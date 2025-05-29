@@ -2,7 +2,7 @@
 
 
 
-## Ho tro push gitlab 50k/may lien he Tuyen
+## Ho tro push gitlab 50k/may lien he Tuyen va Minh
 
 To make it easy for you to get started with GitLab, here's a list of recommended next steps.
 
