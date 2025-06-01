@@ -1,16 +1,18 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import "./App.css";
+import Footer from "./layouts/User/Footer";
+import Header from "./layouts/User/Header";
+import LandingPage from "./layouts/User/Landing";
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <h1>Hello Team 1</h1>
-    </>
-  )
+    <div className="relative w-full bg-slate-900">
+      <div className=" w-full flex justify-center items-center">
+        <Header />
+      </div>
+      <LandingPage />
+      <Footer />
+    </div>
+  );
 }
 
-export default App
+export default App;
