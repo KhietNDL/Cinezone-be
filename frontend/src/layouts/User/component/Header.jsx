@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "../../assets/logoWeb.png";
+import logo from "../../../assets/logoWeb.png";
 import { FaSearch } from "react-icons/fa";
 import { IoLocationOutline } from "react-icons/io5";
 const Header = () => {
@@ -44,6 +44,9 @@ const Header = () => {
         </div>
         <div
           role="button"
+          onClick={() => {
+            navigate("/login");
+          }}
           className="bg-gradient-to-r from-purple-400 to-purple-600 rounded-xl p-2 px-3 font-semibold  active:scale-[1.1] transition-90s duration-75"
         >
           Sign In
