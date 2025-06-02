@@ -6,6 +6,7 @@ import Login from "./auth/login/Login";
 import AdminLayout from "./layouts/Admin/AdminLayout";
 import UserLayout from "./layouts/User/UserLayout";
 import DashboardAdmin from "./layouts/Admin/component/DashboardAdmin";
+import EmployeeManagement from "./layouts/Admin/component/EmployeeManagement";
 
 function App() {
   return (
@@ -15,8 +16,9 @@ function App() {
         <Route path="/login" element={<Login />} />
       </Route>
 
-      <Route path="/admin/dashboard" element={<AdminLayout />}>
-        <Route index path="/admin/dashboard" element={<DashboardAdmin />} />
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route path="dashboard" element={<DashboardAdmin />} />
+        <Route path="employees" element={<EmployeeManagement />} />
       </Route>
     </Routes>
   );

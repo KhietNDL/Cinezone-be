@@ -8,7 +8,7 @@ const UserLayout = () => {
   const hideHeaderFooter = location.pathname === "/login";
 
   return (
-    <div className="relative w-full bg-slate-900">
+    <div className="relative w-full bg-black">
       {!hideHeaderFooter && <Header />}
       <Outlet />
       {!hideHeaderFooter && <Footer />}
