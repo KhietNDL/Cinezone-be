@@ -6,12 +6,14 @@ import Login from "./auth/login/Login";
 import AdminLayout from "./layouts/Admin/AdminLayout";
 import UserLayout from "./layouts/User/UserLayout";
 import DashboardAdmin from "./layouts/Admin/component/DashboardAdmin";
+import BookingPage from "./layouts/User/component/BookingPage";
 
 function App() {
   return (
     <Routes>
       <Route element={<UserLayout />}>
         <Route path="/" element={<LandingPage />} />
+         <Route path="/:idMovie" element={<BookingPage />} />
         <Route path="/login" element={<Login />} />
       </Route>
 
