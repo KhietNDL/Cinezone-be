@@ -1,19 +1,26 @@
+import { Route, Routes } from "react-router-dom";
 import "./App.css";
-import BookingPage from "./layouts/BookingPage";
-import Footer from "./layouts/User/Footer";
-import Header from "./layouts/User/Header";
-import LandingPage from "./layouts/User/Landing";
+
+import LandingPage from "./layouts/User/component/Landing";
+import Login from "./auth/login/Login";
+import AdminLayout from "./layouts/Admin/AdminLayout";
+import UserLayout from "./layouts/User/UserLayout";
+import DashboardAdmin from "./layouts/Admin/component/DashboardAdmin";
+import BookingPage from "./layouts/User/component/BookingPage";
 
 function App() {
   return (
-    <div className="relative w-full bg-slate-900">
-      <div className=" w-full flex justify-center items-center">
-        <Header />
-      </div>
-      {/* <LandingPage /> */}
-      <BookingPage/>
-      <Footer />
-    </div>
+    <Routes>
+      <Route element={<UserLayout />}>
+        <Route path="/" element={<LandingPage />} />
+         <Route path="/:idMovie" element={<BookingPage />} />
+        <Route path="/login" element={<Login />} />
+      </Route>
+
+      <Route path="/admin/dashboard" element={<AdminLayout />}>
+        <Route index path="/admin/dashboard" element={<DashboardAdmin />} />
+      </Route>
+    </Routes>
   );
 }
 

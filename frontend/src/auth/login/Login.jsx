@@ -1,11 +1,11 @@
-import React from 'react';
+import React from "react";
 
-function ComponentName () {
+function Login() {
   return (
     <>
       <h1>Hello, React!</h1>
     </>
   );
-};
+}
 
-export default ComponentName;
+export default Login;

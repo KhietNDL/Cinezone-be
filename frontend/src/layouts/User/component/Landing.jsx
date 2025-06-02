@@ -4,31 +4,33 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/pagination";
 import React, { useState } from "react";
-import landingBackground from "../../assets/landingBackground.jpg";
+import landingBackground from "../../../assets/landingBackground.jpg";
 import { FaPlay } from "react-icons/fa";
 import { Pagination } from "swiper/modules";
-import imageMovie from "../../assets/imageMovie.jpg";
-import imageMovie2 from "../../assets/imageMovie2.jpg";
-import imageMovie3 from "../../assets/imageMovie3.jpg";
-import imageMovie4 from "../../assets/imageMovie4.jpg";
-import imageMovie5 from "../../assets/imageMovie5.jpg";
-import imageMovie6 from "../../assets/imageMovie6.jpg";
-import imageMovie7 from "../../assets/imageMovie7.jpg";
-import imageMovie8 from "../../assets/imageMovie8.jpg";
-import promotionMovie1 from "../../assets/PromotionMovie1.jpg";
-import promotionMovie2 from "../../assets/PromotionMovie2.jpg";
-import promotionMovie3 from "../../assets/PromotionMovie3.jpg";
+import imageMovie from "../../../assets/imageMovie.jpg";
+import imageMovie2 from "../../../assets/imageMovie2.jpg";
+import imageMovie3 from "../../../assets/imageMovie3.jpg";
+import imageMovie4 from "../../../assets/imageMovie4.jpg";
+import imageMovie5 from "../../../assets/imageMovie5.jpg";
+import imageMovie6 from "../../../assets/imageMovie6.jpg";
+import imageMovie7 from "../../../assets/imageMovie7.jpg";
+import imageMovie8 from "../../../assets/imageMovie8.jpg";
+import promotionMovie1 from "../../../assets/PromotionMovie1.jpg";
+import promotionMovie2 from "../../../assets/PromotionMovie2.jpg";
+import promotionMovie3 from "../../../assets/PromotionMovie3.jpg";
+import { useNavigate, useParams } from "react-router-dom";
 const LandingPage = () => {
+  
   const [movieData, setMovieData] = useState([
     {
-      id: 1,
+       idMovie: 1,
       nameMovie: "Stree 2 Sarkate Ka Atank",
       category: [{ title: "Action" }, { title: "Horror" }],
       imgUrl: imageMovie2,
       sub: "English",
     },
     {
-      id: 2,
+       idMovie: 2,
       nameMovie: "Stree 2 Sarkate Ka Atank",
       category: [{ title: "Action" }, { title: "Horror" }],
       imgUrl: imageMovie3,
@@ -36,7 +38,7 @@ const LandingPage = () => {
       sub: "English",
     },
     {
-      id: 3,
+       idMovie: 3,
       nameMovie: "Stree 2 Sarkate Ka Atank",
       category: [{ title: "Action" }, { title: "Horror" }],
       imgUrl: imageMovie4,
@@ -44,7 +46,7 @@ const LandingPage = () => {
       sub: "English",
     },
     {
-      id: 4,
+       idMovie: 4,
       nameMovie: "Stree 2 Sarkate Ka Atank",
       category: [{ title: "Action" }, { title: "Horror" }],
       imgUrl: imageMovie5,
@@ -52,7 +54,7 @@ const LandingPage = () => {
       sub: "English",
     },
     {
-      id: 5,
+       idMovie: 5,
       nameMovie: "Stree 2 Sarkate Ka Atank",
       category: [{ title: "Action" }, { title: "Horror" }],
       imgUrl: imageMovie6,
@@ -60,7 +62,7 @@ const LandingPage = () => {
       sub: "English",
     },
     {
-      id: 6,
+       idMovie: 6,
       nameMovie: "Stree 2 Sarkate Ka Atank",
       category: [{ title: "Action" }, { title: "Horror" }],
       imgUrl: imageMovie7,
@@ -68,7 +70,7 @@ const LandingPage = () => {
       sub: "English",
     },
     {
-      id: 7,
+      idMovie: 7,
       nameMovie: "Stree 2 Sarkate Ka Atank",
       category: [{ title: "Action" }, { title: "Horror" }],
       imgUrl: imageMovie8,
@@ -101,6 +103,13 @@ const LandingPage = () => {
       isActive: "active",
     },
   ]);
+  const navigate=useNavigate();
+  const handleClickMovie=(idMovie)=>{
+    navigate(`/${idMovie}`);
+    
+
+
+  };
   return (
     <div className="w-full bg-slate-900 select-none landingPage">
       <div className="font-bold py-3 text-center text-[30px] text-white">
@@ -168,7 +177,7 @@ const LandingPage = () => {
           <div
             role="button"
             className="bg-purple-500 rounded-xl px-9 py-3 text-white"
-               onClick={() => navigate('/booking')}
+               
           >
             Book Now
           </div>
@@ -214,7 +223,9 @@ const LandingPage = () => {
                   </div>
                   <div
                     role="button"
+
                     className="bg-purple-500 rounded-lg px-3 py-2 text-white hover:bg-purple-600 text-[12px]"
+               
                   >
                     Book now
                   </div>
@@ -265,6 +276,7 @@ const LandingPage = () => {
                   <div
                     role="button"
                     className="bg-purple-500 rounded-lg px-3 py-2 text-white hover:bg-purple-600 text-[12px]"
+                    onClick={()=>{handleClickMovie(item.idMovie)}}
                   >
                     Book now
                   </div>
