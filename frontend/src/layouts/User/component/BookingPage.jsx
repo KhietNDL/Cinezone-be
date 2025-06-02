@@ -1,5 +1,11 @@
-import { useState } from 'react';
-import { FaStar, FaRegClock, FaCalendarAlt, FaHeart, FaTicketAlt } from 'react-icons/fa';
+import { useState } from "react";
+import {
+  FaStar,
+  FaRegClock,
+  FaCalendarAlt,
+  FaHeart,
+  FaTicketAlt,
+} from "react-icons/fa";
 import { MdChair, MdOutlineOndemandVideo } from "react-icons/md";
 
 const BookingPage = () => {
@@ -11,9 +17,9 @@ const BookingPage = () => {
   const [selectedSeats, setSelectedSeats] = useState([]);
 
   // Danh sách ghế (8 hàng, mỗi hàng 8 ghế)
-  const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+  const rows = ["A", "B", "C", "D", "E", "F", "G", "H"];
   const seatsPerRow = 8;
-  const soldSeats = ['A1', 'B3', 'C5', 'D2', 'E4']; // Ghế đã bán (ví dụ)
+  const soldSeats = ["A1", "B3", "C5", "D2", "E4"]; // Ghế đã bán (ví dụ)
 
   // Hàm xử lý chọn ghế
   const toggleSeat = (seat) => {
@@ -25,15 +31,9 @@ const BookingPage = () => {
     }
   };
 
-
   // Tính tổng giá (ví dụ: 100k/vé)
   const ticketPrice = 100000;
   const totalPrice = selectedSeats.length * ticketPrice;
-
-
-
-
-
 
   return (
     <div className="overflow-x-hidden bg-gray-900 text-white p-6">
@@ -142,20 +142,26 @@ const BookingPage = () => {
 
         {/* Phần chọn ghế */}
         <div className="mb-6">
-          <h2 className="text-start text-lg mb-4 font-bold p-[24px]">Choose seat</h2>
+          <h2 className="text-start text-lg mb-4 font-bold p-[24px]">
+            Choose seat
+          </h2>
           <div className="text-center mb-4">
             <div className="inline-block w-3/4 h-[10px] bg-[#8A2BE2] text-[#6956F5] py-1 rounded-t-lg rounded-tl-3xl 	rounded-tr-3xl font-semibold ">
-              <span className="flex items-end justify-center p-4 text-xl"> SCREEN</span>
-
+              <span className="flex items-end justify-center p-4 text-xl">
+                {" "}
+                SCREEN
+              </span>
             </div>
-
           </div>
           <div className="flex justify-center">
             <div className="grid grid-cols-9 gap-2">
               {/* Cột số thứ tự ghế */}
               <div></div>
               {Array.from({ length: seatsPerRow }, (_, i) => (
-                <div key={i} className="text-center text-3xl text-[#6956F5] font-semibold ">
+                <div
+                  key={i}
+                  className="text-center text-3xl text-[#6956F5] font-semibold "
+                >
                   {i + 1}
                 </div>
               ))}
@@ -164,7 +170,10 @@ const BookingPage = () => {
                 Array.from({ length: seatsPerRow + 1 }, (_, i) => {
                   if (i === 0) {
                     return (
-                      <div key={row} className="text-center text-3xl text-[#6956F5] font-semibold ">
+                      <div
+                        key={row}
+                        className="text-center text-3xl text-[#6956F5] font-semibold "
+                      >
                         {row}
                       </div>
                     );
@@ -180,17 +189,24 @@ const BookingPage = () => {
                       className="w-16 h-16 flex items-center justify-center bg-transparent p-0 border-none outline-none"
                     >
                       <MdChair
-                        aria-label={`Seat ${seat} ${isSold ? 'sold' : isSelected ? 'selected' : 'available'}`}
+                        aria-label={`Seat ${seat} ${
+                          isSold
+                            ? "sold"
+                            : isSelected
+                            ? "selected"
+                            : "available"
+                        }`}
                         className={`
                                    w-13 h-13 transition-colors
-                             ${isSold
-                            ? 'text-gray-500'
-                            : isSelected
-                              ? 'text-blue-500'
-                              : 'text-gray-300 hover:text-gray-100'}  `}
+                             ${
+                               isSold
+                                 ? "text-gray-500"
+                                 : isSelected
+                                 ? "text-blue-500"
+                                 : "text-gray-300 hover:text-gray-100"
+                             }  `}
                       />
                     </button>
-
                   );
                 })
               )}
@@ -218,13 +234,10 @@ const BookingPage = () => {
         <div className="flex justify-between items-center p-[24px]">
           <div>
             <p>
-              Seat:{' '}
-              {selectedSeats.length > 0 ? selectedSeats.join(', ') : 'Not yet'}
+              Seat:{" "}
+              {selectedSeats.length > 0 ? selectedSeats.join(", ") : "Not yet"}
             </p>
-            <p>
-              Total price:{' '}
-              {totalPrice.toLocaleString('vi-VN')}đ
-            </p>
+            <p>Total price: {totalPrice.toLocaleString("vi-VN")}đ</p>
           </div>
           <button
             className="bg-[#6956F5] hover:bg-[#6956f5bf] text-white px-5 py-2 rounded-full text-sm flex items-center font-semibold"
@@ -235,7 +248,6 @@ const BookingPage = () => {
           </button>
         </div>
       </div>
-
     </div>
   );
 };
