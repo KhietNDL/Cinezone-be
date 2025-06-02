@@ -168,6 +168,7 @@ const LandingPage = () => {
           <div
             role="button"
             className="bg-purple-500 rounded-xl px-9 py-3 text-white"
+               onClick={() => navigate('/booking')}
           >
             Book Now
           </div>

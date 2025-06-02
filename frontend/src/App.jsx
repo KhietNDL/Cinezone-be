@@ -1,4 +1,5 @@
 import "./App.css";
+import BookingPage from "./layouts/BookingPage";
 import Footer from "./layouts/User/Footer";
 import Header from "./layouts/User/Header";
 import LandingPage from "./layouts/User/Landing";
@@ -9,7 +10,8 @@ function App() {
       <div className=" w-full flex justify-center items-center">
         <Header />
       </div>
-      <LandingPage />
+      {/* <LandingPage /> */}
+      <BookingPage/>
       <Footer />
     </div>
   );
