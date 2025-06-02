@@ -4,20 +4,20 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/pagination";
 import React, { useState } from "react";
-import landingBackground from "../../assets/landingBackground.jpg";
+import landingBackground from "../../../assets/landingBackground.jpg";
 import { FaPlay } from "react-icons/fa";
 import { Pagination } from "swiper/modules";
-import imageMovie from "../../assets/imageMovie.jpg";
-import imageMovie2 from "../../assets/imageMovie2.jpg";
-import imageMovie3 from "../../assets/imageMovie3.jpg";
-import imageMovie4 from "../../assets/imageMovie4.jpg";
-import imageMovie5 from "../../assets/imageMovie5.jpg";
-import imageMovie6 from "../../assets/imageMovie6.jpg";
-import imageMovie7 from "../../assets/imageMovie7.jpg";
-import imageMovie8 from "../../assets/imageMovie8.jpg";
-import promotionMovie1 from "../../assets/PromotionMovie1.jpg";
-import promotionMovie2 from "../../assets/PromotionMovie2.jpg";
-import promotionMovie3 from "../../assets/PromotionMovie3.jpg";
+import imageMovie from "../../../assets/imageMovie.jpg";
+import imageMovie2 from "../../../assets/imageMovie2.jpg";
+import imageMovie3 from "../../../assets/imageMovie3.jpg";
+import imageMovie4 from "../../../assets/imageMovie4.jpg";
+import imageMovie5 from "../../../assets/imageMovie5.jpg";
+import imageMovie6 from "../../../assets/imageMovie6.jpg";
+import imageMovie7 from "../../../assets/imageMovie7.jpg";
+import imageMovie8 from "../../../assets/imageMovie8.jpg";
+import promotionMovie1 from "../../../assets/PromotionMovie1.jpg";
+import promotionMovie2 from "../../../assets/PromotionMovie2.jpg";
+import promotionMovie3 from "../../../assets/PromotionMovie3.jpg";
 const LandingPage = () => {
   const [movieData, setMovieData] = useState([
     {
