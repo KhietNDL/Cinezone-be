@@ -22,8 +22,9 @@ function App() {
         <Route path="/verification" element={<EmailVerification />} />
       </Route>
 
-      <Route path="/admin/dashboard" element={<AdminLayout />}>
-        <Route index path="/admin/dashboard" element={<DashboardAdmin />} />
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route path="dashboard" element={<DashboardAdmin />} />
+        <Route path="employees" element={<EmployeeManagement />} />
       </Route>
     </Routes>
   );
