@@ -8,8 +8,12 @@ const AdminLayout = () => {
     <div className="w-full bg-[#f9f9f9] h-screen">
       <HeaderAdmin />
       <div className="flex items-start h-[calc(100vh_-_5.4rem)]">
-        <SidebarAdmin />
-        <Outlet />
+        <div className="w-[308px] h-full shrink-0">
+          <SidebarAdmin />
+        </div>
+        <div className=" overflow-y-auto h-full p-4 w-full">
+          <Outlet />
+        </div>
       </div>
     </div>
   );
