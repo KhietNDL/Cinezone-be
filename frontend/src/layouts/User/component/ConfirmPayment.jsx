@@ -1,5 +1,11 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { FaStar, FaRegClock, FaCalendarAlt, FaHeart, FaTicketAlt } from "react-icons/fa";
+import {
+  FaStar,
+  FaRegClock,
+  FaCalendarAlt,
+  FaHeart,
+  FaTicketAlt,
+} from "react-icons/fa";
 
 const ConfirmPayment = () => {
   const { state } = useLocation();
@@ -18,7 +24,8 @@ const ConfirmPayment = () => {
   // Movie details (hardcoded for consistency with BookingPage)
   const movieDetails = {
     title: "Mắt Biếc",
-    poster: "https://cdnb.artstation.com/p/assets/images/images/024/183/449/large/baju-creative-mat-biec.jpg?1581838909",
+    poster:
+      "https://cdnb.artstation.com/p/assets/images/images/024/183/449/large/baju-creative-mat-biec.jpg?1581838909",
     duration: "117 min",
     releaseDate: "12/12/2023",
     genres: "Romantic, Comedy",
@@ -48,7 +55,9 @@ const ConfirmPayment = () => {
           />
           <div className="flex flex-col justify-between flex-1">
             <div>
-              <h2 className="text-2xl font-semibold mb-2">{movieDetails.title}</h2>
+              <h2 className="text-2xl font-semibold mb-2">
+                {movieDetails.title}
+              </h2>
               <div className="flex items-center gap-4 text-sm text-gray-400 mb-2">
                 <span className="flex items-center gap-1">
                   <FaRegClock /> {movieDetails.duration}
@@ -58,10 +67,13 @@ const ConfirmPayment = () => {
                 </span>
                 <span>{movieDetails.genres}</span>
               </div>
-              <p className="text-gray-300 text-sm mb-4">{movieDetails.description}</p>
+              <p className="text-gray-300 text-sm mb-4">
+                {movieDetails.description}
+              </p>
               <div className="flex items-center gap-4 text-sm mb-4">
                 <span className="flex items-center text-yellow-400 font-bold gap-1">
-                  <FaStar /> {movieDetails.rating} <span className="text-white">/10</span>
+                  <FaStar /> {movieDetails.rating}{" "}
+                  <span className="text-white">/10</span>
                 </span>
                 <span className="flex items-center gap-1 text-blue-400">
                   <FaHeart /> {movieDetails.feedback} feedback
@@ -89,7 +101,11 @@ const ConfirmPayment = () => {
             </div>
             <div>
               <p className="text-sm text-gray-400">Seats</p>
-              <p>{selectedSeats.length > 0 ? selectedSeats.join(", ") : "None selected"}</p>
+              <p>
+                {selectedSeats.length > 0
+                  ? selectedSeats.join(", ")
+                  : "None selected"}
+              </p>
             </div>
             <div>
               <p className="text-sm text-gray-400">Number of Tickets</p>
