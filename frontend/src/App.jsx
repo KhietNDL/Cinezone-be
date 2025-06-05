@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Router, Routes } from "react-router-dom";
 import "./App.css";
 import LandingPage from "./layouts/User/component/Landing";
 import AdminLayout from "./layouts/Admin/AdminLayout";
@@ -10,10 +10,15 @@ import ForgotPasswordPage from "./auth/forgot/ForgotPassword";
 import EmailVerification from "./auth/verification/VerificationPassword";
 import EmployeeManagement from "./layouts/Admin/component/EmployeeManagement";
 import BookingPage from "./layouts/User/component/BookingPage";
+import ConfirmPayment from "./layouts/User/component/ConfirmPayment";
+import ScrollToTop from "./layouts/User/component/ScrollToTop";
 
 function App() {
   return (
+    
     <Routes>
+      
+
       <Route element={<UserLayout />}>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<MovieTheaterLogin />} />
@@ -21,6 +26,7 @@ function App() {
         <Route path="/forgot" element={<ForgotPasswordPage />} />
         <Route path="/verification" element={<EmailVerification />} />
         <Route path="/:idMovie" element={<BookingPage />} />
+          <Route path="/confirmPayment" element={<ConfirmPayment />} />
       </Route>
 
       <Route path="/admin" element={<AdminLayout />}>
