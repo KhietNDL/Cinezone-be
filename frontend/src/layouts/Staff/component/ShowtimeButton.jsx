@@ -5,9 +5,12 @@ const showtimes = ['08:30 AM', '12:30 PM', '14:30 PM', '18:00 PM', '20:00 PM', '
 
 const ShowtimeButton = ({ selectedTime, onSelectTime }) => (
   <Space direction="vertical">
-    <DatePicker defaultValue={dayjs()} />
-    <Typography.Title level={5} style={{ marginTop: 20 }}><i className="fa-solid fa-clock"></i> Time</Typography.Title>
-    <Space wrap>
+    <div className='p-4 flex items-center justify-start'>
+      <DatePicker defaultValue={dayjs()} style={{marginLeft: "40px"}}/>
+    </div>
+    <h5 style={{ marginTop: 20 }}><i className="fa-solid fa-clock"></i> Time</h5>
+    <div className='p-4 flex items-center justify-start'>
+      <Space wrap style={{paddingLeft: "40px"}}>
       {showtimes.map((time) => (
         <Button
           key={time}
@@ -18,6 +21,7 @@ const ShowtimeButton = ({ selectedTime, onSelectTime }) => (
         </Button>
       ))}
     </Space>
+    </div>
   </Space>
 );
 

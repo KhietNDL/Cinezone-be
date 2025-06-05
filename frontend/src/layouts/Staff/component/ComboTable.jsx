@@ -1,6 +1,6 @@
 import { Table, InputNumber, Button } from 'antd';
 import React from 'react';
-import '../../src/components/ComboTable.css'; // Assuming you have some styles for the table
+import './ComboTable.css'; // Assuming you have a CSS file for custom styles
 
 
 

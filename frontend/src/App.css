@@ -1,1 +1,28 @@
 @import "tailwindcss";
+div[role="button"] {
+  cursor: pointer;
+}
+/* width */
+::-webkit-scrollbar {
+  display: none;
+}
+
+.swiper-pagination-bullet {
+  background: white !important;
+}
+.swiper-pagination-bullet swiper-pagination-bullet-active {
+  background: white !important;
+}
+.swiper-wrapper {
+  padding-bottom: 50px;
+}
+.swiper swiper-initialized swiper-horizontal swiper-backface-hidden mySwiper {
+}
+.swiper-button-prev {
+  color: white !important;
+  padding-right: 10px !important;
+}
+.swiper-button-next {
+  color: white !important;
+  padding-left: 10px !important;
+}
