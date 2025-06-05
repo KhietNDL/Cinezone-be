@@ -20,11 +20,12 @@ app.get('/', (req, res) => {
 
 // Import routes
 const authRoutes = require('./routes/auth');
-
+const employeeRoutes = require('./routes/employees');
 // Use routes
 app.use('/api/auth', authRoutes);
+app.use('/api/employee', employeeRoutes);
 
-//port
+//port 
 const PORT = process.env.PORT || 8080;
 
 //listen
