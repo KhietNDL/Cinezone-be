@@ -14,38 +14,50 @@ class User {
     }
 
     static async create(userData) {
-        const { 
-            password, 
-            fullName, 
-            dateOfBirth, 
-            sex, 
-            email, 
-            cccd, 
-            address,
-            phoneNumber
-        } = userData;
-
-        const userId = uuidv4();
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-        const now = new Date();
-
-        const [result] = await db.promise().query(
-            `INSERT INTO Users (
-                UserId, Password, FullName, DateOfBirth, Sex, 
-                Email, CCCD, Address, Role, IsEmailVerified,
-                ScoreBalance, IsDeleted, CreatedAt, UpdatedAt,
-                PhoneNumber
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-                userId, hashedPassword, fullName, dateOfBirth, sex,
-                email, cccd, address, 0, false, // Role = 0 (user), IsEmailVerified = false
-                0, false, now, now, // ScoreBalance = 0, IsDeleted = false
+        try {
+            const { 
+                password, 
+                fullName, 
+                dateOfBirth, 
+                sex, 
+                email, 
                 phoneNumber
-            ]
-        );
+            } = userData;
 
-        return userId;
+            const userId = uuidv4();
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(password, salt);
+            const now = new Date();
+
+            console.log('Creating user with data:', {
+                userId,
+                fullName,
+                dateOfBirth,
+                sex,
+                email,
+                phoneNumber
+            });
+
+            const [result] = await db.promise().query(
+                `INSERT INTO Users (
+                    UserId, Password, FullName, DateOfBirth, Sex, 
+                    Email, CreatedAt, PhoneNumber, Role, IsEmailVerified, IsDeleted
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    userId, hashedPassword, fullName, dateOfBirth, sex,
+                    email, now, phoneNumber, 1, false, 0
+                ]
+            );
+
+            if (result.affectedRows === 0) {
+                throw new Error('Failed to insert user into database');
+            }
+
+            return userId;
+        } catch (error) {
+            console.error('Error creating user:', error);
+            throw error;
+        }
     }
 
     static async findById(id) {
@@ -82,6 +94,31 @@ class User {
             [hashedPassword, userId]
         );
         return result.affectedRows > 0;
+    }
+
+    static async update(userId, updates) {
+        try {
+            const updateKeys = Object.keys(updates);
+            const updateValues = Object.values(updates);
+
+            if (updateKeys.length === 0) {
+                return false; // Không có gì để cập nhật
+            }
+
+            const setClauses = updateKeys.map(key => `\`${key}\` = ?`).join(', ');
+            const query = `UPDATE Users SET ${setClauses}, UpdatedAt = NOW() WHERE UserId = ? AND IsDeleted = 0`;
+            const values = [...updateValues, userId];
+
+            console.log('Update query:', query);
+            console.log('Update values:', values);
+
+            const [result] = await db.promise().query(query, values);
+
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('Error updating user:', error);
+            throw error;
+        }
     }
 }
 
