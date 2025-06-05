@@ -16,6 +16,7 @@ const ShowtimeButton = ({ selectedTime, onSelectTime }) => (
           key={time}
           type={selectedTime === time ? 'primary' : 'default'}
           onClick={() => onSelectTime(time)}
+          style={{backgroundColor: selectedTime === time ? '#4F46E5' : '#f0f0f0', color: selectedTime === time ? 'white' : 'black', margin: '0 5px'}}
         >
           {time}
         </Button>

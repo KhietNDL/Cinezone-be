@@ -13,7 +13,7 @@ const SellTicketPage = () => {
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(false);
-
+  const [enableTransition, setEnableTransition] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(MOVIES_PER_PAGE);
   const [isAnimating, setIsAnimating] = useState(false);
   const containerRef = useRef(null);
@@ -59,25 +59,26 @@ const SellTicketPage = () => {
   };
 
   const handleTransitionEnd = () => {
-    setIsAnimating(false);
+     setIsAnimating(false);
 
-    if (currentIndex >= movies.length + MOVIES_PER_PAGE) {
-      setCurrentIndex(MOVIES_PER_PAGE);
-      containerRef.current.style.transition = "none";
-      containerRef.current.style.transform = `translateX(-${(MOVIES_PER_PAGE * 100) / MOVIES_PER_PAGE}%)`;
-      setTimeout(() => {
-        containerRef.current.style.transition = "transform 0.5s ease-in-out";
-      }, 50);
-    } else if (currentIndex < MOVIES_PER_PAGE) {
-      const maxIndex = movies.length + MOVIES_PER_PAGE - SCROLL_STEP;
-      setCurrentIndex(maxIndex);
-      containerRef.current.style.transition = "none";
-      containerRef.current.style.transform = `translateX(-${(maxIndex * 100) / MOVIES_PER_PAGE}%)`;
-      setTimeout(() => {
-        containerRef.current.style.transition = "transform 0.5s ease-in-out";
-      }, 50);
-    }
-  };
+  if (currentIndex >= movies.length + MOVIES_PER_PAGE) {
+    setEnableTransition(false);
+    setCurrentIndex(MOVIES_PER_PAGE);
+  } else if (currentIndex < MOVIES_PER_PAGE) {
+    setEnableTransition(false);
+    const maxIndex = movies.length + MOVIES_PER_PAGE - SCROLL_STEP;
+    setCurrentIndex(maxIndex);
+  }
+};
+
+// Khi enableTransition = false, sau khi render xong thì bật lại transition
+useEffect(() => {
+  if (!enableTransition) {
+    // Đợi 1 tick để React render xong
+    const id = setTimeout(() => setEnableTransition(true), 0);
+    return () => clearTimeout(id);
+  }
+}, [enableTransition]);
 
   const translatePercent = -(currentIndex * 100) / MOVIES_PER_PAGE;
 
@@ -138,13 +139,7 @@ const SellTicketPage = () => {
       <h5 className="mt-5">
         <i className="fa-solid fa-clock"></i> Select Showtime
       </h5>
-      {/* <div className="p-4 flex items-center justify-start ">
-        <DatePicker
-          className="w-[200px]"
-          style={{ marginLeft: "50px" }}
-          placeholder="Select date"
-        />
-      </div> */}
+
 
       <ShowtimeButton
         selectedTime={null}

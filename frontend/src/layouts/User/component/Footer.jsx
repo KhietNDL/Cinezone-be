@@ -5,7 +5,7 @@ import { RiInstagramFill } from "react-icons/ri";
 
 const Footer = () => {
   return (
-    <div className="bg-slate-900 px-[30px] py-[40px] flex items-start justify-between">
+    <div className=" px-[30px] py-[40px] flex items-start justify-between">
       <div className="flex justify-start  flex-col space-y-4 w-1/4 select-none">
         <div className="text-white text-[20px] font-bold">CINE ZONE</div>
         <div className="text-slate-300">
@@ -86,15 +86,15 @@ const Footer = () => {
         </div>
         <div className="flex flex-col justify-start space-y-3 text-slate-300">
           <div className="flex items-center ">
-            <FaPhoneAlt size={20} color="#9C27B0" className="mr-2" /> +84 (28)
+            <FaPhoneAlt size={20} color="#6a57f5" className="mr-2" /> +84 (28)
             3775 3535
           </div>
           <div className="flex items-center space-x-2">
-            <MdEmail size={20} color="#9C27B0" className="mr-2" />{" "}
+            <MdEmail size={20} color="#6a57f5" className="mr-2" />{" "}
             info@cinestar.com.vn
           </div>
           <div className="flex items-start space-x-2">
-            <FaLocationDot size={20} color="#9C27B0" className="mr-2" /> 271
+            <FaLocationDot size={20} color="#6a57f5" className="mr-2" /> 271
             Nguyễn Trãi, Phường Nguyễn Cư Trinh, Quận 1, Tp. Hồ Chí Minh
           </div>
         </div>
@@ -117,7 +117,7 @@ const Footer = () => {
           />
           <div
             role="button"
-            className="bg-purple-500  select-none rounded-xl text-white font-bold p-2 hover:bg-purple-600 active:bg-purple-700 text-[20px] flex justify-center items-center"
+            className="bg-[#6a57f5]  select-none rounded-4xl  text-white font-bold p-2 hover:bg-[#6957f5ea]  active:bg-[#6957f5ce]  text-[20px] flex justify-center items-center"
           >
             Subscribe{" "}
           </div>

@@ -5,10 +5,14 @@ import Footer from "./component/Footer";
 
 const UserLayout = () => {
   const location = useLocation();
-  const hideHeaderFooter = location.pathname === "/login";
+  const hideHeaderFooter =
+    location.pathname === "/login" ||
+    location.pathname === "/register" ||
+    location.pathname === "/forgot" ||
+    location.pathname === "/verification";
 
   return (
-    <div className="relative w-full bg-slate-900">
+    <div className="relative w-full bg-black">
       {!hideHeaderFooter && <Header />}
       <Outlet />
       {!hideHeaderFooter && <Footer />}

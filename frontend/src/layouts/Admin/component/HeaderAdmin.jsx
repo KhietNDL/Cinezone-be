@@ -14,7 +14,7 @@ const HeaderAdmin = () => {
           loading="lazy"
           role="button"
           onClick={() => {
-            navigate("/");
+            navigate("/admin/dashboard");
           }}
           className=" w-[140px] h-[70px] object-cover"
         />

@@ -8,7 +8,7 @@ const DashboardAdmin = () => {
     <div className="p-[20px] flex items-center justify-between w-[80%]">
       <div className="w-[70%] space-y-4">
         <div className="flex items-center justify-between w-full">
-          <div className="bg-white rounded-md p-3  w-[23%] shadow-md ">
+          <div className="bg-white rounded-md p-3  w-[23%] shadow-sm ">
             <div className="flex items-center justify-between">
               <p className="text-slate-500">Total Tickets Sold</p>
 
@@ -18,9 +18,9 @@ const DashboardAdmin = () => {
             </div>
             <div className="font-bold text-[19px]">25,340</div>
           </div>
-          <div className="bg-white rounded-md p-3  w-[23%] shadow-md">
+          <div className="bg-white rounded-md p-3  w-[23%] shadow-sm">
             <div className="flex items-center justify-between">
-              <p className="text-slate-500">Total Tickets Sold</p>
+              <p className="text-slate-500">Revenue</p>
 
               <div className="p-2 bg-rose-50 rounded-full">
                 <RiMoneyDollarCircleFill size={20} color="red" />
@@ -28,9 +28,9 @@ const DashboardAdmin = () => {
             </div>
             <div className="font-bold text-[19px]">25,340</div>
           </div>
-          <div className="bg-white rounded-md p-3  w-[23%] shadow-md">
+          <div className="bg-white rounded-md p-3  w-[23%] shadow-sm">
             <div className="flex items-center justify-between">
-              <p className="text-slate-500">Total Tickets Sold</p>
+              <p className="text-slate-500">Active Movies</p>
 
               <div className="p-2 bg-amber-50 rounded-full">
                 <MdMovieFilter size={20} color="gold" />
@@ -38,9 +38,9 @@ const DashboardAdmin = () => {
             </div>
             <div className="font-bold text-[19px]">25,340</div>
           </div>
-          <div className="bg-white rounded-md p-3  w-[23%] shadow-md">
+          <div className="bg-white rounded-md p-3  w-[23%] shadow-sm">
             <div className="flex items-center justify-between">
-              <p className="text-slate-500">Total Tickets Sold</p>
+              <p className="text-slate-500">Upcoming Shows</p>
 
               <div className="p-2 bg-rose-50 rounded-full">
                 <IoCalendar size={20} color="red" />
@@ -49,21 +49,21 @@ const DashboardAdmin = () => {
             <div className="font-bold text-[19px]">25,340</div>
           </div>
         </div>
-        <div className="bg-white w-full h-[250px] rounded-[10px] p-3 font-bold shadow-md">
+        <div className="bg-white w-full h-[250px] rounded-[10px] p-3 font-bold shadow-sm">
           {" "}
           Sale Overview
         </div>
         <div className=" w-full h-[230px] flex items-center justify-between">
-          <div className="bg-white w-[48%] h-full rounded-[10px] p-3 font-bold shadow-md">
+          <div className="bg-white w-[48%] h-full rounded-[10px] p-3 font-bold shadow-sm">
             Chart
           </div>
-          <div className="bg-white w-[48%] h-full rounded-[10px] p-3 font-bold shadow-md">
+          <div className="bg-white w-[48%] h-full rounded-[10px] p-3 font-bold shadow-sm">
             Chart
           </div>
         </div>
       </div>
       <div className="flex items-center justify-center w-[30%]">
-        <div className="bg-white p-5 px-10 rounded-[20px] space-y-4 shadow-md">
+        <div className="bg-white p-5 px-10 rounded-[20px] space-y-4 shadow-sm">
           <p className="font-bold">Top 5 Movies by Ticket Sales</p>
           <div className="w-full space-y-3">
             <div className="flex items-center justify-between">

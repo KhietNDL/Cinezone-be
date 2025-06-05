@@ -4,6 +4,7 @@ import { IoTicketSharp } from "react-icons/io5";
 import { GiPopcorn } from "react-icons/gi";
 import { FaDoorOpen, FaTicket, FaChartLine } from "react-icons/fa6";
 import { NavLink } from "react-router-dom";
+import { PiPopcornDuotone } from "react-icons/pi";
 
 
 const SidebarStaff = () => {
@@ -18,22 +19,13 @@ const SidebarStaff = () => {
       icon: <i className="fa-solid fa-ticket"></i>,
       to: "/staff/ticket-selling",
     },
-    {
-      label: "Rooms",
-      icon: <FaDoorOpen size={20} />,
-      to: "/staff/rooms",
-    },
+    
     {
       label: "Combos",
-      icon: <GiPopcorn />,
+      icon: <PiPopcornDuotone />,
       to: "/staff/combos",
     },
-    {
-      label: "Reports",
-      icon: <FaChartLine />,
-      to: "/staff/reports",
-    },
-    
+   
       
   ];
 
