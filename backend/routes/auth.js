@@ -16,7 +16,7 @@ const {
     resetPasswordValidation,
     updateProfileValidation
 } = require('../middlewares/user.validator');
-const auth = require('../middlewares/auth.middleware');
+const { auth } = require('../middlewares/auth.middleware');
 
 /**
  * @swagger
