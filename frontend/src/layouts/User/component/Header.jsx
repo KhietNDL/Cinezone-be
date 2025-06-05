@@ -26,7 +26,11 @@ const Header = () => {
         <div role="button" className="hover:underline shadow-2xl">
           Cinemas
         </div>
-        <div role="button" className="hover:underline shadow-2xl">
+        <div
+          role="button"
+          className="hover:underline shadow-2xl"
+          onClick={() => navigate("/promotions")}
+        >
           Promotions
         </div>
         <div role="button" className="hover:underline shadow-2xl">
