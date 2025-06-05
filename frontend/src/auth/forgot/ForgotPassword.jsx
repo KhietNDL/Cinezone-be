@@ -4,7 +4,7 @@ import imageLogin1 from "../../assets/imageLogin1.jpg";
 import imageLogin2 from "../../assets/imageLogin2.jpg";
 import imageLogin3 from "../../assets/imageLogin3.jpg";
 import imageLogin4 from "../../assets/imageLogin4.jpg";
-import { useNavigate } from "react-router-dom";
+
 const MovieForgotPassword = () => {
   const [formData, setFormData] = useState({
     email: "",
@@ -14,8 +14,8 @@ const MovieForgotPassword = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [focusedField, setFocusedField] = useState("");
   const [currentBgIndex, setCurrentBgIndex] = useState(0);
-  const navigate = useNavigate();
 
+  // Movie backgrounds - mock images for demo
   // Movie backgrounds - poster phim
   const movieBackgrounds = [imageLogin1, imageLogin2, imageLogin3, imageLogin4];
 
@@ -61,7 +61,7 @@ const MovieForgotPassword = () => {
     setErrors({});
     setIsSuccess(false);
     setIsLoading(false);
-    navigate("/login");
+    // navigate("/login"); // Uncomment when using with router
   };
 
   return (
@@ -86,8 +86,14 @@ const MovieForgotPassword = () => {
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden z-10">
         <div className="absolute -top-4 -left-4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-pulse"></div>
-        <div className="absolute -top-4 -right-4 w-96 h-96 bg-yellow-500 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-pulse animation-delay-2000"></div>
-        <div className="absolute -bottom-8 left-20 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-pulse animation-delay-4000"></div>
+        <div
+          className="absolute -top-4 -right-4 w-96 h-96 bg-yellow-500 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-pulse"
+          style={{ animationDelay: "2s" }}
+        ></div>
+        <div
+          className="absolute -bottom-8 left-20 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-pulse"
+          style={{ animationDelay: "4s" }}
+        ></div>
 
         {/* Floating movie icons */}
         <div className="absolute top-20 left-10 animate-bounce">
@@ -114,7 +120,7 @@ const MovieForgotPassword = () => {
       </div>
 
       {/* Main content */}
-      <div className="flex items-center justify-center h-screen sm:px-10 lg:px-20 relative z-20">
+      <div className="flex items-center justify-center min-h-screen sm:px-10 lg:px-20 relative z-20 py-8">
         <div className="relative w-full max-w-lg">
           {/* Glass morphism card */}
           <div className="backdrop-blur-xl bg-white/10 p-8 rounded-2xl shadow-2xl border border-white/10 hover:bg-white/15 transition-all duration-500">
@@ -136,10 +142,10 @@ const MovieForgotPassword = () => {
                 </div>
 
                 <div className="space-y-6">
-                  {/* Email Input */}
-                  <div className="relative group">
+                  {/* Email Input - Completely fixed layout */}
+                  <div className="relative group mb-8">
                     <div
-                      className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors duration-300 ${
+                      className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors duration-300 z-10 ${
                         focusedField === "email"
                           ? "text-purple-500"
                           : "text-gray-400"
@@ -162,11 +168,14 @@ const MovieForgotPassword = () => {
                         setFormData({ ...formData, email: e.target.value })
                       }
                     />
-                    {errors.email && (
-                      <p className="mt-2 text-sm text-red-400 animate-pulse">
-                        {errors.email}
-                      </p>
-                    )}
+                    {/* Fixed error message position */}
+                    <div className="absolute -bottom-6 left-0 w-full">
+                      {errors.email && (
+                        <p className="text-sm text-red-400 animate-pulse">
+                          {errors.email}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
                   {/* Reset Button */}
@@ -187,7 +196,7 @@ const MovieForgotPassword = () => {
                           <span className="text-base">Sending...</span>
                         </div>
                       ) : (
-                        "Send Reset "
+                        "Send Reset Instructions"
                       )}
                     </button>
                   </div>
@@ -257,7 +266,6 @@ const MovieForgotPassword = () => {
           <div className="absolute -bottom-3 sm:-bottom-4 lg:-bottom-6 -left-3 sm:-left-4 lg:-left-6 w-6 h-6 sm:w-8 sm:h-8 lg:w-12 lg:h-12 bg-gradient-to-r from-red-400 to-pink-500 rounded-full opacity-40 animate-pulse"></div>
         </div>
       </div>
-
       <style jsx>{`
         .animation-delay-2000 {
           animation-delay: 2s;
