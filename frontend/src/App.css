@@ -25,3 +25,7 @@ div[role="button"] {
   color: white !important;
   padding-left: 10px !important;
 }
+.recharts-wrapper {
+  min-height: 250px !important;
+  max-height: 250px !important;
+}
