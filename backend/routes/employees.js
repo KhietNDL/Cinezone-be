@@ -222,6 +222,7 @@ router.delete('/delete/:userId', isAuthenticated, isAdmin, deleteEmployee);
  *       500:
  *         description: Internal server error
  */
-router.put('/update/:userId', isAuthenticated, isAdmin, validateEmployee, updateEmployee);
+er.put('/update/:userId', authisA isenticatedAdmin, validateEmployee, updateEmployee);
 
 module.exports = router;
+    

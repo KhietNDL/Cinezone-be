@@ -14,40 +14,6 @@ class User {
     }
 
     static async create(userData) {
-<<<<<<< HEAD
-        const { 
-            password, 
-            fullName, 
-            dateOfBirth, 
-            sex, 
-            email, 
-            cccd, 
-            address,
-            phoneNumber
-        } = userData;
-
-        const userId = uuidv4();
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-        const now = new Date();
-
-        const [result] = await db.promise().query(
-            `INSERT INTO Users (
-                UserId, Password, FullName, DateOfBirth, Sex, 
-                Email, CCCD, Address, Role, IsEmailVerified,
-                ScoreBalance, IsDeleted, CreatedAt, UpdatedAt,
-                PhoneNumber
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-                userId, hashedPassword, fullName, dateOfBirth, sex,
-                email, cccd, address, 0, false, // Role = 0 (user), IsEmailVerified = false
-                0, false, now, now, // ScoreBalance = 0, IsDeleted = false
-                phoneNumber
-            ]
-        );
-
-        return userId;
-=======
         try {
             const { 
                 password, 
@@ -79,7 +45,7 @@ class User {
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     userId, hashedPassword, fullName, dateOfBirth, sex,
-                    email, now, phoneNumber, 1, false, 0
+                    email, now, phoneNumber, 0, false, 0
                 ]
             );
 
@@ -92,7 +58,6 @@ class User {
             console.error('Error creating user:', error);
             throw error;
         }
->>>>>>> Develop
     }
 
     static async findById(id) {
@@ -130,9 +95,6 @@ class User {
         );
         return result.affectedRows > 0;
     }
-<<<<<<< HEAD
-    
-=======
 
     static async update(userId, updates) {
         try {
@@ -158,7 +120,6 @@ class User {
             throw error;
         }
     }
->>>>>>> Develop
 }
 
 module.exports = User;
