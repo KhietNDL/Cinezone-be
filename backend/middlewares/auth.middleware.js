@@ -27,7 +27,7 @@ const auth = async (req, res, next) => {
 };
 
 const isAdmin = (req, res, next) => {
-    // Giả sử Role = 0 là admin, bạn chỉnh lại nếu DB khác
+   
     if (req.user && (req.user.Role === 3 || req.user.role === 'admin')) {
         return next();
     }

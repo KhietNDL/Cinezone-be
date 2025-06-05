@@ -171,20 +171,11 @@ const resetPassword = async (req, res) => {
     }
 };
 
-const getAllEmployees = async (req, res) => {
-    try {
-        const employees = await User.getAllEmployees();
-        res.json(employees);
-    } catch (error) {
-        console.error('Get all employees error:', error);
-        res.status(500).json({ error: error.message });
-    }
-};
+
 
 module.exports = {
     register,
     login,
     forgotPassword,
     resetPassword,
-    getAllEmployees
 };

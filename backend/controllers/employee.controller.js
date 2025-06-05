@@ -1,5 +1,5 @@
 const Employee = require("../models/employee.model");
-
+const jwt = require("jsonwebtoken");
 // Get all employees
 const getAllEmployees = async (req, res) => {
   try {
@@ -123,9 +123,25 @@ const createEmployee = async (req, res) => {
   const employeeData = req.body;
   try {
     const newEmployeeId = await Employee.createEmployee(employeeData);
+    // Lấy thông tin nhân viên vừa tạo
+    const employee = await Employee.getEmployeeById(newEmployeeId);
+    // Tạo JWT token cho nhân viên mới
+    const token = jwt.sign({ userId: employee.UserId }, process.env.JWT_SECRET, { expiresIn: '1d' });
     res.status(201).json({
       message: "Employee created successfully",
       employeeId: newEmployeeId,
+      token,
+      employee: {
+        UserId: employee.UserId,
+        FullName: employee.FullName,
+        DateOfBirth: employee.DateOfBirth,
+        Sex: employee.Sex,
+        Email: employee.Email,
+        CCCD: employee.CCCD,
+        Address: employee.Address,
+        PhoneNumber: employee.PhoneNumber,
+        CreatedAt: employee.CreatedAt,
+      }
     });
   } catch (error) {
     console.error("Create employee error:", error);

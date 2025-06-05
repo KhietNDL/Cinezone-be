@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { getAllEmployees, getEmployeesbyName, getEmployeeById, getEmployeeByEmail, createEmployee, deleteEmployee, updateEmployee } = require('../controllers/employee.controller');
 const { isAuthenticated, isAdmin } = require('../middlewares/auth.middleware');
+const { validateEmployee } = require('../middlewares/employee.validator');
 
 // Route to get all employees
 /**
@@ -137,7 +138,7 @@ router.get('/email/:email', isAuthenticated, isAdmin, getEmployeeByEmail);
  *       500:
  *         description: Internal server error
  */
-router.post('/create', isAuthenticated, isAdmin, createEmployee);
+router.post('/create', isAuthenticated, isAdmin, validateEmployee, createEmployee);
 
 // Route to delete an employee
 /**
@@ -221,6 +222,6 @@ router.delete('/delete/:userId', isAuthenticated, isAdmin, deleteEmployee);
  *       500:
  *         description: Internal server error
  */
-router.put('/update/:userId', isAuthenticated, isAdmin, updateEmployee);
+router.put('/update/:userId', isAuthenticated, isAdmin, validateEmployee, updateEmployee);
 
 module.exports = router;
