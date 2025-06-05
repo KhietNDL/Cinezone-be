@@ -27,35 +27,36 @@ const loginValidation = [
 // Register validation rules
 const registerValidation = [
     body('password')
-        .isLength({ min: 6 })
-        .withMessage('Password must be at least 6 characters long')
-        .notEmpty()
-        .withMessage('Password is required'),
+        .notEmpty().withMessage('Password is required')
+        .isLength({ min: 8, max: 128 }).withMessage('Password must be 8-128 characters')
+        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,128}$/)
+        .withMessage('Password must contain at least 1 uppercase, 1 lowercase, 1 number, 1 special character')
+        .custom((val) => !/\s/.test(val)).withMessage('Password must not contain whitespace'),
     body('fullName')
-        .isLength({ min: 2, max: 100 })
-        .withMessage('Full name must be between 2 and 100 characters')
-        .notEmpty()
-        .withMessage('Full name is required'),
+        .notEmpty().withMessage('Full name is required')
+        .isLength({ min: 6, max: 100 }).withMessage('Full name must be 6-100 characters')
+        .custom((val) => val.trim() === val).withMessage('Full name must not have leading or trailing spaces')
+        .matches(/^[A-Za-zÀ-ỹ\s]+$/).withMessage('Full name must not contain numbers or special characters'),
     body('dateOfBirth')
-        .isDate()
-        .withMessage('Please enter a valid date of birth')
-        .notEmpty()
-        .withMessage('Date of birth is required'),
+        .notEmpty().withMessage('Date of birth is required')
+        .isDate({ format: 'YYYY-MM-DD' }).withMessage('Date of birth must be a valid date (YYYY-MM-DD)')
+        .custom((val) => new Date(val) <= new Date()).withMessage('Date of birth cannot be in the future'),
     body('sex')
-        .isInt({ min: 0, max: 2 })
-        .withMessage('Sex must be 0 (male), 1 (female), or 2 (other)')
-        .notEmpty()
-        .withMessage('Sex is required'),
+        .isInt({ min: 1, max: 3 })
+        .withMessage('Sex must be 1 (male), 2 (female), or 3 (other)')
+        .notEmpty().withMessage('Sex is required'),
     body('email')
-        .isEmail()
-        .withMessage('Please enter a valid email address')
-        .notEmpty()
-        .withMessage('Email is required'),
+        .notEmpty().withMessage('Email is required')
+        .isEmail().withMessage('Please enter a valid email address')
+        .isLength({ max: 255 }).withMessage('Email must be at most 255 characters')
+        .custom((val) => val === val.toLowerCase()).withMessage('Email must be lowercase')
+        .custom((val) => !/\s/.test(val)).withMessage('Email must not contain whitespace'),
     body('phoneNumber')
-        .matches(/^[0-9]{10,15}$/)
-        .withMessage('Please enter a valid phone number (10-15 digits)')
-        .notEmpty()
-        .withMessage('Phone number is required'),
+        .notEmpty().withMessage('Phone number is required')
+        .matches(/^\d{10}$/).withMessage('Phone number must be exactly 10 digits'),
+    body('cccd')
+        .optional()
+        .matches(/^\d{12}$/).withMessage('CCCD must be exactly 12 digits'),
     validate
 ];
 
@@ -91,9 +92,47 @@ const resetPasswordValidation = [
     validate
 ];
 
+const updateProfileValidation = [
+    body('fullName')
+        .optional()
+        .isLength({ min: 6, max: 100 }).withMessage('Full name must be 6-100 characters')
+        .custom((val) => val === undefined || val.trim() === val).withMessage('Full name must not have leading or trailing spaces')
+        .matches(/^[A-Za-zÀ-ỹ\s]+$/).withMessage('Full name must not contain numbers or special characters'),
+    body('password')
+        .optional()
+        .isLength({ min: 8, max: 128 }).withMessage('Password must be 8-128 characters')
+        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,128}$/)
+        .withMessage('Password must contain at least 1 uppercase, 1 lowercase, 1 number, 1 special character')
+        .custom((val) => val === undefined || !/\s/.test(val)).withMessage('Password must not contain whitespace'),
+    body('dateOfBirth')
+        .optional()
+        .isDate({ format: 'YYYY-MM-DD' }).withMessage('Date of birth must be a valid date (YYYY-MM-DD)')
+        .custom((val) => val === undefined || new Date(val) <= new Date()).withMessage('Date of birth cannot be in the future'),
+    body('phoneNumber')
+        .optional()
+        .matches(/^\d{10}$/).withMessage('Phone number must be exactly 10 digits'),
+    body('sex')
+        .optional()
+        .isInt({ min: 1, max: 3 }).withMessage('Sex must be a number between 1 and 3'),
+    body('email')
+        .optional()
+        .isEmail().withMessage('Invalid email format')
+        .isLength({ max: 255 }).withMessage('Email must be at most 255 characters')
+        .custom((val) => val === undefined || val === val.toLowerCase()).withMessage('Email must be lowercase')
+        .custom((val) => val === undefined || !/\s/.test(val)).withMessage('Email must not contain whitespace'),
+    body('cccd')
+        .optional()
+        .matches(/^\d{12}$/).withMessage('CCCD must be exactly 12 digits'),
+    body('address')
+        .optional()
+        .isString().withMessage('Address must be a string'),
+    // Note: File upload validation for 'avatar' might require different approach depending on how you handle file uploads (e.g., multer)
+];
+
 module.exports = {
     loginValidation,
     registerValidation,
     forgotPasswordValidation,
-    resetPasswordValidation
+    resetPasswordValidation,
+    updateProfileValidation
 }; 
