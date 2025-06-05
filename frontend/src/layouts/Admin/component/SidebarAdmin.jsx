@@ -39,7 +39,7 @@ const SidebarAdmin = () => {
   ];
 
   return (
-    <div className="w-[20%] bg-white h-full rounded-[10px] shadow-md">
+    <div className="w-full bg-white h-full rounded-[10px] shadow-md">
       <div className="flex flex-col gap-2 p-4">
         {menu.map((item) => (
           <NavLink

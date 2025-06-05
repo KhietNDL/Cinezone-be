@@ -61,9 +61,10 @@ const SelectSeatsPage = () => {
             </div>
 
             {/* Ghe */}
-            <div className="bg-white rounded border p-4 mt-2 flex gap-8 justify-center ">
 
-                <div className="grid grid-cols-9 gap-2 mr-10 border p-4 ">
+            <div className="pl-70  flex gap-15 justify-center ">
+
+                <div className="grid grid-cols-9 gap-2 mr-10 border border-gray-700 p-4 ">
                     {/* Column Labels (1–8) */}
                     <div></div> {/* Empty top-left corner */}
                     {cols.map((col) => (
@@ -100,25 +101,30 @@ const SelectSeatsPage = () => {
                         </React.Fragment>
                     ))}
                 </div>
+                {/* Info Box */}
+                <Card style={{  border: "1px solid lightgray" }} title={<div className="font-bold"><i className="fa-solid fa-couch"></i> Seats</div>} className="w-60">
+                    <div className="flex flex-col gap-2">
+                        <div >
+                            <div className="border-b pb-2 mb-2">
+                                <p>Seat can choose: <b>{totalSeats - soldSeats.length - selectedSeats.length}</b></p>
+                                <p>Seat is sold: <span className="text-red-500 font-bold">{soldSeats.length}</span></p>
+                                <p>Seat is selecting: <span className="text-green-600 font-bold">{selectedSeats.length}</span></p>
+                                <p>All seat: <b>{totalSeats}</b></p>
+                            </div>
 
+                            <p>Total Price Seats: <span className="text-green-600 font-bold">${selectedSeats.length * 10}</span></p>
+                        </div>
+
+                        <div className="mt-4 flex justify-end gap-2 pt-50 pl-50.5">
+                            <Button style={{ backgroundColor: "#4F46E5" }} type="primary" icon={<CheckOutlined />}>Continue</Button>
+                            <Button danger icon={<CloseOutlined />}>Cancel</Button>
+                        </div>
+                    </div>
+                </Card>
 
             </div>
-            {/* Info Box */}
-            <Card style={{  padding: "0 20px", border: "1px solid black" }} title={<div className="font-bold"><i className="fa-solid fa-couch"></i> Seats</div>} className="w-60">
-                <div className="flex flex-col gap-2">
-                    <div>
-                        <p>Seat can choose: <b>{totalSeats - soldSeats.length - selectedSeats.length}</b></p>
-                        <p>Seat is sold: <span className="text-red-500 font-bold">{soldSeats.length}</span></p>
-                        <p>Seat is selecting: <span className="text-green-600 font-bold">{selectedSeats.length}</span></p>
-                        <p>All seat: <b>{totalSeats}</b></p>
-                    </div>
 
-                    <div className="mt-4 flex justify-end gap-2">
-                        <Button style={{ backgroundColor: "#4F46E5" }} type="primary" icon={<CheckOutlined />}>Continue</Button>
-                        <Button  danger icon={<CloseOutlined />}>Cancel</Button>
-                    </div>
-                </div>
-            </Card>
+
 
             {/* Legend */}
             <div className="mt-4 flex gap-4 text-sm justify-center">

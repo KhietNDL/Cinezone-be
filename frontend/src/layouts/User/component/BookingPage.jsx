@@ -31,12 +31,10 @@ const BookingPage = () => {
       setSelectedSeats([...selectedSeats, seat]);
     }
   };
-
+  const navigate = useNavigate();
   // Tính tổng giá (ví dụ: 100k/vé)
   const ticketPrice = 100000;
   const totalPrice = selectedSeats.length * ticketPrice;
-
-  const navigate = useNavigate();
 
   return (
     <div className="overflow-x-hidden bg-gray-900 text-white p-6 pt-[86px]">
@@ -158,7 +156,6 @@ const BookingPage = () => {
           </div>
           <div className="flex justify-center">
             <div className="grid grid-cols-10 gap-2">
-
               {/* Cột số thứ tự ghế */}
               <div></div>
               {Array.from({ length: seatsPerRow + 1 }, (_, i) => {
@@ -167,7 +164,10 @@ const BookingPage = () => {
                 }
                 const seatNumber = i > 4 ? i : i + 1;
                 return (
-                  <div key={i} className="text-center text-3xl text-[#6956F5] font-semibold">
+                  <div
+                    key={i}
+                    className="text-center text-3xl text-[#6956F5] font-semibold"
+                  >
                     {seatNumber}
                   </div>
                 );
@@ -207,21 +207,26 @@ const BookingPage = () => {
                       className="w-16 h-16 flex items-center justify-center bg-transparent p-0 border-none outline-none"
                     >
                       <MdChair
-                        aria-label={`Seat ${seat} ${isSold ? "sold" : isSelected ? "selected" : "available"
-                          }`}
-                        className={`w-13 h-13 transition-colors
-            ${isSold
-                            ? "text-gray-500"
+                        aria-label={`Seat ${seat} ${
+                          isSold
+                            ? "sold"
                             : isSelected
-                              ? "text-blue-500"
-                              : "text-gray-300 hover:text-gray-100"
-                          }`}
+                            ? "selected"
+                            : "available"
+                        }`}
+                        className={`w-13 h-13 transition-colors
+            ${
+              isSold
+                ? "text-gray-500"
+                : isSelected
+                ? "text-blue-500"
+                : "text-gray-300 hover:text-gray-100"
+            }`}
                       />
                     </button>
                   );
                 })
               )}
-
             </div>
           </div>
         </div>
