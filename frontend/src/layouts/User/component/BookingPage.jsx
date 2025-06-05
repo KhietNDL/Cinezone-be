@@ -7,6 +7,7 @@ import {
   FaTicketAlt,
 } from "react-icons/fa";
 import { MdChair, MdOutlineOndemandVideo } from "react-icons/md";
+import { useNavigate } from "react-router-dom";
 
 const BookingPage = () => {
   // State để toggle hiển thị phần chọn ghế
@@ -36,7 +37,7 @@ const BookingPage = () => {
   const totalPrice = selectedSeats.length * ticketPrice;
 
   return (
-    <div className="overflow-x-hidden bg-gray-900 text-white p-6">
+    <div className="overflow-x-hidden bg-gray-900 text-white p-6 pt-[86px]">
       {/* Phần thông tin phim */}
       <div className="bg-[#1e1b3a] text-white rounded-tl-xl rounded-tr-xl shadow-lg p-6 flex gap-6 max-w-4xl mx-auto">
         {/* Poster */}
@@ -146,7 +147,7 @@ const BookingPage = () => {
             Choose seat
           </h2>
           <div className="text-center mb-4">
-            <div className="inline-block w-3/4 h-[10px] bg-[#8A2BE2] text-[#6956F5] py-1 rounded-t-lg rounded-tl-3xl 	rounded-tr-3xl font-semibold ">
+            <div className="inline-block w-3/4 h-[10px] bg-[#8A2BE2] text-[#6956F5] py-1 rounded-t-lg rounded-tl-3xl 	rounded-tr-3xl font-semibold  ">
               <span className="flex items-end justify-center p-4 text-xl">
                 {" "}
                 SCREEN
@@ -154,33 +155,48 @@ const BookingPage = () => {
             </div>
           </div>
           <div className="flex justify-center">
-            <div className="grid grid-cols-9 gap-2">
+            <div className="grid grid-cols-10 gap-2">
+
               {/* Cột số thứ tự ghế */}
               <div></div>
-              {Array.from({ length: seatsPerRow }, (_, i) => (
-                <div
-                  key={i}
-                  className="text-center text-3xl text-[#6956F5] font-semibold "
-                >
-                  {i + 1}
-                </div>
-              ))}
+              {Array.from({ length: seatsPerRow + 1 }, (_, i) => {
+                if (i === 4) {
+                  return <div key="aisle-header" className="w-4" />;
+                }
+                const seatNumber = i > 4 ? i : i + 1;
+                return (
+                  <div key={i} className="text-center text-3xl text-[#6956F5] font-semibold">
+                    {seatNumber}
+                  </div>
+                );
+              })}
+
               {/* Ghế và tên hàng */}
               {rows.map((row) =>
-                Array.from({ length: seatsPerRow + 1 }, (_, i) => {
+                Array.from({ length: seatsPerRow + 2 }, (_, i) => {
                   if (i === 0) {
+                    // Cột hiển thị tên hàng (A, B, C...)
                     return (
                       <div
-                        key={row}
-                        className="text-center text-3xl text-[#6956F5] font-semibold "
+                        key={`${row}-label`}
+                        className="text-center text-3xl text-[#6956F5] font-semibold pt-4"
                       >
                         {row}
                       </div>
                     );
                   }
-                  const seat = `${row}${i}`;
+
+                  if (i === 5) {
+                    // Cột lối đi
+                    return <div key={`${row}-aisle`} className="w-4" />;
+                  }
+
+                  // Tính chỉ số thực của ghế
+                  const seatIndex = i > 5 ? i - 1 : i;
+                  const seat = `${row}${seatIndex}`;
                   const isSold = soldSeats.includes(seat);
                   const isSelected = selectedSeats.includes(seat);
+
                   return (
                     <button
                       key={seat}
@@ -189,27 +205,21 @@ const BookingPage = () => {
                       className="w-16 h-16 flex items-center justify-center bg-transparent p-0 border-none outline-none"
                     >
                       <MdChair
-                        aria-label={`Seat ${seat} ${
-                          isSold
-                            ? "sold"
+                        aria-label={`Seat ${seat} ${isSold ? "sold" : isSelected ? "selected" : "available"
+                          }`}
+                        className={`w-13 h-13 transition-colors
+            ${isSold
+                            ? "text-gray-500"
                             : isSelected
-                            ? "selected"
-                            : "available"
-                        }`}
-                        className={`
-                                   w-13 h-13 transition-colors
-                             ${
-                               isSold
-                                 ? "text-gray-500"
-                                 : isSelected
-                                 ? "text-blue-500"
-                                 : "text-gray-300 hover:text-gray-100"
-                             }  `}
+                              ? "text-blue-500"
+                              : "text-gray-300 hover:text-gray-100"
+                          }`}
                       />
                     </button>
                   );
                 })
               )}
+
             </div>
           </div>
         </div>
@@ -242,9 +252,21 @@ const BookingPage = () => {
           <button
             className="bg-[#6956F5] hover:bg-[#6956f5bf] text-white px-5 py-2 rounded-full text-sm flex items-center font-semibold"
             disabled={selectedSeats.length !== numberOfTickets}
+            onClick={() =>
+              navigate("/confirmPayment", {
+                state: {
+                  selectedSeats,
+                  numberOfTickets,
+                  totalPrice,
+                  cinema: "CGV Crescent Mall",
+                  date: "2024-06-12",
+                  time: "14:00",
+                },
+              })
+            }
           >
             <FaTicketAlt className="mr-2" />
-            Continue payment
+            Continue Payment
           </button>
         </div>
       </div>
