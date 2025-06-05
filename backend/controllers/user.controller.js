@@ -275,7 +275,11 @@ const resetPassword = async (req, res) => {
 // Logout user
 const logout = async (req, res) => {
     try {
-        res.json({ 
+        // Clear any auth-related cookies if you're using them
+        res.clearCookie('token');
+        
+        // Send success response
+        res.status(200).json({ 
             message: 'Logout successful' 
         });
     } catch (error) {
