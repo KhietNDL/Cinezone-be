@@ -45,7 +45,8 @@ const SellTicketPage = () => {
         <i className="fa-solid fa-film"></i> Select Movie
       </h5>
 
-      {loading ? (
+      <div className="staff-swiper">
+        {loading ? (
         <div className="text-center my-8">
           <Spin size="large" />
         </div>
@@ -76,6 +77,7 @@ const SellTicketPage = () => {
           ))}
         </Swiper>
       )}
+      </div>
 
       <h5 className="mt-5">
         <i className="fa-solid fa-clock"></i> Select Showtime

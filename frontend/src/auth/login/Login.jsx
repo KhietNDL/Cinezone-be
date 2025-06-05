@@ -11,7 +11,6 @@ const MovieTheaterLogin = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    rememberMe: false,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
@@ -120,8 +119,6 @@ const MovieTheaterLogin = () => {
           <div className="backdrop-blur-xl bg-white/10 p-8 rounded-2xl shadow-2xl border border-white/10 hover:bg-white/15 transition-all duration-500">
             <div className="text-center mb-8">
               <div className="inline-flex items-center justify-center w-[250px] h-20 rounded-2xl mb-4">
-                {/* <Film className="text-white w-14 h-14" />s
-                 */}
                 <img
                   src={logoWeb}
                   alt=""
@@ -136,10 +133,10 @@ const MovieTheaterLogin = () => {
                 Your cinematic journey begins here
               </p>
             </div>
-            <div className="space-y-6">
-              {/* Email input */}
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-purple-400">
+            <div className="space-y-2">
+              {/* Email input - Fixed */}
+              <div className="relative mb-8">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-purple-400 z-10">
                   <Mail className="h-5 w-5" />
                 </div>
                 <input
@@ -153,16 +150,19 @@ const MovieTheaterLogin = () => {
                     setFormData({ ...formData, email: e.target.value })
                   }
                 />
-                {errors.email && (
-                  <p className="mt-2 text-sm text-red-400 animate-pulse">
-                    {errors.email}
-                  </p>
-                )}
+                {/* Fixed error message position */}
+                <div className="absolute -bottom-6 left-0 w-full">
+                  {errors.email && (
+                    <p className="text-sm text-red-400 animate-pulse">
+                      {errors.email}
+                    </p>
+                  )}
+                </div>
               </div>
 
-              {/* Password input */}
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-purple-400">
+              {/* Password input - Fixed */}
+              <div className="relative mb-8">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-purple-400 z-10">
                   <Lock className="h-5 w-5" />
                 </div>
                 <input
@@ -178,7 +178,7 @@ const MovieTheaterLogin = () => {
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center hover:scale-110 transition-transform duration-200"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center hover:scale-110 transition-transform duration-200 z-10"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
@@ -187,14 +187,17 @@ const MovieTheaterLogin = () => {
                     <Eye className="h-5 w-5 text-purple-400 hover:text-purple-300" />
                   )}
                 </button>
-                {errors.password && (
-                  <p className="mt-2 text-sm text-red-400 animate-pulse">
-                    {errors.password}
-                  </p>
-                )}
+                {/* Fixed error message position */}
+                <div className="absolute -bottom-6 left-0 w-full">
+                  {errors.password && (
+                    <p className="text-sm text-red-400 animate-pulse">
+                      {errors.password}
+                    </p>
+                  )}
+                </div>
               </div>
 
-              {/* Remember me & forgot password */}
+              {/* Forgot password */}
 
               <div className="w-full flex justify-end mb-2">
                 <Link
