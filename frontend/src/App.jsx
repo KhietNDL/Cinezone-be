@@ -15,12 +15,10 @@ import SellTicketPage from "./layouts/Staff/component/SellTicketPage";
 import "tailwindcss";
 import StaffLayout from "./layouts/Staff/StaffLayout";
 import SelectSeatsPage from "./layouts/Staff/component/SelectSeatsPage";
+import ConfirmPayment from "./layouts/User/component/ConfirmPayment";
 function App() {
   return (
-    
     <Routes>
-      
-
       <Route element={<UserLayout />}>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<MovieTheaterLogin />} />
@@ -28,7 +26,7 @@ function App() {
         <Route path="/forgot" element={<ForgotPasswordPage />} />
         <Route path="/verification" element={<EmailVerification />} />
         <Route path="/:idMovie" element={<BookingPage />} />
-          <Route path="/confirmPayment" element={<ConfirmPayment />} />
+        <Route path="/confirmPayment" element={<ConfirmPayment />} />
       </Route>
 
       <Route path="/admin" element={<AdminLayout />}>
@@ -37,10 +35,14 @@ function App() {
       </Route>
 
       <Route path="/staff" element={<StaffLayout />}>
-        <Route index path="/staff/ticket-selling" element={<SellTicketPage />} />
-        <Route path="/staff/ticket-selling" element={<SellTicketPage />} />  
+        <Route
+          index
+          path="/staff/ticket-selling"
+          element={<SellTicketPage />}
+        />
+        <Route path="/staff/ticket-selling" element={<SellTicketPage />} />
         <Route path="/staff/movie-info" element={<SellTicketPage />} />
-        <Route path="/staff/rooms" element={<SellTicketPage />} />  
+        <Route path="/staff/rooms" element={<SellTicketPage />} />
         <Route path="/staff/combos" element={<SellTicketPage />} />
         <Route path="/staff/reports" element={<SellTicketPage />} />
         <Route path="/staff/select-seats" element={<SelectSeatsPage />} />
