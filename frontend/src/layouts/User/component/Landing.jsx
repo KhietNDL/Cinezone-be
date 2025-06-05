@@ -266,13 +266,6 @@ const LandingPage = () => {
                     <FaRegCirclePlay size={20} className="mr-1" />
                     Watch Trailer
                   </div>
-                  <div
-                    role="button"
-                    className="bg-purple-500 rounded-lg px-3 py-2 text-white hover:bg-purple-600 text-[12px]"
-                    onClick={()=>{handleClickMovie(item.idMovie)}}
-                  >
-                    Book now
-                  </div>
                 </div>
               </SwiperSlide>
             ))}
