@@ -134,12 +134,23 @@ const LandingPage = () => {
           src={landingBackground}
           alt=""
           loading="lazy"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute w-full h-full bottom-0 flex flex-col md:flex-row items-center justify-between bg-gradient-to-b from-transparent to-black/100">
-          {/* Content Section */}
-          <div className="w-full md:w-[50%] flex flex-col items-center md:items-start space-y-3 md:space-y-5 px-4 md:px-[20px] pt-10 md:pt-0 md:mt-70">
-            <div className="text-[24px] md:text-[32px] lg:text-[40px] font-bold text-white text-center md:text-left">
+          className="w-full h-full object-cover bg-black/70"
+        />{" "}
+        <div className="absolute w-full bottom-4 flex items-center justify-between">
+          <div className="w-[50%] flex flex-col items-start space-y-5 px-[20px]">
+            <div className="flex items-center space-x-3 text-white">
+              <p role="button" className="bg-black p-3 rounded-xl ">
+                ACTION
+              </p>
+              <p role="button" className="bg-black p-3 rounded-xl ">
+                MAXUS MALL
+              </p>
+            </div>{" "}
+          </div>{" "}
+        </div>
+        <div className="absolute w-full h-full bottom-0 flex items-center justify-between bg-gradient-to-b from-transparent to-black/100">
+          <div className="w-[50%] flex flex-col items-start space-y-5 mt-70 px-[20px]">
+            <div className="text-[40px] font-bold text-white">
               Deadpools & Wolverine
             </div>
             <div className="text-white text-center md:text-left text-sm md:text-base px-2 md:px-0">
@@ -164,12 +175,14 @@ const LandingPage = () => {
 
           {/* Movie Poster - Hidden on mobile */}
           <div className="hidden md:flex w-1/2 absolute right-0 top-35 justify-center items-center">
-            <img
-              src={imageMovie}
-              alt=""
-              loading="lazy"
-              className="w-[150px] md:w-[200px] rounded-2xl"
-            />
+            <div className="w-1/2 absolute right-0  top-35 flex justify-center items-center">
+              <img
+                src={imageMovie}
+                alt=""
+                loading="lazy"
+                className="w-[150px] md:w-[200px] rounded-2xl"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -182,8 +195,20 @@ const LandingPage = () => {
           </p>
         </div>
         <div className="flex items-center justify-center mt-[15px] md:mt-[20px]">
+          Book Now
+        </div>
+      </div>
+
+      {/* TRENDING MOVIE */}
+      <div className=" w-full px-[30px] pt-[40px] space-y-3 ">
+        <div className="flex justify-start items-center text-white">
+          <p className="font-bold pb-[30px] text-[30px]">Now showing</p>
+        </div>{" "}
+        <div className="flex items-center justify-center mt-[20px] ">
           <Swiper
             breakpoints={swiperBreakpoints}
+            slidesPerView={5}
+            spaceBetween={50}
             pagination={{
               clickable: true,
             }}
@@ -205,7 +230,7 @@ const LandingPage = () => {
                 <div className="text-white text-center font-semibold text-sm md:text-base px-2">
                   {item.nameMovie}
                 </div>
-                <div className="flex md:flex-col sm:flex-row justify-center md:space-y-2 sm:space-y-0 sm:space-x-1 items-center w-full px-2">
+                <div className="flex lg:flex-row md:flex-col sm:flex-row justify-center md:space-y-2 sm:space-y-0 sm:space-x-1 items-center w-full px-2">
                   <div
                     role="button"
                     className="text-white flex items-center justify-center hover:bg-slate-700 p-2 rounded-4xl px-3 text-[11px] md:text-[12px] w-full sm:w-auto"
@@ -216,7 +241,7 @@ const LandingPage = () => {
                   <div
                     role="button"
                     onClick={() => handleClickMovie(item.idMovie)}
-                    className="bg-[#6a57f5] rounded-4xl px-4 md:px-6 py-2 pb-3 text-white hover:bg-[#6957f5ea] text-[11px] md:text-[12px] shadow-[#6a57f5] shadow-sm w-full sm:w-auto text-center"
+                    className="bg-[#6a57f5] rounded-4xl px-6 py-2 text-white hover:bg-[#6957f5ea] text-[12px]  shadow-[#6a57f5]  shadow-sm sm:w-auto "
                   >
                     Book now
                   </div>
@@ -237,6 +262,8 @@ const LandingPage = () => {
         <div className="flex items-center justify-center mt-[15px] md:mt-[20px]">
           <Swiper
             breakpoints={swiperBreakpoints}
+            slidesPerView={5}
+            spaceBetween={50}
             pagination={{
               clickable: true,
             }}
@@ -258,7 +285,7 @@ const LandingPage = () => {
                 <div className="text-white text-center font-semibold text-sm md:text-base px-2">
                   {item.nameMovie}
                 </div>
-                <div className="flex md:flex-col sm:flex-row justify-center md:space-y-2 sm:space-y-0 sm:space-x-1 items-center w-full px-2">
+                <div className="flex md:flex-col lg:flex-row sm:flex-row justify-center md:space-y-2 sm:space-y-0 sm:space-x-1 items-center w-full px-2">
                   <div
                     role="button"
                     className="text-white flex items-center justify-center hover:bg-slate-700 p-2 rounded-4xl px-3 text-[11px] md:text-[12px] w-full sm:w-auto"
@@ -266,6 +293,7 @@ const LandingPage = () => {
                     <FaRegCirclePlay size={16} className="mr-1" />
                     Watch Trailer
                   </div>
+
                   <div
                     role="button"
                     onClick={() => handleClickMovie(item.idMovie)}
@@ -285,6 +313,7 @@ const LandingPage = () => {
         <div className="text-white font-bold text-[24px] md:text-[30px]">
           Special Promotions
         </div>
+
         <div className="flex w-full items-center justify-center mt-[15px] md:mt-[20px]">
           <Swiper
             breakpoints={swiperBreakpoints}

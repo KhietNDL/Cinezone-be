@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "../../../assets/logoWeb.svg";
+import logo from "../../../assets/logoWeb.png";
 import { FaSearch } from "react-icons/fa";
 import { IoLocationOutline } from "react-icons/io5";
 const Header = () => {
