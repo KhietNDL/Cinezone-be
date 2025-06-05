@@ -16,8 +16,6 @@ div[role="button"] {
 .swiper-wrapper {
   padding-bottom: 50px;
 }
-.swiper swiper-initialized swiper-horizontal swiper-backface-hidden mySwiper {
-}
 .swiper-button-prev {
   color: white !important;
   padding-right: 10px !important;
@@ -25,4 +23,8 @@ div[role="button"] {
 .swiper-button-next {
   color: white !important;
   padding-left: 10px !important;
+}
+.recharts-wrapper {
+  min-height: 250px !important;
+  max-height: 250px !important;
 }
