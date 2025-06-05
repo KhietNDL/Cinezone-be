@@ -36,8 +36,6 @@ const BookingPage = () => {
   const ticketPrice = 100000;
   const totalPrice = selectedSeats.length * ticketPrice;
 
-  const navigate = useNavigate();
-
   return (
     <div className="overflow-x-hidden bg-gray-900 text-white p-6 pt-[86px]">
       {/* Phần thông tin phim */}

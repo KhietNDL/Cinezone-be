@@ -10,8 +10,6 @@ import ForgotPasswordPage from "./auth/forgot/ForgotPassword";
 import EmailVerification from "./auth/verification/VerificationPassword";
 import EmployeeManagement from "./layouts/Admin/component/EmployeeManagement";
 import BookingPage from "./layouts/User/component/BookingPage";
-import ConfirmPayment from "./layouts/User/component/ConfirmPayment";
-import ScrollToTop from "./layouts/User/component/ScrollToTop";
 
 import SellTicketPage from "./layouts/Staff/component/SellTicketPage";
 import "tailwindcss";
