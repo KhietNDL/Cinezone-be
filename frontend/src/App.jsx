@@ -16,6 +16,7 @@ import "tailwindcss";
 import StaffLayout from "./layouts/Staff/StaffLayout";
 import SelectSeatsPage from "./layouts/Staff/component/SelectSeatsPage";
 import ConfirmPayment from "./layouts/User/component/ConfirmPayment";
+import ConfirmTicketsPage from "./layouts/Staff/component/ConfirmTicketsPage";
 function App() {
   return (
     <Routes>
@@ -39,7 +40,8 @@ function App() {
         <Route path="/staff/ticket-selling" element={<SellTicketPage />} />
         <Route path="/staff/movie-info" element={<SellTicketPage />} />
         <Route path="/staff/combos" element={<SellTicketPage />} />
-        <Route path="/staff/select-seats" element={<SelectSeatsPage />} />
+        <Route path="/staff/ticket-selling/select-seats" element={<SelectSeatsPage />} />
+        <Route path="/staff/ticket-selling/confirm-ticket" element={<ConfirmTicketsPage />} />
       </Route>
 
     

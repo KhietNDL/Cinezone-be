@@ -4,7 +4,7 @@ const MovieCard = ({ movie, onSelect, selected }) => (
  <div
   onClick={() => onSelect(movie)}
   className={`cursor-pointer rounded-xl border border-gray-300 p-1 transition-transform hover:scale-105 h-[400px]
-    ${selected ? 'shadow-lg' : 'none'}`}
+    ${selected ? 'shadow-[0_10px_10px_gray]' : 'none'}`}
   style={{ width: 200, minHeight: 350 }}
 >
  <img

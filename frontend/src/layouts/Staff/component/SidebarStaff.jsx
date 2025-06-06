@@ -1,10 +1,10 @@
 import React from "react";
 import { MdOutlineAvTimer, MdMovieCreation, MdPeopleAlt } from "react-icons/md";
 import { IoTicketSharp } from "react-icons/io5";
-import { GiPopcorn } from "react-icons/gi";
 import { FaDoorOpen, FaTicket, FaChartLine } from "react-icons/fa6";
 import { NavLink } from "react-router-dom";
 import { PiPopcornDuotone } from "react-icons/pi";
+
 
 
 const SidebarStaff = () => {
@@ -22,7 +22,7 @@ const SidebarStaff = () => {
     
     {
       label: "Combos",
-      icon: <PiPopcornDuotone />,
+      icon: <PiPopcornDuotone/>,
       to: "/staff/combos",
     },
    
@@ -32,6 +32,10 @@ const SidebarStaff = () => {
   return (
     <div className="w-full bg-white h-full rounded-[10px] shadow-md">
       <div className="flex flex-col gap-2 p-4">
+        <div>
+          <h1 className="text-[20px] font-bold text-purple-600">Hello Staff!</h1>
+          <p className="text-[14px] text-gray-500">Manage your cinema</p>
+        </div>
         {menu.map((item) => (
           <NavLink
             to={item.to}

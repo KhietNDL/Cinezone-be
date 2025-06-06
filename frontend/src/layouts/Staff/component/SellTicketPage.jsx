@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Button, Spin, message } from "antd";
+import { Button, Spin, Tag, message } from "antd";
 import axios from "axios";
 import MovieCard from "./MovieCard";
 import ShowtimeButton from "./ShowtimeButton";
@@ -10,6 +10,7 @@ import { Navigation } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import './SwiperButton.css';
+import { RiMovie2AiFill } from "react-icons/ri";
 
 
 const SellTicketPage = () => {
@@ -17,6 +18,8 @@ const SellTicketPage = () => {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedTime, setSelectedTime] = useState(null);
+  const [selectedVersion, setSelectedVersion] = useState(null);
+
 
 
   useEffect(() => {
@@ -47,36 +50,87 @@ const SellTicketPage = () => {
 
       <div className="staff-swiper">
         {loading ? (
-        <div className="text-center my-8">
-          <Spin size="large" />
-        </div>
-      ) : (
-        <Swiper
-          modules={[Navigation]}
-          navigation
-          spaceBetween={0}
-          slidesPerView={5}
-          loop
-          breakpoints={{
-            320: { slidesPerView: 1 },
-            640: { slidesPerView: 2 },
-            1024: { slidesPerView: 5 },
-          }}
-        >
-          {movies.map((movie) => (
-            <SwiperSlide key={movie.id}>
-              <div className="flex justify-center p-2 w-[230px]">
-                <MovieCard
-                  movie={movie}
-                  onSelect={setSelectedMovie}
-                  selected={selectedMovie?.id === movie.id}
-                />
-              </div>
+          <div className="text-center my-8">
+            <Spin size="large" />
+          </div>
+        ) : (
+          <Swiper
+            modules={[Navigation]}
+            navigation
+            spaceBetween={0}
+            slidesPerView={5}
+            loop
+            breakpoints={{
+              320: { slidesPerView: 1 },
+              640: { slidesPerView: 2 },
+              1024: { slidesPerView: 5 },
+            }}
+          >
+            {movies.map((movie) => (
+              <SwiperSlide key={movie.id}>
+                <div className="flex justify-center p-2 w-[230px]">
+                  <MovieCard
+                    movie={movie}
+                    onSelect={setSelectedMovie}
+                    selected={selectedMovie?.id === movie.id}
+                  />
+                </div>
 
-            </SwiperSlide>
-          ))}
-        </Swiper>
-      )}
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        )}
+
+        <h5 className="mt-5 flex items-center gap-2">
+          <RiMovie2AiFill /> Select Version
+        </h5>
+        <div className="pl-15 pt-2 ">
+          {(!selectedVersion || selectedVersion === "IMAX") && (
+            <Tag
+              className="cursor-pointer"
+              color="geekblue"
+              onClick={() =>
+                setSelectedVersion(selectedVersion === "IMAX" ? null : "IMAX")
+              }
+            >
+              IMAX
+            </Tag>
+          )}
+          {(!selectedVersion || selectedVersion === "4DX") && (
+            <Tag
+              className="cursor-pointer"
+              color="volcano"
+              onClick={() =>
+                setSelectedVersion(selectedVersion === "4DX" ? null : "4DX")
+              }
+            >
+              4DX
+            </Tag>
+          )}
+          {(!selectedVersion || selectedVersion === "3D") && (
+            <Tag
+              className="cursor-pointer"
+              color="cyan"
+              onClick={() =>
+                setSelectedVersion(selectedVersion === "3D" ? null : "3D")
+              }
+            >
+              3D
+            </Tag>
+          )}
+          {(!selectedVersion || selectedVersion === "2D") && (
+            <Tag
+              className="cursor-pointer"
+              color="green"
+              onClick={() =>
+                setSelectedVersion(selectedVersion === "2D" ? null : "2D")
+              }
+            >
+              2D
+            </Tag>
+          )}
+        </div>
+
       </div>
 
       <h5 className="mt-5">
@@ -89,7 +143,7 @@ const SellTicketPage = () => {
       />
 
       <div className="mt-5 text-center">
-        <Link to="/staff/select-seats">
+        <Link to="/staff/ticket-selling/select-seats">
           <Button
             style={{
               backgroundColor: "#4F46E5",
