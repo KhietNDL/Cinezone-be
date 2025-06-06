@@ -42,7 +42,7 @@ const SellTicketPage = () => {
 
   return (
     <div className="p-3">
-      <h1 className="text-3xl font-bold">Sell Movie Ticket</h1>
+      <h1 className="text-3xl font-bold text-fuchsia-700">Sell Movie Ticket</h1>
 
       <h5 className="mt-5">
         <i className="fa-solid fa-film"></i> Select Movie

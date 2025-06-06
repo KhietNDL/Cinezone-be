@@ -17,6 +17,7 @@ import StaffLayout from "./layouts/Staff/StaffLayout";
 import SelectSeatsPage from "./layouts/Staff/component/SelectSeatsPage";
 import ConfirmPayment from "./layouts/User/component/ConfirmPayment";
 import ConfirmTicketsPage from "./layouts/Staff/component/ConfirmTicketsPage";
+import MoviePromotions from "./layouts/User/component/PromotionPage";
 function App() {
   return (
     <Routes>
@@ -28,6 +29,7 @@ function App() {
         <Route path="/verification" element={<EmailVerification />} />
         <Route path="/:idMovie" element={<BookingPage />} />
         <Route path="/confirmPayment" element={<ConfirmPayment />} />
+        <Route path="/promotions" element={<MoviePromotions />} />
       </Route>
 
       <Route path="/admin" element={<AdminLayout />}>

@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "../../../assets/logoWeb.svg";
+import logo from "../../../assets/logoWeb.png";
 import { FaSearch } from "react-icons/fa";
 import { IoLocationOutline } from "react-icons/io5";
 const Header = () => {
@@ -19,21 +19,13 @@ const Header = () => {
           className=" w-[160px] h-[70px] object-cover "
         />
       </div>
-      <div className="flex items-center text-[17px] font-bold space-x-4">
+      <div className="flex items-center text-[17px] font-bold space-x-8">
         <div role="button" className="hover:underline shadow-2xl">
           Movies
         </div>
-        <div role="button" className="hover:underline shadow-2xl">
-          Cinemas
-        </div>
+
         <div role="button" className="hover:underline shadow-2xl">
           Promotions
-        </div>
-        <div role="button" className="hover:underline shadow-2xl">
-          News
-        </div>
-        <div role="button" className="hover:underline shadow-2xl">
-          Membership
         </div>
       </div>
       <div className="flex items-center space-x-4">

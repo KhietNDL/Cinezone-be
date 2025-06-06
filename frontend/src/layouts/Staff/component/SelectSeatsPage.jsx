@@ -28,6 +28,7 @@ const SelectSeatsPage = () => {
 
     return (
         <div className="p-4 mx-auto w-full">
+            <h1 className="text-3xl font-bold mb-4 text-fuchsia-700">Select Seats</h1>
             {/* Phim */}
             <div className="flex items-start gap-4 border-b border-gray-300 pb-4">
                 <img
