@@ -18,6 +18,7 @@ import SelectSeatsPage from "./layouts/Staff/component/SelectSeatsPage";
 import ConfirmPayment from "./layouts/User/component/ConfirmPayment";
 import ConfirmTicketsPage from "./layouts/Staff/component/ConfirmTicketsPage";
 import MoviePromotions from "./layouts/User/component/PromotionPage";
+import ComboPage from "./layouts/Staff/component/ComboPage";
 function App() {
   return (
     <Routes>
@@ -44,6 +45,7 @@ function App() {
         <Route path="/staff/combos" element={<SellTicketPage />} />
         <Route path="/staff/ticket-selling/select-seats" element={<SelectSeatsPage />} />
         <Route path="/staff/ticket-selling/confirm-ticket" element={<ConfirmTicketsPage />} />
+        <Route path="/staff/combo-selling" element={<ComboPage />} />
       </Route>
 
     

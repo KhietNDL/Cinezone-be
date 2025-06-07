@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Button, Spin, Tag, message } from "antd";
+import { Button, Input, Spin, Tag, message } from "antd";
 import axios from "axios";
 import MovieCard from "./MovieCard";
 import ShowtimeButton from "./ShowtimeButton";
@@ -19,7 +19,7 @@ const SellTicketPage = () => {
   const [loading, setLoading] = useState(false);
   const [selectedTime, setSelectedTime] = useState(null);
   const [selectedVersion, setSelectedVersion] = useState(null);
-
+  const [search, setSearch] = useState("");
 
 
   useEffect(() => {
@@ -40,14 +40,26 @@ const SellTicketPage = () => {
     fetchMovies();
   }, []);
 
+  // Lọc movie theo search
+  const filteredMovies = movies.filter(movie =>
+    movie.name?.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <div className="p-3">
       <h1 className="text-3xl font-bold text-fuchsia-700">Sell Movie Ticket</h1>
-
-      <h5 className="mt-5">
-        <i className="fa-solid fa-film"></i> Select Movie
-      </h5>
-
+      <div className="flex justify-between items-center mt-5">
+        <h5 className="mt-5">
+          <i className="fa-solid fa-film"></i> Select Movie
+        </h5>
+        <Input.Search
+          placeholder="Search movie..."
+          style={{ width: 250 }}
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+      </div>
+      
       <div className="staff-swiper">
         {loading ? (
           <div className="text-center my-8">

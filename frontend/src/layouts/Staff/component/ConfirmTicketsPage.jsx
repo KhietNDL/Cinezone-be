@@ -148,7 +148,7 @@ export default function ConfirmTicketsPage() {
                              hover:bg-purple-800 transition duration-300 h-10 flex 
                              items-center justify-center gap-2"
                                 >
-                                    <i className="fa-solid fa-check"></i> Confirm Ticket(s)
+                                    <i className="fa-solid fa-ticket"></i> Confirm Ticket(s)
                                 </button>
                                 <Link to="/staff/ticket-selling">
                                     <button type='button' className='bg-white text-red-700 border

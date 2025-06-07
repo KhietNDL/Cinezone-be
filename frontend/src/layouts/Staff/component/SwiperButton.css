@@ -26,10 +26,14 @@
 }
 
 .staff-swiper .swiper-wrapper {
-  width: 1250px;
+  width: 170vh !important;
 }
 
 .staff-swiper .swiper-slide {
   width: 245px !important;
   padding-left: 20px !important;
+}
+
+.staff-swiper .swiper-initialized{
+  width: 170vh !important;
 }

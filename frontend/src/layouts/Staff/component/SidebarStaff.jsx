@@ -23,7 +23,7 @@ const SidebarStaff = () => {
     {
       label: "Combos",
       icon: <PiPopcornDuotone/>,
-      to: "/staff/combos",
+      to: "/staff/combo-selling",
     },
    
       
