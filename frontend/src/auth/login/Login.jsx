@@ -6,6 +6,8 @@ import imageLogin2 from "../../assets/imageLogin2.jpg";
 import imageLogin3 from "../../assets/imageLogin3.jpg";
 import imageLogin4 from "../../assets/imageLogin4.jpg";
 import { Link } from "react-router-dom";
+import api from "../../services/API";
+import { toast } from "react-toastify";
 
 const MovieTheaterLogin = () => {
   const [formData, setFormData] = useState({
@@ -41,12 +43,14 @@ const MovieTheaterLogin = () => {
     e.preventDefault();
     const newErrors = {};
 
+    // Validate email
     if (!formData.email) {
       newErrors.email = "Email is required";
     } else if (!validateEmail(formData.email)) {
       newErrors.email = "Invalid email format";
     }
 
+    // Validate password
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 8) {
@@ -55,12 +59,24 @@ const MovieTheaterLogin = () => {
 
     setErrors(newErrors);
 
-    if (Object.keys(newErrors).length === 0) {
-      setIsLoading(true);
-      setTimeout(() => {
-        setIsLoading(false);
-        alert("Login successful!");
-      }, 2000);
+    // Nếu có lỗi, dừng lại
+    if (Object.keys(newErrors).length > 0) return;
+
+    // Bắt đầu loading
+    setIsLoading(true);
+
+    try {
+      const response = await api.post("login", formData);
+      const { token } = response.data;
+      localStorage.setItem("token", token);
+      toast.success("Successfully logged in!");
+
+      // Nếu muốn redirect, bạn có thể làm ở đây
+      // navigate('/dashboard');
+    } catch (err) {
+      toast.error(err.response?.data || "Login failed");
+    } finally {
+      setIsLoading(false);
     }
   };
 
