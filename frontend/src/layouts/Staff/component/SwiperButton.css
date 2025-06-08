@@ -1,0 +1,48 @@
+.staff-swiper .swiper-button-prev,
+.staff-swiper .swiper-button-next {
+  color: #6366f1 !important;
+  width: 40px;
+  height: 40px;
+
+  border-radius: 50%;
+
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
+.staff-swiper .swiper-button-prev {
+  left: 0px;
+}
+
+.staff-swiper .swiper-button-next {
+  right: 0px;
+}
+
+.staff-swiper .swiper-button-prev::after,
+.staff-swiper .swiper-button-next::after {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+/* .staff-swiper .swiper-wrapper{
+  width: 1200px !important;
+} */
+
+.staff-swiper {
+  width: 170vh;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0 40px; /* Thêm padding để tránh trùng với nút prev/next */
+  position: relative;
+}
+
+/* 
+.staff-swiper .swiper-slide {
+  width: 250px !important;
+  
+} */
+
+
+
+
