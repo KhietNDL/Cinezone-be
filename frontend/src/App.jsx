@@ -21,6 +21,7 @@ import MoviePromotions from "./layouts/User/component/PromotionPage";
 import MovieManagement from "./layouts/Admin/component/MovieManagement";
 import { AuthProvider } from "./context/AuthContext";
 import ComboPage from "./layouts/Staff/component/ComboPage";
+import RoomManagement from "./layouts/Admin/component/RoomManagement";
 function App() {
   return (
     <AuthProvider>
@@ -40,6 +41,7 @@ function App() {
           <Route path="dashboard" element={<DashboardAdmin />} />
           <Route path="employees" element={<EmployeeManagement />} />
           <Route path="movies" element={<MovieManagement />} />
+          <Route path="rooms" element={<RoomManagement />} />
         </Route>
 
         <Route path="/staff" element={<StaffLayout />}>
