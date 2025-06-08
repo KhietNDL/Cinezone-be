@@ -1,0 +1,27 @@
+.table-cart-staff {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+}
+
+.table-cart-staff .ant-table-thead>tr {
+    background: linear-gradient(90deg, #6466F1 0%, #8B5CF6 50%, #4F46E5 100%);
+}
+
+.table-cart-staff .ant-table-thead>tr>th {
+    background: transparent !important;
+    color: #fff;
+    text-align: center;
+    border-right: none !important; /* Xóa vạch trắng dọc */
+    border-left: none !important;
+    box-shadow: none !important;   /* Xóa bóng nếu có */
+    
+}
+
+.table-cart-staff .ant-table-tbody>tr>td {
+    text-align: center;
+}
+
+.table-cart-staff .ant-table-thead > tr > th::before {
+    display: none !important;
+}

@@ -5,7 +5,7 @@ const MovieCard = ({ movie, onSelect, selected }) => (
   onClick={() => onSelect(movie)}
   className={`cursor-pointer rounded-xl border border-gray-300 p-1 transition-transform hover:scale-105 h-[400px]
     ${selected ? 'shadow-[0_10px_10px_gray]' : 'none'}`}
-  style={{ width: 200, minHeight: 350 }}
+  style={{ width: 250, minHeight: 350 }}
 >
  <img
   alt={movie.nameMovie}

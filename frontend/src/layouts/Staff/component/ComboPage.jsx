@@ -4,7 +4,12 @@ import { LeftOutlined, RightOutlined, DeleteOutlined, MinusOutlined, PlusOutline
 import ComboCard from './ComboCard';
 import { BsTrash3Fill } from "react-icons/bs";
 import { FaCheck, FaX, FaXmark } from "react-icons/fa6";
-
+import './ComboPage.css'; // Assuming you have some styles for the ComboPage
+import { PiPopcornDuotone } from "react-icons/pi";
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation } from 'swiper/modules';
+import 'swiper/css';
+import './SwiperButton.css'; // Custom styles for Swiper buttons
 const comboList = [
     {
         id: 1,
@@ -34,25 +39,25 @@ const comboList = [
         id: 5,
         name: "Combo 1 mix Popcorn + 1 Pepsi",
         price: 17.00,
-        image: "https://png.pngtree.com/png-clipart/20230825/original/pngtree-popcorn-and-soda-cup-vector-png-image_11005947.png"
+        image: "https://down-vn.img.susercontent.com/file/4980f121807444b753f2e9299fc43b42"
     },
     {
         id: 6,
         name: "Combo 1 mix Popcorn + 1 Pepsi + 1 Aquafina",
         price: 18.00,
-        image: "https://png.pngtree.com/png-clipart/20230825/original/pngtree-popcorn-and-soda-cup-vector-png-image_11005947.png"
+        image: "https://down-vn.img.susercontent.com/file/19b7bd0612f4c5c0293c5f07f5e2bb58"
     },
     {
         id: 7,
-        name: "Combo 2 mix Popcorn + 2 Pepsi",
+        name: "Combo 1 mix Popcorn + 2 Pepsi",
         price: 22.00,
-        image: "https://png.pngtree.com/png-clipart/20230825/original/pngtree-popcorn-and-soda-cup-vector-png-image_11005947.png"
+        image: "https://down-vn.img.susercontent.com/file/5178202fa8a147917d01aedc379736d0"
     },
     {
         id: 8,
-        name: "Combo 1 Popcorn + 1 Pepsi + 1 Snack",
+        name: "Combo 1 Popcorn + 1 Pepsi",
         price: 19.00,
-        image: "https://png.pngtree.com/png-clipart/20230825/original/pngtree-popcorn-and-soda-cup-vector-png-image_11005947.png"
+        image: "https://ticketgo.vn/photos/70/hinhanh-tintuc/5f98ed98cc7bb.jpeg"
     }
 ];
 
@@ -60,6 +65,7 @@ export default function ComboPage() {
     const [cart, setCart] = useState([]);
     const [search, setSearch] = useState('');
     const [carouselIndex, setCarouselIndex] = useState(0);
+    // const [loading, setLoading] = useState(false);
 
     const filteredCombos = comboList.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
     const visibleCombos = filteredCombos.slice(carouselIndex, carouselIndex + 4);
@@ -105,9 +111,9 @@ export default function ComboPage() {
             dataIndex: 'quantity',
             render: (qty, record) => (
                 <Space>
-                    <Button style={{backgroundColor: '#7254EF', color: "white"}} icon={<MinusOutlined />} size="small" onClick={() => handleQuantity(record.id, -1)} />
+                    <Button style={{ backgroundColor: '#7254EF', color: "white" }} icon={<MinusOutlined />} size="small" onClick={() => handleQuantity(record.id, -1)} />
                     <span>{qty}</span>
-                    <Button style={{backgroundColor: '#7254EF', color: "white"}} icon={<PlusOutlined />} size="small" onClick={() => handleQuantity(record.id, 1)} />
+                    <Button style={{ backgroundColor: '#7254EF', color: "white" }} icon={<PlusOutlined />} size="small" onClick={() => handleQuantity(record.id, 1)} />
                 </Space>
             ),
         },
@@ -134,14 +140,11 @@ export default function ComboPage() {
     ];
 
     return (
-        <div className="w-screen min-h-screen bg-[#fafbfc] p-8">
-            <div className="w-[170vh]">
+        <div className="w-full bg-[#fafbfc] p-[20px]">
+            <div className="w-full">
                 {/* Header */}
                 <div className="flex justify-between items-center">
-                    <div>
-                        <h1 className="text-2xl font-bold mb-0">Sell Combo</h1>
-                        <div className="text-gray-500 text-base">For Employee & Admin</div>
-                    </div>
+                    <h1 className="text-3xl font-bold text-fuchsia-700">Sell Combo</h1>
                     <Input.Search
                         placeholder="Search combo..."
                         style={{ width: 250 }}
@@ -152,9 +155,9 @@ export default function ComboPage() {
                 {/* Combo Carousel */}
                 <div className="mt-8">
                     <b className="text-lg flex items-center gap-2">
-                        <span className="text-xl">🍿</span> Select Combo
+                        <span className="text-xl"><PiPopcornDuotone /></span> Select Combo
                     </b>
-                    <div className="flex items-center gap-4 mt-6 w-[170vh] justify-center">
+                    <div className="flex items-center gap-4 mt-6 w-full justify-center">
                         <Button
                             icon={<LeftOutlined />}
                             disabled={carouselIndex === 0}
@@ -179,17 +182,55 @@ export default function ComboPage() {
                         />
                     </div>
                 </div>
+                {/* ----------------------------- */}
+                {/* <div className="staff-swiper">
+                    {loading ? (
+                        <div className="text-center my-8">
+                            <Spin size="large" />
+                        </div>
+                    ) : (
+                        <Swiper
+                            modules={[Navigation]}
+                            navigation
+                            spaceBetween={50}
+                            slidesPerView={4}
+                            slidesPerGroup={2}
+                            loop={true}
+                            breakpoints={{
+                                320: { slidesPerView: 1 },
+                                640: { slidesPerView: 2 },
+                                1024: { slidesPerView: 4 },
+                            }}
+                        >
+                            {visibleCombos.map((combo) => (
+                                <SwiperSlide key={combo.id}>
+                                    <div className="flex justify-center p-2 w-[230px]">
+                                        <ComboCard
+                                            key={combo.id}
+                                            combo={combo}
+                                            onAdd={handleAddCombo}
+                                            selected={cart.some(item => item.id === combo.id)}
+                                        />
+                                    </div>
+
+                                </SwiperSlide>
+                            ))}
+                        </Swiper>
+                    )}
+                </div> */}
                 {/* Cart Table */}
-                <div className="bg-white rounded-2xl shadow-md p-8 mt-8 w-[170vh]">
+                <div className="bg-white rounded-2xl shadow-md p-8 mt-8 w-full border border-gray-200">
                     <Table
+                        className='table-cart-staff'
                         dataSource={cart}
                         columns={columns}
                         rowKey="id"
                         pagination={false}
-                        style={{ width: '100%' }}
+                        style={{ width: '100%', border: '1px solid gray', borderRadius: '20px' }}
+
                     />
                     <div className="flex justify-center gap-4 mt-8">
-                        <Button  style={{ width: 180, fontWeight: 600, fontSize: 16, backgroundColor: '#7254EF', color: 'white' }} icon={<FaCheck />}> Check out</Button>
+                        <Button style={{ width: 180, fontWeight: 600, fontSize: 16, backgroundColor: '#7254EF', color: 'white' }} icon={<FaCheck />}> Check out</Button>
                         <Button danger style={{ width: 120, fontWeight: 600, fontSize: 16 }} icon={<FaXmark />}>Cancel</Button>
                     </div>
                 </div>

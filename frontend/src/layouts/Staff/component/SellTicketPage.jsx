@@ -46,20 +46,21 @@ const SellTicketPage = () => {
   );
 
   return (
-    <div className="p-3">
-      <h1 className="text-3xl font-bold text-fuchsia-700">Sell Movie Ticket</h1>
-      <div className="flex justify-between items-center mt-5">
-        <h5 className="mt-5">
-          <i className="fa-solid fa-film"></i> Select Movie
-        </h5>
-        <Input.Search
+    <div className="w-full  bg-[#fafbfc] p-[20px]">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-fuchsia-700">Sell Movie Ticket</h1>
+       <Input.Search
           placeholder="Search movie..."
           style={{ width: 250 }}
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
       </div>
-      
+     
+        <h5 className="mt-5">
+          <i className="fa-solid fa-film"></i> Select Movie
+        </h5>
+
       <div className="staff-swiper">
         {loading ? (
           <div className="text-center my-8">
@@ -69,13 +70,14 @@ const SellTicketPage = () => {
           <Swiper
             modules={[Navigation]}
             navigation
-            spaceBetween={0}
-            slidesPerView={5}
-            loop
+            spaceBetween={50}
+            slidesPerView={4}
+            slidesPerGroup={2}
+            loop={true}
             breakpoints={{
               320: { slidesPerView: 1 },
               640: { slidesPerView: 2 },
-              1024: { slidesPerView: 5 },
+              1024: { slidesPerView: 4 },
             }}
           >
             {movies.map((movie) => (
@@ -92,7 +94,7 @@ const SellTicketPage = () => {
             ))}
           </Swiper>
         )}
-
+</div>
         <h5 className="mt-5 flex items-center gap-2">
           <RiMovie2AiFill /> Select Version
         </h5>
@@ -143,7 +145,7 @@ const SellTicketPage = () => {
           )}
         </div>
 
-      </div>
+      
 
       <h5 className="mt-5">
         <i className="fa-solid fa-clock"></i> Select Showtime

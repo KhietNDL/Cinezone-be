@@ -1,14 +1,14 @@
-/* Chỉ áp dụng Swiper style khi nằm trong .staff-swiper */
-
 .staff-swiper .swiper-button-prev,
 .staff-swiper .swiper-button-next {
-  background-color: none;
   color: #6366f1 !important;
-  padding: 0.75rem;
   width: 40px;
   height: 40px;
-  top: 40%;
+
+  border-radius: 50%;
+
+  top: 50%;
   transform: translateY(-50%);
+  z-index: 10;
 }
 
 .staff-swiper .swiper-button-prev {
@@ -25,15 +25,24 @@
   font-weight: bold;
 }
 
-.staff-swiper .swiper-wrapper {
-  width: 170vh !important;
+/* .staff-swiper .swiper-wrapper{
+  width: 1200px !important;
+} */
+
+.staff-swiper {
+  width: 170vh;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0 40px; /* Thêm padding để tránh trùng với nút prev/next */
+  position: relative;
 }
 
+/* 
 .staff-swiper .swiper-slide {
-  width: 245px !important;
-  padding-left: 20px !important;
-}
+  width: 250px !important;
+  
+} */
 
-.staff-swiper .swiper-initialized{
-  width: 170vh !important;
-}
+
+
+
