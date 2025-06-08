@@ -73,7 +73,6 @@ const LandingPage = () => {
       sub: "English",
     },
   ]);
-
   const [promotionData] = useState([
     {
       idPromotion: 1,
@@ -100,7 +99,6 @@ const LandingPage = () => {
       isActive: "active",
     },
   ]);
-
   const navigate = useNavigate();
   const handleClickMovie = (idMovie) => {
     navigate(`/${idMovie}`);
