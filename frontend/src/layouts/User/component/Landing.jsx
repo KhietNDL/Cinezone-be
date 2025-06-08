@@ -134,37 +134,37 @@ const LandingPage = () => {
           loading="lazy"
           className="w-full h-full object-cover bg-black/70"
         />{" "}
-        <div className="absolute w-full bottom-4 flex items-center justify-between">
-          <div className="w-[50%] flex flex-col items-start space-y-5 px-[20px]">
-            <div className="flex items-center space-x-3 text-white">
-              <p role="button" className="bg-black p-3 rounded-xl ">
-                ACTION
-              </p>
-              <p role="button" className="bg-black p-3 rounded-xl ">
-                MAXUS MALL
-              </p>
-            </div>{" "}
-          </div>{" "}
-        </div>
         <div className="absolute w-full h-full bottom-0 flex items-center justify-between bg-gradient-to-b from-transparent to-black/100">
-          <div className="w-[50%] flex flex-col items-start space-y-5 mt-70 px-[20px]">
-            <div className="text-[40px] font-bold text-white">
+          <div className="md:w-[50%] w-full flex flex-col items-start space-y-5 md:mt-50 mt-80 px-[20px]">
+            <div className=" w-full flex items-center justify-between">
+              <div className=" md:flex flex-col items-start hidden ">
+                <div className="flex items-center space-x-3 text-white">
+                  <p role="button" className="bg-black p-3 rounded-xl ">
+                    ACTION
+                  </p>
+                  <p role="button" className="bg-black p-3 rounded-xl ">
+                    MAXUS MALL
+                  </p>
+                </div>{" "}
+              </div>{" "}
+            </div>{" "}
+            <div className="md:text-[40px] text-[30px] font-bold text-white">
               Deadpools & Wolverine
             </div>
-            <div className="text-white text-center md:text-left text-sm md:text-base px-2 md:px-0">
+            <div className="text-white text-center md:text-left hidden md:block text-sm md:text-base px-2 md:px-0">
               cbehwecwec ưe ce cewc ưecwe cưe c cư ec ưec ư ecwe c cưec ưec ưe
               cư ec ecwec ưec ưe cưec ưe cưe cưe c cưechwe chưe cưec ưiecưiec
             </div>
-            <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-3 w-full md:w-auto">
+            <div className="flex sm:flex-row justify-between items-center sm:space-x-3 w-full ">
               <div
                 role="button"
-                className="p-2 md:p-3 rounded-4xl shadow-[#6a57f5] shadow-md bg-[#6a57f5] px-4 md:px-6 text-white font-semibold hover:bg-[#6957f5ea] active:bg-[#6957f5ea] active:scale-[1.1] text-sm md:text-base w-full sm:w-auto text-center"
+                className="p-2 md:p-3 rounded-4xl shadow-[#6a57f5] shadow-md bg-[#6a57f5] px-4 md:px-6 text-white font-semibold hover:bg-[#6957f5ea] active:bg-[#6957f5ea] active:scale-[1.1] text-sm md:text-base md:w-full w-[47%] text-center"
               >
                 Book Now
               </div>
               <div
                 role="button"
-                className="p-2 md:p-3 shadow-[#6a57f5] shadow-md flex items-center justify-center rounded-4xl px-4 md:px-6 border-solid border-[1px] border-[#6957f5ea] bg-black hover:bg-slate-950 text-[#ffffffea] font-semibold active:scale-[1.1] text-sm md:text-base w-full sm:w-auto"
+                className="p-2 md:p-3 shadow-[#6a57f5] shadow-md flex items-center justify-center rounded-4xl px-4 md:px-6 border-solid border-[1px] border-[#6957f5ea] bg-black hover:bg-slate-950 text-[#ffffffea] font-semibold active:scale-[1.1] text-sm md:text-base w-[47%] md:w-full"
               >
                 <FaPlay size={16} className="mr-2" /> Watch trailer
               </div>
@@ -185,22 +185,122 @@ const LandingPage = () => {
         </div>
       </div>
 
-      {/* NOW SHOWING SECTION */}
-      <div className="w-full px-4 md:px-[30px] pt-[30px] md:pt-[40px] space-y-3">
-        <div className="flex justify-center items-center text-white">
-          <p className="font-bold pb-[20px] md:pb-[30px] text-center text-[24px] md:text-[30px]">
-            Now showing
-          </p>
-        </div>
-        <div className="flex items-center justify-center mt-[15px] md:mt-[20px]">
-          Book Now
+      {/*Screen 3d */}
+      <div className="w-full px-4">
+        <div className="w-full h-[40px] relative overflow-hidden group">
+          {/* SVG cho đường cong gradient */}
+          <svg
+            width="100%"
+            height="100%"
+            viewBox="0 0 800 40"
+            className="absolute inset-0 transition-transform duration-500 group-hover:scale-110"
+            preserveAspectRatio="none"
+            style={{ background: "transparent" }}
+          >
+            {/* Định nghĩa gradient từ nhạt đến đậm ở giữa */}
+            <defs>
+              <linearGradient
+                id="purpleGradient"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="0%"
+              >
+                <stop offset="0%" stopColor="#6a57f5" stopOpacity="0.1" />
+                <stop offset="25%" stopColor="#6a57f5" stopOpacity="0.4" />
+                <stop offset="50%" stopColor="#6a57f5" stopOpacity="1" />
+                <stop offset="75%" stopColor="#6a57f5" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#6a57f5" stopOpacity="0.1" />
+              </linearGradient>
+
+              <linearGradient id="purpleGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#6a57f5" stopOpacity="0.1" />
+                <stop offset="25%" stopColor="#6a57f5" stopOpacity="0.5" />
+                <stop offset="50%" stopColor="#6a57f5" stopOpacity="1" />
+                <stop offset="75%" stopColor="#6a57f5" stopOpacity="0.5" />
+                <stop offset="100%" stopColor="#6a57f5" stopOpacity="0.1" />
+              </linearGradient>
+
+              <linearGradient
+                id="purpleGlowHover"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="0%"
+              >
+                <stop offset="0%" stopColor="#b0a8ff" stopOpacity="0" />
+                <stop offset="25%" stopColor="#b0a8ff" stopOpacity="0.7" />
+                <stop offset="50%" stopColor="#c9c2ff" stopOpacity="1" />
+                <stop offset="75%" stopColor="#b0a8ff" stopOpacity="0.7" />
+                <stop offset="100%" stopColor="#b0a8ff" stopOpacity="0" />
+              </linearGradient>
+
+              <linearGradient
+                id="purpleGradientHover"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="0%"
+              >
+                <stop offset="0%" stopColor="#b0a8ff" stopOpacity="0.01" />
+                <stop offset="25%" stopColor="#b0a8ff" stopOpacity="0.6" />
+                <stop offset="50%" stopColor="#c9c2ff" stopOpacity="1" />
+                <stop offset="75%" stopColor="#b0a8ff" stopOpacity="0.6" />
+                <stop offset="100%" stopColor="#b0a8ff" stopOpacity="0.01" />
+              </linearGradient>
+
+              <linearGradient
+                id="lightGlowBelow"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="100%"
+              >
+                <stop offset="0%" stopColor="#c9c2ff" stopOpacity="0.3" />
+                <stop offset="50%" stopColor="#c9c2ff" stopOpacity="0.1" />
+                <stop offset="100%" stopColor="#c9c2ff" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+
+            {/* Đường cong với hiệu ứng glow */}
+            <path
+              d="M 0 20 Q 400 0 800 20"
+              stroke="url(#purpleGlow)"
+              strokeWidth="6"
+              strokeLinecap="round"
+              fill="none"
+              className="blur-[1px] transition-all duration-500 group-hover:blur-[0px] group-hover:stroke-[7px] group-hover:[stroke:url(#purpleGlowHover)]"
+            />
+
+            {/* Đường cong chính */}
+            <path
+              d="M 0 20 Q 400 0 800 20"
+              stroke="url(#purpleGradient)"
+              strokeWidth="4"
+              strokeLinecap="round"
+              fill="none"
+              className="transition-all duration-500 group-hover:stroke-[6px] group-hover:[stroke:url(#purpleGradientHover)]"
+            />
+
+            {/* Ánh sáng nhẹ phía dưới khi hover */}
+            <path
+              d="M 0 25 Q 400 5 800 25"
+              stroke="url(#lightGlowBelow)"
+              strokeWidth="12"
+              strokeLinecap="round"
+              fill="none"
+              className="opacity-0 blur-[2px] transition-opacity duration-500 group-hover:opacity-100"
+            />
+          </svg>
         </div>
       </div>
 
       {/* TRENDING MOVIE */}
       <div className=" w-full px-[30px] pt-[40px] space-y-3 ">
-        <div className="flex justify-start items-center text-white">
-          <p className="font-bold pb-[30px] text-[30px]">Now showing</p>
+        <div className="flex justify-center items-center text-white">
+          <p className="font-bold pb-[30px] text-center text-[30px]">
+            Now showing
+          </p>
         </div>{" "}
         <div className="flex items-center justify-center mt-[20px] ">
           <Swiper
@@ -228,7 +328,7 @@ const LandingPage = () => {
                 <div className="text-white text-center font-semibold text-sm md:text-base px-2">
                   {item.nameMovie}
                 </div>
-                <div className="flex lg:flex-row md:flex-col sm:flex-row justify-center md:space-y-2 sm:space-y-0 sm:space-x-1 items-center w-full px-2">
+                <div className="flex xl:flex-row md:flex-col sm:flex-row justify-center md:space-y-2 xl:space-y-0 sm:space-y-0 sm:space-x-1 items-center w-full px-2">
                   <div
                     role="button"
                     className="text-white flex items-center justify-center hover:bg-slate-700 p-2 rounded-4xl px-3 text-[11px] md:text-[12px] w-full sm:w-auto"
@@ -291,14 +391,6 @@ const LandingPage = () => {
                     <FaRegCirclePlay size={16} className="mr-1" />
                     Watch Trailer
                   </div>
-
-                  <div
-                    role="button"
-                    onClick={() => handleClickMovie(item.idMovie)}
-                    className="bg-[#6a57f5] rounded-4xl px-4 md:px-6 py-2 pb-3 text-white hover:bg-[#6957f5ea] text-[11px] md:text-[12px] shadow-[#6a57f5] shadow-sm w-full sm:w-auto text-center"
-                  >
-                    Book now
-                  </div>
                 </div>
               </SwiperSlide>
             ))}
@@ -327,16 +419,16 @@ const LandingPage = () => {
                 key={item.idPromotion}
                 className="w-full flex flex-col justify-center items-center pb-2 rounded-xl space-y-2"
               >
-                <div className=" relative h-[180px] w-full md:h-[200px]">
+                <div className="relative h-[180px] w-full md:h-[200px] lg:h-[180px]">
                   <img
                     src={item.imageUrl}
                     alt={item.namePromotion}
-                    className="w-full h-full object-cover"
+                    className="w-full rounded-md h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                   {/* Decorative circles and dashed line */}
-                  <div className="absolute w-[40px] md:w-[60px] h-[40px] md:h-[60px] rounded-full bg-black top-[-20px] md:top-[-30px] right-25 transform translate-x-1/2 md:translate-x-0 md:right-[90px]"></div>
-                  <div className="absolute w-[40px] md:w-[60px] h-[40px] md:h-[60px] rounded-full bg-black bottom-[-20px] md:bottom-[-30px] right-25 transform translate-x-1/2 md:translate-x-0 md:right-[90px]"></div>
-                  <div className="hidden md:block absolute h-[75%] top-[25px] border-dashed right-[120px] border-black border-2"></div>
+                  <div className="absolute w-[40px] md:w-[60px] h-[40px] md:h-[60px] lg:w-[50px] lg:h-[50px] rounded-full bg-black top-[-20px] md:top-[-30px] md:right-[10%] lg:right-[20%] right-[20%] transform translate-x-1/2 md:translate-x-0"></div>
+                  <div className="absolute w-[40px] md:w-[60px] h-[40px] md:h-[60px] lg:w-[50px] lg:h-[50px] rounded-full bg-black bottom-[-20px] md:bottom-[-30px] lg:right-[20%] md:right-[10%] right-[20%]  transform translate-x-1/2 md:translate-x-0"></div>
+                  <div className=" absolute h-[75%] top-[12%] border-dashed border-black  border-2 md:right-[45px] right-[70px] lg:right-[35%] xl:right-[27%]"></div>
                 </div>
               </SwiperSlide>
             ))}
