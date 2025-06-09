@@ -14,14 +14,12 @@ const HeaderStaff = () => {
           loading="lazy"
           role="button"
           onClick={() => {
-            navigate("/");
+            navigate("/staff");
           }}
           className=" w-[140px] h-[70px] object-cover p-0"
         />
       </div>
-      {/* <div className="flex justify-start w-[60%]">
-        <p className="font-bold text-[28px]">Dashboard</p>
-      </div> */}
+  
       <div className="flex items-center justify-end space-x-8">
         <BsBell size={20} />
         <div className="flex items-center space-x-2">

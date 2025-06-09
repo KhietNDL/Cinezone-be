@@ -19,9 +19,7 @@ const HeaderAdmin = () => {
           className=" w-[140px] h-[70px] object-cover"
         />
       </div>
-      <div className="flex justify-start w-[60%]">
-        <p className="font-bold text-[28px]">Dashboard</p>
-      </div>
+
       <div className="flex items-center justify-end w-[20%] space-x-8">
         <BsBell size={20} />
         <div className="flex items-center space-x-2">
