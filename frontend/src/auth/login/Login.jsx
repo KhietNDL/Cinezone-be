@@ -5,11 +5,15 @@ import imageLogin1 from "../../assets/imageLogin1.jpg";
 import imageLogin2 from "../../assets/imageLogin2.jpg";
 import imageLogin3 from "../../assets/imageLogin3.jpg";
 import imageLogin4 from "../../assets/imageLogin4.jpg";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import api from "../../services/API";
 import { toast } from "react-toastify";
+import { useDispatch } from "react-redux";
+import { login } from "../../redux/features/userSlice";
 
 const MovieTheaterLogin = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -59,20 +63,17 @@ const MovieTheaterLogin = () => {
 
     setErrors(newErrors);
 
-    // Nếu có lỗi, dừng lại
     if (Object.keys(newErrors).length > 0) return;
-
-    // Bắt đầu loading
     setIsLoading(true);
-
     try {
+      console.log("Form data gửi:", formData);
       const response = await api.post("login", formData);
-      const { token } = response.data;
+      const { token, user } = response.data;
       localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
       toast.success("Successfully logged in!");
-
-      // Nếu muốn redirect, bạn có thể làm ở đây
-      // navigate('/dashboard');
+      dispatch(login(response.data.user));
+      navigate("/");
     } catch (err) {
       toast.error(err.response?.data || "Login failed");
     } finally {
