@@ -4,8 +4,12 @@ import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/navigation";
 import React, { useState } from "react";
+<<<<<<< HEAD
+import landingBackground from "../../../assets/landingBackground.jpg";
+=======
 import landingBackground from "../../../assets/The-Flash-2023-Teaser-Banner-01.jpg";
 
+>>>>>>> Develop
 import { FaPlay } from "react-icons/fa";
 import { Pagination, Navigation } from "swiper/modules";
 import imageMovie from "../../../assets/imageMovie.jpg";
@@ -19,61 +23,96 @@ import imageMovie8 from "../../../assets/imageMovie8.jpg";
 import promotionMovie1 from "../../../assets/PromotionMovie1.jpg";
 import promotionMovie2 from "../../../assets/PromotionMovie2.jpg";
 import promotionMovie3 from "../../../assets/PromotionMovie3.jpg";
+<<<<<<< HEAD
+const LandingPage = () => {
+  const [movieData, setMovieData] = useState([
+    {
+      id: 1,
+=======
 import { useNavigate } from "react-router-dom";
 
 const LandingPage = () => {
   const [movieData] = useState([
     {
       idMovie: 1,
+>>>>>>> Develop
       nameMovie: "Stree 2 Sarkate Ka Atank",
       category: [{ title: "Action" }, { title: "Horror" }],
       imgUrl: imageMovie2,
       sub: "English",
     },
     {
+<<<<<<< HEAD
+      id: 2,
+=======
       idMovie: 2,
+>>>>>>> Develop
       nameMovie: "Stree 2 Sarkate Ka Atank",
       category: [{ title: "Action" }, { title: "Horror" }],
       imgUrl: imageMovie3,
       sub: "English",
     },
     {
+<<<<<<< HEAD
+      id: 3,
+=======
       idMovie: 3,
+>>>>>>> Develop
       nameMovie: "Stree 2 Sarkate Ka Atank",
       category: [{ title: "Action" }, { title: "Horror" }],
       imgUrl: imageMovie4,
       sub: "English",
     },
     {
+<<<<<<< HEAD
+      id: 4,
+=======
       idMovie: 4,
+>>>>>>> Develop
       nameMovie: "Stree 2 Sarkate Ka Atank",
       category: [{ title: "Action" }, { title: "Horror" }],
       imgUrl: imageMovie5,
       sub: "English",
     },
     {
+<<<<<<< HEAD
+      id: 5,
+=======
       idMovie: 5,
+>>>>>>> Develop
       nameMovie: "Stree 2 Sarkate Ka Atank",
       category: [{ title: "Action" }, { title: "Horror" }],
       imgUrl: imageMovie6,
       sub: "English",
     },
     {
+<<<<<<< HEAD
+      id: 6,
+=======
       idMovie: 6,
+>>>>>>> Develop
       nameMovie: "Stree 2 Sarkate Ka Atank",
       category: [{ title: "Action" }, { title: "Horror" }],
       imgUrl: imageMovie7,
       sub: "English",
     },
     {
+<<<<<<< HEAD
+      id: 7,
+=======
       idMovie: 7,
+>>>>>>> Develop
       nameMovie: "Stree 2 Sarkate Ka Atank",
       category: [{ title: "Action" }, { title: "Horror" }],
       imgUrl: imageMovie8,
       sub: "English",
     },
   ]);
+<<<<<<< HEAD
+  const [promotionData, setPromotionData] = useState([
+=======
   const [promotionData] = useState([
+>>>>>>> Develop
     {
       idPromotion: 1,
       imageUrl: promotionMovie1,
@@ -99,6 +138,14 @@ const LandingPage = () => {
       isActive: "active",
     },
   ]);
+<<<<<<< HEAD
+  return (
+    <div className="w-full bg-slate-900 select-none landingPage">
+      <div className="font-bold py-3 text-center text-[30px] text-white">
+        Trending movies
+      </div>
+      <div className="relative mt-3 h-[450px] w-full">
+=======
   const navigate = useNavigate();
   const handleClickMovie = (idMovie) => {
     navigate(`/${idMovie}`);
@@ -307,6 +354,7 @@ const LandingPage = () => {
             breakpoints={swiperBreakpoints}
             slidesPerView={5}
             spaceBetween={50}
+>>>>>>> Develop
             pagination={{
               clickable: true,
             }}
@@ -338,6 +386,9 @@ const LandingPage = () => {
                   </div>
                   <div
                     role="button"
+<<<<<<< HEAD
+                    className="bg-purple-500 rounded-lg px-3 py-2 text-white hover:bg-purple-600 text-[12px]"
+=======
                     onClick={() => handleClickMovie(item.idMovie)}
                     className="bg-[#6a57f5] rounded-4xl px-6 py-2 text-white hover:bg-[#6957f5ea] text-[12px]  shadow-[#6a57f5]  shadow-sm sm:w-auto "
                   >
@@ -362,6 +413,7 @@ const LandingPage = () => {
             breakpoints={swiperBreakpoints}
             slidesPerView={5}
             spaceBetween={50}
+>>>>>>> Develop
             pagination={{
               clickable: true,
             }}
@@ -391,6 +443,15 @@ const LandingPage = () => {
                     <FaRegCirclePlay size={16} className="mr-1" />
                     Watch Trailer
                   </div>
+<<<<<<< HEAD
+                  <div
+                    role="button"
+                    className="bg-purple-500 rounded-lg px-3 py-2 text-white hover:bg-purple-600 text-[12px]"
+                  >
+                    Book now
+                  </div>
+=======
+>>>>>>> Develop
                 </div>
               </SwiperSlide>
             ))}
