@@ -22,6 +22,7 @@ import MovieManagement from "./layouts/Admin/component/MovieManagement";
 import { AuthProvider } from "./context/AuthContext";
 import ComboPage from "./layouts/Staff/component/ComboPage";
 import RoomManagement from "./layouts/Admin/component/RoomManagement";
+import { ToastContainer } from "react-toastify";
 function App() {
   return (
     <AuthProvider>
@@ -60,6 +61,7 @@ function App() {
           <Route path="/staff/combo-selling" element={<ComboPage />} />
         </Route>
       </Routes>
+      <ToastContainer />
     </AuthProvider>
   );
 }

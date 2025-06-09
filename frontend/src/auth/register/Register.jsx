@@ -12,41 +12,41 @@ function ComponentName () {
 export default ComponentName;
 =======
 import React, { useState, useEffect } from "react";
-import { Eye, EyeOff, Mail, Lock, Film, Star } from "lucide-react";
+import { Eye, EyeOff, Film, Star } from "lucide-react";
 import imageLogin1 from "../../assets/imageLogin1.jpg";
 import imageLogin2 from "../../assets/imageLogin2.jpg";
 import imageLogin3 from "../../assets/imageLogin3.jpg";
 import imageLogin4 from "../../assets/imageLogin4.jpg";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import api from "../../services/API";
+import { toast } from "react-toastify";
 
 const RegistrationForm = () => {
   // eslint-disable-next-line no-unused-vars
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
   const [currentBgIndex, setCurrentBgIndex] = useState(0);
-
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     password: "",
-    confirmPassword: "",
-    phone: "",
+    phoneNumber: "",
     dateOfBirth: "",
-    sex: "",
-    termsAccepted: false,
+    sex: "", // Sẽ convert thành số khi submit
+    cccd: "",
   });
 
   const movieBackgrounds = [imageLogin1, imageLogin2, imageLogin3, imageLogin4];
 
-  // Effect cho background slideshow - ĐÂY LÀ PHẦN THIẾU!
+  // Effect cho background slideshow
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentBgIndex((prev) => (prev + 1) % movieBackgrounds.length);
-    }, 6000); // Chuyển ảnh nền mỗi 6 giây
+    }, 6000);
     return () => clearInterval(interval);
   }, []);
 
@@ -70,32 +70,69 @@ const RegistrationForm = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.fullName.trim()) {
+    const fullName = formData.fullName.trim();
+    // Full Name
+    if (!fullName) {
       newErrors.fullName = "Full name is required";
+    } else if (fullName.length < 6) {
+      newErrors.fullName = "Full name must be at least 6 characters";
+    } else if (fullName.length > 100) {
+      newErrors.fullName = "Full name must be less than 100 characters";
+    } else if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(fullName)) {
+      newErrors.fullName =
+        "Full name cannot contain numbers or special characters";
     }
-
+    // Email
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    } else if (/\s/.test(formData.email)) {
+      newErrors.email = "Email must not contain spaces";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "Please enter a valid email";
+    } else if (formData.email.length > 255) {
+      newErrors.email = "Email must not exceed 255 characters";
     }
+    // Password
+    const password = formData.password;
 
-    if (!formData.password) {
+    if (!password) {
       newErrors.password = "Password is required";
-    } else if (formData.password.length < 8) {
+    } else if (password.length < 8) {
       newErrors.password = "Password must be at least 8 characters";
+    } else if (password.length > 128) {
+      newErrors.password = "Password must be less than 128 characters";
+    } else if (/\s/.test(password)) {
+      newErrors.password = "Password must not contain whitespace";
+    } else if (
+      !/(?=.*[a-z])/.test(password) || // ít nhất 1 chữ thường
+      !/(?=.*[A-Z])/.test(password) || // ít nhất 1 chữ hoa
+      !/(?=.*\d)/.test(password) || // ít nhất 1 số
+      !/(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/.test(password) // ít nhất 1 ký tự đặc biệt
+    ) {
+      newErrors.password =
+        "Password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character";
+    }
+    // Phone Number
+    if (!formData.phoneNumber.trim()) {
+      newErrors.phoneNumber = "Phone number is required";
+    } else if (!/^\d{10}$/.test(formData.phoneNumber)) {
+      newErrors.phoneNumber = "Phone number must be exactly 10 digits";
     }
 
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
+    // Date of birth
+    if (!formData.dateOfBirth.trim()) {
+      newErrors.dateOfBirth = "Date of birth is required";
     }
 
-    if (formData.phone && !/^\+?[\d\s-()]+$/.test(formData.phone)) {
-      newErrors.phone = "Please enter a valid phone number";
+    // Sex
+    if (!formData.sex.trim()) {
+      newErrors.sex = "Sex is required";
     }
-
-    if (!formData.termsAccepted) {
-      newErrors.termsAccepted = "You must accept the terms and conditions";
+    // Identification Card
+    if (!formData.cccd.trim()) {
+      newErrors.cccd = "Identification Card is required";
+    } else if (!/^\d{12}$/.test(formData.cccd)) {
+      newErrors.cccd = "Identification Card must be exactly 12 digits";
     }
 
     setErrors(newErrors);
@@ -104,11 +141,14 @@ const RegistrationForm = () => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+
+    // Nếu là email, tự động chuyển thành chữ thường (lowercase)
+    const newValue = name === "email" ? value.toLowerCase() : value;
+
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === "checkbox" ? checked : newValue,
     }));
-
     if (errors[name]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -120,12 +160,31 @@ const RegistrationForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // 1. Validate dữ liệu trước
     if (!validateForm()) return;
 
-    setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsLoading(false);
-    setIsSubmitted(true);
+    try {
+      setIsLoading(true);
+      const submitData = {
+        ...formData,
+        sex: parseInt(formData.sex), // Convert string thành number
+      };
+      // eslint-disable-next-line no-unused-vars
+      const response = await api.post("register", submitData);
+      toast.success("Successfully created a new account!");
+      setIsSubmitted(true);
+      navigate("/login");
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        err.response?.data ||
+        "Registration failed";
+      toast.error(message);
+      console.error(message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -184,7 +243,7 @@ const RegistrationForm = () => {
       </div>
 
       <div className="flex items-center justify-center min-h-screen px-4 sm:px-10 py-4 lg:px-20 relative z-20">
-        {/* Right side - Registration Form */}
+        {/* Registration Form */}
         <div className="w-full max-w-lg lg:w-2/5 flex flex-col border border-white/10 bg-gray-600/20 rounded-3xl backdrop-blur-sm">
           <div className="flex-1 px-8 py-6">
             <div className="max-w-md mx-auto">
@@ -208,7 +267,7 @@ const RegistrationForm = () => {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <form onSubmit={handleSubmit} className="space-y-3">
                   {/* Full Name */}
                   <div>
                     <label
@@ -334,100 +393,41 @@ const RegistrationForm = () => {
                     )}
                   </div>
 
-                  {/* Confirm Password */}
-                  <div>
-                    <label
-                      htmlFor="confirmPassword"
-                      className="block text-sm font-semibold text-white mb-2"
-                    >
-                      Confirm Password *
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showConfirmPassword ? "text" : "password"}
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        value={formData.confirmPassword}
-                        onChange={handleChange}
-                        className={`w-full px-4 py-2 pr-12 rounded-lg bg-white/10 border backdrop-blur-sm text-white placeholder-gray-300 ${
-                          errors.confirmPassword
-                            ? "border-red-500"
-                            : "border-white/10"
-                        } focus:border-purple-400 focus:ring-2 focus:ring-purple-400/50 transition-all duration-300`}
-                        placeholder="Confirm your password"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowConfirmPassword(!showConfirmPassword)
-                        }
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-300 hover:text-white transition-all duration-300"
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOff size={20} />
-                        ) : (
-                          <Eye size={20} />
-                        )}
-                      </button>
-                    </div>
-                    {errors.confirmPassword && (
-                      <p className="mt-1 text-sm text-red-400">
-                        {errors.confirmPassword}
-                      </p>
-                    )}
-                  </div>
-
                   {/* Phone and DOB */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label
-                        htmlFor="phone"
+                        htmlFor="phoneNumber"
                         className="block text-sm font-semibold text-white mb-2"
                       >
-                        Phone Number
+                        Phone Number *
                       </label>
                       <input
-                        type="number"
-                        id="phone"
-                        name="phone"
-                        value={formData.phone}
+                        type="tel"
+                        id="phoneNumber"
+                        name="phoneNumber"
+                        value={formData.phoneNumber}
                         onChange={handleChange}
                         className={`w-full px-4 py-2 rounded-lg bg-white/10 border backdrop-blur-sm text-white placeholder-gray-300 ${
-                          errors.phone ? "border-red-500" : "border-white/10"
-                        } focus:border-purple-400 focus:ring-2 focus:ring-purple-400/50 transition-all duration-300 
-    [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
+                          errors.phoneNumber
+                            ? "border-red-500"
+                            : "border-white/10"
+                        } focus:border-purple-400 focus:ring-2 focus:ring-purple-400/50 transition-all duration-300`}
                         placeholder="Your phone"
-                        style={{ MozAppearance: "textfield" }}
                       />
-                      {errors.phone && (
+                      {errors.phoneNumber && (
                         <p className="mt-1 text-sm text-red-400">
-                          {errors.phone}
+                          {errors.phoneNumber}
                         </p>
                       )}
                     </div>
-
-                    {/* Hoặc sử dụng CSS riêng biệt */}
-                    <style jsx>{`
-                      /* Ẩn spinner cho Chrome, Safari, Edge */
-                      input[type="number"]::-webkit-outer-spin-button,
-                      input[type="number"]::-webkit-inner-spin-button {
-                        -webkit-appearance: none;
-                        margin: 0;
-                      }
-
-                      /* Ẩn spinner cho Firefox */
-                      input[type="number"] {
-                        -moz-appearance: textfield;
-                      }
-                    `}</style>
 
                     <div>
                       <label
                         htmlFor="dateOfBirth"
                         className="block text-sm font-semibold text-white mb-2"
                       >
-                        Date of Birth
+                        Date of Birth *
                       </label>
                       <input
                         type="date"
@@ -435,9 +435,42 @@ const RegistrationForm = () => {
                         name="dateOfBirth"
                         value={formData.dateOfBirth}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 rounded-lg bg-white/10 border backdrop-blur-sm text-white placeholder-gray-300 border-white/10 focus:border-purple-400 focus:ring-2 focus:ring-purple-400/50 transition-all duration-300 [&::-webkit-calendar-picker-indicator]:invert"
+                        className={`w-full px-4 py-2 rounded-lg bg-white/10 border backdrop-blur-sm text-white placeholder-gray-300 ${
+                          errors.dateOfBirth
+                            ? "border-red-500"
+                            : "border-white/10"
+                        } focus:border-purple-400 focus:ring-2 focus:ring-purple-400/50 transition-all duration-300 [&::-webkit-calendar-picker-indicator]:invert`}
                       />
+                      {errors.dateOfBirth && (
+                        <p className="mt-1 text-sm text-red-400">
+                          {errors.dateOfBirth}
+                        </p>
+                      )}
                     </div>
+                  </div>
+
+                  {/* CCCD */}
+                  <div>
+                    <label
+                      htmlFor="cccd"
+                      className="block text-sm font-semibold text-white mb-2"
+                    >
+                      Identification Card *
+                    </label>
+                    <input
+                      type="text"
+                      id="cccd"
+                      name="cccd"
+                      value={formData.cccd}
+                      onChange={handleChange}
+                      className={`w-full px-4 py-2 rounded-lg bg-white/10 border backdrop-blur-sm text-white placeholder-gray-300 ${
+                        errors.cccd ? "border-red-500" : "border-white/10"
+                      } focus:border-purple-400 focus:ring-2 focus:ring-purple-400/50 transition-all duration-300`}
+                      placeholder="Your Identification Card"
+                    />
+                    {errors.cccd && (
+                      <p className="mt-1 text-sm text-red-400">{errors.cccd}</p>
+                    )}
                   </div>
 
                   {/* Gender */}
@@ -446,7 +479,7 @@ const RegistrationForm = () => {
                       htmlFor="sex"
                       className="block text-sm font-semibold text-white mb-2"
                     >
-                      Gender
+                      Gender *
                     </label>
                     <div className="relative">
                       <select
@@ -454,7 +487,9 @@ const RegistrationForm = () => {
                         name="sex"
                         value={formData.sex}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 pr-10 bg-white/10 backdrop-blur-sm border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-300 appearance-none cursor-pointer hover:bg-white/15"
+                        className={`w-full px-4 py-2 pr-10 bg-white/10 backdrop-blur-sm border ${
+                          errors.sex ? "border-red-500" : "border-white/10"
+                        } rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-300 appearance-none cursor-pointer hover:bg-white/15`}
                       >
                         <option
                           value=""
@@ -467,7 +502,7 @@ const RegistrationForm = () => {
                           Select Gender
                         </option>
                         <option
-                          value="male"
+                          value="1"
                           style={{
                             backgroundColor: "#1f2937",
                             color: "#ffffff",
@@ -476,7 +511,7 @@ const RegistrationForm = () => {
                           Male
                         </option>
                         <option
-                          value="female"
+                          value="2"
                           style={{
                             backgroundColor: "#1f2937",
                             color: "#ffffff",
@@ -485,7 +520,7 @@ const RegistrationForm = () => {
                           Female
                         </option>
                         <option
-                          value="other"
+                          value="3"
                           style={{
                             backgroundColor: "#1f2937",
                             color: "#ffffff",
@@ -511,50 +546,14 @@ const RegistrationForm = () => {
                         </svg>
                       </div>
                     </div>
+                    {errors.sex && (
+                      <p className="mt-1 text-sm text-red-400">{errors.sex}</p>
+                    )}
                   </div>
-
-                  {/* Terms Checkbox */}
-                  <div className="flex items-start space-x-3">
-                    <input
-                      type="checkbox"
-                      id="termsAccepted"
-                      name="termsAccepted"
-                      checked={formData.termsAccepted}
-                      onChange={handleChange}
-                      className="mt-1 h-4 w-4 text-purple-400 rounded focus:ring-purple-400"
-                      required
-                    />
-                    <label
-                      htmlFor="termsAccepted"
-                      className="text-sm text-gray-300 leading-relaxed"
-                    >
-                      I agree to the{" "}
-                      <a
-                        href="#"
-                        className="text-purple-400 hover:text-purple-300 underline"
-                      >
-                        Terms and Conditions
-                      </a>{" "}
-                      and{" "}
-                      <a
-                        href="#"
-                        className="text-purple-400 hover:text-purple-300 underline"
-                      >
-                        Privacy Policy
-                      </a>
-                    </label>
-                  </div>
-
-                  {errors.termsAccepted && (
-                    <p className="text-sm text-red-400">
-                      {errors.termsAccepted}
-                    </p>
-                  )}
 
                   {/* Submit Button */}
                   <button
-                    type="button"
-                    onClick={handleSubmit}
+                    type="submit"
                     disabled={isLoading}
                     className={`w-full py-3 px-5 rounded-lg font-semibold transition-all duration-300 transform ${
                       isLoading
@@ -571,7 +570,7 @@ const RegistrationForm = () => {
                       "Create Account"
                     )}
                   </button>
-                </div>
+                </form>
               )}
 
               <div className="mt-6 text-center">
