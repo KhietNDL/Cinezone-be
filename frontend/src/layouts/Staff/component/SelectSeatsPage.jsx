@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Button, Card, Tag } from "antd";
 import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
+import { Link } from "react-router-dom";
 
 
 const rows = ["A", "B", "C", "D", "E", "F", "G", "H"];
@@ -27,6 +28,7 @@ const SelectSeatsPage = () => {
 
     return (
         <div className="p-4 mx-auto w-full">
+            <h1 className="text-3xl font-bold mb-4 text-fuchsia-700">Select Seats</h1>
             {/* Phim */}
             <div className="flex items-start gap-4 border-b border-gray-300 pb-4">
                 <img
@@ -55,70 +57,121 @@ const SelectSeatsPage = () => {
                 </div>
             </div>
             {/* Mang hinh */}
-            <div className="flex flex-col items-center mb-4 p-4">
+            <div className="flex flex-col items-center  p-4">
                 <div className="w-[40%] h-3 rounded-t-full bg-gradient-to-r from-indigo-600 to-indigo-300"></div>
                 <span className="text-indigo-600 font-bold text-xl mt-2 tracking-widest">SCREEN</span>
             </div>
 
             {/* Ghe */}
-            <div className="bg-white rounded border p-4 mt-2 flex gap-8 justify-center ">
 
-                <div className="grid grid-cols-9 gap-2 mr-10 border p-4 ">
-                    {/* Column Labels (1–8) */}
-                    <div></div> {/* Empty top-left corner */}
-                    {cols.map((col) => (
-                        <div key={col} className="text-blue-600 font-bold text-center ">{col}</div>
+            <div className="pl-70 flex gap-15 justify-center">
+                <div className="grid grid-cols-10 gap-2 mr-10 border border-gray-300 p-4 rounded-2xl bg-white shadow-md">
+                    {/* Cột tiêu đề (1–8) */}
+                    <div></div> {/* Góc trên bên trái trống */}
+                    {cols.map((col, index) => (
+                        <React.Fragment key={col}>
+                            {index === 4 && <div />} {/* Khoảng trống giữa cột 4 và 5 */}
+                            <div className="text-blue-600 font-bold text-center">{col}</div>
+                        </React.Fragment>
                     ))}
+
+                    {/* Hàng ghế A–H */}
                     {rows.map((row) => (
                         <React.Fragment key={row}>
-                            {/* Row Label (A–H) */}
+                            {/* Nhãn hàng ngang */}
                             <div className="font-bold text-blue-600 flex items-center justify-center">
                                 {row}
                             </div>
 
-                            {cols.map((col) => {
+                            {cols.map((col, index) => {
                                 const seatId = `${row}${col}`;
                                 const sold = isSold(seatId);
                                 const selected = isSelected(seatId);
 
                                 return (
-                                    <div
-                                        key={seatId}
-                                        className={`
-              w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded cursor-pointer text-3xl
-              ${sold ? "text-gray-700 cursor-not-allowed" : selected ? "text-green-400" : "text-gray-400 hover:text-blue-400"}
-            
-            `}
-                                        onClick={() => {
-                                            if (!sold) toggleSeat(seatId);
-                                        }}
-                                    >
-                                        <i className="fa-solid fa-couch"></i>
-                                    </div>
+                                    <React.Fragment key={seatId}>
+                                        {index === 4 && <div />} {/* Khoảng trống giữa ghế 4 và 5 */}
+                                        <div
+                                            className={`
+                  w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded cursor-pointer text-3xl
+                  ${sold
+                                                    ? "text-gray-700 cursor-not-allowed"
+                                                    : selected
+                                                        ? "text-green-400"
+                                                        : "text-gray-400 hover:text-blue-400"
+                                                }
+                `}
+                                            onClick={() => {
+                                                if (!sold) toggleSeat(seatId);
+                                            }}
+                                        >
+                                            <i className="fa-solid fa-couch"></i>
+                                        </div>
+                                    </React.Fragment>
                                 );
                             })}
                         </React.Fragment>
                     ))}
                 </div>
 
+                {/* Thông tin ghế */}
+                <Card
+                    style={{ border: "1px solid lightgray" }}
+                    title={
+                        <div className="font-bold">
+                            <i className="fa-solid fa-couch"></i> Seats
+                        </div>
+                    }
+                    className="w-60"
+                >
+                    <div className="flex flex-col gap-2">
+                        <div>
+                            <div className="border-b pb-2 mb-2">
+                                <p className="pb-2">
+                                    Seat can choose: <b>{totalSeats - soldSeats.length - selectedSeats.length}</b>
+                                </p>
+                                <p className="pb-2 pt-2">
+                                    Seat is sold:{" "}
+                                    <span className="text-red-500 font-bold">{soldSeats.length}</span>
+                                </p>
+                                <p className="pb-2 pt-2">
+                                    Seat is selecting:{" "}
+                                    <span className="text-green-600 font-bold">{selectedSeats.length}</span>
+                                </p>
+                                <p className="pb-2 pt-2">
+                                    All seat: <b>{totalSeats}</b>
+                                </p>
+                            </div>
 
+                            <p>
+                                Total Price Seats:{" "}
+                                <span className="text-green-600 font-bold">${selectedSeats.length * 10}</span>
+                            </p>
+                        </div>
+
+                        <div className="mt-4 flex justify-end gap-2 pt-50 pl-50.5">
+                            <Link to="/staff/ticket-selling/confirm-ticket">
+                                <Button
+                                    style={{ backgroundColor: "#4F46E5" }}
+                                    type="primary"
+                                    icon={<CheckOutlined />}
+                                >
+                                    Continue
+                                </Button>
+                            </Link>
+
+                            <Link to="/staff/ticket-selling">
+                                <Button danger icon={<CloseOutlined />}>
+                                    Cancel
+                                </Button>
+                            </Link>
+
+                        </div>
+                    </div>
+                </Card>
             </div>
-            {/* Info Box */}
-            <Card style={{  padding: "0 20px", border: "1px solid black" }} title={<div className="font-bold"><i className="fa-solid fa-couch"></i> Seats</div>} className="w-60">
-                <div className="flex flex-col gap-2">
-                    <div>
-                        <p>Seat can choose: <b>{totalSeats - soldSeats.length - selectedSeats.length}</b></p>
-                        <p>Seat is sold: <span className="text-red-500 font-bold">{soldSeats.length}</span></p>
-                        <p>Seat is selecting: <span className="text-green-600 font-bold">{selectedSeats.length}</span></p>
-                        <p>All seat: <b>{totalSeats}</b></p>
-                    </div>
 
-                    <div className="mt-4 flex justify-end gap-2">
-                        <Button style={{ backgroundColor: "#4F46E5" }} type="primary" icon={<CheckOutlined />}>Continue</Button>
-                        <Button  danger icon={<CloseOutlined />}>Cancel</Button>
-                    </div>
-                </div>
-            </Card>
+
 
             {/* Legend */}
             <div className="mt-4 flex gap-4 text-sm justify-center">
