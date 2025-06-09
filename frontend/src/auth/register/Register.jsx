@@ -1,16 +1,3 @@
-<<<<<<< HEAD
-import React from 'react';
-
-function ComponentName () {
-  return (
-    <>
-      <h1>Hello, React!</h1>
-    </>
-  );
-};
-
-export default ComponentName;
-=======
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, Film, Star } from "lucide-react";
 import imageLogin1 from "../../assets/imageLogin1.jpg";
@@ -593,4 +580,3 @@ const RegistrationForm = () => {
 };
 
 export default RegistrationForm;
->>>>>>> Develop
