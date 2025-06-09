@@ -10,7 +10,7 @@ const { validateEmployee } = require('../middlewares/employee.validator');
  * /api/employee:
  *   get:
  *     summary: Get all employees
- *     tags: [Employees]
+ *     tags: [Employee Management]
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -27,7 +27,7 @@ router.get('/', auth, isAdmin, getAllEmployees);
  * /api/employee/searchByName:
  *   get:
  *     summary: Search employees by name
- *     tags: [Employees]
+ *     tags: [Employee Management]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -52,7 +52,7 @@ router.get('/searchByName', auth, isAdmin, getEmployeesbyName);
  * /api/employee/{userId}:
  *   get:
  *     summary: Get employee by ID
- *     tags: [Employees]
+ *     tags: [Employee Management]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -79,7 +79,7 @@ router.get('/:userId', auth, isAdmin, getEmployeeById);
  * /api/employee/email/{email}:
  *   get:
  *     summary: Get employee by email
- *     tags: [Employees]
+ *     tags: [Employee Management]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -105,7 +105,7 @@ router.get('/email/:email', auth, isAdmin, getEmployeeByEmail);
  * /api/employee/create:
  *   post:
  *     summary: Create a new employee
- *     tags: [Employees]
+ *     tags: [Employee Management]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -146,7 +146,7 @@ router.post('/create', auth, isAdmin, validateEmployee, createEmployee);
  * /api/employee/delete/{userId}:
  *   delete:
  *     summary: Delete an employee
- *     tags: [Employees]
+ *     tags: [Employee Management]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -172,7 +172,7 @@ router.delete('/delete/:userId', auth, isAdmin, deleteEmployee);
  * /api/employee/update/{userId}:
  *   put:
  *     summary: Update an employee
- *     tags: [Employees]
+ *     tags: [Employee Management]
  *     security:
  *       - bearerAuth: []
  *     parameters:

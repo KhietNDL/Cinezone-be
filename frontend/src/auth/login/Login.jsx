@@ -1,3 +1,16 @@
+<<<<<<< HEAD
+import React from "react";
+
+function Login() {
+  return (
+    <>
+      <h1>Hello, React!</h1>
+    </>
+  );
+}
+
+export default Login;
+=======
 import { useState, useEffect } from "react";
 import { Eye, EyeOff, Mail, Lock, Film, Star } from "lucide-react";
 import logoWeb from "../../assets/logoWeb.png";
@@ -259,3 +272,4 @@ const MovieTheaterLogin = () => {
   );
 };
 export default MovieTheaterLogin;
+>>>>>>> Develop
