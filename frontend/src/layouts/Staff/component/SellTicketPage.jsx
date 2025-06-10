@@ -6,9 +6,10 @@ import MovieCard from "./MovieCard";
 import ShowtimeButton from "./ShowtimeButton";
 import { Link } from "react-router-dom";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
+import "swiper/css/pagination";
+import { Pagination, Navigation } from "swiper/modules";
 import './SwiperButton.css';
 import { RiMovie2AiFill } from "react-icons/ri";
 
@@ -46,7 +47,7 @@ const SellTicketPage = () => {
   );
 
   return (
-    <div className="w-full  bg-[#fafbfc] p-[20px]">
+    <div className="w-full bg-[#fafbfc] p-[20px]">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-fuchsia-700">Sell Movie Ticket</h1>
        <Input.Search
@@ -68,8 +69,11 @@ const SellTicketPage = () => {
           </div>
         ) : (
           <Swiper
-            modules={[Navigation]}
+            modules={[Navigation, Pagination ]}
             navigation
+            pagination={{
+              clickable: true,
+            }}
             spaceBetween={50}
             slidesPerView={4}
             slidesPerGroup={2}
@@ -81,8 +85,8 @@ const SellTicketPage = () => {
             }}
           >
             {movies.map((movie) => (
-              <SwiperSlide key={movie.id}>
-                <div className="flex justify-center p-2 w-[230px]">
+              <SwiperSlide  key={movie.id}>
+                <div className="flex justify-center p-2 w-[260px]">
                   <MovieCard
                     movie={movie}
                     onSelect={setSelectedMovie}
@@ -98,50 +102,53 @@ const SellTicketPage = () => {
         <h5 className="mt-5 flex items-center gap-2">
           <RiMovie2AiFill /> Select Version
         </h5>
-        <div className="pl-15 pt-2 ">
+        <div className="pl-15 pt-2 flex gap-4">
           {(!selectedVersion || selectedVersion === "IMAX") && (
-            <Tag
-              className="cursor-pointer"
-              color="geekblue"
+            <div role="button"
+              className=" font-bold text-white text-center
+              px-7 py-2 rounded-lg  bg-[linear-gradient(to_right,_#004897,_#509AEA,_#60BCE6,_#56C3F5,_#0AF7FB)] "
               onClick={() =>
                 setSelectedVersion(selectedVersion === "IMAX" ? null : "IMAX")
               }
             >
               IMAX
-            </Tag>
+            </div>
           )}
           {(!selectedVersion || selectedVersion === "4DX") && (
-            <Tag
-              className="cursor-pointer"
-              color="volcano"
+            <div
+              className=" font-bold text-white text-center
+              px-7 py-2 rounded-lg bg-[linear-gradient(to_right,_#680000,_#991C1C,_#BF1616,_#DB3838,_#F26969)]"
+             
               onClick={() =>
                 setSelectedVersion(selectedVersion === "4DX" ? null : "4DX")
               }
             >
               4DX
-            </Tag>
+            </div>
           )}
           {(!selectedVersion || selectedVersion === "3D") && (
-            <Tag
-              className="cursor-pointer"
+            <div
+              className=" font-bold text-white text-center
+              px-7 py-2 rounded-lg bg-[linear-gradient(to_right,_#C88200,_#DB9E2D,_#D0B400,_#F3C91E,_#FFE606)]"
               color="cyan"
               onClick={() =>
                 setSelectedVersion(selectedVersion === "3D" ? null : "3D")
               }
             >
               3D
-            </Tag>
+            </div>
           )}
           {(!selectedVersion || selectedVersion === "2D") && (
-            <Tag
-              className="cursor-pointer"
-              color="green"
+            <div
+              className=" font-bold text-white text-center
+              px-7 py-2 rounded-lg bg-[linear-gradient(to_right,_#147800,_#03B000,_#0ACA00,_#4ADF00,_#5EFF41)]"
+             
               onClick={() =>
                 setSelectedVersion(selectedVersion === "2D" ? null : "2D")
               }
             >
               2D
-            </Tag>
+            </div>
           )}
         </div>
 
@@ -160,10 +167,10 @@ const SellTicketPage = () => {
         <Link to="/staff/ticket-selling/select-seats">
           <Button
             style={{
-              backgroundColor: "#4F46E5",
+              backgroundColor: "#8A2BE2",
               color: "white",
-              padding: "1rem",
-              borderRadius: "0.25rem",
+              padding: "1rem"
+             
             }}
           >
             <i className="fa-solid fa-couch"></i> Select seats

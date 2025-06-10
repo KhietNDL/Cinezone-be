@@ -19,6 +19,8 @@ import ConfirmPayment from "./layouts/User/component/ConfirmPayment";
 import ConfirmTicketsPage from "./layouts/Staff/component/ConfirmTicketsPage";
 import MoviePromotions from "./layouts/User/component/PromotionPage";
 import ComboPage from "./layouts/Staff/component/ComboPage";
+import TicketInfomation from "./layouts/Staff/component/TicketInfomation";
+import PrintTicket from "./layouts/Staff/component/PrintTicket";
 function App() {
   return (
     <Routes>
@@ -42,10 +44,12 @@ function App() {
         <Route index element={<SellTicketPage />}/>
         <Route path="/staff/ticket-selling" element={<SellTicketPage />} />
         <Route path="/staff/movie-info" element={<SellTicketPage />} />
-        <Route path="/staff/combos" element={<SellTicketPage />} />
         <Route path="/staff/ticket-selling/select-seats" element={<SelectSeatsPage />} />
         <Route path="/staff/ticket-selling/confirm-ticket" element={<ConfirmTicketsPage />} />
+         <Route path="/staff/ticket-selling/ticket-infomation" element={<TicketInfomation />} />
         <Route path="/staff/combo-selling" element={<ComboPage />} />
+        <Route path="/staff/ticket-selling/view-ticket" element={<PrintTicket/>}/>
+
       </Route>
 
     
