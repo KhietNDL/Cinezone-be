@@ -37,3 +37,7 @@ coverage/
 # React specific
 *.local
 public/static/
+
+backend/config/serviceAccountKey.json
+serviceAccountKey.json
+*serviceAccountKey*.json
