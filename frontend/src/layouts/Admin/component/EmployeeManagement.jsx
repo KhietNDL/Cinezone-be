@@ -1,11 +1,24 @@
 import React, { useMemo, useState } from "react";
 import { GoPlus } from "react-icons/go";
-import { IoCloseSharp, IoTime, IoSearchOutline } from "react-icons/io5";
-import { IoMdPersonAdd, IoMdRefresh } from "react-icons/io";
+import {
+  IoCloseSharp,
+  IoTime,
+  IoSearchOutline,
+  IoClose,
+  IoMailOutline,
+  IoCallOutline,
+  IoCardOutline,
+  IoPersonOutline,
+  IoCalendarOutline,
+  IoTimeOutline,
+  IoLocationOutline,
+} from "react-icons/io5";
+import { IoMdPersonAdd } from "react-icons/io";
 import { MdPeopleAlt, MdDeleteForever } from "react-icons/md";
 import { FaRegEdit } from "react-icons/fa";
 import { RiDeleteBin5Line } from "react-icons/ri";
-import { FaUpload } from "react-icons/fa";
+import EmployeeForm from "../employeeComponent/EmployeeForm";
+
 const EmployeeManagement = () => {
   const [employees, setEmployees] = useState([
     {
@@ -182,8 +195,9 @@ const EmployeeManagement = () => {
   const [showEditForm, setShowEditForm] = useState(false);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [hoveredEmployee, setHoveredEmployee] = useState(null);
-  const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
+  const [selectedEmployeeForTooltip, setSelectedEmployeeForTooltip] =
+    useState(null); // New state for clicked tooltip
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 }); // Track tooltip position
   const itemsPerPage = 7;
   const [searchEmployee, setSearchEmployee] = useState("");
 
@@ -266,6 +280,7 @@ const EmployeeManagement = () => {
   // ✅ SỬA LỖI: Hàm handleDelete nhận đúng object employee
   const handleDelete = (employee) => {
     setSelectedEmployee(employee);
+    setSelectedEmployeeForTooltip(null);
     setShowDeletePopup(true);
   };
 
@@ -292,18 +307,21 @@ const EmployeeManagement = () => {
     setSelectedEmployee(null);
   };
 
-  // ✅ SỬA LỖI: handleMouseEnter và handleMouseLeave chỉ xử lý tooltip
-  const handleMouseEnter = (employee, event) => {
-    setHoveredEmployee(employee);
+  // Handle row click to show tooltip for specific employee
+  const handleRowClick = (employee, event) => {
     const rect = event.currentTarget.getBoundingClientRect();
-    setHoverPosition({
+    setTooltipPosition({
       x: rect.right + 10,
-      y: rect.top,
+      y: rect.top + window.scrollY,
     });
+    setSelectedEmployeeForTooltip(employee);
   };
 
-  const handleMouseLeave = () => {
-    setHoveredEmployee(null);
+  // Close tooltip when clicking outside
+  const handleOutsideClick = (e) => {
+    if (!e.target.closest("tr") && !e.target.closest(".tooltip")) {
+      setSelectedEmployeeForTooltip(null);
+    }
   };
 
   const resetForm = () => {
@@ -322,250 +340,152 @@ const EmployeeManagement = () => {
     });
   };
 
-  const EmployeeTooltip = ({ employee, position }) => (
-    <div
-      className="fixed bg-white border ml-3 border-gray-200 rounded-lg shadow-lg p-4 z-50 w-80"
-      style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        transform: "translateY(-20px)",
-      }}
-    >
-      {/* Triangle Arrow */}
-      <div
-        className="absolute -left-2 top-6 w-0 h-0 border-t-8 border-b-8 border-r-8 border-t-transparent border-b-transparent border-r-white"
-        style={{
-          filter: "drop-shadow(-1px 0px 1px rgba(0,0,0,0.1))",
-        }}
-      />
-      <div className="flex items-start space-x-4">
-        <img
-          src={
-            employee.image || "https://www.w3schools.com/howto/img_avatar.png"
-          }
-          alt="Employee"
-          className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
-        />
-        <div className="flex-1">
-          <h3 className="font-semibold text-lg text-gray-800">
-            {employee.fullName}
-          </h3>
-          <p className="text-sm text-gray-500 mb-2">@{employee.username}</p>
-        </div>
-      </div>
-
-      <div className="mt-4 space-y-2">
-        <div className="flex justify-between">
-          <span className="text-sm font-medium text-gray-600">
-            Date of Birth:
-          </span>
-          <span className="text-sm text-gray-800">{employee.dateOfBirth}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-sm font-medium text-gray-600">Gender:</span>
-          <span className="text-sm text-gray-800">{employee.gender}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-sm font-medium text-gray-600">Email:</span>
-          <span className="text-sm text-gray-800 truncate">
-            {employee.email}
-          </span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-sm font-medium text-gray-600">Phone:</span>
-          <span className="text-sm text-gray-800">{employee.phone}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-sm font-medium text-gray-600">ID Card:</span>
-          <span className="text-sm text-gray-800">{employee.identityCard}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-sm font-medium text-gray-600">
-            Register Date:
-          </span>
-          <span className="text-sm text-gray-800">{employee.registerDate}</span>
-        </div>
-        <div className="pt-2 border-t border-gray-200">
-          <span className="text-sm font-medium text-gray-600">Address:</span>
-          <p className="text-sm text-gray-800 mt-1">{employee.address}</p>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Employee Form Component
-  const EmployeeForm = ({ isEdit = false }) => (
-    <div className="fixed inset-0 bg-black/30 bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-[600px] max-h-[90vh] overflow-y-auto">
-        <h2 className="text-xl font-bold mb-4">
-          {isEdit ? "Edit Employee" : "Add New Employee"}
-        </h2>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Username</label>
-            <input
-              type="text"
-              name="username"
-              value={formData.username}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter username"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Password</label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter password"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Confirm password"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Full Name</label>
-            <input
-              type="text"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter full name"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Date of Birth
-            </label>
-            <input
-              type="date"
-              name="dateOfBirth"
-              value={formData.dateOfBirth}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Gender</label>
-            <select
-              name="gender"
-              value={formData.gender}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Identity Card
-            </label>
-            <input
-              type="text"
-              name="identityCard"
-              value={formData.identityCard}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter ID card number"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter email"
-            />
-          </div>
-
-          <div className="col-span-2">
-            <label className="block text-sm font-medium mb-1">Address</label>
-            <textarea
-              name="address"
-              value={formData.address}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter address"
-              rows="2"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Phone Number
-            </label>
-            <input
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter phone number"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Image</label>
-            <div className="flex items-center space-x-2">
-              <input
-                type="url"
-                name="image"
-                value={formData.image}
-                onChange={handleInputChange}
-                className="flex-1 p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter image URL"
+  const EmployeeTooltip = ({ employee, onClose }) => (
+    <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50">
+      <div className="bg-white rounded-2xl shadow-2xl p-6 w-[600px] max-w-[90vw] max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-100">
+        {/* Header Section */}
+        <div className="flex items-start justify-between mb-6">
+          <div className="flex items-start space-x-4">
+            <div className="relative">
+              <img
+                src={
+                  employee.image ||
+                  "https://www.w3schools.com/howto/img_avatar.png"
+                }
+                alt="Employee"
+                className="w-20 h-20 rounded-full object-cover border-4 border-blue-100 shadow-lg"
               />
-              <button className="p-2 bg-gray-100 rounded hover:bg-gray-200">
-                <FaUpload size={16} />
-              </button>
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 border-2 border-white rounded-full"></div>
+            </div>
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                {employee.fullName}
+              </h2>
+              <p className="text-blue-600 font-medium text-sm mb-1">
+                @{employee.username}
+              </p>
+              <span className="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">
+                Active Employee
+              </span>
+            </div>
+          </div>
+          <div
+            role="button"
+            onClick={onClose}
+            className="p-2 rounded-2xl hover:bg-slate-100 active:bg-slate-200 transition-all duration-200 hover:scale-110 active:scale-95"
+          >
+            <IoClose size={24} className="text-gray-600" />
+          </div>
+        </div>
+
+        {/* Employee Information Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          {/* Date of Birth */}
+          <div className="flex items-center p-3 bg-purple-50 rounded-lg border border-purple-100">
+            <div className="flex items-center justify-center w-10 h-10 bg-purple-100 rounded-full mr-3">
+              <IoCalendarOutline size={18} className="text-purple-600" />
+            </div>
+            <div className="flex-1">
+              <span className="text-xs font-medium text-purple-800 block uppercase tracking-wide">
+                Date of Birth
+              </span>
+              <span className="text-sm text-purple-700 font-semibold">
+                {employee.dateOfBirth || "Not provided"}
+              </span>
+            </div>
+          </div>
+
+          {/* Gender */}
+          <div className="flex items-center p-3 bg-pink-50 rounded-lg border border-pink-100">
+            <div className="flex items-center justify-center w-10 h-10 bg-pink-100 rounded-full mr-3">
+              <IoPersonOutline size={18} className="text-pink-600" />
+            </div>
+            <div className="flex-1">
+              <span className="text-xs font-medium text-pink-800 block uppercase tracking-wide">
+                Gender
+              </span>
+              <span className="text-sm text-pink-700 font-semibold">
+                {employee.gender || "Not specified"}
+              </span>
+            </div>
+          </div>
+
+          {/* Email */}
+          <div className="flex items-center p-3 bg-blue-50 rounded-lg border border-blue-100">
+            <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full mr-3">
+              <IoMailOutline size={18} className="text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <span className="text-xs font-medium text-blue-800 block uppercase tracking-wide">
+                Email Address
+              </span>
+              <span className="text-sm text-blue-700 font-semibold truncate">
+                {employee.email || "Not provided"}
+              </span>
+            </div>
+          </div>
+
+          {/* Phone */}
+          <div className="flex items-center p-3 bg-green-50 rounded-lg border border-green-100">
+            <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full mr-3">
+              <IoCallOutline size={18} className="text-green-600" />
+            </div>
+            <div className="flex-1">
+              <span className="text-xs font-medium text-green-800 block uppercase tracking-wide">
+                Phone Number
+              </span>
+              <span className="text-sm text-green-700 font-semibold">
+                {employee.phone || "Not provided"}
+              </span>
+            </div>
+          </div>
+
+          {/* ID Card */}
+          <div className="flex items-center p-3 bg-orange-50 rounded-lg border border-orange-100">
+            <div className="flex items-center justify-center w-10 h-10 bg-orange-100 rounded-full mr-3">
+              <IoCardOutline size={18} className="text-orange-600" />
+            </div>
+            <div className="flex-1">
+              <span className="text-xs font-medium text-orange-800 block uppercase tracking-wide">
+                ID Card
+              </span>
+              <span className="text-sm text-orange-700 font-semibold">
+                {employee.identityCard || "Not provided"}
+              </span>
+            </div>
+          </div>
+
+          {/* Register Date */}
+          <div className="flex items-center p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+            <div className="flex items-center justify-center w-10 h-10 bg-indigo-100 rounded-full mr-3">
+              <IoTimeOutline size={18} className="text-indigo-600" />
+            </div>
+            <div className="flex-1">
+              <span className="text-xs font-medium text-indigo-800 block uppercase tracking-wide">
+                Register Date
+              </span>
+              <span className="text-sm text-indigo-700 font-semibold">
+                {employee.registerDate || "Not available"}
+              </span>
             </div>
           </div>
         </div>
 
-        <div className="flex justify-end space-x-3 mt-6">
-          <button
-            onClick={() => {
-              setShowAddForm(false);
-              setShowEditForm(false);
-              resetForm();
-            }}
-            className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
-          >
-            Back
-          </button>
-          <button
-            onClick={isEdit ? handleUpdate : handleAdd}
-            className="px-4 py-2 bg-[#6051F3] text-white rounded hover:bg-[#5041E3]"
-          >
-            {isEdit ? "Update" : "Add"}
-          </button>
+        {/* Address Section */}
+        <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-6">
+          <div className="flex items-start">
+            <div className="flex items-center justify-center w-10 h-10 bg-gray-200 rounded-full mr-3 mt-1">
+              <IoLocationOutline size={18} className="text-gray-600" />
+            </div>
+            <div className="flex-1">
+              <span className="text-xs font-medium text-gray-700 block uppercase tracking-wide mb-1">
+                Address
+              </span>
+              <p className="text-sm text-gray-800 leading-relaxed">
+                {employee.address || "Address not provided"}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -605,10 +525,13 @@ const EmployeeManagement = () => {
   );
 
   return (
-    <div className="p-[20px] flex items-center h-full justify-between ">
+    <div
+      className="p-[20px] flex items-center h-full justify-between"
+      onClick={handleOutsideClick}
+    >
       <div className="w-[70%] space-y-4">
         <div className="flex items-center justify-between w-full">
-          <div className="bg-white rounded-md p-3  w-[23%] shadow-sm ">
+          <div className="bg-white rounded-md p-3 w-[23%] shadow-sm">
             <div className="flex items-center justify-between">
               <p className="text-slate-500">Total Employees</p>
               <div className="p-2 bg-sky-100 rounded-full">
@@ -617,7 +540,7 @@ const EmployeeManagement = () => {
             </div>
             <div className="font-bold text-[19px]">{employees.length}</div>
           </div>
-          <div className="bg-white rounded-md p-3  w-[23%] shadow-sm">
+          <div className="bg-white rounded-md p-3 w-[23%] shadow-sm">
             <div className="flex items-center justify-between">
               <p className="text-slate-500">On Leave</p>
               <div className="p-2 bg-rose-50 rounded-full">
@@ -626,7 +549,7 @@ const EmployeeManagement = () => {
             </div>
             <div className="font-bold text-[19px]">25,340</div>
           </div>
-          <div className="bg-white rounded-md p-3  w-[23%] shadow-sm">
+          <div className="bg-white rounded-md p-3 w-[23%] shadow-sm">
             <div className="flex items-center justify-between">
               <p className="text-slate-500">New Hires</p>
               <div className="p-2 bg-sky-100 rounded-full">
@@ -635,7 +558,7 @@ const EmployeeManagement = () => {
             </div>
             <div className="font-bold text-[19px]">25,340</div>
           </div>
-          <div className="bg-white rounded-md p-3  w-[23%] shadow-sm">
+          <div className="bg-white rounded-md p-3 w-[23%] shadow-sm">
             <div className="flex items-center justify-between">
               <p className="text-slate-500">Resigned</p>
               <div className="p-2 bg-rose-50 rounded-full">
@@ -695,8 +618,10 @@ const EmployeeManagement = () => {
                     <tr
                       key={emp.idEmployee}
                       role="button"
-                      onMouseEnter={(e) => handleMouseEnter(emp, e)}
-                      onMouseLeave={handleMouseLeave}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRowClick(emp, e);
+                      }}
                       className="border-b border-slate-200 hover:bg-slate-100 text-sm"
                     >
                       <td className="py-2">{emp.fullName}</td>
@@ -706,7 +631,8 @@ const EmployeeManagement = () => {
                       <td className="py-2 text-center">{emp.phone}</td>
                       <td className="py-2 text-center">{emp.registerDate}</td>
                       <td className="flex items-center justify-between py-2">
-                        <button
+                        <div
+                          role="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleEdit(emp);
@@ -715,17 +641,18 @@ const EmployeeManagement = () => {
                           title="Edit"
                         >
                           <FaRegEdit size={20} />
-                        </button>
-                        <button
+                        </div>
+                        <div
+                          role="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDelete(emp); // ✅ Truyền đúng object emp
+                            handleDelete(emp);
                           }}
                           className="text-red-400 hover:text-red-600"
                           title="Delete"
                         >
                           <RiDeleteBin5Line size={20} />
-                        </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -765,17 +692,20 @@ const EmployeeManagement = () => {
           </div>
         </div>
       </div>
-      <div className="flex items-center fixed right-[-40px] top-[25%] justify-center w-[30%]">
-        <div className="flex items-center justify-center   p-4">
+      <div className="flex items-center right-[-40px] top-[25%] justify-end w-[30%]">
+        <div className="flex items-center w-[90%] ">
           <div className="bg-white p-6 rounded-[20px] shadow-sm w-full max-w-md">
             {/* Header */}
-            <div className="flex items-center space-x-2 justify-between mb-6">
-              <h2 className="text-lg font-bold text-gray-800">
+            <div className="space-y-2 mb-6">
+              <h2 className="text-xl font-bold text-gray-800">
                 Attendance Overview
               </h2>
-              <button className="bg-blue-100 text-blue-600 px-3 py-1 rounded-lg text-sm font-medium flex items-center gap-1">
+              <div
+                role="button"
+                className="bg-blue-100 w-fit text-blue-600 px-3 py-1 rounded-lg text-sm font-medium flex items-center"
+              >
                 <svg
-                  className="w-4 h-4"
+                  className="w-4 h-4 shrink-0"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -786,7 +716,7 @@ const EmployeeManagement = () => {
                   />
                 </svg>
                 This Week
-              </button>
+              </div>
             </div>
 
             {/* Table Header */}
@@ -808,7 +738,7 @@ const EmployeeManagement = () => {
             <div className="space-y-3">
               {employees.slice(0, 4).map((employee) => (
                 <div
-                  key={employee.id}
+                  key={employee.idEmployee}
                   className="flex items-center justify-between pr-6 py-2"
                 >
                   <div className="flex items-center">
@@ -817,8 +747,8 @@ const EmployeeManagement = () => {
                     </span>
                     <div className="flex items-center">
                       <img
-                        src={employee.avatar}
-                        alt={employee.name}
+                        src={employee.image}
+                        alt={employee.fullName}
                         className="w-10 h-10 rounded-full object-cover mr-3"
                       />
                       <span className="text-gray-800 font-medium">
@@ -835,11 +765,33 @@ const EmployeeManagement = () => {
           </div>
         </div>
       </div>
-      {showAddForm && <EmployeeForm />}
-      {showEditForm && <EmployeeForm isEdit={true} />}
+      {showAddForm && (
+        <EmployeeForm
+          formData={formData}
+          handleInputChange={handleInputChange}
+          handleAdd={handleAdd}
+          handleUpdate={handleUpdate}
+          setShowAddForm={setShowAddForm}
+          setShowEditForm={setShowEditForm}
+          resetForm={resetForm}
+        />
+      )}
+      {showEditForm && (
+        <EmployeeForm
+          isEdit={true}
+          formData={formData}
+          handleInputChange={handleInputChange}
+          handleUpdate={handleUpdate}
+          setShowEditForm={setShowEditForm}
+          resetForm={resetForm}
+        />
+      )}
       {showDeletePopup && <DeletePopup />}
-      {hoveredEmployee && (
-        <EmployeeTooltip employee={hoveredEmployee} position={hoverPosition} />
+      {selectedEmployeeForTooltip && (
+        <EmployeeTooltip
+          employee={selectedEmployeeForTooltip}
+          position={tooltipPosition}
+        />
       )}
     </div>
   );

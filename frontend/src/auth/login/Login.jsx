@@ -5,9 +5,15 @@ import imageLogin1 from "../../assets/imageLogin1.jpg";
 import imageLogin2 from "../../assets/imageLogin2.jpg";
 import imageLogin3 from "../../assets/imageLogin3.jpg";
 import imageLogin4 from "../../assets/imageLogin4.jpg";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import api from "../../services/API";
+import { toast } from "react-toastify";
+import { useDispatch } from "react-redux";
+import { login } from "../../redux/features/userSlice";
 
 const MovieTheaterLogin = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -41,12 +47,14 @@ const MovieTheaterLogin = () => {
     e.preventDefault();
     const newErrors = {};
 
+    // Validate email
     if (!formData.email) {
       newErrors.email = "Email is required";
     } else if (!validateEmail(formData.email)) {
       newErrors.email = "Invalid email format";
     }
 
+    // Validate password
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 8) {
@@ -55,12 +63,21 @@ const MovieTheaterLogin = () => {
 
     setErrors(newErrors);
 
-    if (Object.keys(newErrors).length === 0) {
-      setIsLoading(true);
-      setTimeout(() => {
-        setIsLoading(false);
-        alert("Login successful!");
-      }, 2000);
+    if (Object.keys(newErrors).length > 0) return;
+    setIsLoading(true);
+    try {
+      console.log("Form data gửi:", formData);
+      const response = await api.post("login", formData);
+      const { token, user } = response.data;
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+      toast.success("Successfully logged in!");
+      dispatch(login(response.data.user));
+      navigate("/");
+    } catch (err) {
+      toast.error(err.response?.data || "Login failed");
+    } finally {
+      setIsLoading(false);
     }
   };
 
