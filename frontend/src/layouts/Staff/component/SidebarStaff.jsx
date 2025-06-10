@@ -21,7 +21,7 @@ const SidebarStaff = () => {
     },
     
     {
-      label: "Combos",
+      label: "Combo Food",
       icon: <PiPopcornDuotone/>,
       to: "/staff/combo-selling",
     },

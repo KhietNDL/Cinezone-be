@@ -10,7 +10,6 @@ import ForgotPasswordPage from "./auth/forgot/ForgotPassword";
 import EmailVerification from "./auth/verification/VerificationPassword";
 import EmployeeManagement from "./layouts/Admin/component/EmployeeManagement";
 import BookingPage from "./layouts/User/component/BookingPage";
-
 import SellTicketPage from "./layouts/Staff/component/SellTicketPage";
 import "tailwindcss";
 import StaffLayout from "./layouts/Staff/StaffLayout";
@@ -21,6 +20,8 @@ import MoviePromotions from "./layouts/User/component/PromotionPage";
 import MovieManagement from "./layouts/Admin/component/MovieManagement";
 import { AuthProvider } from "./context/AuthContext";
 import ComboPage from "./layouts/Staff/component/ComboPage";
+import TicketInfomation from "./layouts/Staff/component/TicketInfomation";
+import PrintTicket from "./layouts/Staff/component/PrintTicket";
 import RoomManagement from "./layouts/Admin/component/RoomManagement";
 import { ToastContainer } from "react-toastify";
 function App() {
@@ -49,16 +50,11 @@ function App() {
           <Route index element={<SellTicketPage />} />
           <Route path="/staff/ticket-selling" element={<SellTicketPage />} />
           <Route path="/staff/movie-info" element={<SellTicketPage />} />
-          <Route path="/staff/combos" element={<SellTicketPage />} />
-          <Route
-            path="/staff/ticket-selling/select-seats"
-            element={<SelectSeatsPage />}
-          />
-          <Route
-            path="/staff/ticket-selling/confirm-ticket"
-            element={<ConfirmTicketsPage />}
-          />
+          <Route path="/staff/ticket-selling/select-seats" element={<SelectSeatsPage />} />
+          <Route path="/staff/ticket-selling/confirm-ticket" element={<ConfirmTicketsPage />} />
+          <Route path="/staff/ticket-selling/ticket-infomation" element={<TicketInfomation />} />
           <Route path="/staff/combo-selling" element={<ComboPage />} />
+          <Route path="/staff/ticket-selling/view-ticket" element={<PrintTicket />} />
         </Route>
       </Routes>
       <ToastContainer />

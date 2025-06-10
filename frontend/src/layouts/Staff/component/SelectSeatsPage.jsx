@@ -152,7 +152,7 @@ const SelectSeatsPage = () => {
                         <div className="mt-4 flex justify-end gap-2 pt-50 pl-50.5">
                             <Link to="/staff/ticket-selling/confirm-ticket">
                                 <Button
-                                    style={{ backgroundColor: "#4F46E5" }}
+                                    style={{ backgroundColor: "#8A2BE2" }}
                                     type="primary"
                                     icon={<CheckOutlined />}
                                 >
