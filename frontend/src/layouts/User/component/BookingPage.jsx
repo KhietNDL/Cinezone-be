@@ -37,9 +37,9 @@ const BookingPage = () => {
   const totalPrice = selectedSeats.length * ticketPrice;
 
   return (
-    <div className="overflow-x-hidden bg-gray-900 text-white p-6 pt-[86px]">
+    <div className="overflow-x-hidden bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] text-white p-6 pt-[100px]">
       {/* Phần thông tin phim */}
-      <div className="bg-[#1e1b3a] text-white rounded-tl-xl rounded-tr-xl shadow-lg p-6 flex gap-6 max-w-4xl mx-auto">
+      <div className="bg-[#1e1b3a]/30 text-white rounded-tl-xl rounded-tr-xl shadow-lg p-6 flex gap-6 max-w-4xl mx-auto">
         {/* Poster */}
         <img
           src="https://cdnb.artstation.com/p/assets/images/images/024/183/449/large/baju-creative-mat-biec.jpg?1581838909"
@@ -99,7 +99,7 @@ const BookingPage = () => {
 
       {/* Phần chọn ghế (hiển thị khi nhấn "Book now") */}
 
-      <div className="mt-0 max-w-4xl mx-auto bg-[#252642] rounded-bl-xl rounded-br-xl">
+      <div className="mt-0 max-w-4xl mx-auto bg-[#252642]/30 rounded-bl-xl rounded-br-xl">
         {/* Phần thông tin rạp chiếu */}
         <div className="mb-6 p-[24px]">
           <div className="flex justify-between items-center mb-4">
@@ -131,7 +131,7 @@ const BookingPage = () => {
                   setSelectedSeats([]); // Reset ghế đã chọn
                 }}
               >
-                {[1, 2, 3, 4, 5].map((num) => (
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
                   <option key={num} value={num}>
                     {num}
                   </option>
@@ -147,7 +147,7 @@ const BookingPage = () => {
             Choose seat
           </h2>
           <div className="text-center mb-4">
-            <div className="inline-block w-3/4 h-[10px] bg-[#8A2BE2] text-[#6956F5] py-1 rounded-t-lg rounded-tl-3xl 	rounded-tr-3xl font-semibold  ">
+            <div className="inline-block w-3/4 h-[10px] bg-[#6956F5] text-[#6956F5] py-1 rounded-t-lg rounded-tl-3xl 	rounded-tr-3xl font-semibold  ">
               <span className="flex items-end justify-center p-4 text-xl">
                 {" "}
                 SCREEN
