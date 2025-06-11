@@ -15,6 +15,7 @@ import "tailwindcss";
 import StaffLayout from "./layouts/Staff/StaffLayout";
 import SelectSeatsPage from "./layouts/Staff/component/SelectSeatsPage";
 import ConfirmPayment from "./layouts/User/component/ConfirmPayment";
+
 import ConfirmTicketsPage from "./layouts/Staff/component/ConfirmTicketsPage";
 import MoviePromotions from "./layouts/User/component/PromotionPage";
 import MovieManagement from "./layouts/Admin/component/MovieManagement";
@@ -24,6 +25,7 @@ import TicketInfomation from "./layouts/Staff/component/TicketInfomation";
 import PrintTicket from "./layouts/Staff/component/PrintTicket";
 import RoomManagement from "./layouts/Admin/component/RoomManagement";
 import { ToastContainer } from "react-toastify";
+import WaitingPayment from "./layouts/User/component/WaitingPayment";
 function App() {
   return (
     <AuthProvider>
@@ -37,6 +39,7 @@ function App() {
           <Route path="/:idMovie" element={<BookingPage />} />
           <Route path="/confirmPayment" element={<ConfirmPayment />} />
           <Route path="/promotions" element={<MoviePromotions />} />
+          <Route path="/waiting" element={<WaitingPayment />} />
         </Route>
 
         <Route path="/admin" element={<AdminLayout />}>
