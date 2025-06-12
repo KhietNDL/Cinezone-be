@@ -97,26 +97,26 @@ const BookingPage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
             <div>
               <label className="block text-xs sm:text-sm mb-1">Cinema</label>
-              <select className="w-full bg-gray-800 text-white p-2 rounded text-xs sm:text-sm">
+              <select className="w-full bg-gray-800/40 text-white p-2 rounded text-xs sm:text-sm">
                 <option>CGV Crescent Mall</option>
               </select>
             </div>
             <div>
               <label className="block text-xs sm:text-sm mb-1">Date</label>
-              <select className="w-full bg-gray-800 text-white p-2 rounded text-xs sm:text-sm">
+              <select className="w-full bg-gray-800/40  text-white p-2 rounded text-xs sm:text-sm">
                 <option>2024-06-12</option>
               </select>
             </div>
             <div>
               <label className="block text-xs sm:text-sm mb-1">Time</label>
-              <select className="w-full bg-gray-800 text-white p-2 rounded text-xs sm:text-sm">
+              <select className="w-full bg-gray-800/40 text-white p-2 rounded text-xs sm:text-sm">
                 <option>14:00</option>
               </select>
             </div>
             <div>
               <label className="block text-xs sm:text-sm mb-1">Number ticket</label>
               <select
-                className="w-full bg-gray-800 text-white p-2 rounded text-xs sm:text-sm"
+                className="w-full bg-gray-800/40 text-white p-2 rounded text-xs sm:text-sm"
                 value={numberOfTickets}
                 onChange={(e) => {
                   setNumberOfTickets(Number(e.target.value));

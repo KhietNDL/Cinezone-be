@@ -32,6 +32,7 @@ import AccountImformation from "./layouts/User/component/AccountImformation";
 import EditAccount from "./layouts/User/component/EditAccount";
 import HistoryActivity from "./layouts/User/component/HistoryActivity";
 
+
 function App() {
   return (
     <AuthProvider>
@@ -51,7 +52,7 @@ function App() {
           <Route path="/account" element={<AccountImformation />}>
             <Route path="*" element={<AccountImformation />} />
             <Route path="personal" element={<EditAccount />} />
-            <Route path="ticket" element={<HistoryActivity />} />
+            <Route path="history" element={<HistoryActivity />} />
             
           </Route>
         </Route>
