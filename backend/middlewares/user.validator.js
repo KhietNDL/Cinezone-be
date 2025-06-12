@@ -1,6 +1,5 @@
 const { body, validationResult } = require('express-validator');
 
-// Validation middleware
 const validate = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -9,7 +8,6 @@ const validate = (req, res, next) => {
     next();
 };
 
-// Login validation rules
 const loginValidation = [
     body('email')
         .isEmail()
@@ -24,7 +22,6 @@ const loginValidation = [
     validate
 ];
 
-// Register validation rules
 const registerValidation = [
     body('password')
         .notEmpty().withMessage('Password is required')
@@ -60,7 +57,6 @@ const registerValidation = [
     validate
 ];
 
-// Forgot password validation rules
 const forgotPasswordValidation = [
     body('email')
         .isEmail()
@@ -70,7 +66,6 @@ const forgotPasswordValidation = [
     validate
 ];
 
-// Reset password validation rules
 const resetPasswordValidation = [
     body('email')
         .isEmail()
@@ -126,7 +121,6 @@ const updateProfileValidation = [
     body('address')
         .optional()
         .isString().withMessage('Address must be a string'),
-    // Note: File upload validation for 'avatar' might require different approach depending on how you handle file uploads (e.g., multer)
 ];
 
 module.exports = {
