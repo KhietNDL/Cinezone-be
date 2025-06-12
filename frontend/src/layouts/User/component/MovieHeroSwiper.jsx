@@ -185,21 +185,23 @@ const MovieHeroSwiper = ({ movieData }) => {
       <div
         role="button"
         onClick={handlePrevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-3 rounded-full transition-all duration-300 backdrop-blur-sm z-10"
+        className="absolute left-1 top-1/2 -translate-y-1/2 hover:text-[#6a57f5] text-white p-3 rounded-full transition-all duration-300 z-20 hover:scale-110"
+        aria-label="Previous slide"
       >
-        <ChevronLeft size={24} />
+        <ChevronLeft size={50} />
       </div>
 
       <div
         role="button"
         onClick={handleNextSlide}
-        className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-3 rounded-full transition-all duration-300 backdrop-blur-sm z-10"
+        className="absolute right-1 top-1/2 -translate-y-1/2 hover:text-[#6a57f5] text-white p-3 rounded-full transition-all duration-300 z-20 hover:scale-110"
+        aria-label="Next slide"
       >
-        <ChevronRight size={24} />
+        <ChevronRight size={50} />
       </div>
 
       {/* Content */}
-      <div className="absolute inset-0 flex items-center bg-gradient-to-b from-transparent to-black/100">
+      <div className="absolute inset-0 flex items-center z-10 px-[30px]">
         <div className="w-full flex items-center justify-between p-5 md:p-8">
           {/* Left Content */}
           <div className="md:w-[50%] w-full flex flex-col items-start space-y-5">
@@ -233,18 +235,18 @@ const MovieHeroSwiper = ({ movieData }) => {
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
               <div
                 role="button"
-                className="bg-[#6a57f5] hover:bg-[#5a47e5] text-white px-8 py-3 rounded-4xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg shadow-[#6a57f5]/30"
+                className="bg-[#6a57f5] hover:bg-[#5a47e5] text-white px-8 py-3 rounded-full font-semibold transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg shadow-[#6a57f5]/30"
               >
                 Book Now
               </div>
 
               <div
                 role="button"
-                onClick={isVideoPlaying ? handleStopVideo : handleOpenPopup}
-                className="bg-transparent border-2 border-white/30 hover:border-white/60 hover:bg-white/10 text-white px-8 py-3 rounded-4xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center backdrop-blur-sm"
+                onClick={handleOpenPopup}
+                className="bg-transparent border-2 border-white/30 hover:border-white/60 hover:bg-white/10 text-white px-8 py-3 rounded-full font-semibold transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center backdrop-blur-sm"
               >
                 <Play size={20} className="mr-2" />
-                {isVideoPlaying ? "Stop Trailer" : "Watch Trailer"}
+                Watch Trailer
               </div>
             </div>
           </div>
