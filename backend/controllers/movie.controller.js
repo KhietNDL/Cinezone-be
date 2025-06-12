@@ -117,10 +117,12 @@ const getMoviesByGenre = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-const getMovieShowtimesByEnglishName = async (req, res) => {
-  const { nameOfEnglish } = req.params;
+// Lấy version, showtime, room theo movieId
+const getMovieShowtimes = async (req, res) => {
+  const { movieId } = req.params;
   try {
-    const rows = await MovieModel.getMovieShowtimesByEnglishName(nameOfEnglish);
+    const rows = await Movie.getMovieShowtimes(movieId);
+    // Gom nhóm theo version
     const movieinfo = {};
     rows.forEach(row => {
       if (!movieinfo[row.Version]) {
@@ -140,14 +142,14 @@ const getMovieShowtimesByEnglishName = async (req, res) => {
       });
     });
     res.json({
-      nameOfEnglish,
+      movieId,
       movieinfo: Object.values(movieinfo)
     });
   } catch (error) {
-    console.error("Get movie showtimes by English name error:", error);
     res.status(500).json({ error: error.message });
   }
 };
+
 
 const createMovie = async (req, res) => {
   try {
@@ -469,5 +471,6 @@ module.exports = {
   updateMovie,
   patchMovie,
   getCurrentMovies,
-  getUpcomingMovies
+  getUpcomingMovies,
+  getMovieShowtimes
 };
