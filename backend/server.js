@@ -6,10 +6,8 @@ const session = require("express-session");
 const passport = require("./middlewares/passport");
 const cors = require("cors");
 
-//rest object
 const app = express();
 
-//middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(
@@ -26,6 +24,7 @@ const employeeRoutes = require("./routes/employees");
 const userRoutes = require("./routes/users");
 const cinemaRoomRoutes = require("./routes/cinemaRoom");
 const promotionRoutes = require("./routes/promotions");
+const movieRoutes = require("./routes/movies");
 
 // Use routes
 app.use("/api/auth", authRoutes);
@@ -33,6 +32,10 @@ app.use("/api/cinema-rooms", cinemaRoomRoutes);
 app.use("/api/employee", employeeRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/promotions", promotionRoutes);
+app.use("/api/movie", movieRoutes);
+
+//port
+const PORT = process.env.PORT || 4458;
 
 // Swagger UI
 app.use(
@@ -43,10 +46,6 @@ app.use(
   })
 );
 
-//port
-const PORT = process.env.PORT || 8080;
-
-//listen
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Swagger documentation available at http://localhost:${PORT}/`);
