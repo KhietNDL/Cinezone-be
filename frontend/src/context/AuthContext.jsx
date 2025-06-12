@@ -11,14 +11,17 @@ export const AuthProvider = ({ children }) => {
     const fetchUser = async () => {
       const token = localStorage.getItem("token");
       console.log("Fetching user with token:", token); // Log token
-      if (token) {
+      const userId = localStorage.getItem("userId");
+      if (token && userId) {
         try {
-          const userData = await getUser();
+          const userData = await getUser(userId);
           console.log("User data:", userData); // Log user data
-          setUser(userData);
+
+          setUser(userData.user);
         } catch (error) {
           console.error("Failed to fetch user:", error);
           localStorage.removeItem("token");
+          localStorage.removeItem("userId");
         }
       }
       setIsLoading(false);
@@ -26,16 +29,18 @@ export const AuthProvider = ({ children }) => {
     fetchUser();
   }, []);
 
-  const signIn = async (token) => {
+  const signIn = async (token, userId) => {
     console.log("signIn called with token:", token); // Log token
     localStorage.setItem("token", token);
+    localStorage.setItem("userId", userId); // lưu id vào
     try {
-      const userData = await getUser();
+      const userData = await getUser(userId);
       console.log("User data from signIn:", userData); // Log user data
-      setUser(userData);
+      setUser(userData.user);
     } catch (error) {
       console.error("Failed to fetch user in signIn:", error);
       localStorage.removeItem("token");
+      localStorage.removeItem("userId");
     }
   };
 

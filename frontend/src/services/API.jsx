@@ -68,9 +68,10 @@ export const logout = async () => {
 };
 
 // API cho User
-export const getUser = async () => {
+export const getUser = async (id) => {
   try {
-    const response = await api.get("/user");
+    const response = await api.get(`/auth/user/${id}`);
+
     return response.data; // Giả sử trả về thông tin user
   } catch (error) {
     handleError(error);
