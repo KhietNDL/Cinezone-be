@@ -26,6 +26,8 @@ import TicketInfomation from "./layouts/Staff/component/TicketInfomation";
 import PrintTicket from "./layouts/Staff/component/PrintTicket";
 import RoomManagement from "./layouts/Admin/component/RoomManagement";
 import { ToastContainer } from "react-toastify";
+import WaitingPayment from "./layouts/User/component/WaitingPayment";
+
 import AccountImformation from "./layouts/User/component/AccountImformation";
 import EditAccount from "./layouts/User/component/EditAccount";
 function App() {
@@ -41,6 +43,9 @@ function App() {
           <Route path="/:idMovie" element={<BookingPage />} />
           <Route path="/confirmPayment" element={<ConfirmPayment />} />
           <Route path="/promotions" element={<MoviePromotions />} />
+          <Route path="/waiting" element={<WaitingPayment />} />
+         
+        
           <Route path="/account" element={<AccountImformation />}>
             <Route path="*" element={<AccountImformation />} />
             <Route path="personal" element={<EditAccount />} />
