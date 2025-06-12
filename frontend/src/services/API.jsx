@@ -78,9 +78,9 @@ export const getUser = async (id) => {
   }
 };
 
-export const updateAccount = async (userData) => {
+export const updateAccount = async ({ id, userData }) => {
   try {
-    const response = await api.put("/user", userData);
+    const response = await api.put(`/auth/user/${id}`, userData);
     return response.data; // Giả sử trả về thông tin user đã cập nhật
   } catch (error) {
     handleError(error);

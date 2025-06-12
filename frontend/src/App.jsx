@@ -30,6 +30,7 @@ import WaitingPayment from "./layouts/User/component/WaitingPayment";
 
 import AccountImformation from "./layouts/User/component/AccountImformation";
 import EditAccount from "./layouts/User/component/EditAccount";
+
 function App() {
   return (
     <AuthProvider>
