@@ -3,212 +3,183 @@ import { ChevronLeft, ChevronRight, Play, X } from "lucide-react";
 
 const MovieHeroSwiper = ({ movieData }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [videoProgress, setVideoProgress] = useState(0);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
-  const [autoSlideEnabled, setAutoSlideEnabled] = useState(true);
-  const [isVideoPaused, setIsVideoPaused] = useState(false);
-  const autoSlideTimeoutRef = useRef(null);
-  const iframeRef = useRef(null);
+  const [pausedByScroll, setPausedByScroll] = useState(false);
+  const videoRef = useRef(null);
+  const popupVideoRef = useRef(null);
+  const progressInterval = useRef(null);
 
   const currentMovie = movieData[currentSlide];
 
-  // Convert YouTube URL to embed format with API enablement
-  const getYouTubeEmbedUrl = (url, enableApi = false, forPopup = false) => {
-    if (!url) return "";
-
-    const regExp =
-      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-
-    if (match && match[2].length === 11) {
-      const videoId = match[2];
-
-      if (forPopup) {
-        // For popup: with controls and sound
-        return `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&showinfo=0&rel=0&modestbranding=1&enablejsapi=1&origin=${window.location.origin}`;
-      } else {
-        // For background: start with sound (remove mute=1)
-        const baseParams = `autoplay=1&loop=1&playlist=${videoId}&controls=1&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3`;
-        const apiParams = enableApi
-          ? `&enablejsapi=1&origin=${window.location.origin}`
-          : "";
-        return `https://www.youtube.com/embed/${videoId}?${baseParams}${apiParams}`;
-      }
-    }
-
-    return url;
-  };
-  // YouTube API commands
-  const pauseVideo = () => {
-    if (iframeRef.current) {
-      iframeRef.current.contentWindow.postMessage(
-        '{"event":"command","func":"pauseVideo","args":""}',
-        "*"
-      );
-    }
-  };
-
-  const playVideo = () => {
-    if (iframeRef.current) {
-      iframeRef.current.contentWindow.postMessage(
-        '{"event":"command","func":"playVideo","args":""}',
-        "*"
-      );
-    }
-  };
-
-  const unmuteVideo = () => {
-    if (iframeRef.current) {
-      iframeRef.current.contentWindow.postMessage(
-        '{"event":"command","func":"unMute","args":""}',
-        "*"
-      );
-      console.log("Sent unmute command");
-    } else {
-      console.log("Iframe not available");
-    }
-  };
-  useEffect(() => {
-    const handleUserInteraction = () => {
-      unmuteVideo(); // Bật âm thanh khi người dùng tương tác
-      // Có thể bỏ lắng nghe sự kiện sau khi bật âm thanh để tránh gọi nhiều lần
-      window.removeEventListener("click", handleUserInteraction);
-    };
-
-    window.addEventListener("click", handleUserInteraction);
-    return () => window.removeEventListener("click", handleUserInteraction);
-  }, []);
+  // Handle slide navigation
   const handleNextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % movieData.length);
-    resetAutoSlide();
-    unmuteVideo(); // Bật âm thanh khi người dùng tương tác
+    resetVideoState();
   };
 
   const handlePrevSlide = () => {
     setCurrentSlide((prev) => (prev - 1 + movieData.length) % movieData.length);
-    resetAutoSlide();
-    unmuteVideo(); // Bật âm thanh khi người dùng tương tác
+    resetVideoState();
   };
 
-  const resetAutoSlide = () => {
-    if (autoSlideTimeoutRef.current) {
-      clearTimeout(autoSlideTimeoutRef.current);
+  const resetVideoState = () => {
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
     }
-    startAutoSlide();
+    setIsVideoPlaying(false);
+    setVideoProgress(0);
   };
 
-  const startAutoSlide = () => {
-    if (autoSlideEnabled && !isPopupOpen && !isVideoPaused) {
-      autoSlideTimeoutRef.current = setTimeout(() => {
-        setCurrentSlide((prev) => (prev + 1) % movieData.length);
-        startAutoSlide();
-      }, 8000); // 8 seconds per slide
-    }
-  };
-
-  // Auto-slide functionality
+  // Auto-play video when slide changes
   useEffect(() => {
-    startAutoSlide();
+    if (videoRef.current && !isPopupOpen) {
+      videoRef.current.load();
+      videoRef.current
+        .play()
+        .then(() => {
+          setIsVideoPlaying(true);
+          setVideoProgress(0);
+        })
+        .catch((error) => {
+          console.error("Video playback failed:", error);
+        });
+    }
+  }, [currentSlide, currentMovie.trailerUrl, isPopupOpen]);
+
+  // Auto-slide after 10 seconds or when video ends
+  useEffect(() => {
+    let timeoutId;
+    if (isVideoPlaying && !isPopupOpen) {
+      timeoutId = setTimeout(() => {
+        setCurrentSlide((prev) => (prev + 1) % movieData.length);
+        resetVideoState();
+      }, 10000);
+    }
 
     return () => {
-      if (autoSlideTimeoutRef.current) {
-        clearTimeout(autoSlideTimeoutRef.current);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [isVideoPlaying, movieData.length, isPopupOpen]);
+
+  // Video progress tracking
+  useEffect(() => {
+    if (isVideoPlaying && videoRef.current && !isPopupOpen) {
+      progressInterval.current = setInterval(() => {
+        const video = videoRef.current;
+        if (video && video.duration) {
+          const progress = (video.currentTime / video.duration) * 100;
+          setVideoProgress(progress);
+
+          if (video.currentTime >= video.duration) {
+            resetVideoState();
+            setCurrentSlide((prev) => (prev + 1) % movieData.length);
+          }
+        }
+      }, 100);
+    } else {
+      if (progressInterval.current) {
+        clearInterval(progressInterval.current);
+      }
+    }
+
+    return () => {
+      if (progressInterval.current) {
+        clearInterval(progressInterval.current);
       }
     };
-  }, [currentSlide, autoSlideEnabled, isPopupOpen, isVideoPaused]);
+  }, [isVideoPlaying, movieData.length, isPopupOpen]);
 
-  // Handle scroll to pause/resume video and auto-slide
+  // Pause video when scrolling down
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY;
-      const shouldPause = scrollPosition > 100;
-
-      if (shouldPause && !isVideoPaused) {
-        // Pause video when scrolling down
-        pauseVideo();
-        setIsVideoPaused(true);
-        setAutoSlideEnabled(false);
-      } else if (!shouldPause && isVideoPaused) {
-        // Resume video when scrolling back to top
-        playVideo();
-        setIsVideoPaused(false);
-        setAutoSlideEnabled(true);
+      if (scrollPosition > 100 && isVideoPlaying) {
+        resetVideoState();
+        setPausedByScroll(true);
+      } else if (
+        scrollPosition <= 100 &&
+        pausedByScroll &&
+        !isVideoPlaying &&
+        !isPopupOpen
+      ) {
+        if (videoRef.current) {
+          videoRef.current.load();
+          videoRef.current
+            .play()
+            .then(() => {
+              setIsVideoPlaying(true);
+              setVideoProgress(0);
+              setPausedByScroll(false);
+            })
+            .catch((error) => {
+              console.error("Video playback failed on scroll up:", error);
+            });
+        }
       }
     };
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [isVideoPaused]);
+  }, [isVideoPlaying, pausedByScroll, isPopupOpen]);
 
-  // Reset video state when slide changes
-  useEffect(() => {
-    if (!isVideoPaused && !isPopupOpen) {
-      // Small delay to ensure iframe is loaded
-      const timer = setTimeout(() => {
-        playVideo();
-      }, 500);
-
-      return () => clearTimeout(timer);
+  const handleStopVideo = () => {
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
     }
-  }, [currentSlide, isVideoPaused, isPopupOpen]);
+    setIsVideoPlaying(false);
+    setVideoProgress(0);
+  };
 
   const handleOpenPopup = () => {
     setIsPopupOpen(true);
-    setAutoSlideEnabled(false);
-    pauseVideo();
-  };
-
-  const handleClosePopup = () => {
-    setIsPopupOpen(false);
-    setAutoSlideEnabled(true);
-    if (!isVideoPaused) {
-      playVideo();
+    resetVideoState(); // Pause background video
+    if (popupVideoRef.current) {
+      popupVideoRef.current.load();
+      popupVideoRef.current.play().catch((error) => {
+        console.error("Popup video playback failed:", error);
+      });
     }
   };
 
-  const handleSlideClick = (index) => {
-    setCurrentSlide(index);
-    resetAutoSlide();
+  const handleClosePopup = () => {
+    if (popupVideoRef.current) {
+      popupVideoRef.current.pause();
+      popupVideoRef.current.currentTime = 0;
+    }
+    setIsPopupOpen(false);
   };
 
   return (
-    <div className="relative h-[500px] md:h-[600px] lg:h-[700px] w-full overflow-hidden">
-      {/* Background Video/Image */}
+    <div className="relative h-[500px] md:h-[600px] lg:h-[700px] w-full ">
+      {/* Background Image/Video */}
       <div className="absolute inset-0">
         <div className="relative w-full h-full">
-          <iframe
-            ref={iframeRef}
+          <video
             key={currentMovie.trailerUrl}
-            src={getYouTubeEmbedUrl(currentMovie.trailerUrl, true)}
-            className="w-full h-full object-cover "
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            style={{
-              transform: "scale(1.2)", // Zoom to hide YouTube controls
-              transformOrigin: "center center",
-            }}
-          />
-        </div>
-      </div>
-      <div className="absolute top-4 right-4 z-20">
-        <button
-          onClick={unmuteVideo}
-          className="bg-[#6a57f5] text-white px-4 py-2 rounded-full"
-        >
-          Unmute
-        </button>
-      </div>
-      {/* Pause Overlay when scrolled */}
-      {isVideoPaused && (
-        <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-5">
-          <div className="bg-black/70 backdrop-blur-sm text-white px-6 py-3 rounded-full text-sm font-medium">
-            Scroll to top to resume trailer
+            ref={videoRef}
+            className="w-full h-full object-cover"
+            playsInline
+            onEnded={handleStopVideo}
+          >
+            <source src={currentMovie.trailerUrl} type="video/mp4" />
+          </video>
+
+          {/* Video Progress Bar */}
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-black/70">
+            <div
+              className="h-full bg-[#6a57f5] transition-all duration-100"
+              style={{ width: `${videoProgress}%` }}
+            />
           </div>
         </div>
-      )}
+      </div>
 
       {/* Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/80" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80 " />
 
       {/* Navigation Arrows */}
       <div
@@ -235,7 +206,7 @@ const MovieHeroSwiper = ({ movieData }) => {
           {/* Left Content */}
           <div className="md:w-[50%] w-full flex flex-col items-start space-y-5">
             {/* Genre Tags */}
-            <div className="flex items-center space-x-3 flex-wrap gap-2">
+            <div className="flex items-center space-x-3">
               {currentMovie.category?.map((cat, index) => (
                 <span
                   key={index}
@@ -244,13 +215,10 @@ const MovieHeroSwiper = ({ movieData }) => {
                   {cat.title}
                 </span>
               ))}
-              {currentMovie.sub && (
-                <span className="bg-black/70 backdrop-blur-sm text-white px-4 py-2 rounded-xl text-sm font-medium">
-                  {currentMovie.sub}
-                </span>
-              )}
+              <span className="bg-black/70 backdrop-blur-sm text-white px-4 py-2 rounded-xl text-sm font-medium">
+                {currentMovie.sub}
+              </span>
             </div>
-
             {/* Title */}
             <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white leading-tight">
               {currentMovie.nameMovie}
@@ -258,8 +226,9 @@ const MovieHeroSwiper = ({ movieData }) => {
 
             {/* Description */}
             <p className="text-white/90 text-base md:text-lg max-w-2xl leading-relaxed">
-              {currentMovie.description ||
-                "Experience the ultimate cinematic adventure with stunning visuals and captivating storylines that will keep you on the edge of your seat."}
+              Experience the ultimate cinematic adventure with stunning visuals
+              and captivating storylines that will keep you on the edge of your
+              seat.
             </p>
 
             {/* Action Buttons */}
@@ -303,36 +272,35 @@ const MovieHeroSwiper = ({ movieData }) => {
           <div
             role="button"
             key={index}
-            onClick={() => handleSlideClick(index)}
+            onClick={() => {
+              setCurrentSlide(index);
+              resetVideoState();
+            }}
             className={`w-12 h-1 rounded-full transition-all duration-300 ${
               index === currentSlide
                 ? "bg-[#6a57f5] shadow-lg shadow-[#6a57f5]/50"
                 : "bg-white/30 hover:bg-white/50"
             }`}
-            aria-label={`Go to slide ${index + 1}`}
           />
         ))}
       </div>
 
       {/* Full-Screen Trailer Popup */}
       {isPopupOpen && (
-        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
-          <div className="relative w-full max-w-4xl aspect-video">
-            <iframe
-              src={getYouTubeEmbedUrl(currentMovie.trailerUrl).replace(
-                "autoplay=1&mute=1",
-                "autoplay=1"
-              )}
-              className="w-full h-full rounded-2xl"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
+        <div className="fixed inset-0 bg-black/30  flex items-center justify-center z-50">
+          <div className="relative w-full max-w-4xl rounded-2xl">
+            <video
+              ref={popupVideoRef}
+              className="w-full h-auto rounded-2xl"
+              controls
+              autoPlay
+            >
+              <source src={currentMovie.trailerUrl} type="video/mp4" />
+            </video>
             <div
               role="button"
               onClick={handleClosePopup}
-              className="absolute -top-12 right-0 hover:bg-white/20 text-white bg-black/50 p-2 rounded-full transition-all duration-300 hover:scale-110"
-              aria-label="Close trailer"
+              className="absolute top-4 right-4  hover:bg-slate-800  active:scale-[1.1]  text-white bg-black/50  p-2 rounded-full"
             >
               <X size={24} />
             </div>
