@@ -10,6 +10,7 @@ import ForgotPasswordPage from "./auth/forgot/ForgotPassword";
 import EmailVerification from "./auth/verification/VerificationPassword";
 import EmployeeManagement from "./layouts/Admin/component/EmployeeManagement";
 import BookingPage from "./layouts/User/component/BookingPage";
+
 import SellTicketPage from "./layouts/Staff/component/SellTicketPage";
 import "tailwindcss";
 import StaffLayout from "./layouts/Staff/StaffLayout";
@@ -27,6 +28,8 @@ import RoomManagement from "./layouts/Admin/component/RoomManagement";
 import { ToastContainer } from "react-toastify";
 import WaitingPayment from "./layouts/User/component/WaitingPayment";
 
+import AccountImformation from "./layouts/User/component/AccountImformation";
+import EditAccount from "./layouts/User/component/EditAccount";
 function App() {
   return (
     <AuthProvider>
@@ -42,7 +45,11 @@ function App() {
           <Route path="/promotions" element={<MoviePromotions />} />
           <Route path="/waiting" element={<WaitingPayment />} />
          
-           <Route path="/success" element={<WaitingPayment />} />
+        
+          <Route path="/account" element={<AccountImformation />}>
+            <Route path="*" element={<AccountImformation />} />
+            <Route path="personal" element={<EditAccount />} />
+          </Route>
         </Route>
 
         <Route path="/admin" element={<AdminLayout />}>
