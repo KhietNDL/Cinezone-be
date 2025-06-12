@@ -33,26 +33,10 @@
 }
 
 .staff-swiper .swiper{
-  height: 500px !important;
+  height: auto !important;
+  padding-bottom: 30px;
 }
 
-/* .staff-swiper .swiper-wrapper{
-  width: 1200px !important;
-} */
-
-  /* .staff-swiper {
-    width: 170vh;
-    max-width: 100%;
-    overflow: hidden;
-    padding: 0 40px; 
-    position: relative;
-  } */
-
-/* 
-.staff-swiper .swiper-slide {
-  width: 250px !important;
-  
-} */
 
 
 
