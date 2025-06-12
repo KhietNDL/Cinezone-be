@@ -1,6 +1,5 @@
 import { useState } from "react";
 
-// Simple SVG icon components to replace lucide-react
 const Copy = ({ className }) => (
   <svg
     className={className}

@@ -2,23 +2,25 @@ const express = require('express');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpecs = require('./swagger');
 require('dotenv').config();
+const session = require("express-session");
+const passport = require("./middlewares/passport");
+const cors = require("cors");
 
-//rest object
 const app = express();
 
-//middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Swagger UI
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
+app.use(
+  session({ secret: "your_secret", resave: false, saveUninitialized: true })
+);
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(cors());
+app.use(express.static('public'));
 
-//routes
-app.get('/', (req, res) => {
-    res.status(200).send({ message: 'Welcome to the Movie Theater API' });
-});
 
-// Import routes
+
 const authRoutes = require('./routes/auth');
 const employeeRoutes = require('./routes/employees');
 const userRoutes = require('./routes/users');
@@ -31,20 +33,26 @@ const bookingSeatRoutes = require('./routes/bookingseat');
 app.use('/api/auth', authRoutes);
 app.use('/api/employee', employeeRoutes);
 app.use('/api/user', userRoutes);
-app.use('/api/movies', movieRoutes);
+app.use('/api/movie', movieRoutes);
 app.use('/api/seats', seatRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/booking-seats', bookingSeatRoutes);
 
-//port 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 4458;
+app.use(
+  "/",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpecs, {
+    customJs: '/swagger-custom.js', // Path to your custom JavaScript file
+  })
+);
 
-//listen
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-    console.log(`Swagger documentation available at http://localhost:${PORT}/api-docs`);
+  console.log(`Server is running on port ${PORT}`);
+  console.log(`Swagger documentation available at http://localhost:${PORT}/`);
 });
+
 
 
 

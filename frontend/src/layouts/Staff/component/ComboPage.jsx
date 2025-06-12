@@ -49,7 +49,7 @@ const comboList = [
     },
     {
         id: 7,
-        name: "Combo 1 mix Popcorn + 2 Pepsi",
+        name: "Pepsi",
         price: 22.00,
         image: "https://down-vn.img.susercontent.com/file/5178202fa8a147917d01aedc379736d0"
     },
@@ -162,7 +162,8 @@ export default function ComboPage() {
                             icon={<LeftOutlined />}
                             disabled={carouselIndex === 0}
                             onClick={() => setCarouselIndex(i => Math.max(0, i - 1))}
-                            style={{ borderRadius: '50%', width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#7254EF', color: 'white' }}
+                            style={{ borderRadius: '50%', width: 40, height: 40, display: 'flex', alignItems: 'center',
+                                 border: "none",justifyContent: 'center', color: '#7254EF', backgroundColor: "#FAFBFC" }}
                         />
                         <div className="flex gap-6 overflow-x-auto w-full pb-2">
                             {visibleCombos.map(combo => (
@@ -178,7 +179,8 @@ export default function ComboPage() {
                             icon={<RightOutlined />}
                             disabled={carouselIndex + 4 >= filteredCombos.length}
                             onClick={() => setCarouselIndex(i => Math.min(filteredCombos.length - 4, i + 1))}
-                            style={{ borderRadius: '50%', width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#7254EF', color: 'white' }}
+                            style={{ borderRadius: '50%', width: 40, height: 40, display: 'flex', alignItems: 'center',
+                                 border: "none",justifyContent: 'center', color: '#7254EF', backgroundColor: "#FAFBFC" }}
                         />
                     </div>
                 </div>
