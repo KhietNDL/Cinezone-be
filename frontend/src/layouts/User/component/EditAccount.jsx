@@ -460,6 +460,7 @@ const EditAccount = () => {
                 </h2>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                  {/* Left Column */}
                   <div className="space-y-6">
                     <div>
                       <label className="block text-sm font-semibold text-purple-700 mb-2">
@@ -472,50 +473,6 @@ const EditAccount = () => {
                         onChange={handleInputChange}
                         className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm"
                         placeholder="Enter full name"
-                        disabled={updateLoading}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-purple-700 mb-2">
-                        Password
-                      </label>
-                      <input
-                        type="password"
-                        name="password"
-                        value={editData.password}
-                        onChange={handleInputChange}
-                        className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm"
-                        placeholder="Enter new password"
-                        disabled={updateLoading}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-purple-700 mb-2">
-                        Date of Birth
-                      </label>
-                      <input
-                        type="date"
-                        name="dateOfBirth"
-                        value={editData.dateOfBirth}
-                        onChange={handleInputChange}
-                        className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm"
-                        disabled={updateLoading}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-purple-700 mb-2">
-                        Phone Number
-                      </label>
-                      <input
-                        type="tel"
-                        name="phoneNumber"
-                        value={editData.phoneNumber}
-                        onChange={handleInputChange}
-                        className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm"
-                        placeholder="Enter phone number"
                         disabled={updateLoading}
                       />
                     </div>
@@ -537,15 +494,29 @@ const EditAccount = () => {
 
                     <div>
                       <label className="block text-sm font-semibold text-purple-700 mb-2">
-                        CCCD (ID Number)
+                        Phone Number
                       </label>
                       <input
-                        type="text"
-                        name="cccd"
-                        value={editData.cccd}
+                        type="tel"
+                        name="phoneNumber"
+                        value={editData.phoneNumber}
                         onChange={handleInputChange}
                         className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm"
-                        placeholder="Enter ID number"
+                        placeholder="Enter phone number"
+                        disabled={updateLoading}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-purple-700 mb-2">
+                        Date of Birth
+                      </label>
+                      <input
+                        type="date"
+                        name="dateOfBirth"
+                        value={editData.dateOfBirth}
+                        onChange={handleInputChange}
+                        className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm"
                         disabled={updateLoading}
                       />
                     </div>
@@ -567,6 +538,39 @@ const EditAccount = () => {
                         <option value="Other">Other</option>
                       </select>
                     </div>
+                  </div>
+
+                  {/* Right Column */}
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-purple-700 mb-2">
+                        Password
+                      </label>
+                      <input
+                        type="password"
+                        name="password"
+                        value={editData.password}
+                        onChange={handleInputChange}
+                        className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm"
+                        placeholder="Enter new password"
+                        disabled={updateLoading}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-purple-700 mb-2">
+                        CCCD (ID Number)
+                      </label>
+                      <input
+                        type="text"
+                        name="cccd"
+                        value={editData.cccd}
+                        onChange={handleInputChange}
+                        className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm"
+                        placeholder="Enter ID number"
+                        disabled={updateLoading}
+                      />
+                    </div>
 
                     <div>
                       <label className="block text-sm font-semibold text-purple-700 mb-2">
@@ -582,59 +586,57 @@ const EditAccount = () => {
                         disabled={updateLoading}
                       />
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-purple-700 mb-2">
-                      Profile Picture
-                    </label>
-                    <div className="bg-white p-6 rounded-xl border-2 border-dashed border-purple-300 hover:border-purple-400 transition-colors">
-                      <Upload
-                        listType="picture-card"
-                        fileList={fileList}
-                        onPreview={handlePreview}
-                        onChange={handleChange}
-                        customRequest={customUploadRequest}
-                        maxCount={1}
-                        className="purple-upload w-full"
-                      >
-                        {fileList.length >= 1 ? null : (
-                          <div className="text-center p-4">
-                            <svg
-                              className="w-12 h-12 mx-auto text-purple-400 mb-2"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                              />
-                            </svg>
-                            <p className="text-purple-600 font-medium">
-                              Upload Image
-                            </p>
-                            <p className="text-purple-400 text-sm">
-                              PNG, JPG max 5MB
-                            </p>
-                          </div>
-                        )}
-                      </Upload>
+                    <div>
+                      <label className="block text-sm font-semibold text-purple-700 mb-2">
+                        Profile Picture
+                      </label>
+                      <div>
+                        <Upload
+                          listType="picture-card"
+                          fileList={fileList}
+                          onPreview={handlePreview}
+                          onChange={handleChange}
+                          customRequest={customUploadRequest}
+                          maxCount={1}
+                          className="purple-upload w-full"
+                        >
+                          {fileList.length >= 1 ? null : (
+                            <div className="text-center p-4">
+                              <svg
+                                className="w-12 h-12 mx-auto text-purple-400 mb-2"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                                />
+                              </svg>
+                              <p className="text-purple-600 font-medium">
+                                Upload Image
+                              </p>
+                            </div>
+                          )}
+                        </Upload>
+                      </div>
+                      {previewImage && (
+                        <Image
+                          wrapperStyle={{ display: "none" }}
+                          preview={{
+                            visible: previewOpen,
+                            onVisibleChange: (visible) =>
+                              setPreviewOpen(visible),
+                            afterOpenChange: (visible) =>
+                              !visible && setPreviewImage(""),
+                          }}
+                          src={previewImage}
+                        />
+                      )}
                     </div>
-                    {previewImage && (
-                      <Image
-                        wrapperStyle={{ display: "none" }}
-                        preview={{
-                          visible: previewOpen,
-                          onVisibleChange: (visible) => setPreviewOpen(visible),
-                          afterOpenChange: (visible) =>
-                            !visible && setPreviewImage(""),
-                        }}
-                        src={previewImage}
-                      />
-                    )}
                   </div>
                 </div>
 
