@@ -6,7 +6,7 @@ import { updateAccount } from "../../../services/API";
 import { useAuth } from "../../../context/AuthContext"; // Import useAuth
 
 const EditAccount = () => {
-  const { user, isLoading: authLoading } = useAuth(); // Lấy user từ AuthContext
+  const { user, isLoading: authLoading } = useAuth(); // Get user from AuthContext
 
   const [profileData, setProfileData] = useState({
     fullName: "",
@@ -40,10 +40,10 @@ const EditAccount = () => {
   const [previewImage, setPreviewImage] = useState("");
   const [fileList, setFileList] = useState([]);
 
-  // Effect để set profile data từ user context
+  // Effect to set profile data from user context
   useEffect(() => {
     if (user) {
-      console.log("Thông tin", user);
+      console.log("User Information", user);
       const profileInfo = {
         fullName: user.FullName || "",
         dateOfBirth: user.DateOfBirth || "",
@@ -172,26 +172,28 @@ const EditAccount = () => {
     try {
       setUpdateLoading(true);
 
-      // Gọi API để cập nhật thông tin
+      // Call API to update information
       const response = await updateAccount(editData);
 
       if (response && response.isSuccess) {
-        // Cập nhật state với dữ liệu mới
+        // Update state with new data
         setProfileData({ ...editData });
-        toast.success(response.message || "Thông tin hồ sơ đã được cập nhật");
+        toast.success(
+          response.message || "Profile information has been updated"
+        );
         setIsEditing(false);
 
-        // TODO: Có thể cần cập nhật lại user trong AuthContext
-        // Bạn có thể thêm method updateUser trong AuthContext
+        // TODO: May need to update user in AuthContext
+        // You can add updateUser method in AuthContext
       } else {
-        // Xử lý lỗi
+        // Handle error
         toast.error(
-          response.errorMessage || "Không thể cập nhật thông tin hồ sơ"
+          response.errorMessage || "Unable to update profile information"
         );
       }
     } catch (error) {
-      console.error("Lỗi khi cập nhật hồ sơ:", error);
-      toast.error("Không thể cập nhật thông tin hồ sơ");
+      console.error("Error updating profile:", error);
+      toast.error("Unable to update profile information");
     } finally {
       setUpdateLoading(false);
     }
@@ -205,10 +207,10 @@ const EditAccount = () => {
     }));
   };
 
-  // Render hình ảnh mặc định hoặc avatar người dùng
+  // Render default image or user avatar
   const renderProfileImage = () => {
     if (!profileData.avatar_url || imageError) {
-      // Hiển thị avatar mặc định (có thể là chữ cái đầu của tên)
+      // Display default avatar (could be first letter of name)
       const initial = profileData.fullName
         ? profileData.fullName.charAt(0).toUpperCase()
         : "?";
@@ -254,7 +256,7 @@ const EditAccount = () => {
     }
   };
 
-  // Hiển thị loading khi AuthContext đang loading
+  // Show loading while AuthContext is loading
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-100 via-indigo-50 to-purple-50 flex items-center justify-center">
@@ -263,9 +265,9 @@ const EditAccount = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-600 border-t-transparent"></div>
             <div>
               <h3 className="text-xl font-semibold text-purple-700">
-                Đang tải thông tin
+                Loading Information
               </h3>
-              <p className="text-purple-500">Vui lòng chờ trong giây lát...</p>
+              <p className="text-purple-500">Please wait a moment...</p>
             </div>
           </div>
         </div>
@@ -273,24 +275,24 @@ const EditAccount = () => {
     );
   }
 
-  // Hiển thị thông báo nếu chưa có user
+  // Show message if no user found
   if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-100 via-indigo-50 to-purple-50 flex items-center justify-center">
         <div className="bg-white rounded-2xl p-8 shadow-2xl border border-purple-200 text-center">
           <h3 className="text-xl font-semibold text-purple-700 mb-2">
-            Không tìm thấy thông tin người dùng
+            User information not found
           </h3>
-          <p className="text-purple-500">Vui lòng đăng nhập lại</p>
+          <p className="text-purple-500">Please log in again</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-indigo-50 to-purple-50 p-6">
-      <div className="max-w-5xl mx-auto">
-        {/* Header với gradient đẹp */}
+    <div className="max-h-screen min-h-[500px]  bg-gradient-to-br from-purple-100 via-indigo-50 to-purple-50">
+      <div className="w-full ">
+        {/* Header with beautiful gradient */}
         <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-t-2xl p-8 text-white shadow-xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-6">
@@ -298,15 +300,15 @@ const EditAccount = () => {
                 <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white shadow-lg ring-4 ring-purple-300/30">
                   {renderProfileImage()}
                 </div>
-                {/* Indicator online */}
+                {/* Online indicator */}
                 <div className="absolute bottom-2 right-2 w-6 h-6 bg-green-400 rounded-full border-3 border-white"></div>
               </div>
               <div>
                 <h1 className="text-3xl font-bold mb-2">
-                  {profileData.fullName || "Người dùng"}
+                  {profileData.fullName || "User"}
                 </h1>
                 <p className="text-purple-100 text-lg">
-                  {profileData.email || "Chưa cập nhật email"}
+                  {profileData.email || "Email not updated"}
                 </p>
               </div>
             </div>
@@ -329,18 +331,18 @@ const EditAccount = () => {
                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                   />
                 </svg>
-                Chỉnh sửa
+                Edit Profile
               </button>
             )}
           </div>
         </div>
 
         {/* Content area */}
-        <div className="bg-white rounded-b-2xl shadow-xl overflow-hidden">
+        <div className="bg-white h-full rounded-b-2xl ">
           {!isEditing ? (
-            /* Hiển thị thông tin với thiết kế card đẹp */
-            <div className="p-8">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            /* Display information with beautiful card design */
+            <div className="p-8 h-full">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
                 {/* Personal Info Card */}
                 <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl p-6 shadow-lg border border-purple-100">
                   <h3 className="text-xl font-bold text-purple-800 mb-4 flex items-center">
@@ -357,37 +359,41 @@ const EditAccount = () => {
                         d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                       />
                     </svg>
-                    Thông tin cá nhân
+                    Personal Information
                   </h3>
                   <div className="space-y-4">
                     <div className="flex items-center p-3 bg-white rounded-lg shadow-sm">
                       <span className="font-semibold text-purple-700 w-32">
-                        Họ tên:
+                        Full Name:
                       </span>
                       <span className="text-gray-700">
-                        {profileData.fullName || "Chưa được cập nhật"}
+                        {profileData.fullName || "Not updated"}
                       </span>
                     </div>
                     <div className="flex items-center p-3 bg-white rounded-lg shadow-sm">
                       <span className="font-semibold text-purple-700 w-32">
-                        Ngày sinh:
+                        Date of Birth:
                       </span>
                       <span className="text-gray-700">
-                        {profileData.dateOfBirth || "Chưa được cập nhật"}
+                        {profileData.dateOfBirth
+                          ? new Date(
+                              profileData.dateOfBirth
+                            ).toLocaleDateString("en-US")
+                          : "Not updated"}
                       </span>
                     </div>
                     <div className="flex items-center p-3 bg-white rounded-lg shadow-sm">
                       <span className="font-semibold text-purple-700 w-32">
-                        Giới tính:
+                        Gender:
                       </span>
                       <span className="text-gray-700">
                         {profileData.sex === 1
-                          ? "Nữ"
+                          ? "Female"
                           : profileData.sex === 2
-                          ? "Nam"
+                          ? "Male"
                           : profileData.sex === 3
-                          ? "Khác"
-                          : "Chưa được cập nhật"}
+                          ? "Other"
+                          : "Not updated"}
                       </span>
                     </div>
                   </div>
@@ -409,7 +415,7 @@ const EditAccount = () => {
                         d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                       />
                     </svg>
-                    Thông tin liên hệ
+                    Contact Information
                   </h3>
                   <div className="space-y-4">
                     <div className="flex items-center p-3 bg-white rounded-lg shadow-sm">
@@ -417,15 +423,15 @@ const EditAccount = () => {
                         Email:
                       </span>
                       <span className="text-gray-700">
-                        {profileData.email || "Chưa được cập nhật"}
+                        {profileData.email || "Not updated"}
                       </span>
                     </div>
                     <div className="flex items-center p-3 bg-white rounded-lg shadow-sm">
                       <span className="font-semibold text-indigo-700 w-32">
-                        Điện thoại:
+                        Phone Number:
                       </span>
                       <span className="text-gray-700">
-                        {profileData.phoneNumber || "Chưa được cập nhật"}
+                        {profileData.phoneNumber || "Not updated"}
                       </span>
                     </div>
                   </div>
@@ -433,8 +439,8 @@ const EditAccount = () => {
               </div>
             </div>
           ) : (
-            /* Form chỉnh sửa với thiết kế hiện đại */
-            <div className="p-8">
+            /* Edit form with modern design */
+            <div className="p-8 overscroll-y-auto h-full">
               <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl p-8 shadow-lg border border-purple-200">
                 <h2 className="text-2xl font-bold text-purple-800 mb-8 flex items-center">
                   <svg
@@ -450,14 +456,14 @@ const EditAccount = () => {
                       d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                     />
                   </svg>
-                  Chỉnh sửa thông tin
+                  Edit Profile Information
                 </h2>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                   <div className="space-y-6">
                     <div>
                       <label className="block text-sm font-semibold text-purple-700 mb-2">
-                        Họ tên đầy đủ
+                        Full Name
                       </label>
                       <input
                         type="text"
@@ -465,14 +471,29 @@ const EditAccount = () => {
                         value={editData.fullName}
                         onChange={handleInputChange}
                         className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm"
-                        placeholder="Nhập họ tên đầy đủ"
+                        placeholder="Enter full name"
                         disabled={updateLoading}
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-semibold text-purple-700 mb-2">
-                        Ngày sinh
+                        Password
+                      </label>
+                      <input
+                        type="password"
+                        name="password"
+                        value={editData.password}
+                        onChange={handleInputChange}
+                        className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm"
+                        placeholder="Enter new password"
+                        disabled={updateLoading}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-purple-700 mb-2">
+                        Date of Birth
                       </label>
                       <input
                         type="date"
@@ -486,22 +507,52 @@ const EditAccount = () => {
 
                     <div>
                       <label className="block text-sm font-semibold text-purple-700 mb-2">
-                        Số điện thoại
+                        Phone Number
                       </label>
                       <input
-                        type="text"
+                        type="tel"
                         name="phoneNumber"
                         value={editData.phoneNumber}
                         onChange={handleInputChange}
                         className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm"
-                        placeholder="Nhập số điện thoại"
+                        placeholder="Enter phone number"
                         disabled={updateLoading}
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-semibold text-purple-700 mb-2">
-                        Giới tính
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={editData.email}
+                        onChange={handleInputChange}
+                        className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm"
+                        placeholder="Enter email address"
+                        disabled={updateLoading}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-purple-700 mb-2">
+                        CCCD (ID Number)
+                      </label>
+                      <input
+                        type="text"
+                        name="cccd"
+                        value={editData.cccd}
+                        onChange={handleInputChange}
+                        className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm"
+                        placeholder="Enter ID number"
+                        disabled={updateLoading}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-purple-700 mb-2">
+                        Sex
                       </label>
                       <select
                         name="sex"
@@ -510,31 +561,16 @@ const EditAccount = () => {
                         className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm"
                         disabled={updateLoading}
                       >
-                        <option value="">Chọn giới tính</option>
-                        <option value="Nam">Nam</option>
-                        <option value="Nữ">Nữ</option>
-                        <option value="Khác">Khác</option>
+                        <option value="">Select gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
                       </select>
                     </div>
 
                     <div>
                       <label className="block text-sm font-semibold text-purple-700 mb-2">
-                        CCCD
-                      </label>
-                      <input
-                        type="text"
-                        name="cccd"
-                        value={editData.cccd}
-                        onChange={handleInputChange}
-                        className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm"
-                        placeholder="Nhập số CCCD"
-                        disabled={updateLoading}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-purple-700 mb-2">
-                        Địa chỉ
+                        Address
                       </label>
                       <textarea
                         name="address"
@@ -542,7 +578,7 @@ const EditAccount = () => {
                         onChange={handleInputChange}
                         rows="3"
                         className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm resize-none"
-                        placeholder="Nhập địa chỉ"
+                        placeholder="Enter address"
                         disabled={updateLoading}
                       />
                     </div>
@@ -550,7 +586,7 @@ const EditAccount = () => {
 
                   <div>
                     <label className="block text-sm font-semibold text-purple-700 mb-2">
-                      Ảnh đại diện
+                      Profile Picture
                     </label>
                     <div className="bg-white p-6 rounded-xl border-2 border-dashed border-purple-300 hover:border-purple-400 transition-colors">
                       <Upload
@@ -578,10 +614,10 @@ const EditAccount = () => {
                               />
                             </svg>
                             <p className="text-purple-600 font-medium">
-                              Tải ảnh lên
+                              Upload Image
                             </p>
                             <p className="text-purple-400 text-sm">
-                              PNG, JPG tối đa 5MB
+                              PNG, JPG max 5MB
                             </p>
                           </div>
                         )}
@@ -602,14 +638,14 @@ const EditAccount = () => {
                   </div>
                 </div>
 
-                {/* Action buttons với hiệu ứng đẹp */}
+                {/* Action buttons with beautiful effects */}
                 <div className="flex justify-end space-x-4 pt-6 border-t border-purple-200">
                   <button
                     className="px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all duration-200 transform hover:scale-105 shadow-md"
                     onClick={handleCancelEdit}
                     disabled={updateLoading}
                   >
-                    Hủy bỏ
+                    Cancel
                   </button>
                   <button
                     className={`px-8 py-3 font-semibold rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center ${
@@ -642,7 +678,7 @@ const EditAccount = () => {
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                           ></path>
                         </svg>
-                        Đang lưu...
+                        Saving...
                       </>
                     ) : (
                       <>
@@ -659,7 +695,7 @@ const EditAccount = () => {
                             d="M5 13l4 4L19 7"
                           />
                         </svg>
-                        Lưu thay đổi
+                        Save Changes
                       </>
                     )}
                   </button>
