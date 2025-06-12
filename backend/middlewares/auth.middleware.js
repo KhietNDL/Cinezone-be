@@ -22,7 +22,7 @@ const auth = async (req, res, next) => {
         console.log('Decoded token:', decoded);
         
         // Kiểm tra user có tồn tại không
-        const user = await User.findById(decoded.userId);
+        const user = await User.findById(decoded.id || decoded.userId);
         console.log('User found:', user ? 'Yes' : 'No');
 
         if (!user) {
