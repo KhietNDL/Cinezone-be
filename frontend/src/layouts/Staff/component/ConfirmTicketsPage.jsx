@@ -82,7 +82,7 @@ export default function ConfirmTicketsPage() {
                         <div>
                             <div className='flex flex-col gap-2 justify-center  border-b border-gray-300 p-4 '>
                                 <p className='flex gap-10'><strong className='w-[20%]'>ID Ticket:</strong> <span>{ticket.id}</span></p>
-                                <p className='flex gap-10'><strong className='w-[28%]'>Movie:</strong> <span>{ticket.movie}</span></p>
+                                <p className='flex gap-10'><strong className='w-[26%]'>Movie:</strong> <span>{ticket.movie}</span></p>
                                 <p className='flex gap-10'><strong className='w-[20%]'>Screan:</strong> <span>{ticket.screen}</span></p>
                                 <p className='flex gap-10'><strong className='w-[20%]'>Showtime:</strong> <span>{ticket.showtime}</span></p>
                                 <p className='flex gap-10'><strong className='w-[20%]'>Room:</strong> <span>{ticket.room}</span></p>
