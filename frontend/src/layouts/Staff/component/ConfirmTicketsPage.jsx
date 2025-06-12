@@ -82,7 +82,7 @@ export default function ConfirmTicketsPage() {
                         <div>
                             <div className='flex flex-col gap-2 justify-center  border-b border-gray-300 p-4 '>
                                 <p className='flex gap-10'><strong className='w-[20%]'>ID Ticket:</strong> <span>{ticket.id}</span></p>
-                                <p className='flex gap-10'><strong className='w-[28%]'>Movie:</strong> <span>{ticket.movie}</span></p>
+                                <p className='flex gap-10'><strong className='w-[26%]'>Movie:</strong> <span>{ticket.movie}</span></p>
                                 <p className='flex gap-10'><strong className='w-[20%]'>Screan:</strong> <span>{ticket.screen}</span></p>
                                 <p className='flex gap-10'><strong className='w-[20%]'>Showtime:</strong> <span>{ticket.showtime}</span></p>
                                 <p className='flex gap-10'><strong className='w-[20%]'>Room:</strong> <span>{ticket.room}</span></p>
@@ -142,14 +142,16 @@ export default function ConfirmTicketsPage() {
                                 </div>
                             </div>
                             <div className="flex justify-center items-center p-4">
-                                <button
-                                    type="button"
-                                    className="bg-purple-600 text-white px-6 py-3 rounded-lg
+                                <Link to="/staff/ticket-selling/ticket-infomation">
+                                    <button
+                                        type="button"
+                                        className="bg-purple-600 text-white px-6 py-3 rounded-lg
                              hover:bg-purple-800 transition duration-300 h-10 flex 
                              items-center justify-center gap-2"
-                                >
-                                    <i className="fa-solid fa-ticket"></i> Confirm Ticket(s)
-                                </button>
+                                    >
+                                        <i className="fa-solid fa-ticket"></i> Confirm Ticket(s)
+                                    </button>
+                                </Link>
                                 <Link to="/staff/ticket-selling">
                                     <button type='button' className='bg-white text-red-700 border
                           border-b-red-700 px-6 py-3 rounded-lg hover:bg-red-800
