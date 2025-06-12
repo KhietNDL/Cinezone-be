@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import logo from "../../../assets/logoWeb.png";
 import { FaSearch } from "react-icons/fa";
 import { useAuth } from "../../../context/AuthContext";
@@ -31,9 +31,13 @@ const Header = () => {
           Movies
         </div>
 
-        <div role="button" className="hover:underline shadow-2xl">
+        <Link
+          to="/promotions"
+          className="hover:underline shadow-2xl block text-center py-2 px-4 cursor-pointer"
+          role="button"
+        >
           Promotions
-        </div>
+        </Link>
       </div>
       <div className="flex items-center space-x-4">
         <div className="relative">
@@ -65,13 +69,13 @@ const Header = () => {
               src={user.avatar || "https://via.placeholder.com/40"}
               alt="User Avatar"
               className="w-10 h-10 rounded-full object-cover cursor-pointer"
-              onClick={() => navigate("/profile")}
+              onClick={() => navigate("/account")}
             />
             <span
               className="font-bold text-[16px] cursor-pointer hover:underline"
               onClick={() => navigate("/profile")}
             >
-              {user.fullName || "User"}
+              {user.FullName || "User"}
             </span>
             <button
               onClick={handleSignOut}

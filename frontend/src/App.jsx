@@ -23,6 +23,8 @@ import { AuthProvider } from "./context/AuthContext";
 import ComboPage from "./layouts/Staff/component/ComboPage";
 import RoomManagement from "./layouts/Admin/component/RoomManagement";
 import { ToastContainer } from "react-toastify";
+import AccountImformation from "./layouts/User/component/AccountImformation";
+import EditAccount from "./layouts/User/component/EditAccount";
 function App() {
   return (
     <AuthProvider>
@@ -36,6 +38,10 @@ function App() {
           <Route path="/:idMovie" element={<BookingPage />} />
           <Route path="/confirmPayment" element={<ConfirmPayment />} />
           <Route path="/promotions" element={<MoviePromotions />} />
+          <Route path="/account" element={<AccountImformation />}>
+            <Route path="*" element={<AccountImformation />} />
+            <Route path="personal" element={<EditAccount />} />
+          </Route>
         </Route>
 
         <Route path="/admin" element={<AdminLayout />}>
