@@ -28,6 +28,7 @@ import RoomManagement from "./layouts/Admin/component/RoomManagement";
 import { ToastContainer } from "react-toastify";
 import AccountImformation from "./layouts/User/component/AccountImformation";
 import EditAccount from "./layouts/User/component/EditAccount";
+import TicketBookingManagement from "./layouts/Admin/component/TicketBookingMangement";
 function App() {
   return (
     <AuthProvider>
@@ -52,17 +53,30 @@ function App() {
           <Route path="employees" element={<EmployeeManagement />} />
           <Route path="movies" element={<MovieManagement />} />
           <Route path="rooms" element={<RoomManagement />} />
+          <Route path="bookings" element={<TicketBookingManagement />} />
         </Route>
 
         <Route path="/staff" element={<StaffLayout />}>
           <Route index element={<SellTicketPage />} />
           <Route path="/staff/ticket-selling" element={<SellTicketPage />} />
           <Route path="/staff/movie-info" element={<SellTicketPage />} />
-          <Route path="/staff/ticket-selling/select-seats" element={<SelectSeatsPage />} />
-          <Route path="/staff/ticket-selling/confirm-ticket" element={<ConfirmTicketsPage />} />
-          <Route path="/staff/ticket-selling/ticket-infomation" element={<TicketInfomation />} />
+          <Route
+            path="/staff/ticket-selling/select-seats"
+            element={<SelectSeatsPage />}
+          />
+          <Route
+            path="/staff/ticket-selling/confirm-ticket"
+            element={<ConfirmTicketsPage />}
+          />
+          <Route
+            path="/staff/ticket-selling/ticket-infomation"
+            element={<TicketInfomation />}
+          />
           <Route path="/staff/combo-selling" element={<ComboPage />} />
-          <Route path="/staff/ticket-selling/view-ticket" element={<PrintTicket />} />
+          <Route
+            path="/staff/ticket-selling/view-ticket"
+            element={<PrintTicket />}
+          />
         </Route>
       </Routes>
       <ToastContainer />
