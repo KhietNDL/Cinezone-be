@@ -13,7 +13,13 @@ import { useNavigate } from "react-router-dom";
 import MovieHeroSwiper from "./MovieHeroSwiper";
 
 // Import assets
-
+import CaptainTrailer from "../../../assets/Video/CaptainTrailer.mp4";
+import DeadpoolTrailer from "../../../assets/Video/DeadpoolTrailer.mp4";
+import DoctorStrangeTrailer from "../../../assets/Video/DoctorStrangeTrailer.mp4";
+import MarvelTrailer from "../../../assets/Video/MarvelTrailer.mp4";
+import SpiderManTrailer from "../../../assets/Video/SpiderManTrailer.mp4";
+import ThorTrailer from "../../../assets/Video/ThorTrailer.mp4";
+import TransformersTrailer from "../../../assets/Video/TransformersTrailer.mp4";
 import TheEndPoster from "../../../assets/TheEndPoster.jpg";
 import DoctorStrangePoster from "../../../assets/DoctorStrangePoster.jpg";
 import SpiderManPoster from "../../../assets/SpiderManPoster.jpg";
@@ -33,7 +39,7 @@ const LandingPage = () => {
       category: [{ title: "Action" }, { title: "Comedy" }],
       imgUrl: DeadPoolPoster,
       sub: "English",
-      trailerUrl: "https://www.youtube.com/watch?v=73_1biulkYk&t=16s",
+      trailerUrl: DeadpoolTrailer,
     },
     {
       idMovie: 2,
@@ -41,7 +47,7 @@ const LandingPage = () => {
       category: [{ title: "Action" }, { title: "Adventure" }],
       imgUrl: CaptainPoster,
       sub: "English",
-      trailerUrl: "https://www.youtube.com/watch?v=1pHDWnXmK7Y&t=13s",
+      trailerUrl: CaptainTrailer,
     },
     {
       idMovie: 3,
@@ -49,7 +55,7 @@ const LandingPage = () => {
       category: [{ title: "Action" }, { title: "Sci-Fi" }],
       imgUrl: TheEndPoster,
       sub: "English",
-      trailerUrl: "https://www.youtube.com/watch?v=6ZfuNTqbHE8&t=7s",
+      trailerUrl: MarvelTrailer,
     },
     {
       idMovie: 4,
@@ -57,7 +63,7 @@ const LandingPage = () => {
       category: [{ title: "Action" }, { title: "Sci-Fi" }],
       imgUrl: TranformerPoster,
       sub: "English",
-      trailerUrl: "https://www.youtube.com/watch?v=itnqEauWQZM",
+      trailerUrl: TransformersTrailer,
     },
     {
       idMovie: 5,
@@ -65,7 +71,7 @@ const LandingPage = () => {
       category: [{ title: "Action" }, { title: "Adventure" }],
       imgUrl: SpiderManPoster,
       sub: "English",
-      trailerUrl: "https://www.youtube.com/watch?v=JfVOs4VSpmA&t=15s",
+      trailerUrl: SpiderManTrailer,
     },
     {
       idMovie: 6,
@@ -73,7 +79,7 @@ const LandingPage = () => {
       category: [{ title: "Action" }, { title: "Fantasy" }],
       imgUrl: DoctorStrangePoster,
       sub: "English",
-      trailerUrl: "https://www.youtube.com/watch?v=aWzlQ2N6qqg",
+      trailerUrl: DoctorStrangeTrailer,
     },
     {
       idMovie: 7,
@@ -81,7 +87,7 @@ const LandingPage = () => {
       category: [{ title: "Action" }, { title: "Comedy" }],
       imgUrl: ThorPoster,
       sub: "English",
-      trailerUrl: "https://www.youtube.com/watch?v=Go8nTmfrQd8&t=9s",
+      trailerUrl: ThorTrailer,
     },
   ]);
 
