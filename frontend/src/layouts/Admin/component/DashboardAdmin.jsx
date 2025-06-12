@@ -18,32 +18,32 @@ import { FaTicket } from "react-icons/fa6";
 import { IoCalendar } from "react-icons/io5";
 import { RiMoneyDollarCircleFill } from "react-icons/ri";
 import { MdMovieFilter } from "react-icons/md";
-import imageMovie from "../../../assets/imageMovie.jpg";
-import imageMovie2 from "../../../assets/imageMovie2.jpg";
-import imageMovie3 from "../../../assets/imageMovie3.jpg";
-import imageMovie4 from "../../../assets/imageMovie4.jpg";
+import DeadPoolPoster from "../../../assets/DeadPoolPoster.jpg";
+import TheEndPoster from "../../../assets/TheEndPoster.jpg";
+import DoctorStrangePoster from "../../../assets/DoctorStrangePoster.jpg";
+import SpiderManPoster from "../../../assets/SpiderManPoster.jpg";
 import imageMovie5 from "../../../assets/imageMovie5.jpg";
 const DashboardAdmin = () => {
   const topMovies = [
     {
       title: "Deadpools & Wolverine",
       tickets: 3210,
-      image: imageMovie,
+      image: DeadPoolPoster,
     },
     {
       title: "The End",
       tickets: 2850,
-      image: imageMovie2,
+      image: TheEndPoster,
     },
     {
       title: "Doctor Strange",
       tickets: 1980,
-      image: imageMovie3,
+      image: DoctorStrangePoster,
     },
     {
       title: "Spider-Man No Way Home",
       tickets: 4520,
-      image: imageMovie4,
+      image: SpiderManPoster,
     },
     {
       title: "Phim hay quá...",
@@ -86,7 +86,7 @@ const DashboardAdmin = () => {
     <div className="p-[20px] flex items-center justify-between">
       <div className="w-[70%] space-y-4">
         <div className="flex items-center justify-between w-full">
-          <div className="bg-white rounded-md p-3  w-[23%] shadow-sm ">
+          <div className="bg-white rounded-md p-3 w-[23%] shadow-sm ">
             <div className="flex items-center justify-between">
               <p className="text-slate-500">Total Tickets Sold</p>
 
