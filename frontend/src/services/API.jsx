@@ -87,4 +87,14 @@ export const updateAccount = async ({ id, userData }) => {
   }
 };
 
+// API cho Movie
+
+export const getMovies = async () => {
+  try {
+    const response = await api.get("/movie");
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
 export default api;

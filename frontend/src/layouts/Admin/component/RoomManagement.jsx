@@ -15,6 +15,7 @@ import { MdChair } from "react-icons/md";
 import { FaRegEdit } from "react-icons/fa";
 import { RiDeleteBin5Line } from "react-icons/ri";
 import { IoSearchOutline } from "react-icons/io5";
+import { GoPlus } from "react-icons/go";
 
 const RoomManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -229,13 +230,13 @@ const RoomManagement = () => {
                 />
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between gap-2">
               <div
                 role="button"
                 onClick={handleAddRoom}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="flex items-center text-[#6051F3] hover:bg-slate-50 p-2 rounded-md active:bg-slate-100 bg-white shadow-sm"
               >
-                <Plus className="w-4 h-4" />
+                <GoPlus size={20} className="mr-2" />
                 Room
               </div>
             </div>
