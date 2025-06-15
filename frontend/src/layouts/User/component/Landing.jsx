@@ -1,78 +1,96 @@
+// Landing.jsx - Cách tích hợp component
+import React, { useState } from "react";
 import { FaRegCirclePlay } from "react-icons/fa6";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/navigation";
-import React, { useState } from "react";
-import landingBackground from "../../../assets/The-Flash-2023-Teaser-Banner-01.jpg";
 
-import { FaPlay } from "react-icons/fa";
 import { Pagination, Navigation } from "swiper/modules";
-import imageMovie from "../../../assets/imageMovie.jpg";
-import imageMovie2 from "../../../assets/imageMovie2.jpg";
-import imageMovie3 from "../../../assets/imageMovie3.jpg";
-import imageMovie4 from "../../../assets/imageMovie4.jpg";
-import imageMovie5 from "../../../assets/imageMovie5.jpg";
-import imageMovie6 from "../../../assets/imageMovie6.jpg";
-import imageMovie7 from "../../../assets/imageMovie7.jpg";
-import imageMovie8 from "../../../assets/imageMovie8.jpg";
+import { useNavigate } from "react-router-dom";
+
+// Import component MovieHeroSwiper
+import MovieHeroSwiper from "./MovieHeroSwiper";
+
+// Import assets
+import CaptainTrailer from "../../../assets/Video/CaptainTrailer.mp4";
+import DeadpoolTrailer from "../../../assets/Video/DeadpoolTrailer.mp4";
+import DoctorStrangeTrailer from "../../../assets/Video/DoctorStrangeTrailer.mp4";
+import MarvelTrailer from "../../../assets/Video/MarvelTrailer.mp4";
+import SpiderManTrailer from "../../../assets/Video/SpiderManTrailer.mp4";
+import ThorTrailer from "../../../assets/Video/ThorTrailer.mp4";
+import TransformersTrailer from "../../../assets/Video/TransformersTrailer.mp4";
+import TheEndPoster from "../../../assets/TheEndPoster.jpg";
+import DoctorStrangePoster from "../../../assets/DoctorStrangePoster.jpg";
+import SpiderManPoster from "../../../assets/SpiderManPoster.jpg";
+import TranformerPoster from "../../../assets/TranformerPoster.jpg";
+import DeadPoolPoster from "../../../assets/DeadPoolPoster.jpg";
+import CaptainPoster from "../../../assets/CaptainPoster.jpg";
+import ThorPoster from "../../../assets/ThorPoster.jpg";
 import promotionMovie1 from "../../../assets/PromotionMovie1.jpg";
 import promotionMovie2 from "../../../assets/PromotionMovie2.jpg";
 import promotionMovie3 from "../../../assets/PromotionMovie3.jpg";
-import { useNavigate } from "react-router-dom";
 
 const LandingPage = () => {
   const [movieData] = useState([
     {
       idMovie: 1,
-      nameMovie: "Stree 2 Sarkate Ka Atank",
-      category: [{ title: "Action" }, { title: "Horror" }],
-      imgUrl: imageMovie2,
+      nameMovie: "Deadpool & Wolverine",
+      category: [{ title: "Action" }, { title: "Comedy" }],
+      imgUrl: DeadPoolPoster,
       sub: "English",
+      trailerUrl: DeadpoolTrailer,
     },
     {
       idMovie: 2,
-      nameMovie: "Stree 2 Sarkate Ka Atank",
-      category: [{ title: "Action" }, { title: "Horror" }],
-      imgUrl: imageMovie3,
+      nameMovie: "Captain America: Brave New World",
+      category: [{ title: "Action" }, { title: "Adventure" }],
+      imgUrl: CaptainPoster,
       sub: "English",
+      trailerUrl: CaptainTrailer,
     },
     {
       idMovie: 3,
-      nameMovie: "Stree 2 Sarkate Ka Atank",
-      category: [{ title: "Action" }, { title: "Horror" }],
-      imgUrl: imageMovie4,
+      nameMovie: "Avengers: Infinity War",
+      category: [{ title: "Action" }, { title: "Sci-Fi" }],
+      imgUrl: TheEndPoster,
       sub: "English",
+      trailerUrl: MarvelTrailer,
     },
     {
       idMovie: 4,
-      nameMovie: "Stree 2 Sarkate Ka Atank",
-      category: [{ title: "Action" }, { title: "Horror" }],
-      imgUrl: imageMovie5,
+      nameMovie: "Transformers: Rise of the Beasts",
+      category: [{ title: "Action" }, { title: "Sci-Fi" }],
+      imgUrl: TranformerPoster,
       sub: "English",
+      trailerUrl: TransformersTrailer,
     },
     {
       idMovie: 5,
-      nameMovie: "Stree 2 Sarkate Ka Atank",
-      category: [{ title: "Action" }, { title: "Horror" }],
-      imgUrl: imageMovie6,
+      nameMovie: "Spider-Man: No Way Home",
+      category: [{ title: "Action" }, { title: "Adventure" }],
+      imgUrl: SpiderManPoster,
       sub: "English",
+      trailerUrl: SpiderManTrailer,
     },
     {
       idMovie: 6,
-      nameMovie: "Stree 2 Sarkate Ka Atank",
-      category: [{ title: "Action" }, { title: "Horror" }],
-      imgUrl: imageMovie7,
+      nameMovie: "Doctor Strange",
+      category: [{ title: "Action" }, { title: "Fantasy" }],
+      imgUrl: DoctorStrangePoster,
       sub: "English",
+      trailerUrl: DoctorStrangeTrailer,
     },
     {
       idMovie: 7,
-      nameMovie: "Stree 2 Sarkate Ka Atank",
-      category: [{ title: "Action" }, { title: "Horror" }],
-      imgUrl: imageMovie8,
+      nameMovie: "Thor: Love and Thunder",
+      category: [{ title: "Action" }, { title: "Comedy" }],
+      imgUrl: ThorPoster,
       sub: "English",
+      trailerUrl: ThorTrailer,
     },
   ]);
+
   const [promotionData] = useState([
     {
       idPromotion: 1,
@@ -85,7 +103,7 @@ const LandingPage = () => {
     {
       idPromotion: 2,
       imageUrl: promotionMovie2,
-      namePromotion: "Happy Wenesday - 50% Off",
+      namePromotion: "Happy Wednesday - 50% Off",
       startActive: "May 20, 2025",
       endActive: "June 20, 2025",
       isActive: "active",
@@ -99,6 +117,7 @@ const LandingPage = () => {
       isActive: "active",
     },
   ]);
+
   const navigate = useNavigate();
   const handleClickMovie = (idMovie) => {
     navigate(`/${idMovie}`);
@@ -126,67 +145,11 @@ const LandingPage = () => {
 
   return (
     <div className="w-full select-none landingPage">
-      {/* HERO SECTION */}
-      <div className="relative h-[500px] md:h-[600px] lg:h-[700px] w-full">
-        <img
-          src={landingBackground}
-          alt=""
-          loading="lazy"
-          className="w-full h-full object-cover bg-black/70"
-        />{" "}
-        <div className="absolute w-full h-full bottom-0 flex items-center justify-between bg-gradient-to-b from-transparent to-black/100">
-          <div className="md:w-[50%] w-full flex flex-col items-start space-y-5 md:mt-50 mt-80 px-[20px]">
-            <div className=" w-full flex items-center justify-between">
-              <div className=" md:flex flex-col items-start hidden ">
-                <div className="flex items-center space-x-3 text-white">
-                  <p role="button" className="bg-black p-3 rounded-xl ">
-                    ACTION
-                  </p>
-                  <p role="button" className="bg-black p-3 rounded-xl ">
-                    MAXUS MALL
-                  </p>
-                </div>{" "}
-              </div>{" "}
-            </div>{" "}
-            <div className="md:text-[40px] text-[30px] font-bold text-white">
-              Deadpools & Wolverine
-            </div>
-            <div className="text-white text-center md:text-left hidden md:block text-sm md:text-base px-2 md:px-0">
-              cbehwecwec ưe ce cewc ưecwe cưe c cư ec ưec ư ecwe c cưec ưec ưe
-              cư ec ecwec ưec ưe cưec ưe cưe cưe c cưechwe chưe cưec ưiecưiec
-            </div>
-            <div className="flex sm:flex-row justify-between items-center sm:space-x-3 w-full ">
-              <div
-                role="button"
-                className="p-2 md:p-3 rounded-4xl shadow-[#6a57f5] shadow-md bg-[#6a57f5] px-4 md:px-6 text-white font-semibold hover:bg-[#6957f5ea] active:bg-[#6957f5ea] active:scale-[1.1] text-sm md:text-base md:w-full w-[47%] text-center"
-              >
-                Book Now
-              </div>
-              <div
-                role="button"
-                className="p-2 md:p-3 shadow-[#6a57f5] shadow-md flex items-center justify-center rounded-4xl px-4 md:px-6 border-solid border-[1px] border-[#6957f5ea] bg-black hover:bg-slate-950 text-[#ffffffea] font-semibold active:scale-[1.1] text-sm md:text-base w-[47%] md:w-full"
-              >
-                <FaPlay size={16} className="mr-2" /> Watch trailer
-              </div>
-            </div>
-          </div>
+      {/* HERO SECTION - Thay thế bằng MovieHeroSwiper */}
+      <MovieHeroSwiper movieData={movieData} />
 
-          {/* Movie Poster - Hidden on mobile */}
-          <div className="hidden md:flex w-1/2 absolute right-0 top-35 justify-center items-center">
-            <div className="w-1/2 absolute right-0  top-35 flex justify-center items-center">
-              <img
-                src={imageMovie}
-                alt=""
-                loading="lazy"
-                className="w-[150px] md:w-[200px] rounded-2xl"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/*Screen 3d */}
-      <div className="w-full px-4">
+      {/* Screen 3D Effect */}
+      <div className="w-full mt-10 px-4">
         <div className="w-full h-[40px] relative overflow-hidden group">
           {/* SVG cho đường cong gradient */}
           <svg
