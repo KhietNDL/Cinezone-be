@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ChevronLeft, ChevronRight, Play, X } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Play,
+  Volume2,
+  VolumeX,
+  X,
+} from "lucide-react";
 
 const MovieHeroSwiper = ({ movieData }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -7,20 +14,32 @@ const MovieHeroSwiper = ({ movieData }) => {
   const [videoProgress, setVideoProgress] = useState(0);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [pausedByScroll, setPausedByScroll] = useState(false);
+  // eslint-disable-next-line no-unused-vars
+  const [isMuted, setIsMuted] = useState(true); // Bắt đầu với muted = true
+  const [userInteracted, setUserInteracted] = useState(false); // Theo dõi user interaction
   const videoRef = useRef(null);
   const popupVideoRef = useRef(null);
   const progressInterval = useRef(null);
 
-  const currentMovie = movieData[currentSlide];
+  // Sử dụng movieData từ props
+  const movies = movieData || [];
+  const currentMovie = movies[currentSlide] || {};
+
+  // Xử lý user interaction để enable autoplay với sound
+  const handleUserInteraction = () => {
+    if (!userInteracted) {
+      setUserInteracted(true);
+    }
+  };
 
   // Handle slide navigation
   const handleNextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % movieData.length);
+    setCurrentSlide((prev) => (prev + 1) % movies.length);
     resetVideoState();
   };
 
   const handlePrevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + movieData.length) % movieData.length);
+    setCurrentSlide((prev) => (prev - 1 + movies.length) % movies.length);
     resetVideoState();
   };
 
@@ -33,38 +52,90 @@ const MovieHeroSwiper = ({ movieData }) => {
     setVideoProgress(0);
   };
 
-  // Auto-play video when slide changes
-  useEffect(() => {
-    if (videoRef.current && !isPopupOpen) {
-      videoRef.current.load();
-      videoRef.current
-        .play()
-        .then(() => {
-          setIsVideoPlaying(true);
-          setVideoProgress(0);
-        })
-        .catch((error) => {
-          console.error("Video playback failed:", error);
-        });
-    }
-  }, [currentSlide, currentMovie.trailerUrl, isPopupOpen]);
+  // // Toggle mute/unmute
+  // const toggleMute = () => {
+  //   if (videoRef.current) {
+  //     videoRef.current.muted = !isMuted;
+  //     setIsMuted(!isMuted);
+  //   }
+  //   handleUserInteraction();
+  // };
 
-  // Auto-slide after 10 seconds or when video ends
+  // Bắt đầu phát video với âm thanh
+  const startVideoWithSound = async () => {
+    if (videoRef.current) {
+      try {
+        videoRef.current.muted = false; // Unmute video
+        setIsMuted(false);
+        await videoRef.current.play();
+        setIsVideoPlaying(true);
+        handleUserInteraction();
+      } catch (error) {
+        console.error("Không thể phát video với âm thanh:", error);
+        // Fallback: phát video muted
+        try {
+          videoRef.current.muted = true;
+          setIsMuted(true);
+          await videoRef.current.play();
+          setIsVideoPlaying(true);
+        } catch (mutedError) {
+          console.error("Không thể phát video ngay cả khi muted:", mutedError);
+        }
+      }
+    }
+  };
+
+  // Auto-play video khi component mount hoặc slide thay đổi
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video && currentMovie.TrailerUrl) {
+      // Load video mới
+      video.load();
+
+      // Đợi video sẵn sàng
+      const handleCanPlay = () => {
+        if (userInteracted) {
+          // Nếu user đã tương tác, phát với âm thanh
+          startVideoWithSound();
+        } else {
+          // Nếu chưa tương tác, phát muted
+          video.muted = true;
+          setIsMuted(true);
+          video
+            .play()
+            .then(() => {
+              setIsVideoPlaying(true);
+            })
+            .catch((error) => {
+              console.error("Autoplay failed:", error);
+            });
+        }
+      };
+
+      video.addEventListener("canplay", handleCanPlay);
+
+      return () => {
+        video.removeEventListener("canplay", handleCanPlay);
+      };
+    }
+  }, [currentSlide, currentMovie.TrailerUrl, userInteracted]);
+
+  // Auto-slide sau 15 giây
   useEffect(() => {
     let timeoutId;
     if (isVideoPlaying && !isPopupOpen) {
       timeoutId = setTimeout(() => {
-        setCurrentSlide((prev) => (prev + 1) % movieData.length);
+        setCurrentSlide((prev) => (prev + 1) % movies.length);
         resetVideoState();
-      }, 10000);
+      }, 15000); // Tăng thời gian để người dùng có thể thưởng thức video
     }
 
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [isVideoPlaying, movieData.length, isPopupOpen]);
+  }, [isVideoPlaying, movies.length, isPopupOpen]);
 
-  // Video progress tracking
+  // Theo dõi tiến độ video
   useEffect(() => {
     if (isVideoPlaying && videoRef.current && !isPopupOpen) {
       progressInterval.current = setInterval(() => {
@@ -75,7 +146,7 @@ const MovieHeroSwiper = ({ movieData }) => {
 
           if (video.currentTime >= video.duration) {
             resetVideoState();
-            setCurrentSlide((prev) => (prev + 1) % movieData.length);
+            setCurrentSlide((prev) => (prev + 1) % movies.length);
           }
         }
       }, 100);
@@ -90,9 +161,9 @@ const MovieHeroSwiper = ({ movieData }) => {
         clearInterval(progressInterval.current);
       }
     };
-  }, [isVideoPlaying, movieData.length, isPopupOpen]);
+  }, [isVideoPlaying, movies.length, isPopupOpen]);
 
-  // Pause video when scrolling down
+  // Tạm dừng video khi cuộn trang
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY;
@@ -107,23 +178,29 @@ const MovieHeroSwiper = ({ movieData }) => {
       ) {
         if (videoRef.current) {
           videoRef.current.load();
-          videoRef.current
-            .play()
-            .then(() => {
-              setIsVideoPlaying(true);
-              setVideoProgress(0);
-              setPausedByScroll(false);
-            })
-            .catch((error) => {
-              console.error("Video playback failed on scroll up:", error);
-            });
+          if (userInteracted) {
+            startVideoWithSound();
+          } else {
+            videoRef.current.muted = true;
+            setIsMuted(true);
+            videoRef.current
+              .play()
+              .then(() => {
+                setIsVideoPlaying(true);
+                setVideoProgress(0);
+                setPausedByScroll(false);
+              })
+              .catch((error) => {
+                console.error("Video playback failed on scroll up:", error);
+              });
+          }
         }
       }
     };
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [isVideoPlaying, pausedByScroll, isPopupOpen]);
+  }, [isVideoPlaying, pausedByScroll, isPopupOpen, userInteracted]);
 
   const handleStopVideo = () => {
     if (videoRef.current) {
@@ -136,13 +213,18 @@ const MovieHeroSwiper = ({ movieData }) => {
 
   const handleOpenPopup = () => {
     setIsPopupOpen(true);
-    resetVideoState(); // Pause background video
-    if (popupVideoRef.current) {
-      popupVideoRef.current.load();
-      popupVideoRef.current.play().catch((error) => {
-        console.error("Popup video playback failed:", error);
-      });
-    }
+    resetVideoState();
+    handleUserInteraction();
+
+    setTimeout(() => {
+      if (popupVideoRef.current) {
+        popupVideoRef.current.load();
+        popupVideoRef.current.muted = false; // Popup video luôn có âm thanh
+        popupVideoRef.current.play().catch((error) => {
+          console.error("Popup video playback failed:", error);
+        });
+      }
+    }, 100);
   };
 
   const handleClosePopup = () => {
@@ -153,19 +235,37 @@ const MovieHeroSwiper = ({ movieData }) => {
     setIsPopupOpen(false);
   };
 
+  // Thêm event listeners cho các tương tác của user
+  useEffect(() => {
+    const handleClick = () => handleUserInteraction();
+    const handleKeyDown = () => handleUserInteraction();
+    const handleTouch = () => handleUserInteraction();
+
+    document.addEventListener("click", handleClick);
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("touchstart", handleTouch);
+
+    return () => {
+      document.removeEventListener("click", handleClick);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("touchstart", handleTouch);
+    };
+  }, []);
+
   return (
     <div className="relative h-[500px] md:h-[600px] lg:h-[700px] w-full ">
       {/* Background Image/Video */}
       <div className="absolute inset-0">
         <div className="relative w-full h-full">
           <video
-            key={currentMovie.trailerUrl}
+            key={currentMovie.TrailerUrl}
             ref={videoRef}
             className="w-full h-full object-cover"
             playsInline
+            muted
             onEnded={handleStopVideo}
           >
-            <source src={currentMovie.trailerUrl} type="video/mp4" />
+            <source src={currentMovie.TrailerUrl} type="video/mp4" />
           </video>
 
           {/* Video Progress Bar */}
@@ -177,9 +277,16 @@ const MovieHeroSwiper = ({ movieData }) => {
           </div>
         </div>
       </div>
-
+      {/* <div
+        role="button"
+        onClick={toggleMute}
+        className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full transition-all duration-300 z-30 hover:scale-110"
+        aria-label={isMuted ? "Unmute" : "Mute"}
+      >
+        {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />}
+      </div> */}
       {/* Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80 " />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black" />
 
       {/* Navigation Arrows */}
       <div
@@ -206,29 +313,26 @@ const MovieHeroSwiper = ({ movieData }) => {
           {/* Left Content */}
           <div className="md:w-[50%] w-full flex flex-col items-start space-y-5">
             {/* Genre Tags */}
-            <div className="flex items-center space-x-3">
-              {currentMovie.category?.map((cat, index) => (
-                <span
-                  key={index}
-                  className="bg-black/70 backdrop-blur-sm text-white px-4 py-2 rounded-xl text-sm font-medium"
-                >
-                  {cat.title}
-                </span>
-              ))}
-              <span className="bg-black/70 backdrop-blur-sm text-white px-4 py-2 rounded-xl text-sm font-medium">
-                {currentMovie.sub}
-              </span>
-            </div>
+            {currentMovie.Genres && (
+              <div className="flex items-center space-x-3">
+                {currentMovie.Genres.split(", ").map((genre, index) => (
+                  <span
+                    key={index}
+                    className="bg-black/70 backdrop-blur-sm text-white px-4 py-2 rounded-xl text-sm font-medium"
+                  >
+                    {genre}
+                  </span>
+                ))}
+              </div>
+            )}
             {/* Title */}
             <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white leading-tight">
-              {currentMovie.nameMovie}
+              {currentMovie.NameOfEnglish}
             </h1>
 
             {/* Description */}
             <p className="text-white/90 text-base md:text-lg max-w-2xl leading-relaxed">
-              Experience the ultimate cinematic adventure with stunning visuals
-              and captivating storylines that will keep you on the edge of your
-              seat.
+              {currentMovie.ContentSynopsis}
             </p>
 
             {/* Action Buttons */}
@@ -255,8 +359,9 @@ const MovieHeroSwiper = ({ movieData }) => {
           <div className="hidden md:flex w-1/2 justify-end items-end">
             <div className="relative">
               <img
-                src={currentMovie.imgUrl}
-                alt={currentMovie.nameMovie}
+                src={currentMovie.PosterImage}
+                alt={currentMovie.NameOfEnglish}
+                loading="lazy"
                 className="w-[200px] lg:w-[250px] rounded-2xl shadow-2xl transform transition-all duration-500 hover:scale-105"
               />
               {/* Poster Glow Effect */}
@@ -295,7 +400,7 @@ const MovieHeroSwiper = ({ movieData }) => {
               controls
               autoPlay
             >
-              <source src={currentMovie.trailerUrl} type="video/mp4" />
+              <source src={currentMovie.TrailerUrl} type="video/mp4" />
             </video>
             <div
               role="button"

@@ -31,6 +31,7 @@ import WaitingPayment from "./layouts/User/component/WaitingPayment";
 import AccountImformation from "./layouts/User/component/AccountImformation";
 import EditAccount from "./layouts/User/component/EditAccount";
 import TicketBookingManagement from "./layouts/Admin/component/TicketBookingMangement";
+import PromotionManagement from "./layouts/Admin/component/PromotionManagement";
 function App() {
   return (
     <AuthProvider>
@@ -58,6 +59,7 @@ function App() {
           <Route path="movies" element={<MovieManagement />} />
           <Route path="rooms" element={<RoomManagement />} />
           <Route path="bookings" element={<TicketBookingManagement />} />
+          <Route path="promotions" element={<PromotionManagement />} />
         </Route>
 
         <Route path="/staff" element={<StaffLayout />}>
