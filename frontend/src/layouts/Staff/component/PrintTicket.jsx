@@ -3,6 +3,7 @@ import React, { useRef } from 'react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { FaAlignLeft } from "react-icons/fa6";
+import { Link } from 'react-router-dom';
 
 export default function PrintTicket() {
     const componentRef = useRef();
@@ -38,63 +39,65 @@ export default function PrintTicket() {
                 <div ref={componentRef}>
                     <div className='flex flex-col items-center justify-center'>
                         <div className="w-[80%] flex flex-col justify-center items-center rounded-xl space-y-2 bg-[linear-gradient(to_right,_#6366F1,_#8B5CF6,_#4F46E5)] mt-6 mb-6">
-                        <div className="relative flex h-[180px] w-[100%] md:h-[200px] lg:h-[300px] p-5">
-                            <div className='w-[63%] h-full'>
-                                <div className="flex items-start gap-4 border-b border-white pb-2 w-[95%] text-white">
-                                    <img
-                                        src="https://iguov8nhvyobj.vcdn.cloud/media/catalog/product/cache/1/image/1800x/71252117777b696995f01934522c402d/c/o/copy_of_250220_dr25_main_b1_localized_embbed_1_.jpg"
-                                        alt="Poster Doraemon"
-                                        className="w-25 h-auto rounded shadow"
-                                    />
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <div
-                                                className="text-[#FFF8A7] p-1 rounded-full shadow-md w-[110px] h-[25px] flex items-center justify-center"
-                                                style={{
-                                                    background: "linear-gradient(90deg, #FACC15, #DDB61A, #DBBB3B, #CDB03D, #B1900C)",
-                                                }}
-                                            >
-                                                <p className="font-bold p-2 text-xs">Now Showing</p>
+                            <div className="relative flex h-[180px] w-[100%] md:h-[200px] lg:h-[300px] p-5">
+                                <div className='w-[63%] h-full'>
+                                    <div className="flex items-start gap-4 border-b border-white pb-2 w-[95%] text-white">
+                                        <img
+                                            src="https://iguov8nhvyobj.vcdn.cloud/media/catalog/product/cache/1/image/1800x/71252117777b696995f01934522c402d/c/o/copy_of_250220_dr25_main_b1_localized_embbed_1_.jpg"
+                                            alt="Poster Doraemon"
+                                            className="w-25 h-auto rounded shadow"
+                                        />
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2">
+                                                <div
+                                                    className=" p-1 rounded-full shadow-md w-[110px] h-[25px] flex items-center justify-center"
+                                                    style={{
+                                                        background: "linear-gradient(90deg, #FACC15, #DDB61A, #DBBB3B, #CDB03D, #B1900C)",
+                                                        color: "#FFF8A7"
+                                                    }}
+                                                >
+                                                    <p className="font-bold p-2 text-xs">Now Showing</p>
+                                                </div>
+                                                <div className="bg-white text-xs px-2 py-1 rounded-sm " 
+                                                style={{color: "#86198F", border: "1px solid #86198F" }}>IMAX</div>
                                             </div>
-                                            <Tag color="purple" style={{ border: "1px solid purple" }}>IMAX</Tag>
+                                            <h2 className="text-sm font-bold mt-2 pt-2 pb-4">
+                                                PHIM ĐIỆN ẢNH DORAEMON: NOBITA VÀ CUỘC PHIÊU LƯU VÀO THẾ GIỚI TRONG TRANH
+                                            </h2>
+                                            <p className="text-xs mt-1">
+                                                <span className="p-2"><i className="fa-solid fa-clock"></i> 10:30 AM - 12:00 PM</span>
+                                                <span className="p-2"><i className="fa-solid fa-location-dot"></i> Cinema Hall 3</span>
+                                                <span className="p-2"><i className="fa-solid fa-couch"></i> Rows: A-H</span>
+                                            </p>
                                         </div>
-                                        <h2 className="text-sm font-bold mt-2 pt-2 pb-4">
-                                            PHIM ĐIỆN ẢNH DORAEMON: NOBITA VÀ CUỘC PHIÊU LƯU VÀO THẾ GIỚI TRONG TRANH
-                                        </h2>
-                                        <p className="text-xs mt-1">
-                                            <span className="p-2"><i className="fa-solid fa-clock"></i> 10:30 AM - 12:00 PM</span>
-                                            <span className="p-2"><i className="fa-solid fa-location-dot"></i> Cinema Hall 3</span>
-                                            <span className="p-2"><i className="fa-solid fa-couch"></i> Rows: A-H</span>
+                                    </div>
+                                    <div className='text-white'>
+                                        <h5 className='flex items-center gap-2 mt-2 text-sm font-bold'>
+                                            <FaAlignLeft /> Synopsis:
+                                        </h5>
+                                        <p className='p-2 text-sm'>
+                                            One of the cartoons that I like the most is Doraemon - a smart robot cat. Doraemon is a futuristic robot cat who is shaped like a small ferret. Making friends with Doraemon also has Nobita - best friend, Shizuka, Jaian, and Honekawa Suneo.
                                         </p>
                                     </div>
                                 </div>
-                                <div className='text-white'>
-                                    <h5 className='flex items-center gap-2 mt-2 text-sm font-bold'>
-                                        <FaAlignLeft /> Synopsis:
-                                    </h5>
-                                    <p className='p-2 text-sm'>
-                                        One of the cartoons that I like the most is Doraemon - a smart robot cat. Doraemon is a futuristic robot cat who is shaped like a small ferret. Making friends with Doraemon also has Nobita - best friend, Shizuka, Jaian, and Honekawa Suneo.
-                                    </p>
+                                <div className='w-[37%] h-full'>
+                                    <div className='flex flex-col items-start justify-center h-full text-white p-4 space-y-2 w-[100%]'>
+                                        <p className='flex w-full'><strong className='w-[40%]'>ID Ticket:</strong><span>{infoTicket.id}</span></p>
+                                        <p className='flex w-full'><strong className='w-[40%]'>Screen:</strong><span>{infoTicket.screen}</span></p>
+                                        <p className='flex gap-16 w-full'><strong className='w-[20%]'>Showtime:</strong><span>{infoTicket.showtime}</span></p>
+                                        <p className='flex gap-16 w-full'><strong className='w-[20%]'>Room:</strong><span>{infoTicket.room}</span></p>
+                                        <p className='flex gap-16 w-full'><strong className='w-[20%]'>Seats:</strong><span>{infoTicket.seats.join(', ')}</span></p>
+                                        <p className='flex gap-16 w-full'><strong className='w-[20%]'>Price:</strong><span>${infoTicket.price}</span></p>
+                                        <p className='flex gap-16 w-full'><strong className='w-[20%]'>Total:</strong><span>${infoTicket.total}</span></p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className='w-[37%] h-full'>
-                                <div className='flex flex-col items-start justify-center h-full text-white p-4 space-y-2 w-[100%]'>
-                                    <p className='flex w-full'><strong className='w-[40%]'>ID Ticket:</strong><span>{infoTicket.id}</span></p>
-                                    <p className='flex w-full'><strong className='w-[40%]'>Screen:</strong><span>{infoTicket.screen}</span></p>
-                                    <p className='flex gap-16 w-full'><strong className='w-[20%]'>Showtime:</strong><span>{infoTicket.showtime}</span></p>
-                                    <p className='flex gap-16 w-full'><strong className='w-[20%]'>Room:</strong><span>{infoTicket.room}</span></p>
-                                    <p className='flex gap-16 w-full'><strong className='w-[20%]'>Seats:</strong><span>{infoTicket.seats.join(', ')}</span></p>
-                                    <p className='flex gap-16 w-full'><strong className='w-[20%]'>Price:</strong><span>${infoTicket.price}</span></p>
-                                    <p className='flex gap-16 w-full'><strong className='w-[20%]'>Total:</strong><span>${infoTicket.total}</span></p>
-                                </div>
-                            </div>
 
-                            {/* Decorative circles and dashed line */}
-                            <div className="absolute w-[40px] md:w-[60px] h-[40px] md:h-[60px] lg:w-[50px] lg:h-[50px] rounded-full bg-white top-[-20px] md:top-[-30px] md:right-[10%] lg:right-[35%] right-[20%] transform translate-x-1/2 md:translate-x-0"></div>
-                            <div className="absolute w-[40px] md:w-[60px] h-[40px] md:h-[60px] lg:w-[50px] lg:h-[50px] rounded-full bg-white bottom-[-20px] md:bottom-[-30px] lg:right-[35%] md:right-[10%] right-[20%] transform translate-x-1/2 md:translate-x-0"></div>
-                            <div className="absolute h-[90%] top-[5%] border-dashed border-white border-2 md:right-[45px] right-[70px] lg:right-[10%] xl:right-[37.5%]"></div>
+                                {/* Decorative circles and dashed line */}
+                                <div className="absolute w-[40px] md:w-[60px] h-[40px] md:h-[60px] lg:w-[50px] lg:h-[50px] rounded-full bg-white top-[-20px] md:top-[-30px] md:right-[10%] lg:right-[35%] right-[20%] transform translate-x-1/2 md:translate-x-0"></div>
+                                <div className="absolute w-[40px] md:w-[60px] h-[40px] md:h-[60px] lg:w-[50px] lg:h-[50px] rounded-full bg-white bottom-[-20px] md:bottom-[-30px] lg:right-[35%] md:right-[10%] right-[20%] transform translate-x-1/2 md:translate-x-0"></div>
+                                <div className="absolute h-[90%] top-[5%] border-dashed border-white border-2 md:right-[45px] right-[70px] lg:right-[10%] xl:right-[37.5%]"></div>
+                            </div>
                         </div>
-                    </div>
                     </div>
                 </div>
 
@@ -105,9 +108,11 @@ export default function PrintTicket() {
                     >
                         <i className="fa-solid fa-print "></i> Print Ticket
                     </Button>
-                    <Button style={{ backgroundColor: 'white', color: 'red', border: '1px solid red', padding: '10px 20px', borderRadius: '5px' }}>
-                        <i className="fa-solid fa-xmark"></i> Cancel
-                    </Button>
+                    <Link to="/staff/ticket-selling">
+                        <Button style={{ backgroundColor: 'white', color: 'red', border: '1px solid red', padding: '10px 20px', borderRadius: '5px' }}>
+                            <i className="fa-solid fa-xmark"></i> Cancel
+                        </Button>
+                    </Link>
                 </div>
             </div>
         </div>

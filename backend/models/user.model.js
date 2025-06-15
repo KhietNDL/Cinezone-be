@@ -13,7 +13,7 @@ class User {
   static async findByUsername(username) {
     const [rows] = await db
       .promise()
-      .query("SELECT * FROM users WHERE username = ?", [username]);
+      .query("SELECT * FROM Users WHERE Username = ? AND IsDeleted = 0", [username]);
     return rows[0];
   }
 

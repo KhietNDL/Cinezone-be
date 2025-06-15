@@ -76,6 +76,9 @@ const getMovieById = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+// Lấy version, showtime, room theo movieId
+
+
 
 const getMoviesByGenre = async (req, res) => {
   try {
@@ -114,6 +117,39 @@ const getMoviesByGenre = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+// Lấy version, showtime, room theo movieId
+const getMovieShowtimes = async (req, res) => {
+  const { movieId } = req.params;
+  try {
+    const rows = await Movie.getMovieShowtimes(movieId);
+    // Gom nhóm theo version
+    const movieinfo = {};
+    rows.forEach(row => {
+      if (!movieinfo[row.Version]) {
+        movieinfo[row.Version] = {
+          version: row.Version,
+          showtimes: []
+        };
+      }
+      movieinfo[row.Version].showtimes.push({
+        showtimeId: row.ShowtimeId,
+        showDate: row.ShowDate,
+        duration: row.Duration,
+        room: {
+          roomId: row.CinemaRoomId,
+          roomName: row.Name
+        }
+      });
+    });
+    res.json({
+      movieId,
+      movieinfo: Object.values(movieinfo)
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 
 const createMovie = async (req, res) => {
   try {
@@ -171,7 +207,7 @@ const createMovie = async (req, res) => {
         expires: '03-01-2500',
       });
       
-      movieData.TrailerUrl = trailerUrl;  // Sử dụng tên biến khác để tránh xung đột
+      movieData.TrailerUrl = trailerUrl;
     }
     
     if (movieData.RunningTime) {
@@ -296,11 +332,9 @@ const patchMovie = async (req, res) => {
     const { movieId } = req.params;
     const movieData = req.body;
     
-    // Xóa các trường file để tránh được đưa vào truy vấn SQL
     delete movieData.poster;
     delete movieData.trailer;
 
-    // Xóa các trường rỗng (Swagger gửi "" thay vì không gửi)
     Object.keys(movieData).forEach(key => {
       if (movieData[key] === "") {
         delete movieData[key];
@@ -333,7 +367,26 @@ const patchMovie = async (req, res) => {
     }
     
     if (req.files && req.files.trailer && req.files.trailer[0]) {
-      movieData.TrailerUrl = url;
+      const trailerFile = req.files.trailer[0];
+      const trailerFileName = `trailers/${Date.now()}-${trailerFile.originalname.replace(/\s+/g, '_')}`;
+      const trailerBlob = bucket.file(trailerFileName);
+      
+      const trailerStream = trailerBlob.createWriteStream({
+        metadata: { contentType: trailerFile.mimetype }
+      });
+      
+      await new Promise((resolve, reject) => {
+        trailerStream.on('error', reject);
+        trailerStream.on('finish', resolve);
+        trailerStream.end(trailerFile.buffer);
+      });
+      
+      const [trailerUrl] = await trailerBlob.getSignedUrl({
+        action: 'read',
+        expires: '03-01-2500',
+      });
+      
+      movieData.TrailerUrl = trailerUrl;
     }
     
     if (movieData.RunningTime) {
@@ -435,5 +488,6 @@ module.exports = {
   updateMovie,
   patchMovie,
   getCurrentMovies,
-  getUpcomingMovies
+  getUpcomingMovies,
+  getMovieShowtimes
 };

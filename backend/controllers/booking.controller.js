@@ -1,0 +1,84 @@
+const Booking = require('../models/booking.model');
+
+const getBookingById = async (req, res) => {
+  const { bookingId } = req.params;
+  try {
+    const booking = await Booking.getBookingById(bookingId);
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+    res.json(booking);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getBookingsByMemberId = async (req, res) => {
+  const { memberId } = req.params;
+  try {
+    const bookings = await Booking.getBookingsByMemberId(memberId);
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const createBooking = async (req, res) => {
+  try {
+    const bookingId = await Booking.createBooking(req.body);
+    res.status(201).json({ bookingId });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const updateBooking = async (req, res) => {
+  const { bookingId } = req.params;
+  try {
+    const success = await Booking.updateBooking(bookingId, req.body);
+    if (!success) return res.status(404).json({ error: 'Booking not found' });
+    res.json({ message: 'Booking updated' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const deleteBooking = async (req, res) => {
+  const { bookingId } = req.params;
+  try {
+    const success = await Booking.deleteBooking(bookingId);
+    if (!success) return res.status(404).json({ error: 'Booking not found' });
+    res.json({ message: 'Booking deleted' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getAllBookings = async (req, res) => {
+  try {
+    const bookings = await Booking.getAllBookings();
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getLatestBookingByMemberId = async (req, res) => {
+  const { memberId } = req.params;
+  try {
+    const booking = await Booking.getLatestBookingByMemberId(memberId);
+    if (!booking) return res.status(404).json({ error: 'No bookings found for this member' });
+    res.json(booking);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+module.exports = {
+  getAllBookings,
+  getBookingById,
+  getBookingsByMemberId,
+  createBooking,
+  updateBooking,
+  deleteBooking,
+  getLatestBookingByMemberId
+};
