@@ -50,14 +50,16 @@ export default function PrintTicket() {
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2">
                                                 <div
-                                                    className="text-[#FFF8A7] p-1 rounded-full shadow-md w-[110px] h-[25px] flex items-center justify-center"
+                                                    className=" p-1 rounded-full shadow-md w-[110px] h-[25px] flex items-center justify-center"
                                                     style={{
                                                         background: "linear-gradient(90deg, #FACC15, #DDB61A, #DBBB3B, #CDB03D, #B1900C)",
+                                                        color: "#FFF8A7"
                                                     }}
                                                 >
                                                     <p className="font-bold p-2 text-xs">Now Showing</p>
                                                 </div>
-                                                <Tag color="purple" style={{ border: "1px solid purple" }}>IMAX</Tag>
+                                                <div className="bg-white text-xs px-2 py-1 rounded-sm " 
+                                                style={{color: "#86198F", border: "1px solid #86198F" }}>IMAX</div>
                                             </div>
                                             <h2 className="text-sm font-bold mt-2 pt-2 pb-4">
                                                 PHIM ĐIỆN ẢNH DORAEMON: NOBITA VÀ CUỘC PHIÊU LƯU VÀO THẾ GIỚI TRONG TRANH
