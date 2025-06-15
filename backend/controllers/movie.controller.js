@@ -207,7 +207,7 @@ const createMovie = async (req, res) => {
         expires: '03-01-2500',
       });
       
-      movieData.TrailerUrl = trailerUrl;  // Sử dụng tên biến khác để tránh xung đột
+      movieData.TrailerUrl = trailerUrl;
     }
     
     if (movieData.RunningTime) {
@@ -332,11 +332,9 @@ const patchMovie = async (req, res) => {
     const { movieId } = req.params;
     const movieData = req.body;
     
-    // Xóa các trường file để tránh được đưa vào truy vấn SQL
     delete movieData.poster;
     delete movieData.trailer;
 
-    // Xóa các trường rỗng (Swagger gửi "" thay vì không gửi)
     Object.keys(movieData).forEach(key => {
       if (movieData[key] === "") {
         delete movieData[key];
@@ -369,7 +367,26 @@ const patchMovie = async (req, res) => {
     }
     
     if (req.files && req.files.trailer && req.files.trailer[0]) {
-      movieData.TrailerUrl = url;
+      const trailerFile = req.files.trailer[0];
+      const trailerFileName = `trailers/${Date.now()}-${trailerFile.originalname.replace(/\s+/g, '_')}`;
+      const trailerBlob = bucket.file(trailerFileName);
+      
+      const trailerStream = trailerBlob.createWriteStream({
+        metadata: { contentType: trailerFile.mimetype }
+      });
+      
+      await new Promise((resolve, reject) => {
+        trailerStream.on('error', reject);
+        trailerStream.on('finish', resolve);
+        trailerStream.end(trailerFile.buffer);
+      });
+      
+      const [trailerUrl] = await trailerBlob.getSignedUrl({
+        action: 'read',
+        expires: '03-01-2500',
+      });
+      
+      movieData.TrailerUrl = trailerUrl;
     }
     
     if (movieData.RunningTime) {
