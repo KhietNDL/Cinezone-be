@@ -12,11 +12,15 @@ import {
   X,
 } from "lucide-react";
 import { MdChair } from "react-icons/md";
+import { FaRegEdit } from "react-icons/fa";
+import { RiDeleteBin5Line } from "react-icons/ri";
+import { IoSearchOutline } from "react-icons/io5";
+import { GoPlus } from "react-icons/go";
 
 const RoomManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [refresh, setRefresh] = useState(false);
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -106,14 +110,14 @@ const RoomManagement = () => {
     },
     {
       icon: TrendingUp,
-      label: "Avg. Utilization Rate",
+      label: "Avg Rate",
       value: "75%",
       color: "text-orange-600",
       bgColor: "bg-orange-100",
     },
     {
       icon: TrendingUp,
-      label: "Avg. Utilization Rate",
+      label: "Avg Rate",
       value: "75%",
       color: "text-orange-600",
       bgColor: "bg-orange-100",
@@ -121,10 +125,6 @@ const RoomManagement = () => {
   ];
 
   const topRooms = rooms.slice(0, 5);
-
-  const handleRefresh = () => {
-    setRefresh(!refresh);
-  };
 
   const handleView = (room) => {
     setSelectedRoom(room);
@@ -192,160 +192,152 @@ const RoomManagement = () => {
   );
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        {statsData.map((stat, index) => (
-          <div key={index} className="bg-white rounded-lg p-6 shadow-sm">
-            <div className="flex items-center">
-              <div className={`p-3 rounded-full ${stat.bgColor} mr-4`}>
-                <stat.icon className={`w-6 h-6 ${stat.color}`} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-800">{stat.value}</p>
-                <p className="text-sm text-gray-600">{stat.label}</p>
+    <div className="p-[20px] flex items-center h-full justify-between">
+      <div className="w-[70%] space-y-4 h-full">
+        <div className="flex items-center justify-between w-full">
+          {statsData.map((stat, index) => (
+            <div
+              key={index}
+              className="bg-white rounded-md  w-[23%] shadow-sm "
+            >
+              <div className="bg-white rounded-md p-3 w-full ">
+                <div className="flex items-center justify-between ">
+                  <p className="text-sm text-gray-600">{stat.label}</p>
+                  <div className={`p-2 rounded-full ${stat.bgColor} `}>
+                    <stat.icon className={`w-6 h-6 ${stat.color}`} />
+                  </div>
+                </div>{" "}
+                <div className="font-bold text-[19px]">{stat.value}</div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex gap-6">
-        <div className="flex-1">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          ))}
+        </div>
+        <div className="w-full py-3 space-y-4">
+          <div className="flex items-center mb-4 justify-between">
+            <div className="w-full">
+              <div className="flex items-center p-1 px-2 w-2/4 rounded-xl bg-white shadow-sm">
+                <div className="shrink-0">
+                  <IoSearchOutline size={20} />
+                </div>
                 <input
                   type="text"
-                  placeholder="Search by room name or room id"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                  }}
+                  className="p-2 focus:outline-none w-full"
+                  placeholder="Search by room name or room id"
                 />
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleRefresh}
-                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                <RefreshCw className="w-4 h-4" />
-                Refresh
-              </button>
-              <button
+            <div className="flex items-center justify-between gap-2">
+              <div
+                role="button"
                 onClick={handleAddRoom}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="flex items-center text-[#6051F3] hover:bg-slate-50 p-2 rounded-md active:bg-slate-100 bg-white shadow-sm"
               >
-                <Plus className="w-4 h-4" />
+                <GoPlus size={20} className="mr-2" />
                 Room
-              </button>
+              </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    #
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Room ID
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Room Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Seat Quantity
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Seat Details
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
+          <div className="bg-white min-h-[340px] max-h-[340px] p-4 rounded-md shadow-sm">
+            <table className="w-full table-auto border-collapse">
+              <thead>
+                <tr className="text-left text-slate-500 text-sm border-b border-slate-200">
+                  <th className="py-2 text-center">#</th>
+                  <th className="py-2 text-center">Room ID</th>
+                  <th className="py-2 text-center">Room Name</th>
+                  <th className="py-2 text-center">Seat Quantity</th>
+                  <th className="py-2 text-center">Seat Details</th>
+                  <th className="py-2 text-center">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody>
                 {filteredRooms.map((room, index) => (
-                  <tr key={room.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {index + 1}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {room.roomId}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {room.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {room.seatQuantity}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button
+                  <tr
+                    key={room.id}
+                    className="border-b border-slate-200 hover:bg-slate-100 text-sm"
+                  >
+                    <td className="py-2 text-center">{index + 1}</td>
+                    <td className="py-2 text-center">{room.roomId}</td>
+                    <td className="py-2 text-center">{room.name}</td>
+                    <td className="py-2 text-center">{room.seatQuantity}</td>
+                    <td className="py-2 ">
+                      <div
+                        role="button"
                         onClick={() => handleView(room)}
-                        className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
+                        className="text-blue-500 hover:text-blue-700 justify-center flex items-center"
                       >
-                        <Eye className="w-4 h-4" />
+                        <Eye size={20} className="mr-1" />
                         View
-                      </button>
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleEdit(room)}
-                          className="p-1 text-blue-600 hover:text-blue-800"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(room)}
-                          className="p-1 text-red-600 hover:text-red-800"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                    <td className="flex items-center justify-evenly p-2">
+                      <div
+                        role="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(room);
+                        }}
+                        className="text-blue-500 hover:text-blue-700"
+                        title="Edit"
+                      >
+                        <FaRegEdit size={20} />
+                      </div>
+                      <div
+                        role="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(room);
+                        }}
+                        className="text-red-400 hover:text-red-600"
+                        title="Delete"
+                      >
+                        <RiDeleteBin5Line size={20} />
                       </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-
-            {/* Pagination */}
-            <div className="bg-white px-6 py-3 border-t border-gray-200 flex items-center justify-between">
-              <div className="text-sm text-gray-700">
-                Showing 1-7 of 17 rooms
+          </div>{" "}
+          {/* Pagination */}
+          <div className="flex items-center justify-end space-x-2 pt-4">
+            <div
+              role="button"
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              className="px-3 py-1 bg-white shadow-sm rounded hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={currentPage === 1}
+            >
+              Previous
+            </div>
+            {[1, 2, 3].map((page) => (
+              <div
+                role="button"
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`px-3 py-1 rounded shadow-sm ${
+                  currentPage === page
+                    ? "bg-[#6051F3] text-white"
+                    : "bg-white hover:bg-slate-100"
+                }`}
+              >
+                {page}
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  className="px-3 py-1 text-gray-500 hover:text-gray-700"
-                  disabled={currentPage === 1}
-                >
-                  &lt;
-                </button>
-                {[1, 2, 3].map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`px-3 py-1 rounded ${
-                      currentPage === page
-                        ? "bg-blue-600 text-white"
-                        : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-                <button
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  className="px-3 py-1 text-gray-500 hover:text-gray-700"
-                >
-                  &gt;
-                </button>
-              </div>
+            ))}
+            <div
+              role="button"
+              onClick={() => setCurrentPage(currentPage + 1)}
+              className="px-3 py-1 bg-white shadow-sm rounded hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="flex items-center right-[-40px] top-[25%] justify-end w-[30%]">
         <div className="w-80">
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex items-center gap-2 mb-4">
@@ -405,6 +397,7 @@ const RoomManagement = () => {
           </div>
         </div>
       </div>
+
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96">
@@ -450,18 +443,20 @@ const RoomManagement = () => {
             </div>
 
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-              <button
+              <div
+                role="button"
                 onClick={handleCloseModals}
                 className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md"
               >
                 ← Back
-              </button>
-              <button
+              </div>
+              <div
+                role="button"
                 onClick={handleSaveRoom}
                 className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium"
               >
                 + Add
-              </button>
+              </div>
             </div>
           </div>
         </div>
@@ -509,18 +504,20 @@ const RoomManagement = () => {
             </div>
 
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-              <button
+              <div
+                role="button"
                 onClick={handleCloseModals}
                 className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md"
               >
                 ← Back
-              </button>
-              <button
+              </div>
+              <div
+                role="button"
                 onClick={handleSaveRoom}
                 className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium"
               >
                 Save Changes
-              </button>
+              </div>
             </div>
           </div>
         </div>
@@ -544,18 +541,20 @@ const RoomManagement = () => {
               </p>
 
               <div className="flex justify-center gap-3">
-                <button
+                <div
+                  role="button"
                   onClick={handleCloseModals}
                   className="px-6 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md"
                 >
                   Cancel
-                </button>
-                <button
+                </div>
+                <div
+                  role="button"
                   onClick={handleConfirmDelete}
                   className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium"
                 >
                   Delete
-                </button>
+                </div>
               </div>
             </div>
           </div>

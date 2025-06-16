@@ -41,3 +41,7 @@ public/static/
 backend/config/serviceAccountKey.json
 serviceAccountKey.json
 *serviceAccountKey*.json
+
+backend/public/swagger-custom.js
+swagger-custom.js
+*swagger-custom.js
