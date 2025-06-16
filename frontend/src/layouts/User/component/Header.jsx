@@ -23,6 +23,7 @@ const Header = () => {
           onClick={() => {
             navigate("/");
           }}
+
           className=" w-[160px] h-[70px] object-cover "
         />
       </div>

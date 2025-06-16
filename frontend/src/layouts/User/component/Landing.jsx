@@ -1,95 +1,30 @@
 // Landing.jsx - Cách tích hợp component
-import React, { useState } from "react";
-import { FaRegCirclePlay } from "react-icons/fa6";
+import React, { useEffect, useState } from "react";
+import { FaRegCalendarCheck, FaRegCirclePlay } from "react-icons/fa6";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/navigation";
-
+import { IoMdBookmark } from "react-icons/io";
+import { GoClockFill } from "react-icons/go";
 import { Pagination, Navigation } from "swiper/modules";
 import { useNavigate } from "react-router-dom";
-
-// Import component MovieHeroSwiper
 import MovieHeroSwiper from "./MovieHeroSwiper";
-
-// Import assets
-import CaptainTrailer from "../../../assets/Video/CaptainTrailer.mp4";
-import DeadpoolTrailer from "../../../assets/Video/DeadpoolTrailer.mp4";
-import DoctorStrangeTrailer from "../../../assets/Video/DoctorStrangeTrailer.mp4";
-import MarvelTrailer from "../../../assets/Video/MarvelTrailer.mp4";
-import SpiderManTrailer from "../../../assets/Video/SpiderManTrailer.mp4";
-import ThorTrailer from "../../../assets/Video/ThorTrailer.mp4";
-import TransformersTrailer from "../../../assets/Video/TransformersTrailer.mp4";
-import TheEndPoster from "../../../assets/TheEndPoster.jpg";
-import DoctorStrangePoster from "../../../assets/DoctorStrangePoster.jpg";
-import SpiderManPoster from "../../../assets/SpiderManPoster.jpg";
-import TranformerPoster from "../../../assets/TranformerPoster.jpg";
-import DeadPoolPoster from "../../../assets/DeadPoolPoster.jpg";
-import CaptainPoster from "../../../assets/CaptainPoster.jpg";
-import ThorPoster from "../../../assets/ThorPoster.jpg";
 import promotionMovie1 from "../../../assets/PromotionMovie1.jpg";
 import promotionMovie2 from "../../../assets/PromotionMovie2.jpg";
 import promotionMovie3 from "../../../assets/PromotionMovie3.jpg";
+import { getMovies } from "../../../services/API";
 
 const LandingPage = () => {
-  const [movieData] = useState([
-    {
-      idMovie: 1,
-      nameMovie: "Deadpool & Wolverine",
-      category: [{ title: "Action" }, { title: "Comedy" }],
-      imgUrl: DeadPoolPoster,
-      sub: "English",
-      trailerUrl: DeadpoolTrailer,
-    },
-    {
-      idMovie: 2,
-      nameMovie: "Captain America: Brave New World",
-      category: [{ title: "Action" }, { title: "Adventure" }],
-      imgUrl: CaptainPoster,
-      sub: "English",
-      trailerUrl: CaptainTrailer,
-    },
-    {
-      idMovie: 3,
-      nameMovie: "Avengers: Infinity War",
-      category: [{ title: "Action" }, { title: "Sci-Fi" }],
-      imgUrl: TheEndPoster,
-      sub: "English",
-      trailerUrl: MarvelTrailer,
-    },
-    {
-      idMovie: 4,
-      nameMovie: "Transformers: Rise of the Beasts",
-      category: [{ title: "Action" }, { title: "Sci-Fi" }],
-      imgUrl: TranformerPoster,
-      sub: "English",
-      trailerUrl: TransformersTrailer,
-    },
-    {
-      idMovie: 5,
-      nameMovie: "Spider-Man: No Way Home",
-      category: [{ title: "Action" }, { title: "Adventure" }],
-      imgUrl: SpiderManPoster,
-      sub: "English",
-      trailerUrl: SpiderManTrailer,
-    },
-    {
-      idMovie: 6,
-      nameMovie: "Doctor Strange",
-      category: [{ title: "Action" }, { title: "Fantasy" }],
-      imgUrl: DoctorStrangePoster,
-      sub: "English",
-      trailerUrl: DoctorStrangeTrailer,
-    },
-    {
-      idMovie: 7,
-      nameMovie: "Thor: Love and Thunder",
-      category: [{ title: "Action" }, { title: "Comedy" }],
-      imgUrl: ThorPoster,
-      sub: "English",
-      trailerUrl: ThorTrailer,
-    },
-  ]);
+  const [movieData, setMovieData] = useState([]);
+  // eslint-disable-next-line no-unused-vars
+  const [itemsPerPage, setItemsPerPage] = useState(7);
+  const [currentPage, setCurrentPage] = useState(1);
+  // eslint-disable-next-line no-unused-vars
+  const [totalPages, setTotalPages] = useState(0);
+  const [hoveredMovie, setHoveredMovie] = useState(null);
+  // eslint-disable-next-line no-unused-vars
+  const [isHovered, setIsHovered] = useState(false);
 
   const [promotionData] = useState([
     {
@@ -117,6 +52,27 @@ const LandingPage = () => {
       isActive: "active",
     },
   ]);
+  const getMovie = async () => {
+    try {
+      const response = await getMovies({
+        limit: itemsPerPage,
+        page: currentPage,
+      });
+      if (response.data) {
+        setMovieData(response.data.movies || response.data);
+        setTotalPages(
+          response.data.totalPages ||
+            Math.ceil(response.data.total / itemsPerPage)
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching movies:", error);
+    }
+  };
+
+  useEffect(() => {
+    getMovie();
+  }, [itemsPerPage, currentPage]);
 
   const navigate = useNavigate();
   const handleClickMovie = (idMovie) => {
@@ -141,6 +97,49 @@ const LandingPage = () => {
       slidesPerView: 4,
       spaceBetween: 50,
     },
+  };
+
+  // eslint-disable-next-line no-unused-vars
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const months = [
+      "JAN",
+      "FEB",
+      "MAR",
+      "APR",
+      "MAY",
+      "JUN",
+      "JUL",
+      "AUG",
+      "SEP",
+      "OCT",
+      "NOV",
+      "DEC",
+    ];
+
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+
+    return `${day} ${month} ${year}`;
+  };
+
+  // Format date range
+  const formatDateRange = (fromDate, toDate) => {
+    if (!fromDate || !toDate) return "Coming Soon";
+    return `${formatDate(fromDate)} - ${formatDate(toDate)}`;
+  };
+
+  // Format running time
+  const formatRunningTime = (minutes) => {
+    if (!minutes) return "N/A";
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   };
 
   return (
@@ -279,29 +278,88 @@ const LandingPage = () => {
           >
             {movieData.map((item) => (
               <SwiperSlide
+                onMouseEnter={() => {
+                  setIsHovered(true);
+                  setHoveredMovie(item.MovieId);
+                }}
+                onMouseLeave={() => {
+                  setIsHovered(false);
+                  setHoveredMovie(null);
+                }}
                 key={item.idMovie}
                 className="bg-slate-800 flex flex-col justify-center items-center pb-2 rounded-xl space-y-2"
               >
-                <img
-                  src={item.imgUrl}
-                  alt=""
-                  loading="lazy"
-                  className="w-full h-[250px] md:h-[320px] object-cover rounded-tl-xl rounded-tr-xl"
-                />
-                <div className="text-white text-center font-semibold text-sm md:text-base px-2">
-                  {item.nameMovie}
+                <div role="button" className="relative w-full">
+                  <img
+                    src={item.PosterImage}
+                    alt={item.NameOfEnglish}
+                    loading="lazy"
+                    className="w-full h-[250px] md:h-[320px] object-cover rounded-tl-xl rounded-tr-xl"
+                  />
+                  {/* Hover Overlay */}
+                  {hoveredMovie === item.MovieId && (
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex flex-col justify-center items-start p-4 rounded-tl-xl rounded-tr-xl transition-all duration-300 ease-in-out">
+                      <div className="text-white space-y-3">
+                        <h3 className="font-bold text-lg mb-3 text-white">
+                          {item.NameOfEnglish}
+                        </h3>
+
+                        <div className="space-y-3 text-sm">
+                          <div className="flex items-center justify-center">
+                            <span className="text-gray-300">
+                              <FaRegCalendarCheck size={20} />{" "}
+                            </span>
+                            <span className="ml-1">
+                              {formatDateRange(item.FromDate, item.ToDate)}
+                            </span>
+                          </div>
+
+                          <div className="flex ">
+                            <span className="text-gray-300 mr-1">
+                              <GoClockFill size={20} />
+                            </span>
+                            <span className="ml-1">
+                              {formatRunningTime(item.RunningTime)}
+                            </span>
+                          </div>
+
+                          <div className="flex">
+                            <span className="text-gray-300 mr-1">
+                              <IoMdBookmark size={24} />
+                            </span>
+                            {item.Genres && (
+                              <div className="flex items-center space-x-3">
+                                {item.Genres.split(", ").map((genre, index) => (
+                                  <span
+                                    key={index}
+                                    className=" text-white rounded-xl text-md font-medium"
+                                  >
+                                    {genre}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="flex xl:flex-row md:flex-col sm:flex-row justify-center md:space-y-2 xl:space-y-0 sm:space-y-0 sm:space-x-1 items-center w-full px-2">
+
+                <div className="text-white text-center font-semibold text-sm md:text-base px-2">
+                  {item.NameOfEnglish}
+                </div>
+                <div className="flex xl:flex-row md:flex-col sm:flex-row justify-evenly md:space-y-2 xl:space-y-0 sm:space-y-0 sm:space-x-1 items-center w-full px-2">
                   <div
                     role="button"
-                    className="text-white flex items-center justify-center hover:bg-slate-700 p-2 rounded-4xl px-3 text-[11px] md:text-[12px] w-full sm:w-auto"
+                    className="text-white flex items-center justify-center hover:bg-slate-700 p-2 rounded-4xl px-3 text-[11px] md:text-[12px] sm:w-auto"
                   >
                     <FaRegCirclePlay size={16} className="mr-1" />
                     Watch Trailer
                   </div>
                   <div
                     role="button"
-                    onClick={() => handleClickMovie(item.idMovie)}
+                    onClick={() => handleClickMovie(item.MovieId)}
                     className="bg-[#6a57f5] rounded-4xl px-6 py-2 text-white hover:bg-[#6957f5ea] text-[12px]  shadow-[#6a57f5]  shadow-sm sm:w-auto "
                   >
                     Book now
@@ -334,17 +392,74 @@ const LandingPage = () => {
           >
             {movieData.map((item) => (
               <SwiperSlide
-                key={item.idMovie}
+                onMouseEnter={() => {
+                  setHoveredMovie(`coming-${item.MovieId}`);
+                }}
+                onMouseLeave={() => {
+                  setHoveredMovie(null);
+                }}
+                key={item.MovieId}
                 className="bg-slate-800 flex flex-col justify-center items-center pb-2 rounded-xl space-y-2"
               >
-                <img
-                  src={item.imgUrl}
-                  alt=""
-                  loading="lazy"
-                  className="w-full h-[250px] md:h-[320px] object-cover rounded-tl-xl rounded-tr-xl"
-                />
+                <div className="relative ww-full">
+                  <img
+                    src={item.PosterImage}
+                    alt={item.NameOfEnglish}
+                    loading="lazy"
+                    className="w-full h-[250px] md:h-[320px] object-cover rounded-tl-xl rounded-tr-xl"
+                  />
+                  {/* Hover Overlay for Coming Soon */}
+                  {hoveredMovie === `coming-${item.MovieId}` && (
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex flex-col justify-center items-start p-4 rounded-tl-xl rounded-tr-xl transition-all duration-300 ease-in-out">
+                      <div className="text-white space-y-3">
+                        <h3 className="font-bold text-lg mb-3 text-white">
+                          {item.NameOfEnglish}
+                        </h3>
+
+                        <div className="space-y-3 text-sm">
+                          <div className="flex items-center justify-center">
+                            <span className="text-gray-300">
+                              <FaRegCalendarCheck size={20} />{" "}
+                            </span>
+                            <span className="ml-1">
+                              {formatDateRange(item.FromDate, item.ToDate)}
+                            </span>
+                          </div>
+
+                          <div className="flex ">
+                            <span className="text-gray-300 mr-1">
+                              <GoClockFill size={20} />
+                            </span>
+                            <span className="ml-1">
+                              {formatRunningTime(item.RunningTime)}
+                            </span>
+                          </div>
+
+                          <div className="flex">
+                            <span className="text-gray-300 mr-1">
+                              <IoMdBookmark size={24} />
+                            </span>
+                            {item.Genres && (
+                              <div className="flex items-center space-x-3">
+                                {item.Genres.split(", ").map((genre, index) => (
+                                  <span
+                                    key={index}
+                                    className=" text-white rounded-xl text-md font-medium"
+                                  >
+                                    {genre}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div className="text-white text-center font-semibold text-sm md:text-base px-2">
-                  {item.nameMovie}
+                  {item.NameOfEnglish}
                 </div>
                 <div className="flex md:flex-col lg:flex-row sm:flex-row justify-center md:space-y-2 sm:space-y-0 sm:space-x-1 items-center w-full px-2">
                   <div

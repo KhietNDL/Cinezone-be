@@ -95,6 +95,7 @@ const Footer = () => {
           </div>
           <div className="flex items-start space-x-2">
             <FaLocationDot size={20} color="#6a57f5" className="mr-2" /> 271
+
             Nguyễn Trãi, Phường Nguyễn Cư Trinh, Quận 1, Tp. Hồ Chí Minh
           </div>
         </div>

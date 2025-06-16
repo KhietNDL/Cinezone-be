@@ -35,6 +35,7 @@ import HistoryActivity from "./layouts/User/component/HistoryActivity";
 
 import TicketBookingManagement from "./layouts/Admin/component/TicketBookingMangement";
 import TicketDetails from "./layouts/User/component/TicketDetails";
+import PromotionManagement from "./layouts/Admin/component/PromotionManagement";
 function App() {
   return (
     <AuthProvider>
@@ -65,6 +66,7 @@ function App() {
           <Route path="movies" element={<MovieManagement />} />
           <Route path="rooms" element={<RoomManagement />} />
           <Route path="bookings" element={<TicketBookingManagement />} />
+          <Route path="promotions" element={<PromotionManagement />} />
         </Route>
 
         <Route path="/staff" element={<StaffLayout />}>

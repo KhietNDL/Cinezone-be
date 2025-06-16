@@ -20,7 +20,7 @@ const options = {
     ],
     servers: [
       {
-        url: 'http://localhost:8080',
+        url: 'http://localhost:4458', // Đổi port về đúng với backend
         description: 'Development server',
       },
     ],
@@ -290,4 +290,4 @@ const options = {
 };
 const specs = swaggerJsdoc(options);
 
-module.exports = specs; 
+module.exports = specs;
