@@ -58,12 +58,10 @@ const { auth, isAdmin } = require('../middlewares/auth.middleware');
 
 /**
  * @swagger
- * /api/promotions:
+ * /api/promotions/getAll:
  *   get:
  *     summary: Get all promotions
  *     tags: [Promotion Management]
- *     security:
- *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: List of all promotions
@@ -87,8 +85,6 @@ router.get('/', auth, isAdmin, getAllPromotions);
  *   get:
  *     summary: Search promotions by title
  *     tags: [Promotion Management]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: title
@@ -108,8 +104,6 @@ router.get('/search', auth, isAdmin, searchPromotionsByTitle);
  *   get:
  *     summary: Get promotion by ID
  *     tags: [Promotion Management]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -126,7 +120,7 @@ router.get('/:id', auth, isAdmin, getPromotionById);
 
 /**
  * @swagger
- * /api/promotions:
+ * /api/promotions/create:
  *   post:
  *     summary: Create new promotion
  *     tags: [Promotion Management]
@@ -167,7 +161,7 @@ router.post('/', auth, isAdmin, createPromotion);
 
 /**
  * @swagger
- * /api/promotions/{id}:
+ * /api/promotions/update/{id}:
  *   put:
  *     summary: Update promotion
  *     tags: [Promotion Management]
@@ -211,7 +205,7 @@ router.put('/:id', auth, isAdmin, updatePromotion);
 
 /**
  * @swagger
- * /api/promotions/{id}:
+ * /api/promotions/delete/{id}:
  *   delete:
  *     summary: Delete promotion
  *     tags: [Promotion Management]

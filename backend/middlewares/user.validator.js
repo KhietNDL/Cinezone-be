@@ -121,6 +121,9 @@ const updateProfileValidation = [
     body('address')
         .optional()
         .isString().withMessage('Address must be a string'),
+    body('avatar')
+    .optional()
+    .isURL().withMessage('Avatar image URL is invalid')
 ];
 
 module.exports = {
