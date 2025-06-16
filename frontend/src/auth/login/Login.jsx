@@ -1,16 +1,3 @@
-<<<<<<< HEAD
-import React from "react";
-
-function Login() {
-  return (
-    <>
-      <h1>Hello, React!</h1>
-    </>
-  );
-}
-
-export default Login;
-=======
 import { useState, useEffect } from "react";
 import { Eye, EyeOff, Mail, Lock, Film, Star } from "lucide-react";
 import logoWeb from "../../assets/logoWeb.png";
@@ -18,9 +5,14 @@ import imageLogin1 from "../../assets/imageLogin1.jpg";
 import imageLogin2 from "../../assets/imageLogin2.jpg";
 import imageLogin3 from "../../assets/imageLogin3.jpg";
 import imageLogin4 from "../../assets/imageLogin4.jpg";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom"; // Thêm useNavigate
+import { login } from "../../services/API"; // Import hàm login từ API.jsx
+import { useAuth } from "../../context/AuthContext";
+import { toast } from "react-toastify";
 
+// import { signIn } from "../../context/AuthContext";
 const MovieTheaterLogin = () => {
+  const { signIn } = useAuth(); // Import signIn
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -28,14 +20,12 @@ const MovieTheaterLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  // eslint-disable-next-line no-unused-vars
-  const [focusedField, setFocusedField] = useState("");
+  const [setFocusedField] = useState("");
   const [currentBgIndex, setCurrentBgIndex] = useState(0);
+  const navigate = useNavigate(); // Thêm navigate để chuyển hướng sau đăng nhập
 
-  // Movie backgrounds - poster phim
   const movieBackgrounds = [imageLogin1, imageLogin2, imageLogin3, imageLogin4];
 
-  // Auto change background every 4 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentBgIndex(
@@ -62,24 +52,41 @@ const MovieTheaterLogin = () => {
 
     if (!formData.password) {
       newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
+    } else if (formData.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters";
     }
 
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
       setIsLoading(true);
-      setTimeout(() => {
+      try {
+        const response = await login({
+          email: formData.email,
+          password: formData.password,
+        });
+        console.log("Login response:", response); // Log response
+        if (response.token && response.user?.UserId) {
+          console.log("Token:", response.token); // Log token
+          await signIn(response.token, response.user.UserId); // Ensure signIn completes
+          setIsLoading(false);
+          toast.success("Login Successfully!");
+
+          navigate("/"); // Navigate to home
+        } else {
+          throw new Error("No token in response");
+        }
+      } catch (error) {
+        console.error("Login error:", error.message); // Log error
         setIsLoading(false);
-        alert("Login successful!");
-      }, 2000);
+        setErrors({ api: error.message || "Login failed. Please try again." });
+      }
     }
   };
 
   return (
-    <div className=" relative overflow-hidden">
-      {/* Background slideshow */}
+    <div className="relative overflow-hidden">
+      {/* Background slideshow và các phần UI khác giữ nguyên */}
       <div className="absolute inset-0">
         {movieBackgrounds.map((bg, index) => (
           <div
@@ -96,13 +103,10 @@ const MovieTheaterLogin = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900/40 via-blue-900/40 to-indigo-900/40" />
       </div>
 
-      {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden z-10">
         <div className="absolute -top-4 -left-4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-pulse"></div>
         <div className="absolute -top-4 -right-4 w-96 h-96 bg-yellow-500 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-pulse animation-delay-2000"></div>
         <div className="absolute -bottom-8 left-20 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-pulse animation-delay-4000"></div>
-
-        {/* Floating movie icons */}
         <div className="absolute top-20 left-10 animate-bounce">
           <Film className="text-yellow-400 w-6 h-6 opacity-60" />
         </div>
@@ -126,8 +130,7 @@ const MovieTheaterLogin = () => {
         </div>
       </div>
 
-      {/* Main content */}
-      <div className=" flex items-center justify-center h-screen sm:px-10 lg:px-20 relative z-20">
+      <div className="flex items-center justify-center h-screen sm:px-10 lg:px-20 relative z-20">
         <div className="relative w-full max-w-lg">
           <div className="backdrop-blur-xl bg-white/10 p-8 rounded-2xl shadow-2xl border border-white/10 hover:bg-white/15 transition-all duration-500">
             <div className="text-center mb-8">
@@ -147,7 +150,7 @@ const MovieTheaterLogin = () => {
               </p>
             </div>
             <div className="space-y-2">
-              {/* Email input - Fixed */}
+              {/* Email input */}
               <div className="relative mb-8">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-purple-400 z-10">
                   <Mail className="h-5 w-5" />
@@ -163,7 +166,6 @@ const MovieTheaterLogin = () => {
                     setFormData({ ...formData, email: e.target.value })
                   }
                 />
-                {/* Fixed error message position */}
                 <div className="absolute -bottom-6 left-0 w-full">
                   {errors.email && (
                     <p className="text-sm text-red-400 animate-pulse">
@@ -173,7 +175,7 @@ const MovieTheaterLogin = () => {
                 </div>
               </div>
 
-              {/* Password input - Fixed */}
+              {/* Password input */}
               <div className="relative mb-8">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-purple-400 z-10">
                   <Lock className="h-5 w-5" />
@@ -200,18 +202,21 @@ const MovieTheaterLogin = () => {
                     <Eye className="h-5 w-5 text-purple-400 hover:text-purple-300" />
                   )}
                 </button>
-                {/* Fixed error message position */}
                 <div className="absolute -bottom-6 left-0 w-full">
                   {errors.password && (
                     <p className="text-sm text-red-400 animate-pulse">
                       {errors.password}
                     </p>
                   )}
+                  {errors.api && (
+                    <p className="text-sm text-red-400 animate-pulse">
+                      {errors.api}
+                    </p>
+                  )}
                 </div>
               </div>
 
               {/* Forgot password */}
-
               <div className="w-full flex justify-end mb-2">
                 <Link
                   to="/forgot"
@@ -230,7 +235,7 @@ const MovieTheaterLogin = () => {
                   className={`w-full py-3 px-6 rounded-xl font-semibold text-lg transition-all duration-150 transform ${
                     isLoading || Object.keys(errors).length > 0
                       ? "bg-gray-600 cursor-not-allowed text-gray-300"
-                      : "bg-gradient-to-r from-purple-400 to-purple-600 text-white active:scale-[1.05] hover:brightness-105 shadow-lg"
+                      : "bg-gradient-to-r from-purple-500 to-purple-600  text-white"
                   }`}
                 >
                   {isLoading ? (
@@ -244,8 +249,8 @@ const MovieTheaterLogin = () => {
                 </button>
               </div>
             </div>
-            {/* Register link */}
 
+            {/* Register link */}
             <p className="mt-6 text-center text-base text-gray-300">
               New to CineZone?{" "}
               <Link
@@ -259,7 +264,6 @@ const MovieTheaterLogin = () => {
         </div>
       </div>
 
-      {/* Custom animation delays */}
       <style jsx>{`
         .animation-delay-2000 {
           animation-delay: 2s;
@@ -271,5 +275,5 @@ const MovieTheaterLogin = () => {
     </div>
   );
 };
+
 export default MovieTheaterLogin;
->>>>>>> Develop

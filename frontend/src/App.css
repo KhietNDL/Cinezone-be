@@ -7,24 +7,45 @@ div[role="button"] {
   display: none;
 }
 
-.swiper-pagination-bullet {
+.landingPage .swiper-pagination-bullet {
   background: white !important;
 }
-.swiper-pagination-bullet swiper-pagination-bullet-active {
+.landingPage .swiper-pagination-bullet swiper-pagination-bullet-active {
   background: white !important;
 }
-.swiper-wrapper {
+.landingPage .swiper-wrapper {
   padding-bottom: 50px;
 }
-.swiper-button-prev {
+.landingPage .swiper-button-prev {
   color: white !important;
   padding-right: 10px !important;
 }
-.swiper-button-next {
+.landingPage .swiper-button-next {
   color: white !important;
   padding-left: 10px !important;
 }
 .recharts-wrapper {
   min-height: 250px !important;
   max-height: 250px !important;
+}
+.landingPage .swiper-button-prev {
+  position: absolute !important;
+  z-index: 10 !important;
+}
+.landingPage .swiper {
+  padding-right: 50px !important;
+  padding-left: 50px !important;
+  width: 100% !important;
+}
+@media (max-width: 768.5px) {
+  .landingPage .swiper {
+    padding-right: 35px !important;
+    padding-left: 35px !important;
+  }
+}
+@media (max-width: 426.5px) {
+  .landingPage .swiper {
+    padding-right: 20px !important;
+    padding-left: 20px !important;
+  }
 }

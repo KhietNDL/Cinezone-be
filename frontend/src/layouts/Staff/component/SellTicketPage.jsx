@@ -1,35 +1,44 @@
 
-import React, { useState, useEffect, useRef } from "react";
-import { Button, Typography, Spin, message, DatePicker } from "antd";
-import axios from "axios";
-import MovieCard from "./MovieCard"; // Giữ nguyên component MovieCard của bạn
+import React, { useState, useEffect } from "react";
+import { Button, Input, Spin, Tag, message } from "antd";
+import api from "../../../services/API";
+
 import ShowtimeButton from "./ShowtimeButton";
 import { Link } from "react-router-dom";
+import { Swiper, SwiperSlide } from "swiper/react";
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
+import { Pagination, Navigation } from "swiper/modules";
+import './SwiperButton.css';
+import { RiMovie2AiFill } from "react-icons/ri";
+import ItemCard from "./ItemCard";
 
-const MOVIES_PER_PAGE = 12;
-const SCROLL_STEP = 2; // Mỗi lần trượt 2 phim
+
 
 const SellTicketPage = () => {
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [selectedDay, setSelectedDay] = useState(null);
+  const [selectedTime, setSelectedTime] = useState(null);
+  const [selectedVersion, setSelectedVersion] = useState(null);
+  const [search, setSearch] = useState("");
 
-  const [currentIndex, setCurrentIndex] = useState(MOVIES_PER_PAGE);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const containerRef = useRef(null);
+  const rooms = "Cinema Hall 3";
+
 
   useEffect(() => {
     const fetchMovies = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(
-          "https://683d6711199a0039e9e55241.mockapi.io/movie"
-        );
-        setMovies(res.data);
-        setCurrentIndex(MOVIES_PER_PAGE);
+        const res = await api.get("/movie/current");
+
+        setMovies(res.data.data);
       } catch (err) {
         message.error("Failed to fetch movies");
         console.error(err);
+        setMovies([]);
       } finally {
         setLoading(false);
       }
@@ -37,127 +46,146 @@ const SellTicketPage = () => {
     fetchMovies();
   }, []);
 
-  // Clone cuối thêm vào đầu, clone đầu thêm vào cuối
-  const extendedMovies = [
-    ...movies.slice(-MOVIES_PER_PAGE),
-    ...movies,
-    ...movies.slice(0, MOVIES_PER_PAGE),
-  ];
 
-  const totalLength = extendedMovies.length;
-
-  const handleNext = () => {
-    if (isAnimating || movies.length === 0) return;
-    setIsAnimating(true);
-    setCurrentIndex((prev) => prev + SCROLL_STEP);
-  };
-
-  const handlePrev = () => {
-    if (isAnimating || movies.length === 0) return;
-    setIsAnimating(true);
-    setCurrentIndex((prev) => prev - SCROLL_STEP);
-  };
-
-  const handleTransitionEnd = () => {
-    setIsAnimating(false);
-
-    if (currentIndex >= movies.length + MOVIES_PER_PAGE) {
-      setCurrentIndex(MOVIES_PER_PAGE);
-      containerRef.current.style.transition = "none";
-      containerRef.current.style.transform = `translateX(-${(MOVIES_PER_PAGE * 100) / MOVIES_PER_PAGE}%)`;
-      setTimeout(() => {
-        containerRef.current.style.transition = "transform 0.5s ease-in-out";
-      }, 50);
-    } else if (currentIndex < MOVIES_PER_PAGE) {
-      const maxIndex = movies.length + MOVIES_PER_PAGE - SCROLL_STEP;
-      setCurrentIndex(maxIndex);
-      containerRef.current.style.transition = "none";
-      containerRef.current.style.transform = `translateX(-${(maxIndex * 100) / MOVIES_PER_PAGE}%)`;
-      setTimeout(() => {
-        containerRef.current.style.transition = "transform 0.5s ease-in-out";
-      }, 50);
-    }
-  };
-
-  const translatePercent = -(currentIndex * 100) / MOVIES_PER_PAGE;
 
   return (
-    <div className="p-3">
-      <h1 className="text-3xl font-bold">Sell Movie Ticket</h1>
+    <div className="w-full bg-[#fafbfc] p-[20px]">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-fuchsia-700">Sell Movie Ticket</h1>
+        <Input.Search
+          placeholder="Search movie..."
+          style={{ width: 250 }}
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+      </div>
 
       <h5 className="mt-5">
         <i className="fa-solid fa-film"></i> Select Movie
       </h5>
 
-      {loading ? (
-        <div className="text-center my-8">
-          <Spin size="large" />
-        </div>
-      ) : (
-        <div className="flex items-center justify-center gap-4">
-          <Button
-            shape="circle"
-            icon={<i className="fa-solid fa-chevron-left" />}
-            onClick={handlePrev}
-            disabled={movies.length === 0 || isAnimating}
-          />
-          <div className="overflow-hidden w-full max-w-6xl">
-            <div
-              ref={containerRef}
-              className="flex transition-transform duration-500 ease-in-out"
-              style={{
-                width: `${(totalLength * 100) / MOVIES_PER_PAGE}%`,
-                transform: `translateX(${translatePercent}%)`,
-              }}
-              onTransitionEnd={handleTransitionEnd}
-            >
-              {extendedMovies.map((movie, idx) => (
-                <div
-                  key={`${movie.id}-${idx}`}
-                  className="flex w-[80px] h-[410px] p-2"
-                  style={{ flex: `0 0 ${80 / MOVIES_PER_PAGE}%` }}
-                >
-                  <MovieCard
-                    movie={movie}
+      <div className="staff-swiper">
+        {loading ? (
+          <div className="text-center my-8">
+            <Spin size="large" />
+          </div>
+        ) : (
+          <Swiper
+            modules={[Navigation, Pagination]}
+            navigation
+            pagination={{
+              clickable: true,
+            }}
+            spaceBetween={50}
+            slidesPerView={4}
+            slidesPerGroup={2}
+            loop={true}
+            breakpoints={{
+              320: { slidesPerView: 1 },
+              640: { slidesPerView: 2 },
+              1024: { slidesPerView: 4 },
+            }}
+          >
+            {movies.map((movie) => (
+              <SwiperSlide key={movie.MovieId}>
+                <div className="flex justify-center p-2 w-[260px]">
+                  <ItemCard
+                    item={movie}
+                    type="movie"
                     onSelect={setSelectedMovie}
-                    selected={selectedMovie?.id === movie.id}
+                    selected={selectedMovie?.MovieId === movie.MovieId}
                   />
                 </div>
-              ))}
-            </div>
+
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        )}
+      </div>
+      {selectedMovie && (
+        <>
+          <h5 className="mt-5 flex items-center gap-2">
+            <RiMovie2AiFill /> Select Version
+          </h5>
+          <div className="pl-15 pt-2 flex gap-4">
+            {(!selectedVersion || selectedVersion === "IMAX") && (
+              <div role="button"
+                className=" font-bold text-white text-center
+            px-7 py-2 rounded-lg  bg-[linear-gradient(to_right,_#004897,_#509AEA,_#60BCE6,_#56C3F5,_#0AF7FB)] "
+                onClick={() =>
+                  setSelectedVersion(selectedVersion === "IMAX" ? null : "IMAX")
+                }
+              >
+                IMAX
+              </div>
+            )}
+            {(!selectedVersion || selectedVersion === "4DX") && (
+              <div
+                className=" font-bold text-white text-center
+            px-7 py-2 rounded-lg bg-[linear-gradient(to_right,_#680000,_#991C1C,_#BF1616,_#DB3838,_#F26969)]"
+                onClick={() =>
+                  setSelectedVersion(selectedVersion === "4DX" ? null : "4DX")
+                }
+              >
+                4DX
+              </div>
+            )}
+            {(!selectedVersion || selectedVersion === "3D") && (
+              <div
+                className=" font-bold text-white text-center
+            px-7 py-2 rounded-lg bg-[linear-gradient(to_right,_#C88200,_#DB9E2D,_#D0B400,_#F3C91E,_#FFE606)]"
+                color="cyan"
+                onClick={() =>
+                  setSelectedVersion(selectedVersion === "3D" ? null : "3D")
+                }
+              >
+                3D
+              </div>
+            )}
+            {(!selectedVersion || selectedVersion === "2D") && (
+              <div
+                className=" font-bold text-white text-center
+            px-7 py-2 rounded-lg bg-[linear-gradient(to_right,_#147800,_#03B000,_#0ACA00,_#4ADF00,_#5EFF41)]"
+                onClick={() =>
+                  setSelectedVersion(selectedVersion === "2D" ? null : "2D")
+                }
+              >
+                2D
+              </div>
+            )}
           </div>
-          <Button
-            shape="circle"
-            icon={<i className="fa-solid fa-chevron-right" />}
-            onClick={handleNext}
-            disabled={movies.length === 0 || isAnimating}
-          />
-        </div>
+        </>
       )}
 
-      <h5 className="mt-5">
-        <i className="fa-solid fa-clock"></i> Select Showtime
-      </h5>
-      {/* <div className="p-4 flex items-center justify-start ">
-        <DatePicker
-          className="w-[200px]"
-          style={{ marginLeft: "50px" }}
-          placeholder="Select date"
-        />
-      </div> */}
+      {selectedMovie && selectedVersion && (
+        <>
 
-      <ShowtimeButton
-        selectedTime={null}
-        onSelectTime={(time) => console.log("Selected time:", time)}
-      />
+          <h5 className="mt-5">
+            <i className="fa-solid fa-clock"></i> Select Showtime
+          </h5>
+          <ShowtimeButton
+            selectedDay={selectedDay}
+            onSelectDay={setSelectedDay}
+            selectedTime={selectedTime}
+            onSelectTime={setSelectedTime}
+          />
+
+        </>
+      )}
+      {selectedMovie && selectedVersion && selectedDay && selectedTime && (
+        <div className="flex items-center gap-2 mt-5">
+          <div className="flex items-center gap-2"><i className="fa-solid fa-location-dot"></i> Room:</div>
+          <div className="font-bold">{rooms}</div>
+        </div>
+      )}
       <div className="mt-5 text-center">
-        <Link to="/staff/select-seats">
+        <Link to="/staff/ticket-selling/select-seats">
           <Button
             style={{
-              backgroundColor: "#4F46E5",
+              backgroundColor: "#8A2BE2",
               color: "white",
-              padding: "1rem",
-              borderRadius: "0.25rem",
+              padding: "1rem"
+
             }}
           >
             <i className="fa-solid fa-couch"></i> Select seats

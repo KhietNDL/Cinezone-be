@@ -1,22 +1,43 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { 
-    register, 
-    login, 
-    forgotPassword, 
-    resetPassword, 
-    logout, 
-    updateProfile,
-    getUserById 
-} = require('../controllers/user.controller');
-const { 
-    loginValidation, 
-    registerValidation, 
-    forgotPasswordValidation, 
-    resetPasswordValidation,
-    updateProfileValidation
-} = require('../middlewares/user.validator');
-const auth = require('../middlewares/auth.middleware');
+const multer = require('multer');
+const UserController = require('../controllers/user.controller');
+const {
+  register,
+  login,
+  forgotPassword,
+  resetPassword,
+  logout,
+  updateProfile,
+  getUserById,
+} = require("../controllers/user.controller");
+const {
+  loginValidation,
+  registerValidation,
+  forgotPasswordValidation,
+  resetPasswordValidation,
+  updateProfileValidation,
+} = require("../middlewares/user.validator");
+const { auth, isAdmin } = require("../middlewares/auth.middleware");
+const passport = require("../middlewares/passport");
+const jwt = require("jsonwebtoken");
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
+  fileFilter: (req, file, cb) => {
+    // check type file
+    if (file.fieldname === 'avatar_url') {
+      if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+      } else {
+        cb(new Error('Avatart must be an image file'));
+      }
+    } else {
+      cb(null, true);
+    }
+  }
+});
 
 /**
  * @swagger
@@ -46,7 +67,7 @@ const auth = require('../middlewares/auth.middleware');
  *               password:
  *                 type: string
  *                 minLength: 8
- *                 maxLength: 128       
+ *                 maxLength: 128
  *                 description: User's password (8-128 chars, at least 1 uppercase, 1 lowercase, 1 number, 1 special character, no whitespace)
  *               fullName:
  *                 type: string
@@ -86,7 +107,7 @@ const auth = require('../middlewares/auth.middleware');
  *       500:
  *         description: Server error
  */
-router.post('/register', registerValidation, register);
+router.post("/register", registerValidation, register);
 
 /**
  * @swagger
@@ -135,7 +156,7 @@ router.post('/register', registerValidation, register);
  *       500:
  *         description: Server error
  */
-router.post('/login', loginValidation, login);
+router.post("/login", loginValidation, login);
 
 /**
  * @swagger
@@ -173,7 +194,7 @@ router.post('/login', loginValidation, login);
  *       500:
  *         description: Server error
  */
-router.post('/forgot-password', forgotPasswordValidation, forgotPassword);
+router.post("/forgot-password", forgotPasswordValidation, forgotPassword);
 
 /**
  * @swagger
@@ -220,7 +241,7 @@ router.post('/forgot-password', forgotPasswordValidation, forgotPassword);
  *       500:
  *         description: Server error
  */
-router.post('/reset-password', resetPasswordValidation, resetPassword);
+router.post("/reset-password", resetPasswordValidation, resetPassword);
 
 /**
  * @swagger
@@ -254,14 +275,14 @@ router.post('/reset-password', resetPasswordValidation, resetPassword);
  *       500:
  *         description: Server error
  */
-router.post('/logout', auth, logout);
+router.post("/logout", auth, logout);
 
 /**
  * @swagger
  * /api/auth/user/{id}:
  *   get:
  *     summary: Get user by ID
- *     tags: [User]
+ *     tags: [Get Profile]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -302,6 +323,12 @@ router.post('/logout', auth, logout);
  *                     sex:
  *                       type: integer
  *                       enum: [1, 2, 3]
+ *                     cccd:
+ *                       type: string
+ *                     address:
+ *                       type: string
+ *                     avatar_url:
+ *                       type: string
  *       400:
  *         description: Invalid user ID format
  *       401:
@@ -311,14 +338,14 @@ router.post('/logout', auth, logout);
  *       500:
  *         description: Server error
  */
-router.get('/user/:id', auth, getUserById);
+router.get("/user/:id", auth, getUserById);
 
 /**
  * @swagger
  * /api/auth/profile/{id}:
  *   put:
  *     summary: Update user profile by ID
- *     tags: [User]
+ *     tags: [Edit Profile]
  *     parameters:
  *       - in: path
  *         name: id
@@ -332,7 +359,7 @@ router.get('/user/:id', auth, getUserById);
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
@@ -340,46 +367,30 @@ router.get('/user/:id', auth, getUserById);
  *                 type: string
  *                 minLength: 6
  *                 maxLength: 100
- *                 default: ''
- *                 description: User's full name (6-100 chars, no numbers or special characters, no leading/trailing spaces)
  *               password:
  *                 type: string
  *                 minLength: 8
  *                 maxLength: 128
- *                 default: ''
- *                 description: User's password (8-128 chars, at least 1 uppercase, 1 lowercase, 1 number, 1 special character, no whitespace)
  *               dateOfBirth:
  *                 type: string
  *                 format: date
- *                 default: ''
- *                 description: User's date of birth (YYYY-MM-DD, not in the future)
  *               phoneNumber:
  *                 type: string
- *                 default: ''
- *                 description: User's phone number (exactly 10 digits)
  *               sex:
  *                 type: integer
  *                 enum: [1, 2, 3]
- *                 default: ''
- *                 description: 1 for male, 2 for female, 3 for other
  *               email:
  *                 type: string
  *                 format: email
  *                 maxLength: 255
- *                 default: ''
- *                 description: User's email address (must be lowercase, no whitespace)
  *               cccd:
- *                 type: string     
- *                 description: Citizen ID (exactly 12 digits, optional)
- *                 default: ''
+ *                 type: string
  *               address:
  *                 type: string
- *                 default: ''
- *                 description: User's address (optional)
- *               avatar_url:
+ *               avatar:
  *                 type: string
- *                 default: ''
- *                 description: User's avatar URL (optional)
+ *                 format: binary
+ *                 description: User's avatar image file
  *     responses:
  *       200:
  *         description: Profile updated successfully
@@ -392,6 +403,74 @@ router.get('/user/:id', auth, getUserById);
  *       500:
  *         description: Server error
  */
-router.put('/profile/:id', auth, updateProfileValidation, updateProfile);
+router.put("/profile/:id", 
+  auth, 
+  upload.fields([{ name: 'avatar', maxCount: 1 }]),
+  updateProfileValidation, 
+  UserController.updateProfile
+);
 
-module.exports = router; 
+/**
+ * @swagger
+ * /api/auth/google:
+ *   get:
+ *     summary: Login with Google OAuth2
+ *     description: Redirect to Google for authentication, then return token.
+ *     tags: [Authentication]
+ *     responses:
+ *       302:
+ *         description: Redirect to Google OAuth2
+ */
+router.get(
+  "/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
+
+/**
+ * @swagger
+ * /api/auth/google/callback:
+ *   get:
+ *     summary: Google OAuth2 callback
+ *     description: Process callback from Google, return token and user.
+ *     tags: [Authentication]
+ *     responses:
+ *       200:
+    *         description: Login successful, return token and user
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     userId:
+ *                       type: string
+ *                       format: uuid
+ *                     email:
+ *                       type: string
+ *                       format: email
+ *                     fullName:
+ *                       type: string
+ *       401:
+ *         description: Login failed
+ */
+router.get(
+  "/google/callback",
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: "/login",
+  }),
+  (req, res) => {
+    const token = jwt.sign(
+      { id: req.user.UserId, email: req.user.Email },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+    res.json({ token, user: req.user });
+  }
+);
+
+module.exports = router;

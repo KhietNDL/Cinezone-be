@@ -1,0 +1,132 @@
+const db = require("../config/database");
+const { v4: uuidv4 } = require("uuid");
+
+// Hàm helper để format datetime cho MySQL
+const formatDateTime = (date) => {
+  return date.toISOString().slice(0, 19).replace("T", " "); // Chuyển từ "2025-06-09T13:44:47.586Z" thành "2025-06-09 13:44:47"
+};
+
+class Promotion {
+  static async getAllPromotions() {
+    const [rows] = await db
+      .promise()
+      .query("SELECT * FROM Promotions WHERE IsDeleted = 0");
+    return rows;
+  }
+
+  static async getPromotionById(id) {
+    const [rows] = await db
+      .promise()
+      .query(
+        "SELECT * FROM Promotions WHERE PromotionId = ? AND IsDeleted = 0",
+        [id]
+      );
+    return rows[0];
+  }
+
+  static async createPromotion(data) {
+    const id = uuidv4();
+    const now = new Date();
+    const {
+      Title,
+      StartTime,
+      EndTime,
+      DiscountValue,
+      Detail,
+      Image,
+      CreatedBy,
+    } = data;
+
+    // Format datetime cho MySQL
+    const formattedStartTime = formatDateTime(new Date(StartTime));
+    const formattedEndTime = formatDateTime(new Date(EndTime));
+    const formattedCreatedAt = formatDateTime(now);
+
+    await db.promise().query(
+      `INSERT INTO Promotions (
+          PromotionId, Title, StartTime, EndTime, DiscountValue, 
+          Detail, Image, IsDeleted, CreatedAt, CreatedBy
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+      [
+        id,
+        Title,
+        formattedStartTime,
+        formattedEndTime,
+        DiscountValue,
+        Detail,
+        Image,
+        formattedCreatedAt,
+        CreatedBy,
+      ]
+    );
+    return id;
+  }
+
+  static async updatePromotion(id, data) {
+    const now = new Date();
+    const {
+      Title,
+      StartTime,
+      EndTime,
+      DiscountValue,
+      Detail,
+      Image,
+      UpdatedBy,
+    } = data;
+
+    // Format datetime cho MySQL
+    const formattedStartTime = formatDateTime(new Date(StartTime));
+    const formattedEndTime = formatDateTime(new Date(EndTime));
+    const formattedUpdatedAt = formatDateTime(now);
+
+    const [result] = await db.promise().query(
+      `UPDATE Promotions 
+         SET Title = ?, 
+             StartTime = ?, 
+             EndTime = ?, 
+             DiscountValue = ?, 
+             Detail = ?, 
+             Image = ?, 
+             UpdatedAt = ?, 
+             UpdatedBy = ? 
+         WHERE PromotionId = ? AND IsDeleted = 0`,
+      [
+        Title,
+        formattedStartTime,
+        formattedEndTime,
+        DiscountValue,
+        Detail,
+        Image,
+        formattedUpdatedAt,
+        UpdatedBy,
+        id,
+      ]
+    );
+    return result.affectedRows > 0;
+  }
+
+  static async deletePromotion(id, DeletedBy) {
+    const now = new Date();
+    const formattedDeletedAt = formatDateTime(now);
+
+    const [result] = await db
+      .promise()
+      .query(
+        "UPDATE Promotions SET IsDeleted = 1, DeletedAt = ?, DeletedBy = ? WHERE PromotionId = ? AND IsDeleted = 0",
+        [formattedDeletedAt, DeletedBy, id]
+      );
+    return result.affectedRows > 0;
+  }
+
+  static async searchPromotionsByTitle(title) {
+    const [rows] = await db
+      .promise()
+      .query(
+        "SELECT * FROM Promotions WHERE LOWER(Title) LIKE LOWER(?) AND IsDeleted = 0",
+        [`%${title}%`]
+      );
+    return rows;
+  }
+}
+
+module.exports = Promotion;

@@ -1,122 +1,32 @@
-import { MdOutlineArrowDropDown } from "react-icons/md";
-import { FaRegCirclePlay } from "react-icons/fa6";
+// Landing.jsx - Cách tích hợp component
+import React, { useEffect, useState } from "react";
+import { FaRegCalendarCheck, FaRegCirclePlay } from "react-icons/fa6";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/pagination";
-import React, { useState } from "react";
-<<<<<<< HEAD
-import landingBackground from "../../../assets/landingBackground.jpg";
-=======
-import landingBackground from "../../../assets/The-Flash-2023-Teaser-Banner-01.jpg";
-
->>>>>>> Develop
-import { FaPlay } from "react-icons/fa";
-import { Pagination } from "swiper/modules";
-import imageMovie from "../../../assets/imageMovie.jpg";
-import imageMovie2 from "../../../assets/imageMovie2.jpg";
-import imageMovie3 from "../../../assets/imageMovie3.jpg";
-import imageMovie4 from "../../../assets/imageMovie4.jpg";
-import imageMovie5 from "../../../assets/imageMovie5.jpg";
-import imageMovie6 from "../../../assets/imageMovie6.jpg";
-import imageMovie7 from "../../../assets/imageMovie7.jpg";
-import imageMovie8 from "../../../assets/imageMovie8.jpg";
+import "swiper/css/navigation";
+import { IoMdBookmark } from "react-icons/io";
+import { GoClockFill } from "react-icons/go";
+import { Pagination, Navigation } from "swiper/modules";
+import { useNavigate } from "react-router-dom";
+import MovieHeroSwiper from "./MovieHeroSwiper";
 import promotionMovie1 from "../../../assets/PromotionMovie1.jpg";
 import promotionMovie2 from "../../../assets/PromotionMovie2.jpg";
 import promotionMovie3 from "../../../assets/PromotionMovie3.jpg";
-<<<<<<< HEAD
+import { getMovies } from "../../../services/API";
+
 const LandingPage = () => {
-  const [movieData, setMovieData] = useState([
-    {
-      id: 1,
-=======
-import { useNavigate } from "react-router-dom";
-const LandingPage = () => {
-  const [movieData] = useState([
-    {
-      idMovie: 1,
->>>>>>> Develop
-      nameMovie: "Stree 2 Sarkate Ka Atank",
-      category: [{ title: "Action" }, { title: "Horror" }],
-      imgUrl: imageMovie2,
-      sub: "English",
-    },
-    {
-<<<<<<< HEAD
-      id: 2,
-=======
-      idMovie: 2,
->>>>>>> Develop
-      nameMovie: "Stree 2 Sarkate Ka Atank",
-      category: [{ title: "Action" }, { title: "Horror" }],
-      imgUrl: imageMovie3,
+  const [movieData, setMovieData] = useState([]);
+  // eslint-disable-next-line no-unused-vars
+  const [itemsPerPage, setItemsPerPage] = useState(7);
+  const [currentPage, setCurrentPage] = useState(1);
+  // eslint-disable-next-line no-unused-vars
+  const [totalPages, setTotalPages] = useState(0);
+  const [hoveredMovie, setHoveredMovie] = useState(null);
+  // eslint-disable-next-line no-unused-vars
+  const [isHovered, setIsHovered] = useState(false);
 
-      sub: "English",
-    },
-    {
-<<<<<<< HEAD
-      id: 3,
-=======
-      idMovie: 3,
->>>>>>> Develop
-      nameMovie: "Stree 2 Sarkate Ka Atank",
-      category: [{ title: "Action" }, { title: "Horror" }],
-      imgUrl: imageMovie4,
-
-      sub: "English",
-    },
-    {
-<<<<<<< HEAD
-      id: 4,
-=======
-      idMovie: 4,
->>>>>>> Develop
-      nameMovie: "Stree 2 Sarkate Ka Atank",
-      category: [{ title: "Action" }, { title: "Horror" }],
-      imgUrl: imageMovie5,
-
-      sub: "English",
-    },
-    {
-<<<<<<< HEAD
-      id: 5,
-=======
-      idMovie: 5,
->>>>>>> Develop
-      nameMovie: "Stree 2 Sarkate Ka Atank",
-      category: [{ title: "Action" }, { title: "Horror" }],
-      imgUrl: imageMovie6,
-
-      sub: "English",
-    },
-    {
-<<<<<<< HEAD
-      id: 6,
-=======
-      idMovie: 6,
->>>>>>> Develop
-      nameMovie: "Stree 2 Sarkate Ka Atank",
-      category: [{ title: "Action" }, { title: "Horror" }],
-      imgUrl: imageMovie7,
-
-      sub: "English",
-    },
-    {
-<<<<<<< HEAD
-      id: 7,
-=======
-      idMovie: 7,
->>>>>>> Develop
-      nameMovie: "Stree 2 Sarkate Ka Atank",
-      category: [{ title: "Action" }, { title: "Horror" }],
-      imgUrl: imageMovie8,
-      sub: "English",
-    },
-  ]);
-<<<<<<< HEAD
-  const [promotionData, setPromotionData] = useState([
-=======
   const [promotionData] = useState([
->>>>>>> Develop
     {
       idPromotion: 1,
       imageUrl: promotionMovie1,
@@ -128,7 +38,7 @@ const LandingPage = () => {
     {
       idPromotion: 2,
       imageUrl: promotionMovie2,
-      namePromotion: "Happy Wenesday - 50% Off",
+      namePromotion: "Happy Wednesday - 50% Off",
       startActive: "May 20, 2025",
       endActive: "June 20, 2025",
       isActive: "active",
@@ -142,191 +52,315 @@ const LandingPage = () => {
       isActive: "active",
     },
   ]);
-<<<<<<< HEAD
-  return (
-    <div className="w-full bg-slate-900 select-none landingPage">
-      <div className="font-bold py-3 text-center text-[30px] text-white">
-        Trending movies
-      </div>
-      <div className="relative mt-3 h-[450px] w-full">
-=======
+  const getMovie = async () => {
+    try {
+      const response = await getMovies({
+        limit: itemsPerPage,
+        page: currentPage,
+      });
+      if (response.data) {
+        setMovieData(response.data.movies || response.data);
+        setTotalPages(
+          response.data.totalPages ||
+            Math.ceil(response.data.total / itemsPerPage)
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching movies:", error);
+    }
+  };
+
+  useEffect(() => {
+    getMovie();
+  }, [itemsPerPage, currentPage]);
+
   const navigate = useNavigate();
   const handleClickMovie = (idMovie) => {
     navigate(`/${idMovie}`);
   };
+
+  // Responsive breakpoints for Swiper
+  const swiperBreakpoints = {
+    320: {
+      slidesPerView: 1,
+      spaceBetween: 20,
+    },
+    640: {
+      slidesPerView: 2,
+      spaceBetween: 30,
+    },
+    768: {
+      slidesPerView: 3,
+      spaceBetween: 40,
+    },
+    1024: {
+      slidesPerView: 4,
+      spaceBetween: 50,
+    },
+  };
+
+  // eslint-disable-next-line no-unused-vars
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const months = [
+      "JAN",
+      "FEB",
+      "MAR",
+      "APR",
+      "MAY",
+      "JUN",
+      "JUL",
+      "AUG",
+      "SEP",
+      "OCT",
+      "NOV",
+      "DEC",
+    ];
+
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+
+    return `${day} ${month} ${year}`;
+  };
+
+  // Format date range
+  const formatDateRange = (fromDate, toDate) => {
+    if (!fromDate || !toDate) return "Coming Soon";
+    return `${formatDate(fromDate)} - ${formatDate(toDate)}`;
+  };
+
+  // Format running time
+  const formatRunningTime = (minutes) => {
+    if (!minutes) return "N/A";
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+  };
+
   return (
-    <div className="w-full  select-none landingPage">
-      {/* <div className="font-bold py-3 text-center text-[30px] text-white">
-        Trending movies
-      </div> */}
-      <div className="relative h-[500px] w-full ">
->>>>>>> Develop
-        <img
-          src={landingBackground}
-          alt=""
-          loading="lazy"
-<<<<<<< HEAD
-          className="w-full h-full object-cover bg-black/70"
-        />{" "}
-        <div className="absolute w-full bottom-4 flex items-center justify-between">
-          <div className="w-[50%] flex flex-col items-start space-y-5 px-[20px]">
-            <div className="flex items-center space-x-3 text-white">
-              <p role="button" className="bg-black p-3 rounded-xl ">
-                ACTION
-              </p>
-              <p role="button" className="bg-black p-3 rounded-xl ">
-                MAXUS MALL
-              </p>
-            </div>
-=======
-          className="w-full h-full object-cover"
-        />{" "}
-        <div className="absolute w-full h-full bottom-0 flex items-center justify-between bg-gradient-to-b from-transparent to-black/100">
-          <div className="w-[50%] flex flex-col items-start space-y-5 mt-70 px-[20px]">
->>>>>>> Develop
-            <div className="text-[40px] font-bold text-white">
-              Deadpools & Wolverine
-            </div>
-            <div className="text-white">
-              cbehwecwec ưe ce cewc ưecwe cưe c cưec ưec ư ecwe c cưec ưec ưe cư
-              ec ecwec ưec ưe cưec ưe cưe cưe c cưechwe chưe cưec ưiecưiec
-            </div>
-            <div className="flex items-center space-x-3">
-              <div
-                role="button"
-<<<<<<< HEAD
-                className="p-3  rounded-xl  bg-purple-500 text-white font-semibold  hover:bg-purple-600 active:bg-purple-700 active:scale-[1.1]"
-=======
-                className="p-3  rounded-4xl shadow-[#6a57f5]  shadow-md   bg-[#6a57f5] px-6  text-white font-semibold  hover:bg-[#6957f5ea]  active:bg-[#6957f5ea] active:scale-[1.1]"
->>>>>>> Develop
+    <div className="w-full select-none landingPage">
+      {/* HERO SECTION - Thay thế bằng MovieHeroSwiper */}
+      <MovieHeroSwiper movieData={movieData} />
+
+      {/* Screen 3D Effect */}
+      <div className="w-full mt-10 px-4">
+        <div className="w-full h-[40px] relative overflow-hidden group">
+          {/* SVG cho đường cong gradient */}
+          <svg
+            width="100%"
+            height="100%"
+            viewBox="0 0 800 40"
+            className="absolute inset-0 transition-transform duration-500 group-hover:scale-110"
+            preserveAspectRatio="none"
+            style={{ background: "transparent" }}
+          >
+            {/* Định nghĩa gradient từ nhạt đến đậm ở giữa */}
+            <defs>
+              <linearGradient
+                id="purpleGradient"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="0%"
               >
-                Book Now
-              </div>
-              <div
-                role="button"
-<<<<<<< HEAD
-                className="p-3  flex items-center rounded-xl border-solid border-[1px] border-purple-500 bg-black text-purple-500 font-semibold active:scale-[1.1]"
-=======
-                className="p-3 shadow-[#6a57f5]  shadow-md   flex items-center rounded-4xl px-6 border-solid border-[1px] border-[#6957f5ea] bg-black hover:bg-slate-950 text-[#ffffffea] font-semibold active:scale-[1.1]"
->>>>>>> Develop
+                <stop offset="0%" stopColor="#6a57f5" stopOpacity="0.1" />
+                <stop offset="25%" stopColor="#6a57f5" stopOpacity="0.4" />
+                <stop offset="50%" stopColor="#6a57f5" stopOpacity="1" />
+                <stop offset="75%" stopColor="#6a57f5" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#6a57f5" stopOpacity="0.1" />
+              </linearGradient>
+
+              <linearGradient id="purpleGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#6a57f5" stopOpacity="0.1" />
+                <stop offset="25%" stopColor="#6a57f5" stopOpacity="0.5" />
+                <stop offset="50%" stopColor="#6a57f5" stopOpacity="1" />
+                <stop offset="75%" stopColor="#6a57f5" stopOpacity="0.5" />
+                <stop offset="100%" stopColor="#6a57f5" stopOpacity="0.1" />
+              </linearGradient>
+
+              <linearGradient
+                id="purpleGlowHover"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="0%"
               >
-                <FaPlay size={20} className="mr-2" /> Watch trailer
-              </div>
-            </div>
-          </div>
-<<<<<<< HEAD
-          <div className="w-1/2 flex justify-center items-center">
-            <img src={imageMovie} alt="" loading="lazy" className="w-[200px]" />
-=======
-          <div className="w-1/2 absolute right-0  top-35 flex justify-center items-center">
-            <img
-              src={imageMovie}
-              alt=""
-              loading="lazy"
-              className="w-[200px] rounded-2xl"
+                <stop offset="0%" stopColor="#b0a8ff" stopOpacity="0" />
+                <stop offset="25%" stopColor="#b0a8ff" stopOpacity="0.7" />
+                <stop offset="50%" stopColor="#c9c2ff" stopOpacity="1" />
+                <stop offset="75%" stopColor="#b0a8ff" stopOpacity="0.7" />
+                <stop offset="100%" stopColor="#b0a8ff" stopOpacity="0" />
+              </linearGradient>
+
+              <linearGradient
+                id="purpleGradientHover"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="0%"
+              >
+                <stop offset="0%" stopColor="#b0a8ff" stopOpacity="0.01" />
+                <stop offset="25%" stopColor="#b0a8ff" stopOpacity="0.6" />
+                <stop offset="50%" stopColor="#c9c2ff" stopOpacity="1" />
+                <stop offset="75%" stopColor="#b0a8ff" stopOpacity="0.6" />
+                <stop offset="100%" stopColor="#b0a8ff" stopOpacity="0.01" />
+              </linearGradient>
+
+              <linearGradient
+                id="lightGlowBelow"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="100%"
+              >
+                <stop offset="0%" stopColor="#c9c2ff" stopOpacity="0.3" />
+                <stop offset="50%" stopColor="#c9c2ff" stopOpacity="0.1" />
+                <stop offset="100%" stopColor="#c9c2ff" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+
+            {/* Đường cong với hiệu ứng glow */}
+            <path
+              d="M 0 20 Q 400 0 800 20"
+              stroke="url(#purpleGlow)"
+              strokeWidth="6"
+              strokeLinecap="round"
+              fill="none"
+              className="blur-[1px] transition-all duration-500 group-hover:blur-[0px] group-hover:stroke-[7px] group-hover:[stroke:url(#purpleGlowHover)]"
             />
->>>>>>> Develop
-          </div>
-        </div>
-      </div>
 
-      {/* QUICK BOOKING */}
-<<<<<<< HEAD
-      <div className="w-full px-[20px] bg-slate-900 pt-[40px] ">
-=======
-      {/* <div className="w-full px-[20px] bg-slate-900 pt-[40px] ">
->>>>>>> Develop
-        <div className="bg-slate-800 flex items-center justify-between px-7 py-3 rounded-xl">
-          <div className="text-white font-bold text-[20px]">Quick booking</div>
-          <div className="bg-slate-900 rounded-xl px-9 py-3 text-white flex justify-center items-center">
-            1.Select Movie <MdOutlineArrowDropDown size={20} className="ml-2" />
-          </div>
-          <div className="bg-slate-900 rounded-xl px-9 py-3 text-white flex justify-center items-center">
-            2.Select Date <MdOutlineArrowDropDown size={20} className="ml-2" />
-          </div>
-          <div className="bg-slate-900 rounded-xl px-9 py-3 text-white flex justify-center items-center">
-            3.Select Showtime{" "}
-            <MdOutlineArrowDropDown size={20} className="ml-2" />
-          </div>
-          <div
-            role="button"
-            className="bg-purple-500 rounded-xl px-9 py-3 text-white"
-<<<<<<< HEAD
-=======
-               
->>>>>>> Develop
-          >
-            Book Now
-          </div>
+            {/* Đường cong chính */}
+            <path
+              d="M 0 20 Q 400 0 800 20"
+              stroke="url(#purpleGradient)"
+              strokeWidth="4"
+              strokeLinecap="round"
+              fill="none"
+              className="transition-all duration-500 group-hover:stroke-[6px] group-hover:[stroke:url(#purpleGradientHover)]"
+            />
+
+            {/* Ánh sáng nhẹ phía dưới khi hover */}
+            <path
+              d="M 0 25 Q 400 5 800 25"
+              stroke="url(#lightGlowBelow)"
+              strokeWidth="12"
+              strokeLinecap="round"
+              fill="none"
+              className="opacity-0 blur-[2px] transition-opacity duration-500 group-hover:opacity-100"
+            />
+          </svg>
         </div>
-<<<<<<< HEAD
       </div>
 
       {/* TRENDING MOVIE */}
       <div className=" w-full px-[30px] pt-[40px] space-y-3 ">
         <div className="flex justify-center items-center text-white">
-=======
-      </div> */}
-
-      {/* TRENDING MOVIE */}
-      <div className=" w-full px-[30px] pt-[40px] space-y-3 ">
-        <div className="flex justify-start items-center text-white">
->>>>>>> Develop
-          <p className="font-bold pb-[30px] text-[30px]">Now showing</p>
+          <p className="font-bold pb-[30px] text-center text-[30px]">
+            Now showing
+          </p>
         </div>{" "}
         <div className="flex items-center justify-center mt-[20px] ">
           <Swiper
-<<<<<<< HEAD
-            slidesPerView={6}
-            spaceBetween={30}
-=======
+            breakpoints={swiperBreakpoints}
             slidesPerView={5}
             spaceBetween={50}
->>>>>>> Develop
             pagination={{
               clickable: true,
             }}
-            modules={[Pagination]}
+            navigation={true}
+            modules={[Pagination, Navigation]}
             className="mySwiper"
           >
             {movieData.map((item) => (
               <SwiperSlide
-                key={item.id}
+                onMouseEnter={() => {
+                  setIsHovered(true);
+                  setHoveredMovie(item.MovieId);
+                }}
+                onMouseLeave={() => {
+                  setIsHovered(false);
+                  setHoveredMovie(null);
+                }}
+                key={item.idMovie}
                 className="bg-slate-800 flex flex-col justify-center items-center pb-2 rounded-xl space-y-2"
               >
-                <img
-                  src={item.imgUrl}
-                  alt=""
-                  loading="lazy"
-<<<<<<< HEAD
-                  className="w-full h-[300px] object-cover rounded-xl "
-=======
-                  className="w-full h-[300px] object-cover rounded-tl-xl rounded-tr-xl "
->>>>>>> Develop
-                />
-                <div className="text-white text-center font-semibold ">
-                  {item.nameMovie}
+                <div role="button" className="relative w-full">
+                  <img
+                    src={item.PosterImage}
+                    alt={item.NameOfEnglish}
+                    loading="lazy"
+                    className="w-full h-[250px] md:h-[320px] object-cover rounded-tl-xl rounded-tr-xl"
+                  />
+                  {/* Hover Overlay */}
+                  {hoveredMovie === item.MovieId && (
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex flex-col justify-center items-start p-4 rounded-tl-xl rounded-tr-xl transition-all duration-300 ease-in-out">
+                      <div className="text-white space-y-3">
+                        <h3 className="font-bold text-lg mb-3 text-white">
+                          {item.NameOfEnglish}
+                        </h3>
+
+                        <div className="space-y-3 text-sm">
+                          <div className="flex items-center justify-center">
+                            <span className="text-gray-300">
+                              <FaRegCalendarCheck size={20} />{" "}
+                            </span>
+                            <span className="ml-1">
+                              {formatDateRange(item.FromDate, item.ToDate)}
+                            </span>
+                          </div>
+
+                          <div className="flex ">
+                            <span className="text-gray-300 mr-1">
+                              <GoClockFill size={20} />
+                            </span>
+                            <span className="ml-1">
+                              {formatRunningTime(item.RunningTime)}
+                            </span>
+                          </div>
+
+                          <div className="flex">
+                            <span className="text-gray-300 mr-1">
+                              <IoMdBookmark size={24} />
+                            </span>
+                            {item.Genres && (
+                              <div className="flex items-center space-x-3">
+                                {item.Genres.split(", ").map((genre, index) => (
+                                  <span
+                                    key={index}
+                                    className=" text-white rounded-xl text-md font-medium"
+                                  >
+                                    {genre}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="flex justify-center space-x-1 items-center w-full ">
+
+                <div className="text-white text-center font-semibold text-sm md:text-base px-2">
+                  {item.NameOfEnglish}
+                </div>
+                <div className="flex xl:flex-row md:flex-col sm:flex-row justify-evenly md:space-y-2 xl:space-y-0 sm:space-y-0 sm:space-x-1 items-center w-full px-2">
                   <div
                     role="button"
-<<<<<<< HEAD
-                    className="text-white flex items-center hover:bg-slate-800 p-2 rounded-lg text-[12px]"
-=======
-                    className="text-white flex items-center hover:bg-slate-700 p-2 rounded-4xl px-3 text-[12px] "
->>>>>>> Develop
+                    className="text-white flex items-center justify-center hover:bg-slate-700 p-2 rounded-4xl px-3 text-[11px] md:text-[12px] sm:w-auto"
                   >
-                    <FaRegCirclePlay size={20} className="mr-1" />
+                    <FaRegCirclePlay size={16} className="mr-1" />
                     Watch Trailer
                   </div>
                   <div
                     role="button"
-<<<<<<< HEAD
-                    className="bg-purple-500 rounded-lg px-3 py-2 text-white hover:bg-purple-600 text-[12px]"
-=======
-                    onClick={() => handleClickMovie(item.idMovie)}
-                    className="bg-[#6a57f5] rounded-4xl px-6 py-2 text-white hover:bg-[#6957f5ea] text-[12px]  shadow-[#6a57f5]  shadow-sm "
->>>>>>> Develop
+                    onClick={() => handleClickMovie(item.MovieId)}
+                    className="bg-[#6a57f5] rounded-4xl px-6 py-2 text-white hover:bg-[#6957f5ea] text-[12px]  shadow-[#6a57f5]  shadow-sm sm:w-auto "
                   >
                     Book now
                   </div>
@@ -337,65 +371,104 @@ const LandingPage = () => {
         </div>
       </div>
 
-      {/* COMMING SOON MOVIE */}
-      <div className="w-full px-[30px] pt-[40px] space-y-3 ">
+      {/* COMING SOON SECTION */}
+      <div className="w-full px-4 md:px-[30px] pt-[30px] md:pt-[40px] space-y-3">
         <div className="flex justify-center items-center text-white">
-          <p className="font-bold pb-[30px] text-[30px]">Comming soon</p>
-        </div>{" "}
-        <div className="flex items-center justify-center mt-[20px] ">
+          <p className="font-bold pb-[20px] md:pb-[30px] text-[24px] md:text-[30px]">
+            Coming soon
+          </p>
+        </div>
+        <div className="flex items-center justify-center mt-[15px] md:mt-[20px]">
           <Swiper
-<<<<<<< HEAD
-            slidesPerView={6}
-            spaceBetween={30}
-=======
+            breakpoints={swiperBreakpoints}
             slidesPerView={5}
             spaceBetween={50}
->>>>>>> Develop
             pagination={{
               clickable: true,
             }}
-            modules={[Pagination]}
+            navigation={true}
+            modules={[Pagination, Navigation]}
             className="mySwiper"
           >
             {movieData.map((item) => (
               <SwiperSlide
-                key={item.id}
+                onMouseEnter={() => {
+                  setHoveredMovie(`coming-${item.MovieId}`);
+                }}
+                onMouseLeave={() => {
+                  setHoveredMovie(null);
+                }}
+                key={item.MovieId}
                 className="bg-slate-800 flex flex-col justify-center items-center pb-2 rounded-xl space-y-2"
               >
-                <img
-                  src={item.imgUrl}
-                  alt=""
-                  loading="lazy"
-<<<<<<< HEAD
-                  className="w-full h-[300px] object-cover rounded-xl "
-=======
-                  className="w-full h-[300px] object-cover rounded-tl-xl rounded-tr-xl "
->>>>>>> Develop
-                />
-                <div className="text-white text-center font-semibold ">
-                  {item.nameMovie}
+                <div className="relative ww-full">
+                  <img
+                    src={item.PosterImage}
+                    alt={item.NameOfEnglish}
+                    loading="lazy"
+                    className="w-full h-[250px] md:h-[320px] object-cover rounded-tl-xl rounded-tr-xl"
+                  />
+                  {/* Hover Overlay for Coming Soon */}
+                  {hoveredMovie === `coming-${item.MovieId}` && (
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex flex-col justify-center items-start p-4 rounded-tl-xl rounded-tr-xl transition-all duration-300 ease-in-out">
+                      <div className="text-white space-y-3">
+                        <h3 className="font-bold text-lg mb-3 text-white">
+                          {item.NameOfEnglish}
+                        </h3>
+
+                        <div className="space-y-3 text-sm">
+                          <div className="flex items-center justify-center">
+                            <span className="text-gray-300">
+                              <FaRegCalendarCheck size={20} />{" "}
+                            </span>
+                            <span className="ml-1">
+                              {formatDateRange(item.FromDate, item.ToDate)}
+                            </span>
+                          </div>
+
+                          <div className="flex ">
+                            <span className="text-gray-300 mr-1">
+                              <GoClockFill size={20} />
+                            </span>
+                            <span className="ml-1">
+                              {formatRunningTime(item.RunningTime)}
+                            </span>
+                          </div>
+
+                          <div className="flex">
+                            <span className="text-gray-300 mr-1">
+                              <IoMdBookmark size={24} />
+                            </span>
+                            {item.Genres && (
+                              <div className="flex items-center space-x-3">
+                                {item.Genres.split(", ").map((genre, index) => (
+                                  <span
+                                    key={index}
+                                    className=" text-white rounded-xl text-md font-medium"
+                                  >
+                                    {genre}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="flex justify-center space-x-1 items-center w-full ">
+
+                <div className="text-white text-center font-semibold text-sm md:text-base px-2">
+                  {item.NameOfEnglish}
+                </div>
+                <div className="flex md:flex-col lg:flex-row sm:flex-row justify-center md:space-y-2 sm:space-y-0 sm:space-x-1 items-center w-full px-2">
                   <div
                     role="button"
-<<<<<<< HEAD
-                    className="text-white flex items-center hover:bg-slate-800 p-2 rounded-lg text-[12px]"
-=======
-                    className="text-white px-3 flex items-center hover:bg-slate-700 p-2 rounded-4xl text-[12px]"
->>>>>>> Develop
+                    className="text-white flex items-center justify-center hover:bg-slate-700 p-2 rounded-4xl px-3 text-[11px] md:text-[12px] w-full sm:w-auto"
                   >
-                    <FaRegCirclePlay size={20} className="mr-1" />
+                    <FaRegCirclePlay size={16} className="mr-1" />
                     Watch Trailer
                   </div>
-<<<<<<< HEAD
-                  <div
-                    role="button"
-                    className="bg-purple-500 rounded-lg px-3 py-2 text-white hover:bg-purple-600 text-[12px]"
-                  >
-                    Book now
-                  </div>
-=======
->>>>>>> Develop
                 </div>
               </SwiperSlide>
             ))}
@@ -403,51 +476,41 @@ const LandingPage = () => {
         </div>
       </div>
 
-      {/* PROMOTION */}
-      <div className="py-[40px] px-[30px] w-full space-y-3 ">
-        <div className="text-white font-bold text-[30px] ">
+      {/* PROMOTION SECTION */}
+      <div className="py-[30px] md:py-[40px] px-4 md:px-[30px] w-full space-y-8">
+        <div className="text-white font-bold text-[24px] md:text-[30px]">
           Special Promotions
         </div>
-        <div className="flex justify-between items-center w-full">
-          {promotionData.map((item) => (
-<<<<<<< HEAD
-            <div
-              key={item.idPromotion}
-              className="w-[30%] rounded-md bg-slate-800"
-            >
-              <div className="w-full h-[200px]">
-                <img
-                  src={item.imageUrl}
-                  alt=""
-                  className="w-full h-full object-cover rounded-tr-[10px] rounded-tl-[10px]"
-                />
-              </div>
-              <div className="p-2 space-y-2 space-x-2">
-=======
-            <div key={item.idPromotion} className="w-[30%]  bg-slate-800">
-              <div className="w-full relative h-[200px]">
-                <img
-                  src={item.imageUrl}
-                  alt=""
-                  className="w-full h-full object-cover rounded-md"
-                />
-                <div className="absolute w-[60px] h-[60px] rounded-full bg-black top-[-35px] right-[90px]"></div>
-                <div className="absolute w-[60px] h-[60px] rounded-full bg-black bottom-[-35px] right-[90px]"></div>
-                <div className="absolute h-[75%]  top-[25px] border-dashed right-[120px] border-black border-2 "></div>
-              </div>
-              {/* <div className="p-2 space-y-2 space-x-2">
->>>>>>> Develop
-                <div className="text-white font-bold">{item.namePromotion}</div>
-                <div className="text-white ">
-                  {item.startActive} to {item.endActive}
+
+        <div className="flex w-full items-center justify-center mt-[15px] md:mt-[20px]">
+          <Swiper
+            breakpoints={swiperBreakpoints}
+            pagination={{
+              clickable: true,
+            }}
+            navigation={true}
+            modules={[Pagination, Navigation]}
+            className="mySwiper"
+          >
+            {promotionData.map((item) => (
+              <SwiperSlide
+                key={item.idPromotion}
+                className="w-full flex flex-col justify-center items-center pb-2 rounded-xl space-y-2"
+              >
+                <div className="relative h-[180px] w-full md:h-[200px] lg:h-[180px]">
+                  <img
+                    src={item.imageUrl}
+                    alt={item.namePromotion}
+                    className="w-full rounded-md h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                  {/* Decorative circles and dashed line */}
+                  <div className="absolute w-[40px] md:w-[60px] h-[40px] md:h-[60px] lg:w-[50px] lg:h-[50px] rounded-full bg-black top-[-20px] md:top-[-30px] md:right-[10%] lg:right-[20%] right-[20%] transform translate-x-1/2 md:translate-x-0"></div>
+                  <div className="absolute w-[40px] md:w-[60px] h-[40px] md:h-[60px] lg:w-[50px] lg:h-[50px] rounded-full bg-black bottom-[-20px] md:bottom-[-30px] lg:right-[20%] md:right-[10%] right-[20%]  transform translate-x-1/2 md:translate-x-0"></div>
+                  <div className=" absolute h-[75%] top-[12%] border-dashed border-black  border-2 md:right-[45px] right-[70px] lg:right-[35%] xl:right-[27%]"></div>
                 </div>
-<<<<<<< HEAD
-              </div>
-=======
-              </div> */}
->>>>>>> Develop
-            </div>
-          ))}
+              </SwiperSlide>
+            ))}
+          </Swiper>
         </div>
       </div>
     </div>

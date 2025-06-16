@@ -22,7 +22,7 @@ const auth = async (req, res, next) => {
         console.log('Decoded token:', decoded);
         
         // Kiểm tra user có tồn tại không
-        const user = await User.findById(decoded.userId);
+        const user = await User.findById(decoded.id || decoded.userId);
         console.log('User found:', user ? 'Yes' : 'No');
 
         if (!user) {
@@ -63,5 +63,15 @@ const auth = async (req, res, next) => {
     }
 };
 
-module.exports = auth;
-        
+const isAdmin = (req, res, next) => {
+   
+    if (req.user && (req.user.Role === 3 || req.user.role === 'admin')) {
+        return next();
+    }
+    return res.status(403).json({ error: 'Access denied. Admins only.' });
+};
+
+module.exports = {
+    auth,
+    isAdmin
+};
