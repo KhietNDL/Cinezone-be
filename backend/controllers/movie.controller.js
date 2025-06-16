@@ -133,7 +133,7 @@ const getMovieShowtimes = async (req, res) => {
       }
       movieinfo[row.Version].showtimes.push({
         showtimeId: row.ShowtimeId,
-        showDate: row.ShowDate,
+        Day: row.Day,
         duration: row.Duration,
         room: {
           roomId: row.CinemaRoomId,
