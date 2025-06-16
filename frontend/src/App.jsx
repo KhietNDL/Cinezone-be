@@ -34,6 +34,7 @@ import HistoryActivity from "./layouts/User/component/HistoryActivity";
 
 
 import TicketBookingManagement from "./layouts/Admin/component/TicketBookingMangement";
+import TicketDetails from "./layouts/User/component/TicketDetails";
 function App() {
   return (
     <AuthProvider>
@@ -48,6 +49,7 @@ function App() {
           <Route path="/confirmPayment" element={<ConfirmPayment />} />
           <Route path="/promotions" element={<MoviePromotions />} />
           <Route path="/waiting" element={<WaitingPayment />} />
+          <Route path="/ticket" element={<TicketDetails />} />
 
           <Route path="/account" element={<AccountImformation />}>
             <Route path="*" element={<AccountImformation />} />
