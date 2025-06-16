@@ -26,8 +26,6 @@ const bookingController = require('../controllers/booking.controller');
  *                 type: number
  *               Status:
  *                 type: string
- *               PaymentId:
- *                 type: string
  *               PromotionId:
  *                 type: string
  *     responses:
@@ -111,8 +109,6 @@ router.get('/member/:memberId', bookingController.getBookingsByMemberId);
  *               TotalAmount:
  *                 type: number
  *               Status:
- *                 type: string
- *               PaymentId:
  *                 type: string
  *               PromotionId:
  *                 type: string
