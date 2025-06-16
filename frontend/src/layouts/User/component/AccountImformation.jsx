@@ -2,16 +2,21 @@ import React, { useEffect, useState } from "react";
 import { FaRegCalendarCheck, FaSignOutAlt, FaUserCircle } from "react-icons/fa";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
-
 const AccountInformation = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [fileList, setFileList] = useState([]);
+
+
+  // eslint-disable-next-line no-unused-vars
+  const { setUser, signOut } = useAuth();
+  // eslint-disable-next-line no-unused-vars
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedSection, setSelectedSection] = useState("personal");
-  const { user, isLoading: authLoading } = useAuth();
-
+  // eslint-disable-next-line no-unused-vars
+  const { user, isLoading: authLoading } = useAuth(); // Lấy user từ AuthContext
+  const [isLoading, setIsLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [profileData, setProfileData] = useState({
     fullName: "",
@@ -71,11 +76,22 @@ const AccountInformation = () => {
     setSelectedSection(path);
     navigate(`/account/${path}`);
   };
-
-  const handleRedirect = () => {
-    navigate(`/`);
+  const handleLogout = async () => {
+    try {
+      setIsLoading(true);
+      await signOut();
+      setIsOpen(false);
+      navigate("/");
+    } catch (error) {
+      console.error("Lỗi khi đăng xuất:", error);
+      setIsOpen(false);
+      navigate("/");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  //hàm xử lý click avatar
   const handleAvatarClick = () => {
     setSelectedSection("personal");
     navigate("/account/personal");
@@ -159,34 +175,42 @@ const AccountInformation = () => {
                 <span>Log Out</span>
               </button>
               
+
               {/* Modal đăng xuất */}
               {isOpen && (
                 <div className="fixed inset-0 flex items-center justify-center bg-gray-300 bg-opacity-50 backdrop-blur-sm z-50">
                   <div className="bg-white p-6 rounded-lg shadow-lg w-96">
                    
+                   
+                    <h2 className="text-lg font-semibold text-center">
+                      Sign Out?
+                    </h2>
                     <p className="text-gray-600 text-center mt-2">
-                      You want log out ?
+                      Do you want to sign out?
                     </p>
 
                     <div className="flex justify-between mt-6">
                       <button
                         onClick={() => setIsOpen(false)}
-                        className="px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600 transition w-1/2 mr-2"
+                        disabled={isLoading}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-600 transition w-1/2 mr-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Cancel
                       </button>
+
                       <button
-                        onClick={() => {
-                          console.log("Đăng xuất...");
-                          localStorage.removeItem("token");
-                          localStorage.removeItem("expiration");
-                          localStorage.clear();
-                          setIsOpen(false);
-                          handleRedirect();
-                        }}
-                        className="px-4 py-2 border border-pink-500 text-pink-500 rounded-md hover:bg-pink-100 transition w-1/2 ml-2"
+                        onClick={handleLogout}
+                        disabled={isLoading}
+                        className="px-4 py-2 border border-purple-950 text-white-500 rounded-md hover:bg-purple-100 transition w-1/2 ml-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                       >
-                        Log Out
+                        {isLoading ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-300-500 mr-2"></div>
+                            Sign out...
+                          </>
+                        ) : (
+                          "Sign Out"
+                        )}
                       </button>
                     </div>
                   </div>
