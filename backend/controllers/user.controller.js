@@ -18,13 +18,17 @@ const ERROR_CODES = {
 
 // Helper function to remove sensitive data from user object
 const removeSensitiveData = (user) => {
-    const { 
-        Password, CCCD, Address, ScoreBalance, IsDeleted, 
-        CreatedAt, UpdatedAt, DeletedAt, DeletedBy,
-        reset_code, reset_code_expires, Role, IsEmailVerified,
-        ...userData 
-    } = user;
-    return userData;
+    return {
+        userId: user.UserId,
+        fullName: user.FullName,
+        email: user.Email,
+        phoneNumber: user.PhoneNumber,
+        dateOfBirth: user.DateOfBirth,
+        sex: user.Sex,
+        cccd: user.CCCD,
+        address: user.Address,
+        avatar_url: user.avatar_url
+    };
 };
 
 // Register new user
@@ -36,7 +40,8 @@ const register = async (req, res) => {
             dateOfBirth, 
             sex, 
             email, 
-            phoneNumber
+            phoneNumber,
+            cccd
         } = req.body;
 
         // Check if user already exists
@@ -55,7 +60,8 @@ const register = async (req, res) => {
             dateOfBirth,
             sex,
             email,
-            phoneNumber
+            phoneNumber,
+            cccd
         });
 
         // Get the created user

@@ -454,8 +454,15 @@ router.get(
   passport.authenticate("google", {
     session: false,
     failureRedirect: "/login",
+    failureMessage: true
   }),
   (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({
+        error: req.authInfo?.message || 'Đăng nhập Google thất bại'
+      });
+    }
+
     const token = jwt.sign(
       { id: req.user.UserId, email: req.user.Email },
       process.env.JWT_SECRET,

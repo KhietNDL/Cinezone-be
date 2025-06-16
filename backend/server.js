@@ -35,7 +35,7 @@ app.use("/api/promotions", promotionRoutes);
 app.use("/api/movie", movieRoutes);
 
 //port
-const PORT = process.env.PORT || 4458;
+const PORT = process.env.PORT || 4459;
 
 // Swagger UI
 app.use(

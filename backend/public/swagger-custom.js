@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
             event.preventDefault(); // Prevent default Swagger UI AJAX request
             event.stopPropagation(); // Stop propagation to avoid other handlers
 
-            const googleAuthUrl = 'http://localhost:8080/api/auth/google'; // Or your actual Google auth URL
+            const googleAuthUrl = 'http://cinezone.info:4458/api/auth/google'; // Or your actual Google auth URL
             window.location.href = googleAuthUrl; // Redirect the browser
         }
     }
