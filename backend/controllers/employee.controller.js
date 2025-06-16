@@ -1,5 +1,6 @@
 const Employee = require("../models/employee.model");
 const jwt = require("jsonwebtoken");
+const User = require('../models/user.model');
 // Get all employees
 const getAllEmployees = async (req, res) => {
   try {
@@ -122,6 +123,13 @@ const getEmployeeByEmail = async (req, res) => {
 const createEmployee = async (req, res) => {
   const employeeData = req.body;
   try {
+    // Check if user already exists
+    const existingUser = await User.findByEmail(employeeData.Email);
+        if (existingUser) {
+            return res.status(400).json({ 
+                error: 'Employee with this email already exists'
+            });
+        }
     const newEmployeeId = await Employee.createEmployee(employeeData);
     // Lấy thông tin nhân viên vừa tạo
     const employee = await Employee.getEmployeeById(newEmployeeId);
