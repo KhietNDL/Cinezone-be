@@ -101,3 +101,5 @@ export const getMovies = async () => {
   }
 };
 export default api;
+
+

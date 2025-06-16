@@ -30,7 +30,11 @@ import WaitingPayment from "./layouts/User/component/WaitingPayment";
 
 import AccountImformation from "./layouts/User/component/AccountImformation";
 import EditAccount from "./layouts/User/component/EditAccount";
+import HistoryActivity from "./layouts/User/component/HistoryActivity";
+
+
 import TicketBookingManagement from "./layouts/Admin/component/TicketBookingMangement";
+import TicketDetails from "./layouts/User/component/TicketDetails";
 import PromotionManagement from "./layouts/Admin/component/PromotionManagement";
 function App() {
   return (
@@ -46,10 +50,13 @@ function App() {
           <Route path="/confirmPayment" element={<ConfirmPayment />} />
           <Route path="/promotions" element={<MoviePromotions />} />
           <Route path="/waiting" element={<WaitingPayment />} />
+          <Route path="/ticket" element={<TicketDetails />} />
 
           <Route path="/account" element={<AccountImformation />}>
             <Route path="*" element={<AccountImformation />} />
             <Route path="personal" element={<EditAccount />} />
+            <Route path="history" element={<HistoryActivity />} />
+            
           </Route>
         </Route>
 
