@@ -1,21 +1,21 @@
 import React, { useEffect, useState } from "react";
-
 import { FaRegCalendarCheck, FaSignOutAlt, FaUserCircle } from "react-icons/fa";
-
 import { Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
-
 const AccountInformation = () => {
   const navigate = useNavigate();
   // eslint-disable-next-line no-unused-vars
   const [fileList, setFileList] = useState([]);
+
+  // eslint-disable-next-line no-unused-vars
+  const { setUser, signOut } = useAuth();
   // eslint-disable-next-line no-unused-vars
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedSection, setSelectedSection] = useState("personal");
   // eslint-disable-next-line no-unused-vars
   const { user, isLoading: authLoading } = useAuth(); // Lấy user từ AuthContext
-
+  const [isLoading, setIsLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [profileData, setProfileData] = useState({
     fullName: "",
@@ -39,8 +39,6 @@ const AccountInformation = () => {
       };
 
       setProfileData(profileInfo);
-
-      // Initialize fileList if avatar_url exists
       if (user.avatar_url) {
         setFileList([
           {
@@ -53,31 +51,33 @@ const AccountInformation = () => {
       }
     }
   }, [user]);
-
-  // Auto navigate to personal page when component mounts
   useEffect(() => {
     navigate("/account/personal");
   }, [navigate]);
-
   const handleNavigate = (path) => {
     setSelectedSection(path);
     navigate(`/account/${path}`);
   };
-
-  const handleRedirect = (path) => {
-    setSelectedSection(path);
-    navigate(`/`);
+  const handleLogout = async () => {
+    try {
+      setIsLoading(true);
+      await signOut();
+      setIsOpen(false);
+      navigate("/");
+    } catch (error) {
+      console.error("Lỗi khi đăng xuất:", error);
+      setIsOpen(false);
+      navigate("/");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Thêm hàm xử lý click avatar
+  //hàm xử lý click avatar
   const handleAvatarClick = () => {
     setSelectedSection("personal");
     navigate("/account/personal");
   };
-
-  {
-    /*hai cái này là của trợ giúp */
-  }
   const [openIndex, setOpenIndex] = useState(null);
 
   // eslint-disable-next-line no-unused-vars
@@ -114,10 +114,8 @@ const AccountInformation = () => {
   return (
     <div className="flex flex-col min-h-screen bg-blue-950 p-[20px]">
       <main className="flex w-full justify-between  p-4 md:p-8 ">
-        {/*do header fixed cứng nên này tôi phải đẩy nó xuống 80px nếu không nó bị header bị che  */}
         <div className="w-[30%] bg-white rounded-2xl shadow-lg p-6 mt-10">
           <div className="flex flex-col items-center">
-            {/* Thêm cursor-pointer và onClick cho avatar */}
             <div
               className="w-32 h-32 rounded-full overflow-hidden border-4 border-purple-200 cursor-pointer hover:border-purple-400 transition-colors"
               onClick={handleAvatarClick}
@@ -160,38 +158,41 @@ const AccountInformation = () => {
                 <FaSignOutAlt />
                 <span>Đăng xuất</span>
               </button>
+
               {/* Modal đăng xuất */}
               {isOpen && (
-                <div className="fixed inset-0 flex items-center justify-center bg-gray-300 bg-opacity-50 backdrop-blur-sm">
+                <div className="fixed inset-0 flex items-center justify-center bg-gray-300 bg-opacity-50 backdrop-blur-sm z-50">
                   <div className="bg-white p-6 rounded-lg shadow-lg w-96">
                     <h2 className="text-lg font-semibold text-center">
-                      Đăng xuất?
+                      Sign Out?
                     </h2>
                     <p className="text-gray-600 text-center mt-2">
-                      Bạn có chắc chắn muốn đăng xuất?
+                      Do you want to sign out?
                     </p>
 
                     {/* Nút hành động */}
                     <div className="flex justify-between mt-6">
                       <button
                         onClick={() => setIsOpen(false)}
-                        className="px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600 transition w-1/2 mr-2"
+                        disabled={isLoading}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-600 transition w-1/2 mr-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Hủy
+                        Cancel
                       </button>
-                      <button
-                        onClick={() => {
-                          console.log("Đăng xuất...");
-                          localStorage.removeItem("token");
-                          localStorage.removeItem("expiration");
-                          localStorage.clear();
 
-                          setIsOpen(false);
-                          handleRedirect();
-                        }}
-                        className="px-4 py-2 border border-pink-500 text-pink-500 rounded-md hover:bg-pink-100 transition w-1/2 ml-2"
+                      <button
+                        onClick={handleLogout}
+                        disabled={isLoading}
+                        className="px-4 py-2 border border-purple-950 text-white-500 rounded-md hover:bg-purple-100 transition w-1/2 ml-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                       >
-                        Đăng xuất
+                        {isLoading ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-300-500 mr-2"></div>
+                            Sign out...
+                          </>
+                        ) : (
+                          "Sign Out"
+                        )}
                       </button>
                     </div>
                   </div>

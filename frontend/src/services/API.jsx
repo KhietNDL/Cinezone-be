@@ -11,11 +11,10 @@ const api = axios.create({
     "Content-Type": "application/json",
   },
 });
-
-// Interceptor để thêm token vào header (nếu có)
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token"); // Giả sử token được lưu trong localStorage
+    const token = localStorage.getItem("token");
+    console.log("Token gửi lên:", token);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -42,7 +41,7 @@ const handleError = (error) => {
 export const login = async (credentials) => {
   try {
     const response = await api.post("/auth/login", credentials);
-    return response.data; // Giả sử trả về { token, user }
+    return response.data;
   } catch (error) {
     handleError(error);
   }
@@ -51,7 +50,7 @@ export const login = async (credentials) => {
 export const register = async (userData) => {
   try {
     const response = await api.post("/auth/register", userData);
-    return response.data; // Giả sử trả về { message, user }
+    return response.data;
   } catch (error) {
     handleError(error);
   }
@@ -60,7 +59,7 @@ export const register = async (userData) => {
 export const logout = async () => {
   try {
     await api.post("/auth/logout");
-    localStorage.removeItem("token"); // Xóa token khi logout
+    localStorage.removeItem("token");
     return { message: "Logged out successfully" };
   } catch (error) {
     handleError(error);
@@ -72,16 +71,20 @@ export const getUser = async (id) => {
   try {
     const response = await api.get(`/auth/user/${id}`);
 
-    return response.data; // Giả sử trả về thông tin user
+    return response.data;
   } catch (error) {
     handleError(error);
   }
 };
 
-export const updateAccount = async ({ id, userData }) => {
+export const updateAccount = async (updateData) => {
   try {
-    const response = await api.put(`/auth/user/${id}`, userData);
-    return response.data; // Giả sử trả về thông tin user đã cập nhật
+    console.log("Update data:", updateData);
+    const { id, ...userData } = updateData;
+    console.log("id:", id);
+    console.log("userData:", userData);
+    const response = await api.put(`/auth/profile/${id}`, userData);
+    return response.data;
   } catch (error) {
     handleError(error);
   }

@@ -3,12 +3,13 @@ import { toast } from "react-toastify";
 import { Image, Upload } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { updateAccount } from "../../../services/API";
-import { useAuth } from "../../../context/AuthContext"; // Import useAuth
+import { useAuth } from "../../../context/AuthContext";
 
 const EditAccount = () => {
-  const { user, isLoading: authLoading } = useAuth(); // Get user from AuthContext
+  const { user, isLoading: authLoading } = useAuth();
 
   const [profileData, setProfileData] = useState({
+    id: "", // Thêm id vào state
     fullName: "",
     password: "",
     dateOfBirth: "",
@@ -19,10 +20,12 @@ const EditAccount = () => {
     address: "",
     avatar_url: "",
   });
+  // eslint-disable-next-line no-unused-vars
   const [loading, setLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
+    id: "",
     fullName: "",
     password: "",
     dateOfBirth: "",
@@ -34,36 +37,36 @@ const EditAccount = () => {
     avatar_url: "",
   });
   const [updateLoading, setUpdateLoading] = useState(false);
-
-  // Image upload state
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState("");
   const [fileList, setFileList] = useState([]);
-
-  // Effect to set profile data from user context
   useEffect(() => {
     if (user) {
       console.log("User Information", user);
       const profileInfo = {
-        fullName: user.FullName || "",
-        dateOfBirth: user.DateOfBirth || "",
-        phoneNumber: user.PhoneNumber || "",
-        sex: user.Sex || "",
-        email: user.Email || "",
-        avatar_url: user.avatar_url || "",
+        id: user.UserId,
+        fullName: user.FullName,
+        dateOfBirth: user.DateOfBirth,
+        phoneNumber: user.PhoneNumber,
+        sex: user.Sex,
+        email: user.Email,
+        cccd: user.cccd || "",
+        address: user.Address || user.address || "",
+        avatar_url: user.avatar_url || user.Avatar_url || "",
+        password: "",
       };
+
+      console.log("Profile Info:", profileInfo);
 
       setProfileData(profileInfo);
       setEditData(profileInfo);
-
-      // Initialize fileList if avatar_url exists
-      if (user.avatar_url) {
+      if (profileInfo.avatar_url) {
         setFileList([
           {
             uid: "-1",
             name: "profile-image.png",
             status: "done",
-            url: user.avatar_url,
+            url: profileInfo.avatar_url,
           },
         ]);
       }
@@ -89,12 +92,10 @@ const EditAccount = () => {
   const handleChange = ({ fileList: newFileList }) => {
     setFileList(newFileList);
 
-    // Update editData.avatar_url when a file is uploaded successfully
     if (newFileList.length > 0) {
       const lastFile = newFileList[newFileList.length - 1];
 
       if (lastFile.status === "done" && lastFile.response) {
-        // If the upload API returns an image URL
         if (lastFile.response.url) {
           setEditData((prev) => ({
             ...prev,
@@ -102,13 +103,11 @@ const EditAccount = () => {
           }));
         }
       } else if (lastFile.status === "done" && lastFile.url) {
-        // If file already has URL (like when we initialize from existing profile)
         setEditData((prev) => ({
           ...prev,
           avatar_url: lastFile.url,
         }));
       } else if (lastFile.originFileObj) {
-        // For local preview before upload completes
         getBase64(lastFile.originFileObj).then((base64Url) => {
           setEditData((prev) => ({
             ...prev,
@@ -117,7 +116,6 @@ const EditAccount = () => {
         });
       }
     } else {
-      // No files, clear the avatar_url
       setEditData((prev) => ({
         ...prev,
         avatar_url: "",
@@ -125,6 +123,7 @@ const EditAccount = () => {
     }
   };
 
+  // eslint-disable-next-line no-unused-vars
   const uploadButton = (
     <button
       style={{
@@ -150,10 +149,8 @@ const EditAccount = () => {
 
   const handleCancelEdit = () => {
     setIsEditing(false);
-    // Reset edit data and fileList to original values
     setEditData({ ...profileData });
 
-    // Reset fileList to match the profile image
     if (profileData.avatar_url) {
       setFileList([
         {
@@ -172,28 +169,49 @@ const EditAccount = () => {
     try {
       setUpdateLoading(true);
 
-      // Call API to update information
-      const response = await updateAccount(editData);
+      // Validate required fields
+      if (!editData.id) {
+        toast.error("User ID is missing. Please try logging in again.");
+        return;
+      }
+      const updateData = {
+        ...editData,
+        ...(editData.password && editData.password.trim() !== ""
+          ? { password: editData.password }
+          : {}),
+      };
+
+      console.log("Data being sent to API:", updateData);
+
+      const response = await updateAccount(updateData);
+
+      console.log("API Response:", response);
 
       if (response && response.isSuccess) {
-        // Update state with new data
         setProfileData({ ...editData });
         toast.success(
           response.message || "Profile information has been updated"
         );
         setIsEditing(false);
-
-        // TODO: May need to update user in AuthContext
-        // You can add updateUser method in AuthContext
       } else {
-        // Handle error
-        toast.error(
-          response.errorMessage || "Unable to update profile information"
-        );
+        const errorMessage =
+          response?.errorMessage ||
+          response?.message ||
+          "Unable to update profile information";
+        toast.error(errorMessage);
+        console.error("API Error:", response);
       }
     } catch (error) {
       console.error("Error updating profile:", error);
-      toast.error("Unable to update profile information");
+      if (error.response) {
+        console.error("Error Response:", error.response.data);
+        toast.error(error.response.data?.message || "Server error occurred");
+      } else if (error.request) {
+        console.error("Network Error:", error.request);
+        toast.error("Network error. Please check your connection.");
+      } else {
+        toast.error("An unexpected error occurred");
+      }
     } finally {
       setUpdateLoading(false);
     }
@@ -207,10 +225,8 @@ const EditAccount = () => {
     }));
   };
 
-  // Render default image or user avatar
   const renderProfileImage = () => {
     if (!profileData.avatar_url || imageError) {
-      // Display default avatar (could be first letter of name)
       const initial = profileData.fullName
         ? profileData.fullName.charAt(0).toUpperCase()
         : "?";
@@ -231,23 +247,18 @@ const EditAccount = () => {
     );
   };
 
-  // Custom request handler for Upload component
   const customUploadRequest = async ({ file, onSuccess, onError }) => {
     try {
-      // Here you would normally upload to your server
-      // For now, we'll simulate a successful upload and use FileReader for preview
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => {
         const base64Url = reader.result;
 
-        // Update the avatar_url in editData
         setEditData((prev) => ({
           ...prev,
           avatar_url: base64Url,
         }));
 
-        // Call onSuccess to update the Upload component's internal state
         onSuccess({ url: base64Url }, file);
       };
     } catch (error) {
@@ -256,7 +267,6 @@ const EditAccount = () => {
     }
   };
 
-  // Show loading while AuthContext is loading
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-100 via-indigo-50 to-purple-50 flex items-center justify-center">
@@ -275,7 +285,6 @@ const EditAccount = () => {
     );
   }
 
-  // Show message if no user found
   if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-100 via-indigo-50 to-purple-50 flex items-center justify-center">
@@ -292,7 +301,6 @@ const EditAccount = () => {
   return (
     <div className="max-h-screen min-h-[500px]  bg-gradient-to-br from-purple-100 via-indigo-50 to-purple-50">
       <div className="w-full ">
-        {/* Header with beautiful gradient */}
         <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-t-2xl p-8 text-white shadow-xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-6">
@@ -300,7 +308,6 @@ const EditAccount = () => {
                 <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white shadow-lg ring-4 ring-purple-300/30">
                   {renderProfileImage()}
                 </div>
-                {/* Online indicator */}
                 <div className="absolute bottom-2 right-2 w-6 h-6 bg-green-400 rounded-full border-3 border-white"></div>
               </div>
               <div>
@@ -340,7 +347,7 @@ const EditAccount = () => {
         {/* Content area */}
         <div className="bg-white h-full rounded-b-2xl ">
           {!isEditing ? (
-            /* Display information with beautiful card design */
+            /* Display information */
             <div className="p-8 h-full">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
                 {/* Personal Info Card */}
@@ -439,7 +446,7 @@ const EditAccount = () => {
               </div>
             </div>
           ) : (
-            /* Edit form with modern design */
+            /* Edit form */
             <div className="p-8 overscroll-y-auto h-full">
               <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl p-8 shadow-lg border border-purple-200">
                 <h2 className="text-2xl font-bold text-purple-800 mb-8 flex items-center">
@@ -523,7 +530,7 @@ const EditAccount = () => {
 
                     <div>
                       <label className="block text-sm font-semibold text-purple-700 mb-2">
-                        Sex
+                        Gender
                       </label>
                       <select
                         name="sex"
@@ -552,7 +559,7 @@ const EditAccount = () => {
                         value={editData.password}
                         onChange={handleInputChange}
                         className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm"
-                        placeholder="Enter new password"
+                        placeholder="Enter new password (leave blank to keep current)"
                         disabled={updateLoading}
                       />
                     </div>
@@ -640,7 +647,7 @@ const EditAccount = () => {
                   </div>
                 </div>
 
-                {/* Action buttons with beautiful effects */}
+                {/* Action buttons */}
                 <div className="flex justify-end space-x-4 pt-6 border-t border-purple-200">
                   <button
                     className="px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all duration-200 transform hover:scale-105 shadow-md"
