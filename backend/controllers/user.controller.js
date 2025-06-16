@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4, validate: uuidValidate } = require('uuid');
+const bucket = require('../config/firebase');
 
 // Define error codes
 const ERROR_CODES = {
@@ -18,31 +19,36 @@ const ERROR_CODES = {
 
 // Helper function to remove sensitive data from user object
 const removeSensitiveData = (user) => {
-    const { 
-        Password, CCCD, Address, ScoreBalance, IsDeleted, 
-        CreatedAt, UpdatedAt, DeletedAt, DeletedBy,
-        reset_code, reset_code_expires, Role, IsEmailVerified,
-        ...userData 
-    } = user;
-    return userData;
+    return {
+        userId: user.UserId,
+        fullName: user.FullName,
+        email: user.Email,
+        phoneNumber: user.PhoneNumber,
+        dateOfBirth: user.DateOfBirth,
+        sex: user.Sex,
+        cccd: user.CCCD,
+        address: user.Address,
+        avatar_url: user.avatar_url
+    };
 };
+
 
 // Register new user
 const register = async (req, res) => {
     try {
-        const { 
-            password, 
-            fullName, 
-            dateOfBirth, 
-            sex, 
-            email, 
+        const {
+            password,
+            fullName,
+            dateOfBirth,
+            sex,
+            email,
             phoneNumber
         } = req.body;
 
         // Check if user already exists
         const existingUser = await User.findByEmail(email);
         if (existingUser) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 error: 'User with this email already exists',
                 code: ERROR_CODES.USER_EXISTS
             });
@@ -61,7 +67,7 @@ const register = async (req, res) => {
         // Get the created user
         const user = await User.findById(userId);
         if (!user) {
-            return res.status(500).json({ 
+            return res.status(500).json({
                 error: 'Failed to create user',
                 code: ERROR_CODES.SERVER_ERROR
             });
@@ -81,7 +87,7 @@ const register = async (req, res) => {
         });
     } catch (error) {
         console.error('Register error:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: 'Internal server error during registration',
             code: ERROR_CODES.SERVER_ERROR
         });
@@ -96,7 +102,7 @@ const login = async (req, res) => {
         // Find user by email
         const user = await User.findByEmail(email);
         if (!user) {
-            return res.status(401).json({ 
+            return res.status(401).json({
                 error: 'Invalid email or password',
                 code: ERROR_CODES.INVALID_CREDENTIALS
             });
@@ -104,7 +110,7 @@ const login = async (req, res) => {
 
         // Check if user is active
         if (user.IsDeleted) {
-            return res.status(401).json({ 
+            return res.status(401).json({
                 error: 'Account is locked',
                 code: ERROR_CODES.ACCOUNT_LOCKED
             });
@@ -113,7 +119,7 @@ const login = async (req, res) => {
         // Verify password
         const isMatch = await User.comparePassword(password, user.Password);
         if (!isMatch) {
-            return res.status(401).json({ 
+            return res.status(401).json({
                 error: 'Invalid email or password',
                 code: ERROR_CODES.INVALID_CREDENTIALS
             });
@@ -133,7 +139,7 @@ const login = async (req, res) => {
         });
     } catch (error) {
         console.error('Login error:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: 'Internal server error during login',
             code: ERROR_CODES.SERVER_ERROR
         });
@@ -148,7 +154,7 @@ const forgotPassword = async (req, res) => {
         // Check if user exists
         const user = await User.findByEmail(email);
         if (!user) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 error: 'User not found',
                 code: ERROR_CODES.USER_NOT_FOUND
             });
@@ -269,7 +275,7 @@ const forgotPassword = async (req, res) => {
         res.json({ message: 'Reset code sent to your email' });
     } catch (error) {
         console.error('Forgot password error:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: 'Internal server error during password reset',
             code: ERROR_CODES.SERVER_ERROR
         });
@@ -284,7 +290,7 @@ const resetPassword = async (req, res) => {
         // Verify reset code
         const user = await User.verifyResetCode(email, resetCode);
         if (!user) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 error: 'Invalid or expired reset code',
                 code: ERROR_CODES.INVALID_RESET_CODE
             });
@@ -296,7 +302,7 @@ const resetPassword = async (req, res) => {
         res.json({ message: 'Password reset successful' });
     } catch (error) {
         console.error('Reset password error:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: 'Internal server error during password reset',
             code: ERROR_CODES.SERVER_ERROR
         });
@@ -308,13 +314,13 @@ const logout = async (req, res) => {
     try {
         // Clear auth cookie if exists
         res.clearCookie('token');
-        
-        res.status(200).json({ 
-            message: 'Logout successful' 
+
+        res.status(200).json({
+            message: 'Logout successful'
         });
     } catch (error) {
         console.error('Logout error:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: 'Internal server error during logout',
             code: ERROR_CODES.SERVER_ERROR
         });
@@ -325,30 +331,82 @@ const logout = async (req, res) => {
 const updateProfile = async (req, res) => {
     try {
         const userId = req.params.id;
-
-        // Validate UUID format
-        if (!uuidValidate(userId)) {
-            return res.status(400).json({ 
-                error: 'Invalid UUID format',
-                code: ERROR_CODES.INVALID_UUID
-            });
-        }
-
-        // Check update permissions
-        if (req.user.Role !== 'admin' && req.user.UserId !== userId) {
-            return res.status(403).json({ 
-                error: 'Forbidden: You can only update your own information',
-                code: ERROR_CODES.FORBIDDEN
-            });
-        }
-
-        // Get update data from request
         const updates = req.body;
+
+        delete updates.avatar;
+
+        // Lấy thông tin người dùng hiện tại để xác định avatar cũ
+        const existingUserEdit = await User.findById(userId);
+        if (!existingUserEdit) {
+            return res.status(404).json({
+                error: 'User not found',
+                code: ERROR_CODES.USER_NOT_FOUND
+            });
+        }
+
+        if (req.files && req.files.avatar && req.files.avatar[0]) {
+            try {
+                if (existingUserEdit.avatar_url) {
+                    try {
+                        console.log("Avatar URL hiện tại:", existingUserEdit.avatar_url);
+
+                        const fileNameMatch = existingUserEdit.avatar_url.match(/firebasestorage\.app\/([^?]+)/);
+                        if (fileNameMatch && fileNameMatch[1]) {
+                            const oldFilePath = fileNameMatch[1];
+                            console.log('Extracted path using regex:', oldFilePath);
+
+                            if (oldFilePath) {
+                                console.log('Attempting to delete old avatar:', oldFilePath);
+
+                                try {
+                                    await bucket.file(oldFilePath).delete();
+                                    console.log('Successfully deleted old avatar');
+                                } catch (deleteError) {
+                                    console.log('Failed to delete old avatar:', deleteError.message);
+                                }
+                            }
+                        } else {
+                            console.log('Could not extract file path from URL using regex');
+                        }
+                    } catch (error) {
+                        console.log('Error processing old avatar URL:', error);
+                    }
+                }
+
+                const avatarFile = req.files.avatar[0];
+                const avatarFileName = `avatars/${Date.now()}-${avatarFile.originalname.replace(/\s+/g, '_')}`;
+                const avatarBlob = bucket.file(avatarFileName);
+
+                const avatarStream = avatarBlob.createWriteStream({
+                    metadata: { contentType: avatarFile.mimetype }
+                });
+
+                await new Promise((resolve, reject) => {
+                    avatarStream.on('error', reject);
+                    avatarStream.on('finish', resolve);
+                    avatarStream.end(avatarFile.buffer);
+                });
+
+                const [avatarUrl] = await avatarBlob.getSignedUrl({
+                    action: 'read',
+                    expires: '03-01-2500',
+                });
+
+                updates.avatar_url = avatarUrl;
+            } catch (firebaseError) {
+                console.error('Firebase operation failed:', firebaseError);
+                return res.status(500).json({
+                    error: 'Firebase operation failed during profile update',
+                    code: 'AUTH_008'
+                });
+            }
+        }
+
         const allowedUpdates = [
-            'fullName', 'password', 'dateOfBirth', 'phoneNumber', 
+            'fullName', 'password', 'dateOfBirth', 'phoneNumber',
             'sex', 'email', 'cccd', 'address', 'avatar_url'
         ];
-        
+
         // Filter out empty values
         const filteredUpdates = {};
         Object.keys(updates).forEach(key => {
@@ -359,7 +417,7 @@ const updateProfile = async (req, res) => {
 
         // Validate update data
         if (Object.keys(filteredUpdates).length === 0) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 error: 'No valid updates provided',
                 code: ERROR_CODES.SERVER_ERROR
             });
@@ -369,7 +427,7 @@ const updateProfile = async (req, res) => {
         const updatesKeys = Object.keys(filteredUpdates);
         const isValidOperation = updatesKeys.every((key) => allowedUpdates.includes(key));
         if (!isValidOperation) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 error: 'Invalid update fields',
                 code: ERROR_CODES.SERVER_ERROR
             });
@@ -378,7 +436,7 @@ const updateProfile = async (req, res) => {
         // Check if user exists
         const existingUser = await User.findById(userId);
         if (!existingUser) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 error: 'User not found',
                 code: ERROR_CODES.USER_NOT_FOUND
             });
@@ -393,7 +451,7 @@ const updateProfile = async (req, res) => {
         // Update user
         const success = await User.update(userId, filteredUpdates);
         if (!success) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 error: 'User not found',
                 code: ERROR_CODES.USER_NOT_FOUND
             });
@@ -402,13 +460,13 @@ const updateProfile = async (req, res) => {
         // Get updated user data
         const updatedUser = await User.findById(userId);
 
-        res.json({ 
+        res.json({
             message: 'Profile updated successfully',
             user: removeSensitiveData(updatedUser)
         });
     } catch (error) {
         console.error('Update profile error:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: 'Internal server error during profile update',
             code: ERROR_CODES.SERVER_ERROR
         });
@@ -422,7 +480,7 @@ const getUserById = async (req, res) => {
 
         // Check view permissions
         if (req.user.Role !== 'admin' && req.user.UserId !== id) {
-            return res.status(403).json({ 
+            return res.status(403).json({
                 error: 'Forbidden: You can only view your own information',
                 code: ERROR_CODES.FORBIDDEN
             });
@@ -430,7 +488,7 @@ const getUserById = async (req, res) => {
 
         // Validate UUID format
         if (!uuidValidate(id)) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 error: 'Invalid UUID format',
                 code: ERROR_CODES.INVALID_UUID
             });
@@ -439,7 +497,7 @@ const getUserById = async (req, res) => {
         // Find user by ID
         const user = await User.findById(id);
         if (!user) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 error: 'User not found',
                 code: ERROR_CODES.USER_NOT_FOUND
             });
@@ -451,7 +509,7 @@ const getUserById = async (req, res) => {
         });
     } catch (error) {
         console.error('Get user error:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: 'Internal server error while retrieving user',
             code: ERROR_CODES.SERVER_ERROR
         });
@@ -466,4 +524,4 @@ module.exports = {
     logout,
     updateProfile,
     getUserById
-}; 
+};
