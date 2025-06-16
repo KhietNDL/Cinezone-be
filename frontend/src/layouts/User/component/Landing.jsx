@@ -305,7 +305,7 @@ const LandingPage = () => {
                         </h3>
 
                         <div className="space-y-3 text-sm">
-                          <div className="flex items-center justify-center">
+                          <div className="flex items-center">
                             <span className="text-gray-300">
                               <FaRegCalendarCheck size={20} />{" "}
                             </span>
@@ -417,7 +417,7 @@ const LandingPage = () => {
                         </h3>
 
                         <div className="space-y-3 text-sm">
-                          <div className="flex items-center justify-center">
+                          <div className="flex items-center">
                             <span className="text-gray-300">
                               <FaRegCalendarCheck size={20} />{" "}
                             </span>
