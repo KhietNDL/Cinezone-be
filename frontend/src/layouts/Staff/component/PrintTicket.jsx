@@ -56,18 +56,23 @@ export default function PrintTicket() {
                                                         color: "#FFF8A7"
                                                     }}
                                                 >
-                                                    <p className="font-bold p-2 text-xs">Now Showing</p>
+                                                    <p className="font-bold p-2 text-xs"
+                                                        style={{
+                                                            fontSize: "0.75rem",
+                                                            lineHeight: "1rem",
+                                                            textShadow: "0 1px 2px Orange"
+                                                        }}>Now Showing</p>
                                                 </div>
-                                                <div className="bg-white text-xs px-2 py-1 rounded-sm " 
-                                                style={{color: "#86198F", border: "1px solid #86198F" }}>IMAX</div>
+                                                <div className="bg-white text-xs px-2 py-1 rounded-sm "
+                                                    style={{ color: "#86198F", border: "1px solid #86198F" }}>IMAX</div>
                                             </div>
                                             <h2 className="text-sm font-bold mt-2 pt-2 pb-4">
                                                 PHIM ĐIỆN ẢNH DORAEMON: NOBITA VÀ CUỘC PHIÊU LƯU VÀO THẾ GIỚI TRONG TRANH
                                             </h2>
-                                            <p className="text-xs mt-1">
-                                                <span className="p-2"><i className="fa-solid fa-clock"></i> 10:30 AM - 12:00 PM</span>
-                                                <span className="p-2"><i className="fa-solid fa-location-dot"></i> Cinema Hall 3</span>
-                                                <span className="p-2"><i className="fa-solid fa-couch"></i> Rows: A-H</span>
+                                            <p className="text-xs flex gap-3">
+                                                <span className="py-2"><i className="fa-solid fa-clock"></i> 10:30 AM - 12:00 PM</span>
+                                                <span className="py-2"><i className="fa-solid fa-location-dot"></i> Cinema Hall 3</span>
+                                                <span className="py-2"><i className="fa-solid fa-couch"></i> Rows: A-H</span>
                                             </p>
                                         </div>
                                     </div>
