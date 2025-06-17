@@ -78,18 +78,18 @@ const SelectSeatsPage = () => {
     // Xác định màu cho ghế
     const getSeatColor = (sold, selected) => {
         if (sold) return "#6b7280"; // gray-500
-        if (selected) return "#22c55e"; // green-400
+        if (selected) return "#5447F8"; // green-400
         return "#a3a3a3"; // gray-400
     };
 
     // Tính toán vị trí và kích thước ô vuông đỏ bao quanh 16 ghế VIP
-  
+
     const vipBoxStyle = {
         position: "absolute",
-        top: 160, 
-        left: 154, 
-        width: 244, 
-        height: 210, 
+        top: 160,
+        left: 154,
+        width: 244,
+        height: 210,
         border: "2px solid red",
         borderRadius: 12,
         pointerEvents: "none",
@@ -127,7 +127,7 @@ const SelectSeatsPage = () => {
 
     return (
         <div className="p-4 mx-auto w-full">
-            <h1 className="text-3xl font-bold mb-4 text-fuchsia-700">Select Seats</h1>
+            <h1 className="text-3xl font-bold mb-4 text-[#9810FA]">Select Seats</h1>
             {/* Phim */}
             <div className="flex items-start gap-4 border-b border-gray-300 pb-4">
                 <img
@@ -137,7 +137,7 @@ const SelectSeatsPage = () => {
                 />
                 <div className="flex-1">
                     <div className="flex items-center gap-2">
-                        <div className="text-[#FFF8A7] p-1 rounded-full shadow-md w-[125px] h-[30px] flex items-center justify-center mb-2"
+                        <div className="text-[#FFF8A7] text-shadow-2xs text-shadow-amber-500 p-1 rounded-full shadow-md w-[125px] h-[30px] flex items-center justify-center mb-2"
                             style={{
                                 background: "linear-gradient(90deg, #FACC15, #DDB61A, #DBBB3B, #CDB03D, #B1900C)",
                             }}>
@@ -145,26 +145,26 @@ const SelectSeatsPage = () => {
                         </div>
                         <Tag color="purple" style={{ border: "1px solid purple" }}>IMAX</Tag>
                     </div>
-                    <h2 className="text-xl font-bold mt-2 p-4">
+                    <h2 className="text-xl font-bold mt-2 py-4">
                         PHIM ĐIỆN ẢNH DORAEMON: NOBITA VÀ CUỘC PHIÊU LƯU VÀO THẾ GIỚI TRONG TRANH
                     </h2>
-                    <p className="text-sm mt-1 ">
-                        <span className="p-2"><i className="fa-solid fa-clock"></i> 10:30 AM - 12:00 PM</span>
-                        <span className="p-2"><i className="fa-solid fa-location-dot"></i> Cinema Hall 3</span>
-                        <span className="p-2"><i className="fa-solid fa-couch"></i> Rows: A-H</span>
+                    <p className="text-sm mt-1 flex gap-4">
+                        <span className="py-2"><i className="fa-solid fa-clock"></i> 10:30 AM - 12:00 PM</span>
+                        <span className="py-2"><i className="fa-solid fa-location-dot"></i> Cinema Hall 3</span>
+                        <span className="py-2"><i className="fa-solid fa-couch"></i> Rows: A-H</span>
                     </p>
                 </div>
             </div>
             {/* Mang hinh */}
             <div className="flex flex-col items-center  p-4">
-                <div className="w-[40%] h-3 rounded-t-full bg-gradient-to-r from-indigo-600 to-indigo-300"></div>
+                <div className="w-[50%] h-3 rounded-t-full bg-gradient-to-r from-indigo-600 to-indigo-300"></div>
                 <span className="text-indigo-600 font-bold text-xl mt-2 tracking-widest">SCREEN</span>
             </div>
 
             {/* Ghe */}
-            <div className="pl-70 flex gap-15 justify-center">
+            <div className="pl-80 flex gap-15 justify-center">
                 <div
-                    className="grid grid-cols-10 gap-2 mr-10 border border-gray-300 p-4 rounded-2xl bg-white shadow-md"
+                    className="grid grid-cols-10 gap-2  border border-gray-300 p-4 rounded-2xl bg-white shadow-md pr-18"
                     style={{ position: "relative" }}
                 >
                     {/* Ô vuông đỏ bao quanh 16 ghế VIP */}
@@ -244,13 +244,15 @@ const SelectSeatsPage = () => {
                             <div>
                                 <div className="border-b pb-2 mb-2">
                                     <div className="border-b border-black pb-2 ">
-                                        <p style={{ margin: "2px 0" }} className="flex items-center gap-5"><i className="fa-solid fa-couch" 
-                                        style={{ color: "#a3a3a3", fontSize: 15}}></i>
-                                        Nomal seat: ${NORMAL_PRICE}</p>
-                                        <p style={{ margin: "2px 0" }} className="flex items-center gap-2"><i className="fa-solid fa-couch" 
-                                        style={{ color: "#a3a3a3", fontSize: 15, border: "1px solid red", padding: 5, borderRadius: 5 }}></i>
-                                        VIP seat: ${VIP_PRICE}</p>
-                                        <p style={{ margin: "2px 0" }} className="flex items-center gap-3"> <CoupleSeatIcon size={25} color="#a3a3a3" /> Couple seat: ${COUPLE_PRICE}</p>
+                                        <p style={{ margin: "2px 0", paddingLeft: 5 }} className="flex items-center gap-4"><i className="fa-solid fa-couch"
+                                            style={{ color: "#a3a3a3", fontSize: 15 }}></i>
+                                            Nomal seat: ${NORMAL_PRICE}</p>
+                                        <p style={{ margin: "2px 0" }} className="flex items-center gap-2.5"><i className="fa-solid fa-couch"
+                                            style={{ color: "#a3a3a3", fontSize: 15, border: "1px solid red", padding: 5, borderRadius: 5 }}></i>
+                                            VIP seat: ${VIP_PRICE}</p>
+                                        <p style={{ margin: "2px 0" }} className="flex items-center gap-3">
+                                            <span className="pl-1"><CoupleSeatIcon size={25} color="#a3a3a3" /></span>
+                                            Couple seat: ${COUPLE_PRICE}</p>
                                     </div>
                                     <p style={{ margin: "2px 0" }}>
                                         Seat can choose: <b>{totalSeats - soldSeats.length - selectedSeats.length}</b>
@@ -304,7 +306,7 @@ const SelectSeatsPage = () => {
                 </div>
                 <div className="flex items-center gap-2">
                     <div className="w-8 h-5 flex items-center">
-                        <i className="fa-solid fa-couch" style={{ color: "#22c55e", fontSize: 20 }}></i>
+                        <i className="fa-solid fa-couch" style={{ color: "#5447F8", fontSize: 20 }}></i>
                     </div> Selected
                 </div>
                 <div className="flex items-center gap-2">
@@ -312,7 +314,7 @@ const SelectSeatsPage = () => {
                         <i className="fa-solid fa-couch" style={{ color: "#6b7280", fontSize: 20 }}></i>
                     </div> Sold
                 </div>
-                
+
             </div>
         </div>
     );

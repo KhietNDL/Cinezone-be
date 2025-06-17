@@ -36,6 +36,7 @@ import HistoryActivity from "./layouts/User/component/HistoryActivity";
 import TicketBookingManagement from "./layouts/Admin/component/TicketBookingMangement";
 import TicketDetails from "./layouts/User/component/TicketDetails";
 import PromotionManagement from "./layouts/Admin/component/PromotionManagement";
+import MoviePage from "./layouts/Staff/component/MoviePage";
 function App() {
   return (
     <AuthProvider>
@@ -72,7 +73,7 @@ function App() {
         <Route path="/staff" element={<StaffLayout />}>
           <Route index element={<SellTicketPage />} />
           <Route path="/staff/ticket-selling" element={<SellTicketPage />} />
-          <Route path="/staff/movie-info" element={<SellTicketPage />} />
+          <Route path="/staff/movie-info" element={<MoviePage />} />
           <Route
             path="/staff/ticket-selling/select-seats"
             element={<SelectSeatsPage />}

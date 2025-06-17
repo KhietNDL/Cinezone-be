@@ -1,6 +1,21 @@
+import React from "react";
+
 
 const ItemCard = ({ item, type, onSelect, selected }) => {
- 
+
+  const truncateText = (text, maxLength = 20) => {
+    if (!text) return "";
+    return text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
+  };
+
+
+  const displayName =
+    type === "movie"
+      ? truncateText(item.NameOfEnglish)
+      : truncateText(item.name);
+  const fullName =
+    type === "movie" ? item.NameOfEnglish : item.name;
+
   return (
     <div
       onClick={() => onSelect(item)}
@@ -8,7 +23,7 @@ const ItemCard = ({ item, type, onSelect, selected }) => {
         ${selected ? 'shadow-[0_10px_10px_gray]' : 'none'}
         ${type === 'movie' ? 'h-[440px]' : 'h-[350px]'}
         `}
-     
+      title={fullName}
     >
       {type === 'movie' ?
         <img
@@ -20,11 +35,12 @@ const ItemCard = ({ item, type, onSelect, selected }) => {
         : <img
           alt={item.name}
           src={item.image}
-           className="w-full h-[250px] object-cover rounded-tl-md rounded-tr-md mx-auto"
+          className="w-full h-[250px] object-cover rounded-tl-md rounded-tr-md mx-auto"
         />}
 
       <div className="mt-2 text-sm p-2 font-semibold text-center uppercase text-gray-700">
-        {type === 'movie' ? item.NameOfEnglish : item.name}
+        {/* {type === 'movie' ? item.NameOfEnglish : item.name} */}
+        {displayName}
       </div>
 
       {type === 'combo' && (
