@@ -29,6 +29,7 @@ const seatRoutes = require('./routes/seat');
 const bookingRoutes = require('./routes/booking');
 const ticketRoutes = require('./routes/ticket');
 const bookingSeatRoutes = require('./routes/bookingseat');
+const showtimeRoutes = require('./routes/showtime');
 const seatShowtimeRoutes = require('./routes/seatshowtime');
 
 // Use routes
@@ -42,6 +43,7 @@ app.use('/api/seats', seatRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/booking-seats', bookingSeatRoutes);
+app.use('/api/showtimes', showtimeRoutes);
 app.use('/api/seatshowtime', seatShowtimeRoutes);
 
 //port
