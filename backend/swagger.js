@@ -17,10 +17,14 @@ const options = {
         name: 'Cinema Room Management',
         description: 'API endpoints for managing cinema rooms (Admin only)',
       },
+      {
+        name: 'Showtime Management',
+        description: 'API endpoints for managing showtimes (Admin only)',
+      },
     ],
     servers: [
       {
-        url: 'http://localhost:8080',
+        url: 'http://localhost:4458', // Đổi port về đúng với backend
         description: 'Development server',
       },
     ],
@@ -290,4 +294,4 @@ const options = {
 };
 const specs = swaggerJsdoc(options);
 
-module.exports = specs; 
+module.exports = specs;

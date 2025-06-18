@@ -1,24 +1,45 @@
 const express = require("express");
 const router = express.Router();
+const multer = require('multer');
+const UserController = require('../controllers/user.controller');
 const {
   register,
   login,
   forgotPassword,
+  verifyOtp,
   resetPassword,
   logout,
   updateProfile,
   getUserById,
 } = require("../controllers/user.controller");
 const {
-  loginValidation,
   registerValidation,
+  loginValidation,
   forgotPasswordValidation,
+  verifyOtpValidation,
   resetPasswordValidation,
   updateProfileValidation,
 } = require("../middlewares/user.validator");
 const { auth, isAdmin } = require("../middlewares/auth.middleware");
 const passport = require("../middlewares/passport");
 const jwt = require("jsonwebtoken");
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
+  fileFilter: (req, file, cb) => {
+    // check type file
+    if (file.fieldname === 'avatar_url') {
+      if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+      } else {
+        cb(new Error('Avatart must be an image file'));
+      }
+    } else {
+      cb(null, true);
+    }
+  }
+});
 
 /**
  * @swagger
@@ -179,9 +200,9 @@ router.post("/forgot-password", forgotPasswordValidation, forgotPassword);
 
 /**
  * @swagger
- * /api/auth/reset-password:
+ * /api/auth/verify-otp:
  *   post:
- *     summary: Reset password with code
+ *     summary: Verify OTP code
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -190,23 +211,51 @@ router.post("/forgot-password", forgotPasswordValidation, forgotPassword);
  *           schema:
  *             type: object
  *             required:
- *               - email
  *               - resetCode
- *               - newPassword
  *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 description: User's email address
  *               resetCode:
  *                 type: string
  *                 minLength: 6
  *                 maxLength: 6
  *                 description: 6-digit reset code received via email
+ *     responses:
+ *       200:
+ *         description: OTP verified successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: OTP verified successfully
+ *       400:
+ *         description: Validation error or invalid/expired reset code
+ *       500:
+ *         description: Server error
+ */
+router.post("/verify-otp", verifyOtpValidation, verifyOtp);
+
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Reset password with new password
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - newPassword
+ *             properties:
  *               newPassword:
  *                 type: string
- *                 minLength: 6
- *                 description: New password
+ *                 minLength: 8
+ *                 maxLength: 128
+ *                 description: New password (must contain uppercase, lowercase, number, special character)
  *     responses:
  *       200:
  *         description: Password reset successful
@@ -217,8 +266,11 @@ router.post("/forgot-password", forgotPasswordValidation, forgotPassword);
  *               properties:
  *                 message:
  *                   type: string
+ *                   example: Password reset successful
  *       400:
- *         description: Validation error or invalid/expired reset code
+ *         description: Validation error or please verify OTP first
+ *       404:
+ *         description: User not found
  *       500:
  *         description: Server error
  */
@@ -340,7 +392,7 @@ router.get("/user/:id", auth, getUserById);
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
@@ -348,46 +400,30 @@ router.get("/user/:id", auth, getUserById);
  *                 type: string
  *                 minLength: 6
  *                 maxLength: 100
- *                 default: ''
- *                 description: User's full name (6-100 chars, no numbers or special characters, no leading/trailing spaces)
  *               password:
  *                 type: string
  *                 minLength: 8
  *                 maxLength: 128
- *                 default: ''
- *                 description: User's password (8-128 chars, at least 1 uppercase, 1 lowercase, 1 number, 1 special character, no whitespace)
  *               dateOfBirth:
  *                 type: string
  *                 format: date
- *                 default: ''
- *                 description: User's date of birth (YYYY-MM-DD, not in the future)
  *               phoneNumber:
  *                 type: string
- *                 default: ''
- *                 description: User's phone number (exactly 10 digits)
  *               sex:
  *                 type: integer
  *                 enum: [1, 2, 3]
- *                 default: ''
- *                 description: 1 for male, 2 for female, 3 for other
  *               email:
  *                 type: string
  *                 format: email
  *                 maxLength: 255
- *                 default: ''
- *                 description: User's email address (must be lowercase, no whitespace)
  *               cccd:
  *                 type: string
- *                 description: Citizen ID (exactly 12 digits, optional)
- *                 default: ''
  *               address:
  *                 type: string
- *                 default: ''
- *                 description: User's address (optional)
- *               avatar_url:
+ *               avatar:
  *                 type: string
- *                 default: ''
- *                 description: User's avatar URL (optional)
+ *                 format: binary
+ *                 description: User's avatar image file
  *     responses:
  *       200:
  *         description: Profile updated successfully
@@ -400,7 +436,12 @@ router.get("/user/:id", auth, getUserById);
  *       500:
  *         description: Server error
  */
-router.put("/profile/:id", auth, updateProfileValidation, updateProfile);
+router.put("/profile/:id", 
+  auth, 
+  upload.fields([{ name: 'avatar', maxCount: 1 }]),
+  updateProfileValidation, 
+  UserController.updateProfile
+);
 
 /**
  * @swagger

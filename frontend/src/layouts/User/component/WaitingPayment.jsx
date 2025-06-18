@@ -11,6 +11,29 @@ const WaitingPayment = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
 
+  const handleViewTicket = () => {
+    navigate("/ticket", {
+      state: {
+        movieTitle: movie.title,
+        screen: ticketInfo.screen,
+        showtimeDate: ticketInfo.date,
+        showtimeTime: ticketInfo.time,
+        timeRange: movie.timeRange,
+        room: ticketInfo.room,
+        seats: ticketInfo.seats,
+        pricePerTicket: ticketInfo.price,
+        numberOfTickets: ticketInfo.count,
+        discount: ticketInfo.discount,
+        ticketId: ticketInfo.id,
+        cardHolder: user.name,
+        email: user.email,
+        identity: user.idCard,
+        phone: user.phone,
+        description: movie.description,
+      },
+    });
+  };
+
   const {
     numberOfTickets = 2,
     selectedSeats = [],
@@ -21,17 +44,20 @@ const WaitingPayment = () => {
     cinema = "CGV Crescent Mall",
     date = "2024-06-12",
     time = "14:00",
+    movie = {},
+    user = {},
+    ticketInfo = {},
   } = state || {};
 
-  const [timeLeft, setTimeLeft] = useState(10 ); 
+  const [timeLeft, setTimeLeft] = useState(300);
   const [paymentMethod, setPaymentMethod] = useState(initialPaymentMethod);
   const [cardHolder, setCardHolder] = useState("");
   const [expiry, setExpiry] = useState("");
   const [cvc, setCvc] = useState("");
   const [cardNumber, setCardNumber] = useState("");
-  
+
   // State để track trạng thái thanh toán
-  const [paymentStatus, setPaymentStatus] = useState("waiting"); 
+  const [paymentStatus, setPaymentStatus] = useState("waiting");
 
   const total = totalPrice + comboPrice - discount;
 
@@ -47,7 +73,7 @@ const WaitingPayment = () => {
         return prevTime - 1;
       });
     }, 1000);
-    
+
     return () => clearInterval(interval);
   }, [paymentStatus]);
 
@@ -96,25 +122,21 @@ const WaitingPayment = () => {
           />
         </div>
         <div className="flex justify-center items-center">
-        
-        <CheckCircle className="w-30 h-30 text-green-400 mb-6" />
+
+          <CheckCircle className="w-30 h-30 text-green-400 mb-6" />
         </div>
         <h1 className="text-3xl font-bold text-green-400 mb-4 text-center">Payment Successful!</h1>
         <p className="text-center text-gray-300 mb-6">
           Your booking has been confirmed. Enjoy your movie!
         </p>
 
-        <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 w-full text-center">
-          <p className="text-sm text-green-300">
-            🎫 E-tickets have been sent to your email
-          </p>
-        </div>
+       
       </div>
 
       {/* Right Side - Booking Details */}
       <div className="w-1/2 bg-[#25244A] rounded-r-xl p-8">
         <h2 className="text-2xl font-bold mb-6 text-center">Booking Details</h2>
-        
+
         <div className="space-y-4 mb-8">
           <div className="bg-[#1E1B3A] rounded-lg p-4">
             <h3 className="font-semibold mb-2 text-green-400">Movie Information</h3>
@@ -157,6 +179,24 @@ const WaitingPayment = () => {
             <Home className="w-5 h-5" />
             Back to Home
           </button>
+          <button
+            onClick={() =>
+              navigate("/ticket", {
+                state: {
+                  selectedSeats,
+                  numberOfTickets,
+                  cinema,
+                  date,
+                  time,
+                  total,
+                  cardHolder,
+                },
+              })
+            }
+            className="flex-1 flex items-center justify-center gap-2 bg-green-400 hover:bg-green-500 text-white py-3 rounded-lg font-semibold transition"
+          >
+            🎫 View Ticket
+          </button>
         </div>
       </div>
     </>
@@ -167,7 +207,7 @@ const WaitingPayment = () => {
     <>
       {/* Left Side - Failed Info */}
       <div className="w-1/2 p-8 ">
-       <div role="button" className="flex items-center mb-4">
+        <div role="button" className="flex items-center mb-4">
           <img
             src={logo}
             alt=""
@@ -177,24 +217,24 @@ const WaitingPayment = () => {
             className="w-[160px] h-[70px] object-cover"
           />
         </div>
-        
+
         <div className="flex justify-center items-center mb-6">
           <XCircle className="w-30 h-30 text-red-500 text-center " />
-          
+
         </div>
-        
+
         <h1 className="text-3xl font-bold text-red-400 mb-4 text-center">Payment Failed</h1>
         <p className="text-center text-gray-300 mb-6">
           Thank you for using our service !
         </p>
 
-      
+
       </div>
 
       {/* Right Side - What Happened */}
       <div className="w-1/2 bg-[#25244A] rounded-r-xl p-8">
         <h2 className="text-2xl font-bold mb-6 text-center">What Happened?</h2>
-        
+
         <div className="space-y-4 mb-8">
           <div className="bg-[#1E1B3A] rounded-lg p-4">
             <h3 className="font-semibold mb-3 text-red-400">Order Details</h3>
@@ -232,8 +272,9 @@ const WaitingPayment = () => {
             <Home className="w-5 h-5" />
             Back to Home
           </button>
-          
-         
+
+
+
         </div>
       </div>
     </>
@@ -285,27 +326,24 @@ const WaitingPayment = () => {
         <div className="grid grid-cols-10 gap-3 mb-6">
           <button
             type="button"
-            className={`col-span-3 flex items-center justify-center p-3 rounded-lg font-semibold ${
-              paymentMethod === "PayPal" ? "bg-[#6B59E6] text-white" : "bg-[#1E1B3A] text-white"
-            }`}
+            className={`col-span-3 flex items-center justify-center p-3 rounded-lg font-semibold ${paymentMethod === "PayPal" ? "bg-[#6B59E6] text-white" : "bg-[#1E1B3A] text-white"
+              }`}
             onClick={() => setPaymentMethod("PayPal")}
           >
             <FaPaypal className="mr-2 text-[#b2a6ff]" /> PayPal
           </button>
           <button
             type="button"
-            className={`col-span-3 flex items-center justify-center p-3 rounded-lg font-semibold ${
-              paymentMethod === "Bank" ? "bg-[#6B59E6] text-white" : "bg-[#1E1B3A] text-white"
-            }`}
+            className={`col-span-3 flex items-center justify-center p-3 rounded-lg font-semibold ${paymentMethod === "Bank" ? "bg-[#6B59E6] text-white" : "bg-[#1E1B3A] text-white"
+              }`}
             onClick={() => setPaymentMethod("Bank")}
           >
             <BsBank className="mr-2 text-[#b2a6ff]" /> Bank
           </button>
           <button
             type="button"
-            className={`col-span-4 flex items-center justify-center p-3 rounded-lg font-semibold ${
-              paymentMethod === "Visa" ? "bg-[#6B59E6] text-white" : "bg-[#1E1B3A] text-white"
-            }`}
+            className={`col-span-4 flex items-center justify-center p-3 rounded-lg font-semibold ${paymentMethod === "Visa" ? "bg-[#6B59E6] text-white" : "bg-[#1E1B3A] text-white"
+              }`}
             onClick={() => setPaymentMethod("Visa")}
           >
             <RiVisaFill className="mr-2 text-[#b2a6ff]" /> Visa / Master Card

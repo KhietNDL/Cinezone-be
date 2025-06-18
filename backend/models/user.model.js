@@ -13,7 +13,7 @@ class User {
   static async findByUsername(username) {
     const [rows] = await db
       .promise()
-      .query("SELECT * FROM users WHERE username = ?", [username]);
+      .query("SELECT * FROM Users WHERE Username = ? AND IsDeleted = 0", [username]);
     return rows[0];
   }
 
@@ -172,6 +172,16 @@ class User {
       console.error('Error creating Google user:', error);
       throw error;
     }
+  }
+
+  static async findByResetCode(resetCode) {
+    const [rows] = await db
+      .promise()
+      .query(
+        "SELECT * FROM Users WHERE reset_code = ? AND reset_code_expires > NOW() AND IsDeleted = 0",
+        [resetCode]
+      );
+    return rows[0];
   }
 }
 

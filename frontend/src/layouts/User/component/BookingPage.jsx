@@ -8,11 +8,15 @@ import {
 } from "react-icons/fa";
 import { MdChair, MdOutlineOndemandVideo } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext";
+import Swal from "sweetalert2";
+
 
 const BookingPage = () => {
   // State để quản lý số lượng vé, ghế đã chọn, v.v.
   const [numberOfTickets, setNumberOfTickets] = useState(1);
   const [selectedSeats, setSelectedSeats] = useState([]);
+  const { user, isLoading } = useAuth();
 
   // Danh sách ghế (8 hàng, mỗi hàng 8 ghế)
   const rows = ["A", "B", "C", "D", "E", "F", "G", "H"];
@@ -21,14 +25,30 @@ const BookingPage = () => {
 
   // Hàm xử lý chọn ghế
   const toggleSeat = (seat) => {
+    
+
+    if (!user) {
+  Swal.fire({
+    icon: "info",
+    title: "Bạn cần đăng nhập",
+    text: "Vui lòng đăng nhập để chọn ghế.",
+    confirmButtonText: "Đăng nhập",
+  }).then((result) => {
+    if (result.isConfirmed) {
+      navigate("/login");
+    }
+  });
+  return;
+}
+
     if (soldSeats.includes(seat)) return; // Không cho chọn ghế đã bán
+
     if (selectedSeats.includes(seat)) {
       setSelectedSeats(selectedSeats.filter((s) => s !== seat));
     } else if (selectedSeats.length < numberOfTickets) {
       setSelectedSeats([...selectedSeats, seat]);
     }
   };
-  
   const navigate = useNavigate();
   // Tính tổng giá (ví dụ: 100k/vé)
   const ticketPrice = 100000;
@@ -97,26 +117,26 @@ const BookingPage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
             <div>
               <label className="block text-xs sm:text-sm mb-1">Cinema</label>
-              <select className="w-full bg-gray-800 text-white p-2 rounded text-xs sm:text-sm">
+              <select className="w-full bg-gray-800/40 text-white p-2 rounded text-xs sm:text-sm">
                 <option>CGV Crescent Mall</option>
               </select>
             </div>
             <div>
               <label className="block text-xs sm:text-sm mb-1">Date</label>
-              <select className="w-full bg-gray-800 text-white p-2 rounded text-xs sm:text-sm">
+              <select className="w-full bg-gray-800/40  text-white p-2 rounded text-xs sm:text-sm">
                 <option>2024-06-12</option>
               </select>
             </div>
             <div>
               <label className="block text-xs sm:text-sm mb-1">Time</label>
-              <select className="w-full bg-gray-800 text-white p-2 rounded text-xs sm:text-sm">
+              <select className="w-full bg-gray-800/40 text-white p-2 rounded text-xs sm:text-sm">
                 <option>14:00</option>
               </select>
             </div>
             <div>
               <label className="block text-xs sm:text-sm mb-1">Number ticket</label>
               <select
-                className="w-full bg-gray-800 text-white p-2 rounded text-xs sm:text-sm"
+                className="w-full bg-gray-800/40 text-white p-2 rounded text-xs sm:text-sm"
                 value={numberOfTickets}
                 onChange={(e) => {
                   setNumberOfTickets(Number(e.target.value));
@@ -145,7 +165,7 @@ const BookingPage = () => {
               </span>
             </div>
           </div>
-          
+
           {/* Seat selection - Mobile optimized */}
           <div className="flex justify-center overflow-x-auto">
             <div className="min-w-max">
@@ -201,21 +221,19 @@ const BookingPage = () => {
                         className="w-10 h-10 sm:w-16 sm:h-16 flex items-center justify-center bg-transparent p-0 border-none outline-none"
                       >
                         <MdChair
-                          aria-label={`Seat ${seat} ${
-                            isSold
+                          aria-label={`Seat ${seat} ${isSold
                               ? "sold"
                               : isSelected
-                              ? "selected"
-                              : "available"
-                          }`}
+                                ? "selected"
+                                : "available"
+                            }`}
                           className={`w-8 h-8 sm:w-13 sm:h-13 transition-colors
-                ${
-                  isSold
-                    ? "text-gray-500"
-                    : isSelected
-                    ? "text-blue-500"
-                    : "text-gray-300 hover:text-gray-100"
-                }`}
+                ${isSold
+                              ? "text-gray-500"
+                              : isSelected
+                                ? "text-blue-500"
+                                : "text-gray-300 hover:text-gray-100"
+                            }`}
                         />
                       </button>
                     );

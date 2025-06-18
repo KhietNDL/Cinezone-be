@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { Input, Button, Table, Image, Space } from 'antd';
 import { LeftOutlined, RightOutlined, DeleteOutlined, MinusOutlined, PlusOutlined } from '@ant-design/icons';
-import ComboCard from './ComboCard';
+import ItemCard from './ItemCard'; // Assuming you have an ItemCard component for displaying combo items
 import { BsTrash3Fill } from "react-icons/bs";
 import { FaCheck, FaX, FaXmark } from "react-icons/fa6";
 import './ComboPage.css'; // Assuming you have some styles for the ComboPage
 import { PiPopcornDuotone } from "react-icons/pi";
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation } from 'swiper/modules';
+import { Navigation, Pagination } from 'swiper/modules';
 import 'swiper/css';
-import './SwiperButton.css'; // Custom styles for Swiper buttons
+import 'swiper/css/navigation';
+import 'swiper/css/pagination'; // Custom styles for Swiper buttons
 const comboList = [
     {
         id: 1,
@@ -100,15 +101,18 @@ export default function ComboPage() {
         {
             title: 'Image',
             dataIndex: 'image',
+            width: 242,
             render: img => <Image src={img} width={100} />,
         },
         {
             title: 'Name',
             dataIndex: 'name',
+            width: 373,
         },
         {
             title: 'Quantity',
             dataIndex: 'quantity',
+            width: 190,
             render: (qty, record) => (
                 <Space>
                     <Button style={{ backgroundColor: '#7254EF', color: "white" }} icon={<MinusOutlined />} size="small" onClick={() => handleQuantity(record.id, -1)} />
@@ -120,14 +124,17 @@ export default function ComboPage() {
         {
             title: 'Price',
             dataIndex: 'price',
+            width: 116,
             render: price => `$${price}`,
         },
         {
             title: 'Total',
+            width: 115,
             render: (_, record) => `$${record.price * record.quantity}`,
         },
         {
             title: 'Action',
+            width: 135,
             render: (_, record) => (
                 <Button
                     icon={<BsTrash3Fill />}
@@ -157,43 +164,11 @@ export default function ComboPage() {
                     <b className="text-lg flex items-center gap-2">
                         <span className="text-xl"><PiPopcornDuotone /></span> Select Combo
                     </b>
-                    <div className="flex items-center gap-4 mt-6 w-full justify-center">
-                        <Button
-                            icon={<LeftOutlined />}
-                            disabled={carouselIndex === 0}
-                            onClick={() => setCarouselIndex(i => Math.max(0, i - 1))}
-                            style={{ borderRadius: '50%', width: 40, height: 40, display: 'flex', alignItems: 'center',
-                                 border: "none",justifyContent: 'center', color: '#7254EF', backgroundColor: "#FAFBFC" }}
-                        />
-                        <div className="flex gap-6 overflow-x-auto w-full pb-2">
-                            {visibleCombos.map(combo => (
-                                <ComboCard
-                                    key={combo.id}
-                                    combo={combo}
-                                    onAdd={handleAddCombo}
-                                    selected={cart.some(item => item.id === combo.id)}
-                                />
-                            ))}
-                        </div>
-                        <Button
-                            icon={<RightOutlined />}
-                            disabled={carouselIndex + 4 >= filteredCombos.length}
-                            onClick={() => setCarouselIndex(i => Math.min(filteredCombos.length - 4, i + 1))}
-                            style={{ borderRadius: '50%', width: 40, height: 40, display: 'flex', alignItems: 'center',
-                                 border: "none",justifyContent: 'center', color: '#7254EF', backgroundColor: "#FAFBFC" }}
-                        />
-                    </div>
-                </div>
-                {/* ----------------------------- */}
-                {/* <div className="staff-swiper">
-                    {loading ? (
-                        <div className="text-center my-8">
-                            <Spin size="large" />
-                        </div>
-                    ) : (
+                    <div className="staff-swiper">
                         <Swiper
-                            modules={[Navigation]}
+                            modules={[Navigation, Pagination]}
                             navigation
+                            pagination={{ clickable: true }}
                             spaceBetween={50}
                             slidesPerView={4}
                             slidesPerGroup={2}
@@ -204,22 +179,22 @@ export default function ComboPage() {
                                 1024: { slidesPerView: 4 },
                             }}
                         >
-                            {visibleCombos.map((combo) => (
+                            {filteredCombos.map((combo) => (
                                 <SwiperSlide key={combo.id}>
-                                    <div className="flex justify-center p-2 w-[230px]">
-                                        <ComboCard
-                                            key={combo.id}
-                                            combo={combo}
-                                            onAdd={handleAddCombo}
+                                    <div className="flex justify-center p-2 w-[260px]">
+                                        <ItemCard
+                                            item={combo}
+                                            type="combo"
+                                            onSelect={handleAddCombo}
                                             selected={cart.some(item => item.id === combo.id)}
                                         />
                                     </div>
-
                                 </SwiperSlide>
                             ))}
                         </Swiper>
-                    )}
-                </div> */}
+                    </div>
+                </div>
+
                 {/* Cart Table */}
                 <div className="bg-white rounded-2xl shadow-md p-8 mt-8 w-full border border-gray-200">
                     <Table
@@ -231,6 +206,12 @@ export default function ComboPage() {
                         style={{ width: '100%', border: '1px solid gray', borderRadius: '20px' }}
 
                     />
+                    <div className='flex justify-center mt-4 gap-3 text-2xl'>
+                        <strong>Total Price: </strong>
+                        <p className='text-green-700'>
+                            ${cart.reduce((sum, item) => sum + item.price * item.quantity, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                    </div>
                     <div className="flex justify-center gap-4 mt-8">
                         <Button style={{ width: 180, fontWeight: 600, fontSize: 16, backgroundColor: '#7254EF', color: 'white' }} icon={<FaCheck />}> Check out</Button>
                         <Button danger style={{ width: 120, fontWeight: 600, fontSize: 16 }} icon={<FaXmark />}>Cancel</Button>

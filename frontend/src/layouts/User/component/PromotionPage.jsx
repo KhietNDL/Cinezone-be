@@ -214,7 +214,7 @@ const MoviePromotions = () => {
     });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-800 via-blue-950 to-slate-950 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] relative overflow-hidden">
       {/* Enhanced Background Animation */}
       <div className="absolute inset-0">
         <div className="absolute top-0 left-0 w-[800px] h-[800px] bg-gradient-radial from-purple-600/30 to-transparent rounded-full blur-3xl animate-pulse"></div>
@@ -302,7 +302,7 @@ const MoviePromotions = () => {
           {/* Enhanced Hero Section */}
           <div className="text-center mb-20">
             <div className="relative inline-block mb-8">
-              <h1 className="text-6xl md:text-8xl font-black mb-4 bg-gradient-to-r from-white via-purple-200 via-cyan-200 to-pink-200 bg-clip-text text-transparent leading-tight">
+              <h1 className="text-6xl md:text-8xl font-black mb-4 bg-gradient-to-r from-white via-purple-200  to-pink-200 bg-clip-text text-transparent leading-tight">
                 Movie Promotions
               </h1>
               <div className="absolute -top-4 -right-4 text-yellow-400 animate-bounce">

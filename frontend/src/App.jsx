@@ -30,7 +30,12 @@ import WaitingPayment from "./layouts/User/component/WaitingPayment";
 
 import AccountImformation from "./layouts/User/component/AccountImformation";
 import EditAccount from "./layouts/User/component/EditAccount";
+import HistoryActivity from "./layouts/User/component/HistoryActivity";
 
+
+import TicketBookingManagement from "./layouts/Admin/component/TicketBookingMangement";
+import TicketDetails from "./layouts/User/component/TicketDetails";
+import PromotionManagement from "./layouts/Admin/component/PromotionManagement";
 function App() {
   return (
     <AuthProvider>
@@ -45,11 +50,13 @@ function App() {
           <Route path="/confirmPayment" element={<ConfirmPayment />} />
           <Route path="/promotions" element={<MoviePromotions />} />
           <Route path="/waiting" element={<WaitingPayment />} />
-         
-        
+          <Route path="/ticket" element={<TicketDetails />} />
+
           <Route path="/account" element={<AccountImformation />}>
             <Route path="*" element={<AccountImformation />} />
             <Route path="personal" element={<EditAccount />} />
+            <Route path="history" element={<HistoryActivity />} />
+            
           </Route>
         </Route>
 
@@ -58,17 +65,31 @@ function App() {
           <Route path="employees" element={<EmployeeManagement />} />
           <Route path="movies" element={<MovieManagement />} />
           <Route path="rooms" element={<RoomManagement />} />
+          <Route path="bookings" element={<TicketBookingManagement />} />
+          <Route path="promotions" element={<PromotionManagement />} />
         </Route>
 
         <Route path="/staff" element={<StaffLayout />}>
           <Route index element={<SellTicketPage />} />
           <Route path="/staff/ticket-selling" element={<SellTicketPage />} />
           <Route path="/staff/movie-info" element={<SellTicketPage />} />
-          <Route path="/staff/ticket-selling/select-seats" element={<SelectSeatsPage />} />
-          <Route path="/staff/ticket-selling/confirm-ticket" element={<ConfirmTicketsPage />} />
-          <Route path="/staff/ticket-selling/ticket-infomation" element={<TicketInfomation />} />
+          <Route
+            path="/staff/ticket-selling/select-seats"
+            element={<SelectSeatsPage />}
+          />
+          <Route
+            path="/staff/ticket-selling/confirm-ticket"
+            element={<ConfirmTicketsPage />}
+          />
+          <Route
+            path="/staff/ticket-selling/ticket-infomation"
+            element={<TicketInfomation />}
+          />
           <Route path="/staff/combo-selling" element={<ComboPage />} />
-          <Route path="/staff/ticket-selling/view-ticket" element={<PrintTicket />} />
+          <Route
+            path="/staff/ticket-selling/view-ticket"
+            element={<PrintTicket />}
+          />
         </Route>
       </Routes>
       <ToastContainer />

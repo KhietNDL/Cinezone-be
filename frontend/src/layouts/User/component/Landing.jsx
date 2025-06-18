@@ -1,78 +1,31 @@
-import { FaRegCirclePlay } from "react-icons/fa6";
+// Landing.jsx - Cách tích hợp component
+import React, { useEffect, useState } from "react";
+import { FaRegCalendarCheck, FaRegCirclePlay } from "react-icons/fa6";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/navigation";
-import React, { useState } from "react";
-import landingBackground from "../../../assets/The-Flash-2023-Teaser-Banner-01.jpg";
-
-import { FaPlay } from "react-icons/fa";
+import { IoMdBookmark } from "react-icons/io";
+import { GoClockFill } from "react-icons/go";
 import { Pagination, Navigation } from "swiper/modules";
-import imageMovie from "../../../assets/imageMovie.jpg";
-import imageMovie2 from "../../../assets/imageMovie2.jpg";
-import imageMovie3 from "../../../assets/imageMovie3.jpg";
-import imageMovie4 from "../../../assets/imageMovie4.jpg";
-import imageMovie5 from "../../../assets/imageMovie5.jpg";
-import imageMovie6 from "../../../assets/imageMovie6.jpg";
-import imageMovie7 from "../../../assets/imageMovie7.jpg";
-import imageMovie8 from "../../../assets/imageMovie8.jpg";
+import { useNavigate } from "react-router-dom";
+import MovieHeroSwiper from "./MovieHeroSwiper";
 import promotionMovie1 from "../../../assets/PromotionMovie1.jpg";
 import promotionMovie2 from "../../../assets/PromotionMovie2.jpg";
 import promotionMovie3 from "../../../assets/PromotionMovie3.jpg";
-import { useNavigate } from "react-router-dom";
+import { getMovies } from "../../../services/API";
 
 const LandingPage = () => {
-  const [movieData] = useState([
-    {
-      idMovie: 1,
-      nameMovie: "Stree 2 Sarkate Ka Atank",
-      category: [{ title: "Action" }, { title: "Horror" }],
-      imgUrl: imageMovie2,
-      sub: "English",
-    },
-    {
-      idMovie: 2,
-      nameMovie: "Stree 2 Sarkate Ka Atank",
-      category: [{ title: "Action" }, { title: "Horror" }],
-      imgUrl: imageMovie3,
-      sub: "English",
-    },
-    {
-      idMovie: 3,
-      nameMovie: "Stree 2 Sarkate Ka Atank",
-      category: [{ title: "Action" }, { title: "Horror" }],
-      imgUrl: imageMovie4,
-      sub: "English",
-    },
-    {
-      idMovie: 4,
-      nameMovie: "Stree 2 Sarkate Ka Atank",
-      category: [{ title: "Action" }, { title: "Horror" }],
-      imgUrl: imageMovie5,
-      sub: "English",
-    },
-    {
-      idMovie: 5,
-      nameMovie: "Stree 2 Sarkate Ka Atank",
-      category: [{ title: "Action" }, { title: "Horror" }],
-      imgUrl: imageMovie6,
-      sub: "English",
-    },
-    {
-      idMovie: 6,
-      nameMovie: "Stree 2 Sarkate Ka Atank",
-      category: [{ title: "Action" }, { title: "Horror" }],
-      imgUrl: imageMovie7,
-      sub: "English",
-    },
-    {
-      idMovie: 7,
-      nameMovie: "Stree 2 Sarkate Ka Atank",
-      category: [{ title: "Action" }, { title: "Horror" }],
-      imgUrl: imageMovie8,
-      sub: "English",
-    },
-  ]);
+  const [movieData, setMovieData] = useState([]);
+  // eslint-disable-next-line no-unused-vars
+  const [itemsPerPage, setItemsPerPage] = useState(7);
+  const [currentPage, setCurrentPage] = useState(1);
+  // eslint-disable-next-line no-unused-vars
+  const [totalPages, setTotalPages] = useState(0);
+  const [hoveredMovie, setHoveredMovie] = useState(null);
+  // eslint-disable-next-line no-unused-vars
+  const [isHovered, setIsHovered] = useState(false);
+
   const [promotionData] = useState([
     {
       idPromotion: 1,
@@ -85,7 +38,7 @@ const LandingPage = () => {
     {
       idPromotion: 2,
       imageUrl: promotionMovie2,
-      namePromotion: "Happy Wenesday - 50% Off",
+      namePromotion: "Happy Wednesday - 50% Off",
       startActive: "May 20, 2025",
       endActive: "June 20, 2025",
       isActive: "active",
@@ -99,6 +52,28 @@ const LandingPage = () => {
       isActive: "active",
     },
   ]);
+  const getMovie = async () => {
+    try {
+      const response = await getMovies({
+        limit: itemsPerPage,
+        page: currentPage,
+      });
+      if (response.data) {
+        setMovieData(response.data.movies || response.data);
+        setTotalPages(
+          response.data.totalPages ||
+            Math.ceil(response.data.total / itemsPerPage)
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching movies:", error);
+    }
+  };
+
+  useEffect(() => {
+    getMovie();
+  }, [itemsPerPage, currentPage]);
+
   const navigate = useNavigate();
   const handleClickMovie = (idMovie) => {
     navigate(`/${idMovie}`);
@@ -124,69 +99,56 @@ const LandingPage = () => {
     },
   };
 
+  // eslint-disable-next-line no-unused-vars
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const months = [
+      "JAN",
+      "FEB",
+      "MAR",
+      "APR",
+      "MAY",
+      "JUN",
+      "JUL",
+      "AUG",
+      "SEP",
+      "OCT",
+      "NOV",
+      "DEC",
+    ];
+
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+
+    return `${day} ${month} ${year}`;
+  };
+
+  // Format date range
+  const formatDateRange = (fromDate, toDate) => {
+    if (!fromDate || !toDate) return "Coming Soon";
+    return `${formatDate(fromDate)} - ${formatDate(toDate)}`;
+  };
+
+  // Format running time
+  const formatRunningTime = (minutes) => {
+    if (!minutes) return "N/A";
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+  };
+
   return (
     <div className="w-full select-none landingPage">
-      {/* HERO SECTION */}
-      <div className="relative h-[500px] md:h-[600px] lg:h-[700px] w-full">
-        <img
-          src={landingBackground}
-          alt=""
-          loading="lazy"
-          className="w-full h-full object-cover bg-black/70"
-        />{" "}
-        <div className="absolute w-full h-full bottom-0 flex items-center justify-between bg-gradient-to-b from-transparent to-black/100">
-          <div className="md:w-[50%] w-full flex flex-col items-start space-y-5 md:mt-50 mt-80 px-[20px]">
-            <div className=" w-full flex items-center justify-between">
-              <div className=" md:flex flex-col items-start hidden ">
-                <div className="flex items-center space-x-3 text-white">
-                  <p role="button" className="bg-black p-3 rounded-xl ">
-                    ACTION
-                  </p>
-                  <p role="button" className="bg-black p-3 rounded-xl ">
-                    MAXUS MALL
-                  </p>
-                </div>{" "}
-              </div>{" "}
-            </div>{" "}
-            <div className="md:text-[40px] text-[30px] font-bold text-white">
-              Deadpools & Wolverine
-            </div>
-            <div className="text-white text-center md:text-left hidden md:block text-sm md:text-base px-2 md:px-0">
-              cbehwecwec ưe ce cewc ưecwe cưe c cư ec ưec ư ecwe c cưec ưec ưe
-              cư ec ecwec ưec ưe cưec ưe cưe cưe c cưechwe chưe cưec ưiecưiec
-            </div>
-            <div className="flex sm:flex-row justify-between items-center sm:space-x-3 w-full ">
-              <div
-                role="button"
-                className="p-2 md:p-3 rounded-4xl shadow-[#6a57f5] shadow-md bg-[#6a57f5] px-4 md:px-6 text-white font-semibold hover:bg-[#6957f5ea] active:bg-[#6957f5ea] active:scale-[1.1] text-sm md:text-base md:w-full w-[47%] text-center"
-              >
-                Book Now
-              </div>
-              <div
-                role="button"
-                className="p-2 md:p-3 shadow-[#6a57f5] shadow-md flex items-center justify-center rounded-4xl px-4 md:px-6 border-solid border-[1px] border-[#6957f5ea] bg-black hover:bg-slate-950 text-[#ffffffea] font-semibold active:scale-[1.1] text-sm md:text-base w-[47%] md:w-full"
-              >
-                <FaPlay size={16} className="mr-2" /> Watch trailer
-              </div>
-            </div>
-          </div>
+      {/* HERO SECTION - Thay thế bằng MovieHeroSwiper */}
+      <MovieHeroSwiper movieData={movieData} />
 
-          {/* Movie Poster - Hidden on mobile */}
-          <div className="hidden md:flex w-1/2 absolute right-0 top-35 justify-center items-center">
-            <div className="w-1/2 absolute right-0  top-35 flex justify-center items-center">
-              <img
-                src={imageMovie}
-                alt=""
-                loading="lazy"
-                className="w-[150px] md:w-[200px] rounded-2xl"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/*Screen 3d */}
-      <div className="w-full px-4">
+      {/* Screen 3D Effect */}
+      <div className="w-full mt-10 px-4">
         <div className="w-full h-[40px] relative overflow-hidden group">
           {/* SVG cho đường cong gradient */}
           <svg
@@ -316,29 +278,88 @@ const LandingPage = () => {
           >
             {movieData.map((item) => (
               <SwiperSlide
+                onMouseEnter={() => {
+                  setIsHovered(true);
+                  setHoveredMovie(item.MovieId);
+                }}
+                onMouseLeave={() => {
+                  setIsHovered(false);
+                  setHoveredMovie(null);
+                }}
                 key={item.idMovie}
                 className="bg-slate-800 flex flex-col justify-center items-center pb-2 rounded-xl space-y-2"
               >
-                <img
-                  src={item.imgUrl}
-                  alt=""
-                  loading="lazy"
-                  className="w-full h-[250px] md:h-[320px] object-cover rounded-tl-xl rounded-tr-xl"
-                />
-                <div className="text-white text-center font-semibold text-sm md:text-base px-2">
-                  {item.nameMovie}
+                <div role="button" className="relative w-full">
+                  <img
+                    src={item.PosterImage}
+                    alt={item.NameOfEnglish}
+                    loading="lazy"
+                    className="w-full h-[250px] md:h-[320px] object-cover rounded-tl-xl rounded-tr-xl"
+                  />
+                  {/* Hover Overlay */}
+                  {hoveredMovie === item.MovieId && (
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex flex-col justify-center items-start p-4 rounded-tl-xl rounded-tr-xl transition-all duration-300 ease-in-out">
+                      <div className="text-white space-y-3">
+                        <h3 className="font-bold text-lg mb-3 text-white">
+                          {item.NameOfEnglish}
+                        </h3>
+
+                        <div className="space-y-3 text-sm">
+                          <div className="flex items-center justify-center">
+                            <span className="text-gray-300">
+                              <FaRegCalendarCheck size={20} />{" "}
+                            </span>
+                            <span className="ml-1">
+                              {formatDateRange(item.FromDate, item.ToDate)}
+                            </span>
+                          </div>
+
+                          <div className="flex ">
+                            <span className="text-gray-300 mr-1">
+                              <GoClockFill size={20} />
+                            </span>
+                            <span className="ml-1">
+                              {formatRunningTime(item.RunningTime)}
+                            </span>
+                          </div>
+
+                          <div className="flex">
+                            <span className="text-gray-300 mr-1">
+                              <IoMdBookmark size={24} />
+                            </span>
+                            {item.Genres && (
+                              <div className="flex items-center space-x-3">
+                                {item.Genres.split(", ").map((genre, index) => (
+                                  <span
+                                    key={index}
+                                    className=" text-white rounded-xl text-md font-medium"
+                                  >
+                                    {genre}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="flex xl:flex-row md:flex-col sm:flex-row justify-center md:space-y-2 xl:space-y-0 sm:space-y-0 sm:space-x-1 items-center w-full px-2">
+
+                <div className="text-white text-center font-semibold text-sm md:text-base px-2">
+                  {item.NameOfEnglish}
+                </div>
+                <div className="flex xl:flex-row md:flex-col sm:flex-row justify-evenly md:space-y-2 xl:space-y-0 sm:space-y-0 sm:space-x-1 items-center w-full px-2">
                   <div
                     role="button"
-                    className="text-white flex items-center justify-center hover:bg-slate-700 p-2 rounded-4xl px-3 text-[11px] md:text-[12px] w-full sm:w-auto"
+                    className="text-white flex items-center justify-center hover:bg-slate-700 p-2 rounded-4xl px-3 text-[11px] md:text-[12px] sm:w-auto"
                   >
                     <FaRegCirclePlay size={16} className="mr-1" />
                     Watch Trailer
                   </div>
                   <div
                     role="button"
-                    onClick={() => handleClickMovie(item.idMovie)}
+                    onClick={() => handleClickMovie(item.MovieId)}
                     className="bg-[#6a57f5] rounded-4xl px-6 py-2 text-white hover:bg-[#6957f5ea] text-[12px]  shadow-[#6a57f5]  shadow-sm sm:w-auto "
                   >
                     Book now
@@ -371,17 +392,74 @@ const LandingPage = () => {
           >
             {movieData.map((item) => (
               <SwiperSlide
-                key={item.idMovie}
+                onMouseEnter={() => {
+                  setHoveredMovie(`coming-${item.MovieId}`);
+                }}
+                onMouseLeave={() => {
+                  setHoveredMovie(null);
+                }}
+                key={item.MovieId}
                 className="bg-slate-800 flex flex-col justify-center items-center pb-2 rounded-xl space-y-2"
               >
-                <img
-                  src={item.imgUrl}
-                  alt=""
-                  loading="lazy"
-                  className="w-full h-[250px] md:h-[320px] object-cover rounded-tl-xl rounded-tr-xl"
-                />
+                <div className="relative ww-full">
+                  <img
+                    src={item.PosterImage}
+                    alt={item.NameOfEnglish}
+                    loading="lazy"
+                    className="w-full h-[250px] md:h-[320px] object-cover rounded-tl-xl rounded-tr-xl"
+                  />
+                  {/* Hover Overlay for Coming Soon */}
+                  {hoveredMovie === `coming-${item.MovieId}` && (
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex flex-col justify-center items-start p-4 rounded-tl-xl rounded-tr-xl transition-all duration-300 ease-in-out">
+                      <div className="text-white space-y-3">
+                        <h3 className="font-bold text-lg mb-3 text-white">
+                          {item.NameOfEnglish}
+                        </h3>
+
+                        <div className="space-y-3 text-sm">
+                          <div className="flex items-center justify-center">
+                            <span className="text-gray-300">
+                              <FaRegCalendarCheck size={20} />{" "}
+                            </span>
+                            <span className="ml-1">
+                              {formatDateRange(item.FromDate, item.ToDate)}
+                            </span>
+                          </div>
+
+                          <div className="flex ">
+                            <span className="text-gray-300 mr-1">
+                              <GoClockFill size={20} />
+                            </span>
+                            <span className="ml-1">
+                              {formatRunningTime(item.RunningTime)}
+                            </span>
+                          </div>
+
+                          <div className="flex">
+                            <span className="text-gray-300 mr-1">
+                              <IoMdBookmark size={24} />
+                            </span>
+                            {item.Genres && (
+                              <div className="flex items-center space-x-3">
+                                {item.Genres.split(", ").map((genre, index) => (
+                                  <span
+                                    key={index}
+                                    className=" text-white rounded-xl text-md font-medium"
+                                  >
+                                    {genre}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div className="text-white text-center font-semibold text-sm md:text-base px-2">
-                  {item.nameMovie}
+                  {item.NameOfEnglish}
                 </div>
                 <div className="flex md:flex-col lg:flex-row sm:flex-row justify-center md:space-y-2 sm:space-y-0 sm:space-x-1 items-center w-full px-2">
                   <div
