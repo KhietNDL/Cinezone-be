@@ -32,10 +32,10 @@ import AccountImformation from "./layouts/User/component/AccountImformation";
 import EditAccount from "./layouts/User/component/EditAccount";
 import HistoryActivity from "./layouts/User/component/HistoryActivity";
 
-
 import TicketBookingManagement from "./layouts/Admin/component/TicketBookingMangement";
 import TicketDetails from "./layouts/User/component/TicketDetails";
 import PromotionManagement from "./layouts/Admin/component/PromotionManagement";
+import { UserManagement } from "./layouts/Admin/component/UserManagement";
 import MoviePage from "./layouts/Staff/component/MoviePage";
 import MovieDetail from "./layouts/Staff/component/MovieDetail";
 function App() {
@@ -58,7 +58,6 @@ function App() {
             <Route path="*" element={<AccountImformation />} />
             <Route path="personal" element={<EditAccount />} />
             <Route path="history" element={<HistoryActivity />} />
-
           </Route>
         </Route>
 
@@ -69,13 +68,14 @@ function App() {
           <Route path="rooms" element={<RoomManagement />} />
           <Route path="bookings" element={<TicketBookingManagement />} />
           <Route path="promotions" element={<PromotionManagement />} />
+          <Route path="users" element={<UserManagement />} />
         </Route>
 
         <Route path="/staff" element={<StaffLayout />}>
           <Route index element={<SellTicketPage />} />
           <Route path="/staff/ticket-selling" element={<SellTicketPage />} />
           <Route path="/staff/movie" element={<MoviePage />} />
-          <Route path="/staff/movie/:id" element={<MovieDetail/>}/>
+          <Route path="/staff/movie/:id" element={<MovieDetail />} />
           <Route
             path="/staff/ticket-selling/select-seats"
             element={<SelectSeatsPage />}

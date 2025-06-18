@@ -11,11 +11,11 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import Swal from "sweetalert2";
 
-
 const BookingPage = () => {
   // State để quản lý số lượng vé, ghế đã chọn, v.v.
   const [numberOfTickets, setNumberOfTickets] = useState(1);
   const [selectedSeats, setSelectedSeats] = useState([]);
+  // eslint-disable-next-line no-unused-vars
   const { user, isLoading } = useAuth();
 
   // Danh sách ghế (8 hàng, mỗi hàng 8 ghế)
@@ -25,21 +25,19 @@ const BookingPage = () => {
 
   // Hàm xử lý chọn ghế
   const toggleSeat = (seat) => {
-    
-
     if (!user) {
-  Swal.fire({
-    icon: "info",
-    title: "Bạn cần đăng nhập",
-    text: "Vui lòng đăng nhập để chọn ghế.",
-    confirmButtonText: "Đăng nhập",
-  }).then((result) => {
-    if (result.isConfirmed) {
-      navigate("/login");
+      Swal.fire({
+        icon: "info",
+        title: "Bạn cần đăng nhập",
+        text: "Vui lòng đăng nhập để chọn ghế.",
+        confirmButtonText: "Đăng nhập",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate("/login");
+        }
+      });
+      return;
     }
-  });
-  return;
-}
 
     if (soldSeats.includes(seat)) return; // Không cho chọn ghế đã bán
 
@@ -71,7 +69,9 @@ const BookingPage = () => {
         <div className="flex flex-col justify-between flex-1">
           {/* Tên phim */}
           <div>
-            <h2 className="text-xl sm:text-2xl font-semibold mb-2 text-center sm:text-left">Mắt Biếc</h2>
+            <h2 className="text-xl sm:text-2xl font-semibold mb-2 text-center sm:text-left">
+              Mắt Biếc
+            </h2>
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-4 text-xs sm:text-sm text-gray-400 mb-2">
               <span className="flex items-center gap-1">
                 <FaRegClock /> 117 min
@@ -134,7 +134,9 @@ const BookingPage = () => {
               </select>
             </div>
             <div>
-              <label className="block text-xs sm:text-sm mb-1">Number ticket</label>
+              <label className="block text-xs sm:text-sm mb-1">
+                Number ticket
+              </label>
               <select
                 className="w-full bg-gray-800/40 text-white p-2 rounded text-xs sm:text-sm"
                 value={numberOfTickets}
@@ -204,7 +206,9 @@ const BookingPage = () => {
 
                     if (i === 5) {
                       // Cột lối đi
-                      return <div key={`${row}-aisle`} className="w-2 sm:w-4" />;
+                      return (
+                        <div key={`${row}-aisle`} className="w-2 sm:w-4" />
+                      );
                     }
 
                     // Tính chỉ số thực của ghế
@@ -221,19 +225,21 @@ const BookingPage = () => {
                         className="w-10 h-10 sm:w-16 sm:h-16 flex items-center justify-center bg-transparent p-0 border-none outline-none"
                       >
                         <MdChair
-                          aria-label={`Seat ${seat} ${isSold
+                          aria-label={`Seat ${seat} ${
+                            isSold
                               ? "sold"
                               : isSelected
-                                ? "selected"
-                                : "available"
-                            }`}
+                              ? "selected"
+                              : "available"
+                          }`}
                           className={`w-8 h-8 sm:w-13 sm:h-13 transition-colors
-                ${isSold
-                              ? "text-gray-500"
-                              : isSelected
-                                ? "text-blue-500"
-                                : "text-gray-300 hover:text-gray-100"
-                            }`}
+                ${
+                  isSold
+                    ? "text-gray-500"
+                    : isSelected
+                    ? "text-blue-500"
+                    : "text-gray-300 hover:text-gray-100"
+                }`}
                         />
                       </button>
                     );
