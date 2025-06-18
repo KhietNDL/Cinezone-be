@@ -30,6 +30,7 @@ const bookingRoutes = require('./routes/booking');
 const ticketRoutes = require('./routes/ticket');
 const bookingSeatRoutes = require('./routes/bookingseat');
 const showtimeRoutes = require('./routes/showtime');
+const seatShowtimeRoutes = require('./routes/seatshowtime');
 
 // Use routes
 app.use("/api/auth", authRoutes);
@@ -43,9 +44,17 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/booking-seats', bookingSeatRoutes);
 app.use('/api/showtimes', showtimeRoutes);
+app.use('/api/seatshowtime', seatShowtimeRoutes);
 
 //port
 const PORT = process.env.PORT || 4458;
+app.use(
+  "/",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpecs, {
+    customJs: '/swagger-custom.js', // Path to your custom JavaScript file
+  })
+);
 
 // Swagger UI
 app.use(

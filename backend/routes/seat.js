@@ -1,20 +1,23 @@
 const express = require('express');
 const router = express.Router();
 const seatController = require('../controllers/seat.controller');
-
+const { auth, isAdmin, isEmployee, isAdminOrEmployee } = require('../middlewares/auth.middleware');
+const { validateSeat } = require('../middlewares/seat.validator');
 /**
  * @swagger
  * /api/seats:
  *   get:
  *     summary: Get all seats
  *     tags: [Seats]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Success
  *       500:
  *         description: Internal server error
  */
-router.get('/', seatController.getAllSeats);
+router.get('/', auth, isAdminOrEmployee, seatController.getAllSeats);
 
 /**
  * @swagger
@@ -22,6 +25,8 @@ router.get('/', seatController.getAllSeats);
  *   get:
  *     summary: Get seats by cinema room ID
  *     tags: [Seats]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: cinemaRoomId
@@ -37,7 +42,7 @@ router.get('/', seatController.getAllSeats);
  *       500:
  *         description: Internal server error
  */
-router.get('/cinema-room/:cinemaRoomId', seatController.getSeatsByCinemaRoomId);
+router.get('/cinema-room/:cinemaRoomId', auth, isAdminOrEmployee, seatController.getSeatsByCinemaRoomId);
 
 /**
  * @swagger
@@ -45,6 +50,8 @@ router.get('/cinema-room/:cinemaRoomId', seatController.getSeatsByCinemaRoomId);
  *   get:
  *     summary: Get seat by ID
  *     tags: [Seats]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: seatId
@@ -60,7 +67,7 @@ router.get('/cinema-room/:cinemaRoomId', seatController.getSeatsByCinemaRoomId);
  *       500:
  *         description: Internal server error
  */
-router.get('/:seatId', seatController.getSeatById);
+router.get('/:seatId', auth, isAdminOrEmployee, seatController.getSeatById);
 
 /**
  * @swagger
@@ -68,6 +75,8 @@ router.get('/:seatId', seatController.getSeatById);
  *   post:
  *     summary: Create a new seat
  *     tags: [Seats]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -75,12 +84,14 @@ router.get('/:seatId', seatController.getSeatById);
  *           schema:
  *             type: object
  *             properties:
- *               seatNumber:
+ *               SeatNumber:
  *                 type: string
- *               row:
+ *               CinemaRoomId:
  *                 type: string
- *               cinemaRoomId:
+ *               Type:
  *                 type: string
+ *               Price:
+ *                 type: number
  *     responses:
  *       201:
  *         description: Created
@@ -89,7 +100,7 @@ router.get('/:seatId', seatController.getSeatById);
  *       500:
  *         description: Internal server error
  */
-router.post('/', seatController.createSeat);
+router.post('/', auth, isAdminOrEmployee, validateSeat, seatController.createSeat);
 
 /**
  * @swagger
@@ -97,6 +108,8 @@ router.post('/', seatController.createSeat);
  *   put:
  *     summary: Update a seat
  *     tags: [Seats]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: seatId
@@ -111,12 +124,14 @@ router.post('/', seatController.createSeat);
  *           schema:
  *             type: object
  *             properties:
- *               seatNumber:
+ *               SeatNumber:
  *                 type: string
- *               row:
+ *               CinemaRoomId:
  *                 type: string
- *               cinemaRoomId:
+ *               Type:
  *                 type: string
+ *               Price:
+ *                 type: number
  *     responses:
  *       200:
  *         description: Success
@@ -127,7 +142,7 @@ router.post('/', seatController.createSeat);
  *       500:
  *         description: Internal server error
  */
-router.put('/:seatId', seatController.updateSeat);
+router.put('/:seatId', auth, isAdminOrEmployee, validateSeat, seatController.updateSeat);
 
 /**
  * @swagger
@@ -135,6 +150,8 @@ router.put('/:seatId', seatController.updateSeat);
  *   delete:
  *     summary: Delete a seat
  *     tags: [Seats]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: seatId
@@ -150,7 +167,7 @@ router.put('/:seatId', seatController.updateSeat);
  *       500:
  *         description: Internal server error
  */
-router.delete('/:seatId', seatController.deleteSeat);
+router.delete('/:seatId', auth, isAdminOrEmployee, seatController.deleteSeat);
 
 /**
  * @swagger
@@ -158,6 +175,8 @@ router.delete('/:seatId', seatController.deleteSeat);
  *   get:
  *     summary: Get all seats for a showtime
  *     tags: [Seats]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: showtimeId
@@ -173,6 +192,7 @@ router.delete('/:seatId', seatController.deleteSeat);
  *       500:
  *         description: Internal server error
  */
-router.get('/showtime/:showtimeId', seatController.getSeatsByShowtimeId);
+router.get('/showtime/:showtimeId', auth, isAdminOrEmployee, seatController.getSeatsByShowtimeId);
+
 
 module.exports = router;

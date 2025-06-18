@@ -109,7 +109,7 @@ router.get('/member/:memberId', bookingController.getBookingsByMemberId);
  *               TotalAmount:
  *                 type: number
  *               Status:
- *                 type: string 
+ *                 type: string
  *               PromotionId:
  *                 type: string
  *     responses:
