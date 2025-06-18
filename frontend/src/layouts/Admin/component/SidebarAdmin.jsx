@@ -1,7 +1,7 @@
 import React from "react";
 import { MdOutlineAvTimer, MdMovieCreation, MdPeopleAlt } from "react-icons/md";
 import { IoTicketSharp } from "react-icons/io5";
-import { FaDoorOpen, FaTicket } from "react-icons/fa6";
+import { FaDoorOpen, FaTicket, FaUser } from "react-icons/fa6";
 import { NavLink } from "react-router-dom";
 
 const SidebarAdmin = () => {
@@ -12,14 +12,14 @@ const SidebarAdmin = () => {
       to: "/admin/dashboard",
     },
     {
+      label: "User Management",
+      icon: <FaUser size={20} />,
+      to: "/admin/users",
+    },
+    {
       label: "Employee Management",
       icon: <MdPeopleAlt size={20} />,
       to: "/admin/employees",
-    },
-    {
-      label: "Cinema Room Management",
-      icon: <FaDoorOpen size={20} />,
-      to: "/admin/rooms",
     },
     {
       label: "Movie Management",
@@ -27,14 +27,20 @@ const SidebarAdmin = () => {
       to: "/admin/movies",
     },
     {
-      label: "Promotion Management",
-      icon: <FaTicket size={20} />,
-      to: "/admin/promotions",
+      label: "Cinema Room Management",
+      icon: <FaDoorOpen size={20} />,
+      to: "/admin/rooms",
     },
+
     {
       label: "Ticket Booking Management",
       icon: <IoTicketSharp size={20} />,
       to: "/admin/bookings",
+    },
+    {
+      label: "Promotion Management",
+      icon: <FaTicket size={20} />,
+      to: "/admin/promotions",
     },
   ];
 
@@ -46,7 +52,7 @@ const SidebarAdmin = () => {
             to={item.to}
             key={item.label}
             className={({ isActive }) =>
-              `font-bold text-[16px] p-2 rounded flex items-center transition-colors ${
+              `font-bold text-[16px] p-2 rounded flex items-center transition-all duration-200 transform hover:scale-105 ${
                 isActive
                   ? "bg-purple-100 text-purple-600"
                   : "text-gray-800 hover:bg-gray-100"
