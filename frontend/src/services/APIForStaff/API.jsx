@@ -56,3 +56,13 @@ export const searchMovies = async (name) => {
     handleError(error);
   }
 };
+
+// Lấy movie theo id
+export const getMovieById = async (id) => {
+  try {
+    const response = await api.get(`/movie/${id}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
