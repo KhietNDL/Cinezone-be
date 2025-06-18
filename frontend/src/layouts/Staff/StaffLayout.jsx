@@ -10,7 +10,7 @@ const StaffLayout = () => {
       <HeaderStaff />
       <div className="flex items-start h-[calc(100vh_-_4.5rem)]">
         
-        <div className="h-full w-[250px] shrink-0"><SidebarStaff /></div>
+        <div className="h-full w-auto shrink-0"><SidebarStaff /></div>
        <div className="h-full overflow-y-auto w-full"><Outlet /></div> 
       </div>
     </div>

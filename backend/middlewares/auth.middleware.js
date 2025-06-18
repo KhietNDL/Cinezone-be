@@ -8,7 +8,7 @@ const auth = async (req, res, next) => {
         console.log('Auth header:', authHeader);
         
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            console.log('Invalid auth header format');
+            console.log('Invalid auth header format');  
             return res.status(401).json({ 
                 error: 'Please authenticate.' 
             });
@@ -71,7 +71,23 @@ const isAdmin = (req, res, next) => {
     return res.status(403).json({ error: 'Access denied. Admins only.' });
 };
 
+const isEmployee = (req, res, next) => {
+    if (req.user && (req.user.Role === 2 || req.user.role === 'employee')) {
+        return next();
+    }
+    return res.status(403).json({ error: 'Access denied. Employees only.' });
+};
+
+const isAdminOrEmployee = (req, res, next) => {
+  if (req.user && (req.user.Role === 2 || req.user.Role === 3)) {
+    return next();
+  }
+  return res.status(403).json({ error: 'Forbidden: Admin or Employee only' });
+}
+
 module.exports = {
     auth,
-    isAdmin
+    isAdmin,
+    isEmployee,
+    isAdminOrEmployee
 };

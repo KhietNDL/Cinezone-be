@@ -69,15 +69,16 @@ export default function ComboPage() {
     // const [loading, setLoading] = useState(false);
 
     const filteredCombos = comboList.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
-    const visibleCombos = filteredCombos.slice(carouselIndex, carouselIndex + 4);
+    
 
     const handleAddCombo = (combo) => {
         setCart(prev => {
             const found = prev.find(item => item.id === combo.id);
             if (found) {
-                return prev.map(item =>
-                    item.id === combo.id ? { ...item, quantity: item.quantity + 1 } : item
-                );
+                // return prev.map(item =>
+                //     item.id === combo.id ? { ...item, quantity: item.quantity + 1 } : item
+                // );
+                 return prev.filter(item => item.id !== combo.id);
             }
             return [...prev, { ...combo, quantity: 1 }];
         });
@@ -151,7 +152,7 @@ export default function ComboPage() {
             <div className="w-full">
                 {/* Header */}
                 <div className="flex justify-between items-center">
-                    <h1 className="text-3xl font-bold text-fuchsia-700">Sell Combo</h1>
+                    <h1 className="text-3xl font-bold text-[#9810FA]">Sell Combo Food</h1>
                     <Input.Search
                         placeholder="Search combo..."
                         style={{ width: 250 }}
@@ -161,9 +162,9 @@ export default function ComboPage() {
                 </div>
                 {/* Combo Carousel */}
                 <div className="mt-8">
-                    <b className="text-lg flex items-center gap-2">
+                    <p className="text-lg flex items-center gap-2">
                         <span className="text-xl"><PiPopcornDuotone /></span> Select Combo
-                    </b>
+                    </p>
                     <div className="staff-swiper">
                         <Swiper
                             modules={[Navigation, Pagination]}

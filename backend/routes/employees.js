@@ -225,3 +225,4 @@ router.delete('/delete/:userId', auth, isAdmin, deleteEmployee);
 router.put('/update/:userId', auth, isAdmin, validateEmployee, updateEmployee);
 
 module.exports = router;
+    
