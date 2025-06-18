@@ -16,6 +16,7 @@ import { FaRegEdit } from "react-icons/fa";
 import { RiDeleteBin5Line } from "react-icons/ri";
 import { IoSearchOutline } from "react-icons/io5";
 import { GoPlus } from "react-icons/go";
+import { LayoutSelectSeat } from "../../../component/LayoutSelectSeat";
 
 const RoomManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -562,7 +563,7 @@ const RoomManagement = () => {
       )}
       {showDetailsModal && selectedRoom && (
         <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-[800px] max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 w-[800px]  overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
@@ -587,97 +588,7 @@ const RoomManagement = () => {
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-6">
-              <div className="mb-8">
-                <div className="bg-[#6a57f5] rounded-lg rounded-tr-[50px] rounded-tl-[50px] p-4 text-center mb-2">
-                  <span className="text-white font-medium">SCREEN</span>
-                </div>
-              </div>
-
-              <div className="flex justify-center mb-3 gap-3 ">
-                <div className="w-8"></div>
-                {Array.from({ length: 12 }, (_, index) => (
-                  <div
-                    key={index}
-                    className="w-8 h-6 flex items-center justify-center text-md font-bold text-gray-600"
-                  >
-                    {index + 1}
-                  </div>
-                ))}
-              </div>
-              <div className="space-y-4 flex flex-col items-center justify-center">
-                {["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"].map(
-                  (row) => (
-                    <div key={row} className="flex items-center gap-4 ">
-                      <div className="w-8 text-center font-medium text-gray-700">
-                        {row}
-                      </div>
-
-                      <div className="flex gap-1">
-                        {Array.from({ length: 12 }, (_, seatIndex) => {
-                          const seatNumber = seatIndex + 1;
-                          const isOccupied = Math.random() > 0.7; // Random occupied seats for demo
-
-                          return (
-                            <div
-                              key={seatNumber}
-                              className={` relative flex items-center justify-center text-xs font-medium  transition-colors ${
-                                isOccupied
-                                  ? "  text-[#6a57f5]"
-                                  : "  text-slate-400 "
-                              }`}
-                              title={`Seat ${row}${seatNumber} - ${
-                                isOccupied ? "Occupied" : "Available"
-                              }`}
-                            >
-                              <MdChair size={40} />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )
-                )}
-              </div>
-
-              {/* Legend */}
-              <div className="flex justify-center gap-6 mt-6 pt-4 ">
-                <div className="flex items-center gap-2">
-                  <div className=" text-slate-400 ">
-                    {" "}
-                    <MdChair size={40} />
-                  </div>
-                  <span className="text-sm text-gray-600">Available</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className=" text-[#6a57f5] ">
-                    {" "}
-                    <MdChair size={40} />
-                  </div>
-                  <span className="text-sm text-gray-600">Occupied</span>
-                </div>
-              </div>
-
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-4 mt-6 pt-4 border-t">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-800">120</div>
-                  <div className="text-sm text-gray-500">Total Seats</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-slate-400">
-                    {120 - Math.floor(120 * 0.3)}
-                  </div>
-                  <div className="text-sm text-gray-500">Available</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-[#6a57f5]">
-                    {Math.floor(120 * 0.3)}
-                  </div>
-                  <div className="text-sm text-gray-500">Occupied</div>
-                </div>
-              </div>
-            </div>
+            <LayoutSelectSeat />
           </div>
         </div>
       )}

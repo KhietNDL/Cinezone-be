@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { IoSearchOutline } from "react-icons/io5";
 
 const TicketBookingManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -98,7 +99,22 @@ const TicketBookingManagement = () => {
       status: "Successful",
     },
   ];
-
+  const filteredTicketBooking = bookingData.filter(
+    (booking) =>
+      booking.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.movie.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  const itemsPerPage = 5;
+  // Calculate pagination
+  const totalItems = filteredTicketBooking.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentBooking = filteredTicketBooking.slice(startIndex, endIndex);
+  const pageNumbers = [];
+  for (let i = 1; i <= totalPages; i++) {
+    pageNumbers.push(i);
+  }
   const getStatusBadge = (status) => {
     const statusStyles = {
       Successful: "bg-green-100 text-green-800 border border-green-200",
@@ -115,148 +131,98 @@ const TicketBookingManagement = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">
-            Ticket Booking Management
-          </h1>
-
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            {statsData.map((stat, index) => {
-              const IconComponent = stat.icon;
-              return (
-                <div
-                  key={index}
-                  className="bg-white rounded-lg shadow-md p-6 border border-gray-200"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600 mb-1">
-                        {stat.title}
-                      </p>
-                      <p className="text-3xl font-bold text-gray-900">
-                        {stat.value}
-                      </p>
-                    </div>
-                    <div
-                      className={`p-3 rounded-full bg-gray-50 ${stat.color}`}
-                    >
-                      <IconComponent size={24} />
-                    </div>
+    <div className="p-[20px] flex items-center h-full justify-between">
+      <div className="w-[90%] space-y-4">
+        {/* Stats Cards */}
+        <div className="flex items-center justify-between w-full">
+          {statsData.map((stat, index) => {
+            const IconComponent = stat.icon;
+            return (
+              <div
+                key={index}
+                className="bg-white rounded-md p-3 w-[23%] shadow-sm"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-slate-500">{stat.title}</p>
+                  <div className={`p-2  rounded-full ${stat.color}`}>
+                    <IconComponent size={24} />
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                </div>{" "}
+                <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+              </div>
+            );
+          })}
         </div>
 
         {/* Search and Filter */}
-        <div className="bg-white rounded-lg shadow-md mb-6">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Search
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                  size={20}
-                />
+        <div className="w-full py-3 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="w-full">
+              <div className="flex items-center p-1 px-2 w-2/4 rounded-xl bg-white shadow-sm">
+                <div className="shrink-0">
+                  <IoSearchOutline size={20} />
+                </div>
                 <input
                   type="text"
-                  placeholder="Search by Booking ID, account ID, phone or identity card number"
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                  }}
+                  className="p-2 focus:outline-none w-full"
+                  placeholder="Search by name or email"
                 />
               </div>
-              <div className="flex items-center gap-2">
-                <select className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                  <option>All</option>
-                  <option>Successful</option>
-                  <option>Pending</option>
-                </select>
-              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
+              <select className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <option>All</option>
+                <option>Successful</option>
+                <option>Pending</option>
+              </select>
             </div>
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    #
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Booking ID
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Member ID
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Full name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Identity card
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Phone number
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Movie
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Time
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Seat
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Action
-                  </th>
+          <div className="bg-white min-h-[340px] max-h-[340px] p-4 rounded-md shadow-sm">
+            <table className="w-full table-auto border-collapse">
+              <thead>
+                <tr className="text-left text-slate-500 text-sm border-b border-slate-200">
+                  <th className="py-2 text-center">#</th>
+                  <th className="py-2 text-center">Booking ID</th>
+                  {/* <th className="py-2 text-center">Member ID</th> */}
+                  <th className="py-2 text-center">Full name</th>
+                  {/* <th className="py-2 text-center">Identity card</th> */}
+                  <th className="py-2 text-center">Phone number</th>
+                  <th className="py-2 text-center">Movie</th>
+                  <th className="py-2 text-center">Time</th>
+                  <th className="py-2 text-center">Seat</th>
+                  <th className="py-2 text-center">Status</th>
+                  <th className="py-2 text-center">Action</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {bookingData.map((booking) => (
-                  <tr key={booking.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {booking.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {booking.bookingId}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {booking.memberId}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {booking.fullName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {booking.identityCard}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {booking.phoneNumber}
-                    </td>
-                    <td
-                      className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate"
-                      title={booking.movie}
-                    >
+                {currentBooking.map((booking) => (
+                  <tr
+                    key={booking.id}
+                    role="button"
+                    className="border-b border-slate-200 hover:bg-slate-100 text-sm"
+                  >
+                    <td className="py-2 text-center">{booking.id}</td>
+                    <td className="py-2 text-center">{booking.bookingId}</td>
+                    {/* <td className="py-2 text-center">{booking.memberId}</td> */}
+                    <td className="py-2 text-center">{booking.fullName}</td>
+                    {/* <td className="py-2 text-center">{booking.identityCard}</td> */}
+                    <td className="py-2 text-center">{booking.phoneNumber}</td>
+                    <td className="py-2 text-center" title={booking.movie}>
                       {booking.movie}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {booking.time}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {booking.seat}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="py-2 text-center">{booking.time}</td>
+                    <td className="py-2 text-center">{booking.seat}</td>
+                    <td className="py-2 text-center">
                       {getStatusBadge(booking.status)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="py-2 text-center">
                       <button className="text-blue-600 hover:text-blue-800 p-1">
                         <Eye size={16} />
                       </button>
@@ -268,41 +234,52 @@ const TicketBookingManagement = () => {
           </div>
 
           {/* Pagination */}
-          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-            <div className="flex items-center justify-center">
-              <nav className="flex items-center space-x-2">
+          <div className="px-6 py-4 flex items-center justify-between border-t border-gray-200">
+            <div className="text-sm text-gray-700">
+              Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of{" "}
+              {totalItems} promotions
+            </div>
+            <div className="flex items-center justify-end space-x-2 pt-4">
+              <div
+                role="button"
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className={`px-3 py-1 text-sm cursor-pointer ${
+                  currentPage === 1
+                    ? "text-gray-300 cursor-not-allowed"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Previous
+              </div>
+              {pageNumbers.map((page) => (
                 <div
                   role="button"
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  className="px-3 py-1 bg-white shadow-sm rounded hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={currentPage === 1}
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-3 py-1 text-sm rounded cursor-pointer ${
+                    currentPage === page
+                      ? "bg-blue-500 text-white"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
                 >
-                  Previous
+                  {page}
                 </div>
-
-                {[1, 2, 3].map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`px-3 py-2 rounded-lg border ${
-                      currentPage === page
-                        ? "bg-blue-600 text-white border-blue-600"
-                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-
-                <div
-                  role="button"
-                  onClick={() => setCurrentPage(Math.min(3, currentPage + 1))}
-                  className="px-3 py-1 bg-white shadow-sm rounded hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={currentPage === 3}
-                >
-                  Next
-                </div>
-              </nav>
+              ))}
+              <div
+                role="button"
+                onClick={() =>
+                  setCurrentPage(Math.min(totalPages, currentPage + 1))
+                }
+                disabled={currentPage === totalPages}
+                className={`px-3 py-1 text-sm cursor-pointer ${
+                  currentPage === totalPages
+                    ? "text-gray-300 cursor-not-allowed"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Next
+              </div>
             </div>
           </div>
         </div>
