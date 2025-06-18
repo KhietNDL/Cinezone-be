@@ -66,9 +66,9 @@ const MovieTheaterLogin = () => {
           password: formData.password,
         });
         console.log("Login response:", response); // Log response
-        if (response.token && response.user?.UserId) {
+        if (response.token && response.user?.userId) {
           console.log("Token:", response.token); // Log token
-          await signIn(response.token, response.user.UserId); // Ensure signIn completes
+          await signIn(response.token, response.user.userId); // Ensure signIn completes
           setIsLoading(false);
           toast.success("Login Successfully!");
 

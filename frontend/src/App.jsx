@@ -42,11 +42,14 @@ function App() {
       <Routes>
         <Route element={<UserLayout />}>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/:slug" element={<BookingPage />} />
+
+
           <Route path="/login" element={<MovieTheaterLogin />} />
           <Route path="/register" element={<RegistrationPage />} />
           <Route path="/forgot" element={<ForgotPasswordPage />} />
           <Route path="/verification" element={<EmailVerification />} />
-          <Route path="/:idMovie" element={<BookingPage />} />
+
           <Route path="/confirmPayment" element={<ConfirmPayment />} />
           <Route path="/promotions" element={<MoviePromotions />} />
           <Route path="/waiting" element={<WaitingPayment />} />
@@ -56,7 +59,7 @@ function App() {
             <Route path="*" element={<AccountImformation />} />
             <Route path="personal" element={<EditAccount />} />
             <Route path="history" element={<HistoryActivity />} />
-            
+
           </Route>
         </Route>
 
