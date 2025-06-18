@@ -380,13 +380,13 @@ class Movie {
     const sql = `
       SELECT 
         mv.MovieId, mv.Version, 
-        st.ShowtimeId, st.ShowDate, st.Duration, 
+        st.ShowtimeId, st.Day, st.Duration, 
         cr.CinemaRoomId, cr.Name
       FROM Movies mv
       JOIN Showtimes st ON mv.MovieId = st.MovieId
       JOIN CinemaRooms cr ON st.CinemaRoomId = cr.CinemaRoomId
       WHERE mv.MovieId = ?
-      ORDER BY mv.MovieId, st.ShowDate
+      ORDER BY mv.MovieId, st.Day
     `;
     try {
       const [rows] = await db.promise().query(sql, [movieId]);
