@@ -1,6 +1,6 @@
 import { Tag } from 'antd';
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { IoMdCash } from "react-icons/io";
 import vnpay from '../../../assets/vnpay-seeklogo.png'
 import momo from "../../../assets/momo-seeklogo.png";
@@ -14,10 +14,10 @@ import { FaCalendarDays, FaLocationDot, FaCouch, FaUser, FaFire} from "react-ico
 import { IoTime } from "react-icons/io5";
 import { FaMoneyBillWave, FaIdCard, FaIdBadge, FaPhoneAlt, FaExchangeAlt} from "react-icons/fa";
 
-
 export default function ConfirmTicketsPage() {
     const [discount, setDiscount] = useState(null);
     const [memberChecked, setMemberChecked] = useState(false);
+    const navigate = useNavigate();
 
     const ticket = {
         id: 'TICKET12345',
@@ -74,6 +74,9 @@ export default function ConfirmTicketsPage() {
             .then(() => {
                 toast.success('Submit success!');
                 setSubmitting(false);
+                setTimeout(() => {
+                    navigate('/staff/ticket-selling/ticket-infomation');
+                }, 1000); // Chờ toast hiện xong rồi chuyển trang
             })
             .catch((err) => {
                 if (err.inner) {
@@ -259,17 +262,15 @@ export default function ConfirmTicketsPage() {
                                             </div>
                                         </div>
                                         <div className="flex justify-center items-center p-4">
-                                            <Link to="/staff/ticket-selling/ticket-infomation">
-                                                <button
-                                                    type="submit"
-                                                    className="bg-purple-600 text-white px-6 py-3 rounded-lg
-                                                    hover:bg-purple-800 transition duration-300 h-10 flex 
-                                                    items-center justify-center gap-2"
-                                                    disabled={isSubmitting}
-                                                >
-                                                    <i className="fa-solid fa-ticket"></i> Confirm Ticket(s)
-                                                </button>
-                                            </Link>
+                                            <button
+                                                type="submit"
+                                                className="bg-purple-600 text-white px-6 py-3 rounded-lg
+                                                hover:bg-purple-800 transition duration-300 h-10 flex 
+                                                items-center justify-center gap-2"
+                                                disabled={isSubmitting}
+                                            >
+                                                <i className="fa-solid fa-ticket"></i> Confirm Ticket(s)
+                                            </button>
                                             <Link to="/staff/ticket-selling">
                                                 <button type='button' className='bg-white text-red-700 border
                                                     border-b-red-700 px-6 py-3 rounded-lg hover:bg-red-800
