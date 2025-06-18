@@ -66,12 +66,7 @@ const forgotPasswordValidation = [
     validate
 ];
 
-const resetPasswordValidation = [
-    body('email')
-        .isEmail()
-        .withMessage('Please enter a valid email address')
-        .notEmpty()
-        .withMessage('Email is required'),
+const verifyOtpValidation = [
     body('resetCode')
         .isLength({ min: 6, max: 6 })
         .withMessage('Reset code must be exactly 6 digits')
@@ -79,9 +74,15 @@ const resetPasswordValidation = [
         .withMessage('Reset code must contain only numbers')
         .notEmpty()
         .withMessage('Reset code is required'),
+    validate
+];
+
+const resetPasswordValidation = [
     body('newPassword')
-        .isLength({ min: 6 })
-        .withMessage('New password must be at least 6 characters long')
+        .isLength({ min: 8, max: 128 }).withMessage('Password must be 8-128 characters')
+        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,128}$/)
+        .withMessage('Password must contain at least 1 uppercase, 1 lowercase, 1 number, 1 special character')
+        .custom((val) => !/\s/.test(val)).withMessage('Password must not contain whitespace')
         .notEmpty()
         .withMessage('New password is required'),
     validate
@@ -130,6 +131,7 @@ module.exports = {
     loginValidation,
     registerValidation,
     forgotPasswordValidation,
+    verifyOtpValidation,
     resetPasswordValidation,
     updateProfileValidation
 }; 

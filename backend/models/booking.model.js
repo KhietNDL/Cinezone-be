@@ -64,7 +64,11 @@ class Booking {
     } = data;
     const UpdatedAt = new Date();
     const sql = `
+<<<<<<< HEAD
+        UPDATE Bookings SET MemberId=?, ShowtimeId=?, BookingDate=?, TotalAmount=?, Status=?, PromotionId=?, UpdatedAt=?, UpdatedBy=?
+=======
       UPDATE Bookings SET MemberId=?, ShowtimeId=?, BookingDate=?, TotalAmount=?, Status=?, PromotionId=?, UpdatedAt=?, UpdatedBy=?
+>>>>>>> Develop
       WHERE BookingId=? AND IsDeleted=0
     `;
     const [result] = await db.promise().query(sql, [

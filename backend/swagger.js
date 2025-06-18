@@ -17,6 +17,10 @@ const options = {
         name: 'Cinema Room Management',
         description: 'API endpoints for managing cinema rooms (Admin only)',
       },
+      {
+        name: 'Showtime Management',
+        description: 'API endpoints for managing showtimes (Admin only)',
+      },
     ],
     servers: [
       {

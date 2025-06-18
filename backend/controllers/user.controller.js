@@ -14,7 +14,8 @@ const ERROR_CODES = {
     INVALID_RESET_CODE: 'AUTH_005',
     INVALID_UUID: 'AUTH_006',
     FORBIDDEN: 'AUTH_007',
-    SERVER_ERROR: 'AUTH_008'
+    SERVER_ERROR: 'AUTH_008',
+    INVALID_REQUEST: 'AUTH_009'
 };
 
 // Helper function to remove sensitive data from user object
@@ -36,13 +37,14 @@ const removeSensitiveData = (user) => {
 // Register new user
 const register = async (req, res) => {
     try {
-        const {
-            password,
-            fullName,
-            dateOfBirth,
-            sex,
-            email,
-            phoneNumber
+        const { 
+            password, 
+            fullName, 
+            dateOfBirth, 
+            sex, 
+            email, 
+            phoneNumber,
+            cccd
         } = req.body;
 
         // Check if user already exists
@@ -61,7 +63,8 @@ const register = async (req, res) => {
             dateOfBirth,
             sex,
             email,
-            phoneNumber
+            phoneNumber,
+            cccd
         });
 
         // Get the created user
@@ -146,7 +149,7 @@ const login = async (req, res) => {
     }
 };
 
-// Forgot password
+// Forgot password - Step 1: Send OTP
 const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
@@ -274,7 +277,7 @@ const forgotPassword = async (req, res) => {
 
         res.json({ message: 'Reset code sent to your email' });
     } catch (error) {
-        console.error('Forgot password error:', error);
+        console.error('Request password reset error:', error);
         res.status(500).json({
             error: 'Internal server error during password reset',
             code: ERROR_CODES.SERVER_ERROR
@@ -282,13 +285,13 @@ const forgotPassword = async (req, res) => {
     }
 };
 
-// Reset password
-const resetPassword = async (req, res) => {
+// Verify OTP - Step 2: Verify the OTP code
+const verifyOtp = async (req, res) => {
     try {
-        const { email, resetCode, newPassword } = req.body;
+        const { resetCode } = req.body;
 
-        // Verify reset code
-        const user = await User.verifyResetCode(email, resetCode);
+        // Verify reset code - tìm user có reset code hợp lệ
+        const user = await User.findByResetCode(resetCode);
         if (!user) {
             return res.status(400).json({
                 error: 'Invalid or expired reset code',
@@ -296,8 +299,49 @@ const resetPassword = async (req, res) => {
             });
         }
 
+        // Lưu userId vào session để sử dụng ở bước reset password
+        req.session.resetUserId = user.UserId;
+
+        res.json({ 
+            message: 'OTP verified successfully'
+        });
+    } catch (error) {
+        console.error('Verify OTP error:', error);
+        res.status(500).json({
+            error: 'Internal server error during OTP verification',
+            code: ERROR_CODES.SERVER_ERROR
+        });
+    }
+};
+
+// Reset password - Step 3: Update password with new password
+const resetPassword = async (req, res) => {
+    try {
+        const { newPassword } = req.body;
+
+        // Lấy userId từ session
+        const userId = req.session.resetUserId;
+        if (!userId) {
+            return res.status(400).json({
+                error: 'Please verify OTP first',
+                code: ERROR_CODES.INVALID_REQUEST
+            });
+        }
+
+        // Check if user exists
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({
+                error: 'User not found',
+                code: ERROR_CODES.USER_NOT_FOUND
+            });
+        }
+
         // Update password
-        await User.updatePassword(user.UserId, newPassword);
+        await User.updatePassword(userId, newPassword);
+
+        // Xóa session sau khi reset thành công
+        delete req.session.resetUserId;
 
         res.json({ message: 'Password reset successful' });
     } catch (error) {
@@ -520,6 +564,7 @@ module.exports = {
     register,
     login,
     forgotPassword,
+    verifyOtp,
     resetPassword,
     logout,
     updateProfile,

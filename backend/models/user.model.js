@@ -25,7 +25,8 @@ class User {
         dateOfBirth, 
         sex, 
         email, 
-        phoneNumber
+        phoneNumber,
+        cccd,
       } = userData;
 
       const userId = uuidv4();
@@ -39,14 +40,15 @@ class User {
         dateOfBirth,
         sex,
         email,
-        phoneNumber
+        phoneNumber,
+        cccd
       });
 
       const [result] = await db.promise().query(
         `INSERT INTO Users (
           UserId, Password, FullName, DateOfBirth, Sex, 
-          Email, CreatedAt, PhoneNumber, Role, IsEmailVerified, IsDeleted
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          Email, CreatedAt, PhoneNumber, Role, IsEmailVerified, IsDeleted, CCCD
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           userId,
           hashedPassword,
@@ -59,6 +61,7 @@ class User {
           1,
           false,
           0,
+          cccd
         ]
       );
 
@@ -169,6 +172,16 @@ class User {
       console.error('Error creating Google user:', error);
       throw error;
     }
+  }
+
+  static async findByResetCode(resetCode) {
+    const [rows] = await db
+      .promise()
+      .query(
+        "SELECT * FROM Users WHERE reset_code = ? AND reset_code_expires > NOW() AND IsDeleted = 0",
+        [resetCode]
+      );
+    return rows[0];
   }
 }
 
