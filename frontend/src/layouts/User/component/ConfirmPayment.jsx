@@ -10,12 +10,12 @@ import { useAuth } from "../../../context/AuthContext";
 const ConfirmPayment = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
-  const [paymentMethod, setPaymentMethod] = useState(""); // Quản lý phương thức thanh toán
+  const [paymentMethod, setPaymentMethod] = useState(""); 
 const { user } = useAuth();
-  // Extract data from BookingPage via location state
+
   const {
     selectedSeats = [],
-    numberOfTickets = 1,
+   
     totalPrice = 0,
     cinema = "CGV Crescent Mall",
     date = "2024-06-12",
@@ -24,18 +24,13 @@ const { user } = useAuth();
   } = state || {};
    if (!movie) return <div>Không có dữ liệu phim.</div>;
 
-  // Movie details
-
-
- 
-  // Handle payment method selection
   const handlePaymentMethod = (method) => {
     setPaymentMethod(method);
   };
 
  
 
-  // Handle confirm and navigate to waiting
+ 
   const handleConfirm = (e) => {
     e.preventDefault();
     if (!paymentMethod) {
@@ -44,7 +39,7 @@ const { user } = useAuth();
     }
 
     console.log("Navigating to /waiting with state:", {
-      numberOfTickets,
+     
       selectedSeats,
       totalPrice,
       paymentMethod,
@@ -56,7 +51,7 @@ const { user } = useAuth();
   
     navigate("/waiting", {
       state: {
-        numberOfTickets,
+        
         selectedSeats,
         totalPrice,
         paymentMethod,
@@ -97,10 +92,11 @@ const { user } = useAuth();
                   </h2>
                   <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-4 text-xs sm:text-sm text-gray-400 mb-2">
                     <span className="flex items-center gap-1">
-                      <FaRegClock /> {movie.RunningTime}
+                      <FaRegClock /> {movie.RunningTime} min
                     </span>
                     <span className="flex items-center gap-1">
-                      <FaCalendarAlt /> {movie.FromDate}
+                      <FaCalendarAlt /> {new Date(movie.FromDate).toLocaleDateString("vi-VN")}
+
                     </span>
                     <span>{movie.Genres}</span>
                   </div>

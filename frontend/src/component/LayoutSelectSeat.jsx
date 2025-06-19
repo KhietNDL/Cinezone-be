@@ -5,11 +5,14 @@ import DoubleSeatSelectingLight from "../assets/DoubleSeatSelectingLight.svg";
 import DoubleSeatNoneNight from "../assets/DoubleSeatNoneNight.svg";
 import DoubleSeatNoneLight from "../assets/DoubleSeatNoneLight.svg";
 import DoubleSeatSelected from "../assets/DoubleSeatSelected.svg";
+import DoubleSeatSelected4 from "../assets/DoubleSeatSelected4.svg"
+
 export const LayoutSelectSeat = ({
-  onSeatSelect = () => {},
+  onSeatSelect = () => { },
   initialSelectedSeats = [],
   //   seatPrice = 150000,
   //   currency = "VND",
+  textColor = "text-gray-800",
 }) => {
   const [selectedSeats, setSelectedSeats] = useState(
     new Set(initialSelectedSeats)
@@ -117,7 +120,7 @@ export const LayoutSelectSeat = ({
     if (isCoupleSeat) {
       let seatIcon = DoubleSeatNoneLight;
       if (isTaken) {
-        seatIcon = DoubleSeatSelected;
+        seatIcon = DoubleSeatSelected4;
       } else if (isSelected) {
         seatIcon = DoubleSeatSelectingLight;
       }
@@ -125,9 +128,8 @@ export const LayoutSelectSeat = ({
         <button
           key={seatId}
           onClick={() => handleSeatClick(seatId)}
-          className={`transition-all duration-200  hover:scale-105 ${
-            isTaken ? "cursor-not-allowed" : "cursor-pointer"
-          }`}
+          className={`transition-all duration-200  hover:scale-105 ${isTaken ? "cursor-not-allowed" : "cursor-pointer"
+            }`}
           disabled={isTaken}
           title={`Seat ${seatId}`}
         >
@@ -139,13 +141,14 @@ export const LayoutSelectSeat = ({
       <button
         key={seatId}
         onClick={() => handleSeatClick(seatId)}
-        className={`transition-all duration-200 hover:scale-110 ${
-          isTaken ? "cursor-not-allowed" : "cursor-pointer"
-        } ${getSeatColor(seatId)}`}
+        className={`transition-all duration-200 hover:scale-110 ${isTaken ? "cursor-not-allowed" : "cursor-pointer"
+          } ${getSeatColor(seatId)}`}
         disabled={isTaken}
         title={`Chair ${seatId}`}
       >
-        {isSelected ? (
+        {isTaken ? (
+          <PiArmchairFill className="w-6 h-6 text-gray-500" />
+        ) : isSelected ? (
           <PiArmchairFill className="w-6 h-6 " />
         ) : (
           <PiArmchairLight className="w-6 h-6 " />
@@ -183,7 +186,7 @@ export const LayoutSelectSeat = ({
                     key={`label-${seatNumber}`}
                     className={isGapAfter ? "mr-10" : ""}
                   >
-                    <span className="text-xs text-gray-600 block text-center w-6 my-2">
+                    <span className={`text-xs ${textColor} block text-center w-6 my-2`}>
                       {seatNumber}
                     </span>
                   </div>
@@ -195,7 +198,7 @@ export const LayoutSelectSeat = ({
         )}
 
         <div className="flex items-center justify-evenly">
-          <span className="text-gray-500 w-6 text-sm font-medium mr-4">
+          <span className={`${textColor} w-6 text-sm font-medium mr-4`}>
             {rowData.row}
           </span>
 
@@ -203,7 +206,7 @@ export const LayoutSelectSeat = ({
             {seatElements}
           </div>
 
-          <span className="text-gray-500 w-6 text-sm font-medium ml-4">
+          <span className={`${textColor} w-6 text-sm font-medium ml-4`}>
             {rowData.row}
           </span>
         </div>
@@ -321,13 +324,13 @@ export const LayoutSelectSeat = ({
             className="opacity-0 blur-[2px] transition-opacity duration-500 group-hover:opacity-100"
           />
         </svg>
-        <div className="text-center font-bold text-[20px] mt-4 text-black">
+        <div className={`text-center font-bold text-[20px] mt-4 ${textColor}`}>
           SCREEN
         </div>
       </div>
 
       {/* Seat Layout */}
-      <div>{seatLayout.map((rowData) => renderRow(rowData))}</div>
+      <div className="">{seatLayout.map((rowData) => renderRow(rowData))}</div>
 
       {/* Legend */}
       <div className="flex justify-center items-center space-x-6 mb-6">
@@ -340,7 +343,7 @@ export const LayoutSelectSeat = ({
           <span className="text-sm text-gray-500">Available</span>
         </div>
         <div className="flex items-center space-x-2">
-          <PiArmchairLight size={20} className="text-[#5341dbea]" />
+          <PiArmchairFill size={20} className="text-gray-500" />
           <span className="text-sm text-gray-500">Taken</span>
         </div>
         <div className="flex items-center space-x-2">

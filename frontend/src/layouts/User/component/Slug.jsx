@@ -1,5 +1,5 @@
 export const slugify = (str) => {
-  if (!str) return ""; // 👈 tránh lỗi khi str là undefined hoặc null
+  if (!str) return ""; 
   return str
     .toLowerCase()
     .normalize("NFD")
