@@ -13,7 +13,13 @@ import MovieHeroSwiper from "./MovieHeroSwiper";
 import promotionMovie1 from "../../../assets/PromotionMovie1.jpg";
 import promotionMovie2 from "../../../assets/PromotionMovie2.jpg";
 import promotionMovie3 from "../../../assets/PromotionMovie3.jpg";
-import { getMovies } from "../../../services/API";
+
+import { slugify } from "./Slug";
+import {
+  getCurrentMovies,
+  getMovies,
+  getUpcomingMovies,
+} from "../../../services/API";
 
 const LandingPage = () => {
   const [movieData, setMovieData] = useState([]);
@@ -22,10 +28,13 @@ const LandingPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   // eslint-disable-next-line no-unused-vars
   const [totalPages, setTotalPages] = useState(0);
+  // const [totalCurrentPages, setTotalCurrentPages] = useState(0);
+  // const [totalUpcomingPages, setTotalUpcomingPages] = useState(0);
   const [hoveredMovie, setHoveredMovie] = useState(null);
   // eslint-disable-next-line no-unused-vars
   const [isHovered, setIsHovered] = useState(false);
-
+  const [currentMovies, setCurrentMovies] = useState([]);
+  const [upcomingMovies, setUpcomingMovies] = useState([]);
   const [promotionData] = useState([
     {
       idPromotion: 1,
@@ -52,6 +61,7 @@ const LandingPage = () => {
       isActive: "active",
     },
   ]);
+
   const getMovie = async () => {
     try {
       const response = await getMovies({
@@ -59,7 +69,7 @@ const LandingPage = () => {
         page: currentPage,
       });
       if (response.data) {
-        setMovieData(response.data.movies || response.data);
+        setMovieData(response.data);
         setTotalPages(
           response.data.totalPages ||
             Math.ceil(response.data.total / itemsPerPage)
@@ -70,14 +80,54 @@ const LandingPage = () => {
     }
   };
 
+  const getCurrentMovie = async () => {
+    try {
+      const response = await getCurrentMovies({
+        limit: itemsPerPage,
+        page: currentPage,
+      });
+      if (response.data) {
+        setCurrentMovies(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching current movies:", error);
+    }
+  };
+
+  const getUpcomingMovie = async () => {
+    try {
+      const response = await getUpcomingMovies({
+        limit: itemsPerPage,
+        page: currentPage,
+      });
+      if (response.data) {
+        setUpcomingMovies(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching upcoming movies:", error);
+    }
+  };
+
   useEffect(() => {
+    getCurrentMovie();
+    getUpcomingMovie();
     getMovie();
   }, [itemsPerPage, currentPage]);
-
   const navigate = useNavigate();
-  const handleClickMovie = (idMovie) => {
-    navigate(`/${idMovie}`);
-  };
+//  const slugify = (str) => {
+//   return str
+//     .toLowerCase() // chữ thường
+//     .normalize("NFD") // chuẩn hóa chuỗi để tách dấu
+//     .replace(/[\u0300-\u036f]/g, "") // xóa dấu
+//     .replace(/[^a-z0-9\s-]/g, "") // loại bỏ ký tự đặc biệt
+//     .trim() // xóa khoảng trắng đầu/cuối
+//     .replace(/\s+/g, "-"); // thay khoảng trắng bằng dấu -
+// };
+
+const handleClickMovie = (movieTitle) => {
+  const slug = slugify(movieTitle);
+  navigate(`/${slug}`);
+};
 
   // Responsive breakpoints for Swiper
   const swiperBreakpoints = {
@@ -276,7 +326,7 @@ const LandingPage = () => {
             modules={[Pagination, Navigation]}
             className="mySwiper"
           >
-            {movieData.map((item) => (
+            {currentMovies.map((item) => (
               <SwiperSlide
                 onMouseEnter={() => {
                   setIsHovered(true);
@@ -305,7 +355,7 @@ const LandingPage = () => {
                         </h3>
 
                         <div className="space-y-3 text-sm">
-                          <div className="flex items-center justify-center">
+                          <div className="flex items-center">
                             <span className="text-gray-300">
                               <FaRegCalendarCheck size={20} />{" "}
                             </span>
@@ -359,7 +409,7 @@ const LandingPage = () => {
                   </div>
                   <div
                     role="button"
-                    onClick={() => handleClickMovie(item.MovieId)}
+                    onClick={() => handleClickMovie(item.NameOfEnglish)}
                     className="bg-[#6a57f5] rounded-4xl px-6 py-2 text-white hover:bg-[#6957f5ea] text-[12px]  shadow-[#6a57f5]  shadow-sm sm:w-auto "
                   >
                     Book now
@@ -390,7 +440,7 @@ const LandingPage = () => {
             modules={[Pagination, Navigation]}
             className="mySwiper"
           >
-            {movieData.map((item) => (
+            {upcomingMovies.map((item) => (
               <SwiperSlide
                 onMouseEnter={() => {
                   setHoveredMovie(`coming-${item.MovieId}`);
@@ -417,7 +467,7 @@ const LandingPage = () => {
                         </h3>
 
                         <div className="space-y-3 text-sm">
-                          <div className="flex items-center justify-center">
+                          <div className="flex items-center">
                             <span className="text-gray-300">
                               <FaRegCalendarCheck size={20} />{" "}
                             </span>

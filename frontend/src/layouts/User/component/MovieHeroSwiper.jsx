@@ -7,6 +7,8 @@ import {
   VolumeX,
   X,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { slugify } from "./Slug";
 
 const MovieHeroSwiper = ({ movieData }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -45,21 +47,55 @@ const MovieHeroSwiper = ({ movieData }) => {
 
   const resetVideoState = () => {
     if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.currentTime = 0;
+      try {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      } catch (error) {
+        console.error("Error pausing video:", error);
+      }
     }
     setIsVideoPlaying(false);
     setVideoProgress(0);
+    setPausedByScroll(false); // Reset pause state
   };
 
-  // // Toggle mute/unmute
-  // const toggleMute = () => {
-  //   if (videoRef.current) {
-  //     videoRef.current.muted = !isMuted;
-  //     setIsMuted(!isMuted);
-  //   }
-  //   handleUserInteraction();
-  // };
+  // Pause video without resetting
+  const pauseVideo = () => {
+    if (videoRef.current && isVideoPlaying) {
+      try {
+        videoRef.current.pause();
+        setIsVideoPlaying(false);
+      } catch (error) {
+        console.error("Error pausing video:", error);
+      }
+    }
+  };
+
+  // Resume video from current position
+  const resumeVideo = () => {
+    if (videoRef.current && !isVideoPlaying) {
+      try {
+        if (userInteracted) {
+          videoRef.current.muted = false;
+          setIsMuted(false);
+        } else {
+          videoRef.current.muted = true;
+          setIsMuted(true);
+        }
+
+        videoRef.current
+          .play()
+          .then(() => {
+            setIsVideoPlaying(true);
+          })
+          .catch((error) => {
+            console.error("Error resuming video:", error);
+          });
+      } catch (error) {
+        console.error("Error resuming video:", error);
+      }
+    }
+  };
 
   // Bắt đầu phát video với âm thanh
   const startVideoWithSound = async () => {
@@ -85,20 +121,17 @@ const MovieHeroSwiper = ({ movieData }) => {
     }
   };
 
-  // Auto-play video khi component mount hoặc slide thay đổi
   useEffect(() => {
     const video = videoRef.current;
     if (video && currentMovie.TrailerUrl) {
-      // Load video mới
+      console.log("Attempting to auto-play video");
       video.load();
 
-      // Đợi video sẵn sàng
       const handleCanPlay = () => {
+        console.log("Video can play");
         if (userInteracted) {
-          // Nếu user đã tương tác, phát với âm thanh
           startVideoWithSound();
         } else {
-          // Nếu chưa tương tác, phát muted
           video.muted = true;
           setIsMuted(true);
           video
@@ -123,17 +156,17 @@ const MovieHeroSwiper = ({ movieData }) => {
   // Auto-slide sau 15 giây
   useEffect(() => {
     let timeoutId;
-    if (isVideoPlaying && !isPopupOpen) {
+    if (isVideoPlaying && !isPopupOpen && !pausedByScroll) {
       timeoutId = setTimeout(() => {
         setCurrentSlide((prev) => (prev + 1) % movies.length);
         resetVideoState();
-      }, 15000); // Tăng thời gian để người dùng có thể thưởng thức video
+      }, 15000);
     }
 
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [isVideoPlaying, movies.length, isPopupOpen]);
+  }, [isVideoPlaying, movies.length, isPopupOpen, pausedByScroll]);
 
   // Theo dõi tiến độ video
   useEffect(() => {
@@ -163,42 +196,30 @@ const MovieHeroSwiper = ({ movieData }) => {
     };
   }, [isVideoPlaying, movies.length, isPopupOpen]);
 
-  // Tạm dừng video khi cuộn trang
+  // Fixed scroll handling
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY;
-      if (scrollPosition > 100 && isVideoPlaying) {
-        resetVideoState();
-        setPausedByScroll(true);
-      } else if (
-        scrollPosition <= 100 &&
-        pausedByScroll &&
-        !isVideoPlaying &&
-        !isPopupOpen
-      ) {
-        if (videoRef.current) {
-          videoRef.current.load();
-          if (userInteracted) {
-            startVideoWithSound();
-          } else {
-            videoRef.current.muted = true;
-            setIsMuted(true);
-            videoRef.current
-              .play()
-              .then(() => {
-                setIsVideoPlaying(true);
-                setVideoProgress(0);
-                setPausedByScroll(false);
-              })
-              .catch((error) => {
-                console.error("Video playback failed on scroll up:", error);
-              });
-          }
+      console.log("Scroll position:", scrollPosition);
+
+      if (scrollPosition > 300) {
+        // Scroll xuống - chỉ pause video, không reset
+        if (isVideoPlaying && !pausedByScroll) {
+          console.log("Pausing video due to scroll");
+          pauseVideo();
+          setPausedByScroll(true);
+        }
+      } else if (scrollPosition <= 300) {
+        // Scroll lên - resume video từ vị trí hiện tại
+        if (pausedByScroll && !isVideoPlaying && !isPopupOpen) {
+          console.log("Resuming video on scroll up");
+          resumeVideo();
+          setPausedByScroll(false);
         }
       }
     };
 
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [isVideoPlaying, pausedByScroll, isPopupOpen, userInteracted]);
 
@@ -212,8 +233,9 @@ const MovieHeroSwiper = ({ movieData }) => {
   };
 
   const handleOpenPopup = () => {
+    // Pause video bên ngoài khi mở popup
+    pauseVideo();
     setIsPopupOpen(true);
-    resetVideoState();
     handleUserInteraction();
 
     setTimeout(() => {
@@ -233,6 +255,13 @@ const MovieHeroSwiper = ({ movieData }) => {
       popupVideoRef.current.currentTime = 0;
     }
     setIsPopupOpen(false);
+
+    // Resume video bên ngoài nếu không bị pause bởi scroll
+    if (!pausedByScroll) {
+      setTimeout(() => {
+        resumeVideo();
+      }, 100);
+    }
   };
 
   // Thêm event listeners cho các tương tác của user
@@ -251,6 +280,12 @@ const MovieHeroSwiper = ({ movieData }) => {
       document.removeEventListener("touchstart", handleTouch);
     };
   }, []);
+
+  const navigate = useNavigate();
+const handleClickMovie = (movieTitle) => {
+  const slug = slugify(movieTitle);
+  navigate(`/${slug}`);
+};
 
   return (
     <div className="relative h-[500px] md:h-[600px] lg:h-[700px] w-full ">
@@ -277,14 +312,7 @@ const MovieHeroSwiper = ({ movieData }) => {
           </div>
         </div>
       </div>
-      {/* <div
-        role="button"
-        onClick={toggleMute}
-        className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full transition-all duration-300 z-30 hover:scale-110"
-        aria-label={isMuted ? "Unmute" : "Mute"}
-      >
-        {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />}
-      </div> */}
+
       {/* Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black" />
 
@@ -339,6 +367,7 @@ const MovieHeroSwiper = ({ movieData }) => {
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
               <div
                 role="button"
+                onClick={() => handleClickMovie(currentMovie.NameOfEnglish)}
                 className="bg-[#6a57f5] hover:bg-[#5a47e5] text-white px-8 py-3 rounded-full font-semibold transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg shadow-[#6a57f5]/30"
               >
                 Book Now

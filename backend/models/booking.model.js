@@ -123,7 +123,7 @@ class Booking {
       // Kiểm tra trạng thái ghế trong SeatShowtime
       const [bookedSeats] = await connection.query(
         `SELECT SeatId FROM SeatShowtime 
-         WHERE ShowtimeId = ? AND SeatId IN (?) AND Status IN ('taken', 'holding') FOR UPDATE`,
+         WHERE ShowtimeId = ? AND SeatId IN (?) AND Status IN ('taken', 'holding') AND IsDeleted = 0 FOR UPDATE`,
         [showtimeId, seatIds]
       );
       if (bookedSeats.length > 0) {

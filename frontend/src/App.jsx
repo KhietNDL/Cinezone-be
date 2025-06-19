@@ -32,22 +32,26 @@ import AccountImformation from "./layouts/User/component/AccountImformation";
 import EditAccount from "./layouts/User/component/EditAccount";
 import HistoryActivity from "./layouts/User/component/HistoryActivity";
 
-
 import TicketBookingManagement from "./layouts/Admin/component/TicketBookingMangement";
 import TicketDetails from "./layouts/User/component/TicketDetails";
 import PromotionManagement from "./layouts/Admin/component/PromotionManagement";
+import { UserManagement } from "./layouts/Admin/component/UserManagement";
 import MoviePage from "./layouts/Staff/component/MoviePage";
+import MovieDetail from "./layouts/Staff/component/MovieDetail";
 function App() {
   return (
     <AuthProvider>
       <Routes>
         <Route element={<UserLayout />}>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/:slug" element={<BookingPage />} />
+
+
           <Route path="/login" element={<MovieTheaterLogin />} />
           <Route path="/register" element={<RegistrationPage />} />
           <Route path="/forgot" element={<ForgotPasswordPage />} />
           <Route path="/verification" element={<EmailVerification />} />
-          <Route path="/:idMovie" element={<BookingPage />} />
+
           <Route path="/confirmPayment" element={<ConfirmPayment />} />
           <Route path="/promotions" element={<MoviePromotions />} />
           <Route path="/waiting" element={<WaitingPayment />} />
@@ -57,7 +61,6 @@ function App() {
             <Route path="*" element={<AccountImformation />} />
             <Route path="personal" element={<EditAccount />} />
             <Route path="history" element={<HistoryActivity />} />
-            
           </Route>
         </Route>
 
@@ -68,12 +71,14 @@ function App() {
           <Route path="rooms" element={<RoomManagement />} />
           <Route path="bookings" element={<TicketBookingManagement />} />
           <Route path="promotions" element={<PromotionManagement />} />
+          <Route path="users" element={<UserManagement />} />
         </Route>
 
         <Route path="/staff" element={<StaffLayout />}>
           <Route index element={<SellTicketPage />} />
           <Route path="/staff/ticket-selling" element={<SellTicketPage />} />
-          <Route path="/staff/movie-info" element={<MoviePage />} />
+          <Route path="/staff/movie" element={<MoviePage />} />
+          <Route path="/staff/movie/:id" element={<MovieDetail />} />
           <Route
             path="/staff/ticket-selling/select-seats"
             element={<SelectSeatsPage />}
@@ -86,11 +91,12 @@ function App() {
             path="/staff/ticket-selling/ticket-infomation"
             element={<TicketInfomation />}
           />
-          <Route path="/staff/combo-selling" element={<ComboPage />} />
+
           <Route
             path="/staff/ticket-selling/view-ticket"
             element={<PrintTicket />}
           />
+          <Route path="/staff/combo-selling" element={<ComboPage />} />
         </Route>
       </Routes>
       <ToastContainer />

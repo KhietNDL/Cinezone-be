@@ -4,12 +4,14 @@ import { BsBank } from "react-icons/bs";
 import { RiVisaFill } from "react-icons/ri";
 import { FaPaypal } from "react-icons/fa6";
 import { useState } from "react";
+import { useAuth } from "../../../context/AuthContext";
+
 
 const ConfirmPayment = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState(""); // Quản lý phương thức thanh toán
-
+const { user } = useAuth();
   // Extract data from BookingPage via location state
   const {
     selectedSeats = [],
@@ -18,32 +20,20 @@ const ConfirmPayment = () => {
     cinema = "CGV Crescent Mall",
     date = "2024-06-12",
     time = "14:00",
+    movie,
   } = state || {};
+   if (!movie) return <div>Không có dữ liệu phim.</div>;
 
   // Movie details
-  const movieDetails = {
-    title: "Mắt Biếc",
-    poster: "https://cdnb.artstation.com/p/assets/images/images/024/183/449/large/baju-creative-mat-biec.jpg?1581838909",
-    duration: "117 min",
-    releaseDate: "12/12/2023",
-    genres: "Romantic, Comedy",
-    description:
-      "A touching story about youth, memories and unrequited love that lasts a lifetime. 'Mắt Biếc' will take you back to your student years full of dreams and aspirations.",
-    rating: "8.7",
-    feedback: "1.2K",
-  };
 
-  const user = {
-    fullName: "Vu Quan",
-    email: "VuQuan@gmail.com",
-    phone: "0215666999",
-    identityCard: "0000111122223333",
-  };
 
+ 
   // Handle payment method selection
   const handlePaymentMethod = (method) => {
     setPaymentMethod(method);
   };
+
+ 
 
   // Handle confirm and navigate to waiting
   const handleConfirm = (e) => {
@@ -63,6 +53,7 @@ const ConfirmPayment = () => {
       time,
     });
 
+  
     navigate("/waiting", {
       state: {
         numberOfTickets,
@@ -72,6 +63,7 @@ const ConfirmPayment = () => {
         cinema,
         date,
         time,
+        
       },
     });
   };
@@ -91,8 +83,8 @@ const ConfirmPayment = () => {
               {/* Poster */}
               <div className="flex justify-center sm:justify-start">
                 <img
-                  src={movieDetails.poster}
-                  alt={movieDetails.title}
+                  src={movie.PosterImage}
+                  alt={movie.NameOfEnglish}
                   className="w-40 h-56 sm:w-48 sm:h-72 object-cover rounded-lg flex-shrink-0"
                 />
               </div>
@@ -101,27 +93,27 @@ const ConfirmPayment = () => {
               <div className="flex flex-col justify-between flex-1">
                 <div > 
                   <h2 className="text-xl sm:text-2xl font-bold mb-2 text-center sm:text-left">
-                    {movieDetails.title}
+                    {movie.NameOfEnglish}
                   </h2>
                   <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-4 text-xs sm:text-sm text-gray-400 mb-2">
                     <span className="flex items-center gap-1">
-                      <FaRegClock /> {movieDetails.duration}
+                      <FaRegClock /> {movie.RunningTime}
                     </span>
                     <span className="flex items-center gap-1">
-                      <FaCalendarAlt /> {movieDetails.releaseDate}
+                      <FaCalendarAlt /> {movie.FromDate}
                     </span>
-                    <span>{movieDetails.genres}</span>
+                    <span>{movie.Genres}</span>
                   </div>
-                  <div className="flex items-center justify-center sm:justify-start gap-3 sm:gap-4 text-xs sm:text-sm mb-4">
+                  {/* <div className="flex items-center justify-center sm:justify-start gap-3 sm:gap-4 text-xs sm:text-sm mb-4">
                     <span className="flex items-center text-yellow-400 font-bold gap-1">
-                      <FaStar /> {movieDetails.rating} <span className="text-white">/10</span>
+                      <FaStar /> {movie.rating} <span className="text-white">/10</span>
                     </span>
                     <span className="flex items-center gap-1 text-blue-400">
-                      <FaHeart /> {movieDetails.feedback} feedback
+                      <FaHeart /> {movie.feedback} feedback
                     </span>
-                  </div>
+                  </div> */}
                   <p className="text-gray-300 text-xs sm:text-sm text-center sm:text-left leading-relaxed">
-                    {movieDetails.description}
+                    {movie.ContentSynopsis}
                   </p>
                 </div>
               </div>
@@ -144,11 +136,11 @@ const ConfirmPayment = () => {
               </p>
               <p className="flex flex-col sm:flex-row">
                 <span className="text-gray-400 text-sm sm:text-base min-w-[120px]">Phone:</span>
-                <span className="text-sm sm:text-base">{user.phone}</span>
+                <span className="text-sm sm:text-base">{user.phoneNumber}</span>
               </p>
               <p className="flex flex-col sm:flex-row">
                 <span className="text-gray-400 text-sm sm:text-base min-w-[120px]">Identity Card:</span>
-                <span className="text-sm sm:text-base">{user.identityCard}</span>
+                <span className="text-sm sm:text-base">1112223336868</span>
               </p>
             </div>
 

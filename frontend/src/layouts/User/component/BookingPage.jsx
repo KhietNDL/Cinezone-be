@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   FaStar,
   FaRegClock,
@@ -7,15 +7,21 @@ import {
   FaTicketAlt,
 } from "react-icons/fa";
 import { MdChair, MdOutlineOndemandVideo } from "react-icons/md";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import Swal from "sweetalert2";
-
+import { slugify } from "./Slug";
+import axios from "axios";
 
 const BookingPage = () => {
   // State để quản lý số lượng vé, ghế đã chọn, v.v.
   const [numberOfTickets, setNumberOfTickets] = useState(1);
   const [selectedSeats, setSelectedSeats] = useState([]);
+  
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+const popupVideoRef = useRef(null);
+
+  // eslint-disable-next-line no-unused-vars
   const { user, isLoading } = useAuth();
 
   // Danh sách ghế (8 hàng, mỗi hàng 8 ghế)
@@ -25,21 +31,19 @@ const BookingPage = () => {
 
   // Hàm xử lý chọn ghế
   const toggleSeat = (seat) => {
-    
-
     if (!user) {
-  Swal.fire({
-    icon: "info",
-    title: "Bạn cần đăng nhập",
-    text: "Vui lòng đăng nhập để chọn ghế.",
-    confirmButtonText: "Đăng nhập",
-  }).then((result) => {
-    if (result.isConfirmed) {
-      navigate("/login");
+      Swal.fire({
+        icon: "info",
+        title: "Bạn cần đăng nhập",
+        text: "Vui lòng đăng nhập để chọn ghế.",
+        confirmButtonText: "Đăng nhập",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate("/login");
+        }
+      });
+      return;
     }
-  });
-  return;
-}
 
     if (soldSeats.includes(seat)) return; // Không cho chọn ghế đã bán
 
@@ -49,10 +53,70 @@ const BookingPage = () => {
       setSelectedSeats([...selectedSeats, seat]);
     }
   };
+
   const navigate = useNavigate();
   // Tính tổng giá (ví dụ: 100k/vé)
   const ticketPrice = 100000;
   const totalPrice = selectedSeats.length * ticketPrice;
+
+  const { slug } = useParams();
+  const [movie, setMovie] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMovie = async () => {
+      try {
+        const response = await axios.get("http://cinezone.info:4458/api/movie");
+        console.log("API response:", response.data);
+        const movies = Array.isArray(response.data.data)
+          ? response.data.data
+          : response.data.data.movies || [];
+        const matchedMovie = movies.find(
+          (m) => m.NameOfEnglish && slugify(m.NameOfEnglish) === slug
+        );
+        console.log(matchedMovie);
+
+        if (matchedMovie) {
+          setMovie(matchedMovie);
+        } else {
+          console.warn("No movie found for slug:", slug);
+        }
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách phim:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMovie();
+  }, [slug]);
+
+  if (loading) return <div className="text-white text-center mt-20">Đang tải...</div>;
+  if (!movie) return <div className="text-white text-center mt-20">Không tìm thấy phim.</div>;
+
+   
+const handleOpenPopup = () => {
+  setIsPopupOpen(true);
+  setTimeout(() => {
+    if (popupVideoRef.current) {
+      popupVideoRef.current.load();
+      popupVideoRef.current.muted = false;
+      popupVideoRef.current.play().catch((error) => {
+        console.error("Popup video playback failed:", error);
+      });
+    }
+  }, 100);
+};
+
+
+
+  const handleClosePopup = () => {
+  if (popupVideoRef.current) {
+    popupVideoRef.current.pause();
+    popupVideoRef.current.currentTime = 0;
+  }
+  setIsPopupOpen(false);
+};
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] text-white p-3 sm:p-6 pt-[80px] sm:pt-[100px]">
@@ -61,8 +125,8 @@ const BookingPage = () => {
         {/* Poster */}
         <div className="flex justify-center sm:justify-start">
           <img
-            src="https://cdnb.artstation.com/p/assets/images/images/024/183/449/large/baju-creative-mat-biec.jpg?1581838909"
-            alt="Mắt Biếc"
+            src={movie.PosterImage || "https://via.placeholder.com/150x200"}
+            alt={movie.NameOfEnglish || "Movie Poster"}
             className="w-32 h-48 sm:w-40 sm:h-60 object-cover rounded-lg flex-shrink-0"
           />
         </div>
@@ -71,39 +135,41 @@ const BookingPage = () => {
         <div className="flex flex-col justify-between flex-1">
           {/* Tên phim */}
           <div>
-            <h2 className="text-xl sm:text-2xl font-semibold mb-2 text-center sm:text-left">Mắt Biếc</h2>
+            <h2 className="text-xl sm:text-2xl font-semibold mb-2 text-center sm:text-left">
+              {movie.NameOfEnglish || "Untitled"}
+            </h2>
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-4 text-xs sm:text-sm text-gray-400 mb-2">
               <span className="flex items-center gap-1">
-                <FaRegClock /> 117 min
+                <FaRegClock /> {movie.RunningTime ? `${movie.RunningTime} min` : "N/A"}
               </span>
               <span className="flex items-center gap-1">
-                <FaCalendarAlt /> 12/12/2023
+                <FaCalendarAlt /> {movie.FromDate ? new Date(movie.FromDate).toLocaleDateString() : "N/A"}
               </span>
-              <span>Romantic, Comedy</span>
+              <span>{movie.Genres || "N/A"}</span>
             </div>
 
             {/* Mô tả */}
             <p className="text-gray-300 text-xs sm:text-sm mb-4 text-center sm:text-left leading-relaxed">
-              A touching story about youth, memories and unrequited love that
-              lasts a lifetime. "Mắt Biếc" will take you back to your student
-              years full of dreams and aspirations.
+              {movie.ContentSynopsis || "No description available."}
             </p>
 
             {/* Rating */}
             <div className="flex items-center justify-center sm:justify-start gap-3 sm:gap-4 text-xs sm:text-sm mb-4">
               <span className="flex items-center text-yellow-400 font-bold gap-1">
-                <FaStar /> 8.7 <span className="text-white">/10</span>
+                <FaStar /> {movie.Rating || "N/A"} <span className="text-white">/10</span>
               </span>
-              <span className="flex items-center gap-1 text-blue-400">
-                <FaHeart /> 1.2K feedback
-              </span>
+            
             </div>
           </div>
 
           {/* Nút */}
           <div className="flex justify-center sm:justify-start">
-            <button className="text-white bg-[#6956F5] px-4 py-2 sm:px-5 sm:py-2 rounded-full text-xs sm:text-sm hover:bg-[#6956f5bf] transition font-semibold flex items-center">
+            <button className="text-white bg-[#6956F5] px-4 py-2 sm:px-5 sm:py-2 rounded-full text-xs sm:text-sm hover:bg-[#6956f5bf] transition font-semibold flex items-center"
+              onClick={handleOpenPopup}
+            >
+              
               <MdOutlineOndemandVideo className="mr-2" />
+               
               View trailer
             </button>
           </div>
@@ -123,7 +189,7 @@ const BookingPage = () => {
             </div>
             <div>
               <label className="block text-xs sm:text-sm mb-1">Date</label>
-              <select className="w-full bg-gray-800/40  text-white p-2 rounded text-xs sm:text-sm">
+              <select className="w-full bg-gray-800/40 text-white p-2 rounded text-xs sm:text-sm">
                 <option>2024-06-12</option>
               </select>
             </div>
@@ -134,7 +200,9 @@ const BookingPage = () => {
               </select>
             </div>
             <div>
-              <label className="block text-xs sm:text-sm mb-1">Number ticket</label>
+              <label className="block text-xs sm:text-sm mb-1">
+                Number ticket
+              </label>
               <select
                 className="w-full bg-gray-800/40 text-white p-2 rounded text-xs sm:text-sm"
                 value={numberOfTickets}
@@ -204,7 +272,9 @@ const BookingPage = () => {
 
                     if (i === 5) {
                       // Cột lối đi
-                      return <div key={`${row}-aisle`} className="w-2 sm:w-4" />;
+                      return (
+                        <div key={`${row}-aisle`} className="w-2 sm:w-4" />
+                      );
                     }
 
                     // Tính chỉ số thực của ghế
@@ -212,7 +282,6 @@ const BookingPage = () => {
                     const seat = `${row}${seatIndex}`;
                     const isSold = soldSeats.includes(seat);
                     const isSelected = selectedSeats.includes(seat);
-
                     return (
                       <button
                         key={seat}
@@ -221,19 +290,21 @@ const BookingPage = () => {
                         className="w-10 h-10 sm:w-16 sm:h-16 flex items-center justify-center bg-transparent p-0 border-none outline-none"
                       >
                         <MdChair
-                          aria-label={`Seat ${seat} ${isSold
+                          aria-label={`Seat ${seat} ${
+                            isSold
                               ? "sold"
                               : isSelected
-                                ? "selected"
-                                : "available"
-                            }`}
+                              ? "selected"
+                              : "available"
+                          }`}
                           className={`w-8 h-8 sm:w-13 sm:h-13 transition-colors
-                ${isSold
-                              ? "text-gray-500"
-                              : isSelected
-                                ? "text-blue-500"
-                                : "text-gray-300 hover:text-gray-100"
-                            }`}
+                ${
+                  isSold
+                    ? "text-gray-500"
+                    : isSelected
+                    ? "text-blue-500"
+                    : "text-gray-300 hover:text-gray-100"
+                }`}
                         />
                       </button>
                     );
@@ -266,8 +337,7 @@ const BookingPage = () => {
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-4 sm:p-[24px]">
           <div className="text-center sm:text-left">
             <p className="text-xs sm:text-sm mb-1">
-              Seat:{" "}
-              {selectedSeats.length > 0 ? selectedSeats.join(", ") : "Not yet"}
+              Seat: {selectedSeats.length > 0 ? selectedSeats.join(", ") : "Not yet"}
             </p>
             <p className="text-sm sm:text-base font-semibold">
               Total price: {totalPrice.toLocaleString("vi-VN")}đ
@@ -285,6 +355,7 @@ const BookingPage = () => {
                   cinema: "CGV Crescent Mall",
                   date: "2024-06-12",
                   time: "14:00",
+                  movie,
                 },
               })
             }
@@ -294,7 +365,35 @@ const BookingPage = () => {
           </button>
         </div>
       </div>
+
+       {isPopupOpen && (
+        <div className="fixed inset-0 bg-black/30  flex items-center justify-center z-50">
+          <div className="relative w-full max-w-4xl rounded-2xl">
+            <video
+              ref={popupVideoRef}
+              controls
+              className="w-full h-auto rounded-lg shadow-xl"
+            >
+              <source
+                src={
+                  movie.TrailerUrl ||
+                  "https://storage.googleapis.com/movie-c96b6.firebasestorage.app/trailers/1749720180325-The_Smurfs_2_-_How_Smurfette_Came_to_Be___Fandango_Family.mp4"
+                }
+                type="video/mp4"
+              />
+              Your browser does not support the video tag.
+            </video>
+            <button
+              onClick={handleClosePopup}
+              className="absolute top-4 right-4  hover:bg-slate-800  active:scale-[1.1]  text-white bg-black/50  p-2 rounded-full"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
     </div>
+    
   );
 };
 

@@ -22,7 +22,7 @@ export default function MoviePage() {
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState("");
 
-//    const filteredMovies = movies.filter(c => c.NameOfEnglish.toLowerCase().includes(search.toLowerCase()));
+    //    const filteredMovies = movies.filter(c => c.NameOfEnglish.toLowerCase().includes(search.toLowerCase()));
 
     const getCurrentMovie = async () => {
         try {
@@ -37,7 +37,7 @@ export default function MoviePage() {
         }
     }
 
-      const handleSearch = async (value) => {
+    const handleSearch = async (value) => {
         setSearch(value);
         setLoading(true);
         try {
@@ -120,19 +120,19 @@ export default function MoviePage() {
                             {movies.map((movie) => (
                                 <SwiperSlide key={movie.MovieId}>
                                     <div className="flex justify-center p-2 w-[260px]">
-                                        <ItemCard
-                                            item={movie}
-                                            type="movie"
-                                            // onSelect={setSelectedMovie}
-                                            onSelect={() =>
-                                                setSelectedMovie(
-                                                    selectedMovie?.MovieId === movie.MovieId ? null : movie
-                                                )
-                                            }
-                                            selected={selectedMovie?.MovieId === movie.MovieId}
-                                        />
+                                        <Link to={`/staff/movie/${movie.MovieId}`}>
+                                            <ItemCard
+                                                item={movie}
+                                                type="movie"
+                                                selected={selectedMovie?.MovieId === movie.MovieId}
+                                                onSelect={() =>
+                                                    setSelectedMovie(
+                                                        selectedMovie?.MovieId === movie.MovieId ? null : movie
+                                                    )
+                                                }
+                                            />
+                                        </Link>
                                     </div>
-
                                 </SwiperSlide>
                             ))}
                         </Swiper>

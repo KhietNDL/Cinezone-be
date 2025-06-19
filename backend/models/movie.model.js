@@ -385,7 +385,7 @@ class Movie {
       FROM Movies mv
       JOIN Showtimes st ON mv.MovieId = st.MovieId
       JOIN CinemaRooms cr ON st.CinemaRoomId = cr.CinemaRoomId
-      WHERE mv.MovieId = ?
+      WHERE mv.MovieId = ? and mv.IsDeleted = 0
       ORDER BY mv.MovieId, st.Day
     `;
     try {
