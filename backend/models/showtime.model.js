@@ -249,6 +249,20 @@ class Showtime {
             throw error;
         }
     }
+
+    static async searchByMovieAndDay(MovieId, Day) {
+        const query = `
+            SELECT * FROM Showtimes
+            WHERE IsDeleted = 0 AND MovieId = ? AND Day = ?
+        `;
+        try {
+            const [rows] = await db.promise().query(query, [MovieId, Day]);
+            return rows;
+        } catch (error) {
+            console.error('Error in searchByMovieAndDay:', error);
+            throw error;
+        }
+    }
 }
 
 module.exports = Showtime; 

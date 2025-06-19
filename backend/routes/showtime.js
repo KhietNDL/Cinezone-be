@@ -46,6 +46,53 @@ const { auth, isAdmin } = require('../middlewares/auth.middleware');
 
 /**
  * @swagger
+ * /api/showtimes/filter:
+ *   get:
+ *     summary: Get showtimes by movieId and day
+ *     tags: [Showtime Management]
+ *     parameters:
+ *       - in: query
+ *         name: movieId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: The movie's UUID
+ *       - in: query
+ *         name: day
+ *         schema:
+ *           type: string
+ *           format: date
+ *         required: true
+ *         description: The day of the showtime (YYYY-MM-DD)
+ *     responses:
+ *       200:
+ *         description: List of showtimes for the movie on the given day
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 movieId:
+ *                   type: string
+ *                 day:
+ *                   type: string
+ *                 showtimes:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       showtimeId:
+ *                         type: string
+ *                       time:
+ *                         type: string
+ *                       roomName:
+ *                         type: string
+ */
+router.get('/filter', showtimeController.getShowtimesByMovieAndDay);
+
+/**
+ * @swagger
  * /api/showtimes:
  *   get:
  *     summary: Get all showtimes
