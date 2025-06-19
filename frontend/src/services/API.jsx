@@ -167,3 +167,17 @@ export const editMovie = async (movieData) => {
 };
 
 export default api;
+
+
+
+//API cho Booking FLow
+
+export const getShowtimeByMovieId = async (movieId) => {
+  try {
+    const response = await api.get(`/movie/${movieId}/showtimes`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy showtime theo movieId:", error);
+    throw error;
+  }
+};

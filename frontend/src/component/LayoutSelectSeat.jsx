@@ -331,7 +331,7 @@ export const LayoutSelectSeat = ({
       </div>
 
       {/* Seat Layout */}
-      <div>{seatLayout.map((rowData) => renderRow(rowData))}</div>
+      <div className="">{seatLayout.map((rowData) => renderRow(rowData))}</div>
 
       {/* Legend */}
       <div className="flex justify-center items-center space-x-6 mb-6">
