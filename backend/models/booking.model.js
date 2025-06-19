@@ -27,7 +27,6 @@ class Booking {
       BookingDate,
       TotalAmount,
       Status,
-      PaymentId,
       PromotionId,
       CreatedBy
     } = data;
@@ -35,8 +34,8 @@ class Booking {
     const CreatedAt = new Date();
     const IsDeleted = 0;
     const sql = `
-      INSERT INTO Bookings (BookingId, MemberId, ShowtimeId, BookingDate, TotalAmount, Status, PaymentId, PromotionId, IsDeleted, CreatedAt, CreatedBy)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO Bookings (BookingId, MemberId, ShowtimeId, BookingDate, TotalAmount, Status, PromotionId, IsDeleted, CreatedAt, CreatedBy)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     await db.promise().query(sql, [
       BookingId,
@@ -45,7 +44,6 @@ class Booking {
       BookingDate,
       TotalAmount,
       Status,
-      PaymentId,
       PromotionId,
       IsDeleted,
       CreatedAt,
@@ -61,13 +59,16 @@ class Booking {
       BookingDate,
       TotalAmount,
       Status,
-      PaymentId,
       PromotionId,
       UpdatedBy
     } = data;
     const UpdatedAt = new Date();
     const sql = `
-      UPDATE Bookings SET MemberId=?, ShowtimeId=?, BookingDate=?, TotalAmount=?, Status=?, PaymentId=?, PromotionId=?, UpdatedAt=?, UpdatedBy=?
+<<<<<<< HEAD
+        UPDATE Bookings SET MemberId=?, ShowtimeId=?, BookingDate=?, TotalAmount=?, Status=?, PromotionId=?, UpdatedAt=?, UpdatedBy=?
+=======
+      UPDATE Bookings SET MemberId=?, ShowtimeId=?, BookingDate=?, TotalAmount=?, Status=?, PromotionId=?, UpdatedAt=?, UpdatedBy=?
+>>>>>>> Develop
       WHERE BookingId=? AND IsDeleted=0
     `;
     const [result] = await db.promise().query(sql, [
@@ -76,7 +77,6 @@ class Booking {
       BookingDate,
       TotalAmount,
       Status,
-      PaymentId,
       PromotionId,
       UpdatedAt,
       UpdatedBy,

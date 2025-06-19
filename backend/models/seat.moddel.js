@@ -21,20 +21,20 @@ class Seat {
   }
 
   static async createSeat(data) {
-    const { CinemaRoomId, SeatNumber, Type, Status, Price, CreatedBy } = data;
+    const { CinemaRoomId, SeatNumber, Type, Price, CreatedBy } = data;
     const SeatId = uuidv4();
     const CreatedAt = new Date();
     const IsDeleted = 0;
-    const sql = `INSERT INTO Seats (SeatId, CinemaRoomId, SeatNumber, Type, Status, Price, IsDeleted, CreatedAt, CreatedBy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    await db.promise().query(sql, [SeatId, CinemaRoomId, SeatNumber, Type, Status, Price, IsDeleted, CreatedAt, CreatedBy]);
+    const sql = `INSERT INTO Seats (SeatId, CinemaRoomId, SeatNumber, Type, Price, IsDeleted, CreatedAt, CreatedBy) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+    await db.promise().query(sql, [SeatId, CinemaRoomId, SeatNumber, Type, Price, IsDeleted, CreatedAt, CreatedBy]);
     return SeatId;
   }
 
   static async updateSeat(seatId, data) {
-    const { CinemaRoomId, SeatNumber, Type, Status, Price, UpdatedBy } = data;
+    const { CinemaRoomId, SeatNumber, Type, Price, UpdatedBy } = data;
     const UpdatedAt = new Date();
-    const sql = `UPDATE Seats SET CinemaRoomId = ?, SeatNumber = ?, Type = ?, Status = ?, Price = ?, UpdatedAt = ?, UpdatedBy = ? WHERE SeatId = ? AND IsDeleted = 0`;
-    const [result] = await db.promise().query(sql, [CinemaRoomId, SeatNumber, Type, Status, Price, UpdatedAt, UpdatedBy, seatId]);
+    const sql = `UPDATE Seats SET CinemaRoomId = ?, SeatNumber = ?, Type = ?, Price = ?, UpdatedAt = ?, UpdatedBy = ? WHERE SeatId = ? AND IsDeleted = 0`;
+    const [result] = await db.promise().query(sql, [CinemaRoomId, SeatNumber, Type, Price, UpdatedAt, UpdatedBy, seatId]);
     return result.affectedRows > 0;
   }
 
