@@ -21,7 +21,6 @@ const Header = () => {
           onClick={() => {
             navigate("/");
           }}
-
           className=" w-[160px] h-[70px] object-cover "
         />
       </div>
@@ -82,7 +81,7 @@ const Header = () => {
               className="font-bold text-[16px] cursor-pointer hover:underline"
               onClick={() => navigate("/account")}
             >
-              {user.FullName || "User"}
+              {user.fullName || "User"}
             </span>
           </div>
         ) : (

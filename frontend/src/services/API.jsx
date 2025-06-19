@@ -165,5 +165,15 @@ export const editMovie = async (movieData) => {
     handleError(error);
   }
 };
-
+export const deleteMovie = async (movieId) => {
+  try {
+    if (!movieId) {
+      throw new Error("Movie ID is undefined");
+    }
+    const response = await api.delete(`/movie/${movieId}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
 export default api;

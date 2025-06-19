@@ -17,7 +17,12 @@ import { MdMovie, MdDeleteForever } from "react-icons/md";
 import { FaRegEdit } from "react-icons/fa";
 import { RiDeleteBin5Line } from "react-icons/ri";
 import { FaUpload, FaCalendarAlt, FaClock } from "react-icons/fa";
-import { createMovie, getMovies, editMovie } from "../../../services/API";
+import {
+  createMovie,
+  getMovies,
+  editMovie,
+  deleteMovie,
+} from "../../../services/API";
 import { formatDateRange } from "../../../utils/dateUtils";
 
 const MovieManagement = () => {
@@ -371,16 +376,33 @@ const MovieManagement = () => {
   };
 
   const handleDelete = (movie) => {
+    console.log("Movie to delete:", movie); // Debug
+    if (!movie || !movie.MovieId) {
+      console.error("Invalid movie or movieId:", movie);
+      alert("Cannot delete: Invalid movie selection.");
+      return;
+    }
     setSelectedMovie(movie);
     setShowDeletePopup(true);
   };
 
-  const confirmDelete = () => {
-    setMovies((prev) =>
-      prev.filter((mov) => mov.idMovie !== selectedMovie.idMovie)
-    );
-    setShowDeletePopup(false);
-    setSelectedMovie(null);
+  const confirmDelete = async () => {
+    if (!selectedMovie || !selectedMovie.MovieId) {
+      alert("Cannot delete: No movie selected or invalid movie ID.");
+      return;
+    }
+
+    try {
+      await deleteMovie(selectedMovie.MovieId);
+      setMovies((prev) =>
+        prev.filter((mov) => mov.MovieId !== selectedMovie.MovieId)
+      );
+      setShowDeletePopup(false);
+      setSelectedMovie(null);
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert(`Failed to delete movie: ${error.message || "Server error"}`);
+    }
   };
 
   const handleRowClick = (movie, event) => {
