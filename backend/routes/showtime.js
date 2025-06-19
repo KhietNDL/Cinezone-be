@@ -339,4 +339,46 @@ router.put('/update/:id', auth, isAdmin, showtimeController.updateShowtime);
  */
 router.delete('/delete/:id', auth, isAdmin, showtimeController.deleteShowtime);
 
-module.exports = router; 
+/**
+ * @swagger
+ * /api/showtimes/{showtimeId}/seats:
+ *   get:
+ *     summary: Get seat map and status for a showtime
+ *     tags: [Showtime Management]
+ *     parameters:
+ *       - in: path
+ *         name: showtimeId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: The showtime ID
+ *     responses:
+ *       200:
+ *         description: List of seats with status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   seatId:
+ *                     type: string
+ *                   seatNumber:
+ *                     type: string
+ *                   type:
+ *                     type: string
+ *                   price:
+ *                     type: number
+ *                   status:
+ *                     type: string
+ *                     enum: [available, taken, holding]
+ *       404:
+ *         description: Showtime not found
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/:showtimeId/seats', showtimeController.getSeatsByShowtime);
+
+module.exports = router;

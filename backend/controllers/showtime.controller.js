@@ -212,6 +212,19 @@ exports.searchShowtimes = async (req, res) => {
     }
 };
 
+exports.getSeatsByShowtime = async (req, res) => {
+  const { showtimeId } = req.params;
+  try {
+    const result = await Showtime.getSeatsWithStatusByShowtime(showtimeId);
+    if (!result) {
+      return res.status(404).json({ error: 'Showtime not found' });
+    }
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
 // Helper để chuẩn hóa ngày về dạng YYYY-MM-DD
 function normalizeDate(dateString) {
     if (!dateString) return null;

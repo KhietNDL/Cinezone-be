@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/seatshowtime.controller');
-const { auth, isAdmin, isEmployee } = require('../middlewares/auth.middleware');
+const { auth, isAdminOrEmployee } = require('../middlewares/auth.middleware');
 
 // Lấy tất cả
 /**
@@ -18,7 +18,7 @@ const { auth, isAdmin, isEmployee } = require('../middlewares/auth.middleware');
  *       500:
  *         description: Internal server error
  */
-router.get('/', auth, isAdmin, isEmployee, controller.getAllSeatShowtimes);
+router.get('/', auth, isAdminOrEmployee, controller.getAllSeatShowtimes);
 // Lấy theo id
 /**
  * @swagger
@@ -43,7 +43,7 @@ router.get('/', auth, isAdmin, isEmployee, controller.getAllSeatShowtimes);
  *       500:
  *         description: Internal server error
  */
-router.get('/:seatShowtimeId', auth, isAdmin, isEmployee, controller.getSeatShowtimeById);
+router.get('/:seatShowtimeId', auth, isAdminOrEmployee, controller.getSeatShowtimeById);
 // Tạo mới
 /**
  * @swagger
@@ -72,7 +72,7 @@ router.get('/:seatShowtimeId', auth, isAdmin, isEmployee, controller.getSeatShow
  *       500:
  *         description: Internal server error
  */
-router.post('/', auth, isAdmin, isEmployee, controller.createSeatShowtime);
+router.post('/', auth, isAdminOrEmployee, controller.createSeatShowtime);
 // Cập nhật
 /**
  * @swagger
@@ -110,7 +110,7 @@ router.post('/', auth, isAdmin, isEmployee, controller.createSeatShowtime);
  *       500:
  *         description: Internal server error
  */
-router.put('/:seatShowtimeId', auth, isAdmin, isEmployee, controller.updateSeatShowtime);
+router.put('/:seatShowtimeId', auth, isAdminOrEmployee, controller.updateSeatShowtime);
 // Xóa mềm
 /**
  * @swagger
@@ -135,6 +135,6 @@ router.put('/:seatShowtimeId', auth, isAdmin, isEmployee, controller.updateSeatS
  *       500:
  *         description: Internal server error
  */
-router.delete('/:seatShowtimeId', auth, isAdmin, isEmployee, controller.deleteSeatShowtime);
+router.delete('/:seatShowtimeId', auth, isAdminOrEmployee, controller.deleteSeatShowtime);
 
 module.exports = router;
