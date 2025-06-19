@@ -229,7 +229,7 @@ export default function ConfirmTicketsPage() {
                               <IoTime /> Show Time
                             </span>
                             <span className="text-gray-600">
-                              {ticket.showtime}
+                              {ticket.showtime} 
                             </span>
                           </div>
                         </div>
