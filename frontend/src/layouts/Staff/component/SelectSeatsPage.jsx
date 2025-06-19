@@ -48,7 +48,7 @@ const SelectSeatsPage = () => {
     };
 
     return (
-        <div className="p-4 mx-auto w-full">
+        <div className="p-4 mx-auto w-full bg-white">
             <h1 className="text-3xl font-bold mb-4 text-[#9810FA]">Select Seats</h1>
             {/* Phim */}
             <div className="flex items-start gap-4 border-b border-gray-300 pb-4">
@@ -80,7 +80,7 @@ const SelectSeatsPage = () => {
 
 
             {/* Sử dụng LayoutSelectSeat */}
-            <div className="flex gap-10 justify-center">
+            <div className="flex gap-10 justify-center bg-white mt-4">
                 <div>
                     <LayoutSelectSeat
                         initialSelectedSeats={selectedSeats}

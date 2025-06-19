@@ -184,7 +184,7 @@ export default function MovieDetail() {
   };
 
   return (
-    <div className='w-full p-4 flex flex-col'>
+    <div className='w-full flex flex-col p-[20px]'>
       <div className='text-3xl font-bold mb-4 text-[#9810FA]'>Movie Detail</div>
 
       <div className='flex gap-5 w-full '>

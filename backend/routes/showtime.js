@@ -46,6 +46,53 @@ const { auth, isAdmin } = require('../middlewares/auth.middleware');
 
 /**
  * @swagger
+ * /api/showtimes/filter:
+ *   get:
+ *     summary: Get showtimes by movieId and day
+ *     tags: [Showtime Management]
+ *     parameters:
+ *       - in: query
+ *         name: movieId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: The movie's UUID
+ *       - in: query
+ *         name: day
+ *         schema:
+ *           type: string
+ *           format: date
+ *         required: true
+ *         description: The day of the showtime (YYYY-MM-DD)
+ *     responses:
+ *       200:
+ *         description: List of showtimes for the movie on the given day
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 movieId:
+ *                   type: string
+ *                 day:
+ *                   type: string
+ *                 showtimes:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       showtimeId:
+ *                         type: string
+ *                       time:
+ *                         type: string
+ *                       roomName:
+ *                         type: string
+ */
+router.get('/filter', showtimeController.getShowtimesByMovieAndDay);
+
+/**
+ * @swagger
  * /api/showtimes:
  *   get:
  *     summary: Get all showtimes
@@ -292,4 +339,46 @@ router.put('/update/:id', auth, isAdmin, showtimeController.updateShowtime);
  */
 router.delete('/delete/:id', auth, isAdmin, showtimeController.deleteShowtime);
 
-module.exports = router; 
+/**
+ * @swagger
+ * /api/showtimes/{showtimeId}/seats:
+ *   get:
+ *     summary: Get seat map and status for a showtime
+ *     tags: [Showtime Management]
+ *     parameters:
+ *       - in: path
+ *         name: showtimeId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: The showtime ID
+ *     responses:
+ *       200:
+ *         description: List of seats with status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   seatId:
+ *                     type: string
+ *                   seatNumber:
+ *                     type: string
+ *                   type:
+ *                     type: string
+ *                   price:
+ *                     type: number
+ *                   status:
+ *                     type: string
+ *                     enum: [available, taken, holding]
+ *       404:
+ *         description: Showtime not found
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/:showtimeId/seats', showtimeController.getSeatsByShowtime);
+
+module.exports = router;
