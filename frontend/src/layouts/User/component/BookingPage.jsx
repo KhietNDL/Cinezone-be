@@ -15,14 +15,12 @@ import { slugify } from "./Slug";
 import { getMovies, getShowtimeByMovieId } from "../../../services/API";
 import { LayoutSelectSeat } from "../../../component/LayoutSelectSeat";
 
-
-
 const BookingPage = () => {
   // State để quản lý số lượng vé, ghế đã chọn, v.v.
 
   const [selectedSeats, setSelectedSeats] = useState([]);
-  
-const [showtimes, setShowtimes] = useState([]);
+
+  const [showtimes, setShowtimes] = useState([]);
 
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const popupVideoRef = useRef(null);
@@ -36,36 +34,34 @@ const [showtimes, setShowtimes] = useState([]);
   const soldSeats = ["A1", "B3", "C5", "D2", "E4"]; // Ghế đã bán (ví dụ)
 
   // Hàm xử lý chọn ghế
-const toggleSeat = (seat) => {
-  if (!user) {
-    Swal.fire({
-      icon: "info",
-      title: "Sign In !",
-      text: "Please sign in for service",
-      confirmButtonText: "Sign In",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        navigate("/login");
-      }
-    });
-    return;
-  }
+  const toggleSeat = (seat) => {
+    if (!user) {
+      Swal.fire({
+        icon: "info",
+        title: "Sign In !",
+        text: "Please sign in for service",
+        confirmButtonText: "Sign In",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate("/login");
+        }
+      });
+      return;
+    }
 
-  if (soldSeats.includes(seat)) return; // Không cho chọn ghế đã bán
+    if (soldSeats.includes(seat)) return; // Không cho chọn ghế đã bán
 
-  if (selectedSeats.includes(seat)) {
-    setSelectedSeats(selectedSeats.filter((s) => s !== seat));
-  } else {
-    setSelectedSeats([...selectedSeats, seat]);
-  }
-};
-
+    if (selectedSeats.includes(seat)) {
+      setSelectedSeats(selectedSeats.filter((s) => s !== seat));
+    } else {
+      setSelectedSeats([...selectedSeats, seat]);
+    }
+  };
 
   const navigate = useNavigate();
   // Tính tổng giá (ví dụ: 100k/vé)
-const ticketPrice = 100000;
-const totalPrice = selectedSeats.length * ticketPrice;
-
+  const ticketPrice = 100000;
+  const totalPrice = selectedSeats.length * ticketPrice;
 
   const { slug } = useParams();
   const [movie, setMovie] = useState(null);
@@ -99,25 +95,26 @@ const totalPrice = selectedSeats.length * ticketPrice;
   }, [slug]);
 
   useEffect(() => {
-  const fetchShowtimes = async () => {
-    if (!movie || !movie.MovieId) return;
+    const fetchShowtimes = async () => {
+      if (!movie || !movie.MovieId) return;
 
-    try {
-      const res = await getShowtimeByMovieId(movie.MovieId);
-      setShowtimes(res.movieinfo || []);
-    } catch (error) {
-      console.error("Lỗi khi lấy showtimes:", error);
-    }
-  };
+      try {
+        const res = await getShowtimeByMovieId(movie.MovieId);
+        setShowtimes(res.movieinfo || []);
+      } catch (error) {
+        console.error("Lỗi khi lấy showtimes:", error);
+      }
+    };
 
-  fetchShowtimes();
-}, [movie]);
+    fetchShowtimes();
+  }, [movie]);
 
-
-
-  if (loading) return <div className="text-white text-center mt-20">Đang tải...</div>;
-  if (!movie) return <div className="text-white text-center mt-20">Không tìm thấy phim.</div>;
-
+  if (loading)
+    return <div className="text-white text-center mt-20">Đang tải...</div>;
+  if (!movie)
+    return (
+      <div className="text-white text-center mt-20">Không tìm thấy phim.</div>
+    );
 
   const handleOpenPopup = () => {
     setIsPopupOpen(true);
@@ -131,8 +128,6 @@ const totalPrice = selectedSeats.length * ticketPrice;
       }
     }, 100);
   };
-
-
 
   const handleClosePopup = () => {
     if (popupVideoRef.current) {
@@ -164,10 +159,14 @@ const totalPrice = selectedSeats.length * ticketPrice;
             </h2>
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-4 text-xs sm:text-sm text-gray-400 mb-2">
               <span className="flex items-center gap-1">
-                <FaRegClock /> {movie.RunningTime ? `${movie.RunningTime} min` : "N/A"}
+                <FaRegClock />{" "}
+                {movie.RunningTime ? `${movie.RunningTime} min` : "N/A"}
               </span>
               <span className="flex items-center gap-1">
-                <FaCalendarAlt /> {movie.FromDate ? new Date(movie.FromDate).toLocaleDateString("vi-VN") : "N/A"}
+                <FaCalendarAlt />{" "}
+                {movie.FromDate
+                  ? new Date(movie.FromDate).toLocaleDateString("vi-VN")
+                  : "N/A"}
               </span>
               <span>{movie.Genres || "N/A"}</span>
             </div>
@@ -180,20 +179,19 @@ const totalPrice = selectedSeats.length * ticketPrice;
             {/* Rating */}
             <div className="flex items-center justify-center sm:justify-start gap-3 sm:gap-4 text-xs sm:text-sm mb-4">
               <span className="flex items-center text-yellow-400 font-bold gap-1">
-                <FaStar /> {movie.Rating || "N/A"} <span className="text-white">/10</span>
+                <FaStar /> {movie.Rating || "N/A"}{" "}
+                <span className="text-white">/10</span>
               </span>
-
             </div>
           </div>
 
           {/* Nút */}
           <div className="flex justify-center sm:justify-start">
-            <button className="text-white bg-[#6956F5] px-4 py-2 sm:px-5 sm:py-2 rounded-full text-xs sm:text-sm hover:bg-[#6956f5bf] transition font-semibold flex items-center"
+            <button
+              className="text-white bg-[#6956F5] px-4 py-2 sm:px-5 sm:py-2 rounded-full text-xs sm:text-sm hover:bg-[#6956f5bf] transition font-semibold flex items-center"
               onClick={handleOpenPopup}
             >
-
               <MdOutlineOndemandVideo className="mr-2" />
-
               View trailer
             </button>
           </div>
@@ -223,7 +221,6 @@ const totalPrice = selectedSeats.length * ticketPrice;
                 <option>14:00</option>
               </select>
             </div>
-
           </div>
         </div>
 
@@ -231,24 +228,22 @@ const totalPrice = selectedSeats.length * ticketPrice;
         <div className="mb-6 px-2 sm:px-0">
           <LayoutSelectSeat
             initialSelectedSeats={selectedSeats}
-             onSeatSelect={setSelectedSeats}
+            onSeatSelect={setSelectedSeats}
           />
-
         </div>
 
         {/* Trạng thái ghế */}
-
 
         {/* Phần tổng giá và nút thanh toán */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-4 sm:p-[24px]">
           <div className="text-center sm:text-left">
             <p className="text-xs sm:text-sm mb-1">
-              Seat: {selectedSeats.length > 0 ? selectedSeats.join(", ") : "Not yet"}
+              Seat:{" "}
+              {selectedSeats.length > 0 ? selectedSeats.join(", ") : "Not yet"}
             </p>
             <p className="text-sm sm:text-base font-semibold">
               Total price: {totalPrice.toLocaleString("vi-VN")}đ
             </p>
-
           </div>
           <button
             className="bg-[#6956F5] hover:bg-[#6956f5bf] text-white px-4 py-2 sm:px-5 sm:py-2 rounded-full text-xs sm:text-sm flex items-center font-semibold disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto justify-center"
@@ -269,7 +264,6 @@ const totalPrice = selectedSeats.length * ticketPrice;
             <FaTicketAlt className="mr-2" />
             Continue Payment
           </button>
-
         </div>
       </div>
 
@@ -300,7 +294,6 @@ const totalPrice = selectedSeats.length * ticketPrice;
         </div>
       )}
     </div>
-
   );
 };
 

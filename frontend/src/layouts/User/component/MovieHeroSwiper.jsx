@@ -282,10 +282,10 @@ const MovieHeroSwiper = ({ movieData }) => {
   }, []);
 
   const navigate = useNavigate();
-const handleClickMovie = (movieTitle) => {
-  const slug = slugify(movieTitle);
-  navigate(`/${slug}`);
-};
+  const handleClickMovie = (movieTitle) => {
+    const slug = slugify(movieTitle);
+    navigate(`/${slug}`);
+  };
 
   return (
     <div className="relative h-[500px] md:h-[600px] lg:h-[700px] w-full ">
