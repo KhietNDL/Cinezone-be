@@ -10,7 +10,7 @@ const SidebarStaff = () => {
     {
       label: "Movie",
       icon: <i className="fa-solid fa-film"></i>,
-      to: "/staff/movie-info",
+      to: "/staff/movie",
     },
     {
       label: "Ticket Selling",

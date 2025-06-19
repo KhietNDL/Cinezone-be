@@ -17,10 +17,12 @@ const BookingPage = () => {
   // State để quản lý số lượng vé, ghế đã chọn, v.v.
   const [numberOfTickets, setNumberOfTickets] = useState(1);
   const [selectedSeats, setSelectedSeats] = useState([]);
-  const { user } = useAuth();
+  
   const [isPopupOpen, setIsPopupOpen] = useState(false);
 const popupVideoRef = useRef(null);
 
+  // eslint-disable-next-line no-unused-vars
+  const { user, isLoading } = useAuth();
 
   // Danh sách ghế (8 hàng, mỗi hàng 8 ghế)
   const rows = ["A", "B", "C", "D", "E", "F", "G", "H"];
@@ -198,7 +200,9 @@ const handleOpenPopup = () => {
               </select>
             </div>
             <div>
-              <label className="block text-xs sm:text-sm mb-1">Number ticket</label>
+              <label className="block text-xs sm:text-sm mb-1">
+                Number ticket
+              </label>
               <select
                 className="w-full bg-gray-800/40 text-white p-2 rounded text-xs sm:text-sm"
                 value={numberOfTickets}
@@ -287,15 +291,20 @@ const handleOpenPopup = () => {
                       >
                         <MdChair
                           aria-label={`Seat ${seat} ${
-                            isSold ? "sold" : isSelected ? "selected" : "available"
+                            isSold
+                              ? "sold"
+                              : isSelected
+                              ? "selected"
+                              : "available"
                           }`}
                           className={`w-8 h-8 sm:w-13 sm:h-13 transition-colors
-                            ${isSold
-                              ? "text-gray-500"
-                              : isSelected
-                              ? "text-blue-500"
-                              : "text-gray-300 hover:text-gray-100"
-                            }`}
+                ${
+                  isSold
+                    ? "text-gray-500"
+                    : isSelected
+                    ? "text-blue-500"
+                    : "text-gray-300 hover:text-gray-100"
+                }`}
                         />
                       </button>
                     );

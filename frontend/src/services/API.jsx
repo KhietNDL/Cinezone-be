@@ -14,7 +14,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
-    console.log("Token gửi lên:", token);
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -23,18 +23,36 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Xử lý lỗi chung
 const handleError = (error) => {
+  console.error("API Error:", {
+    status: error.response?.status,
+    data: error.response?.data,
+    message: error.message,
+    request: error.request,
+  });
+
+  let errorMessage = error.message || "Unknown error";
   if (error.response) {
-    // Lỗi từ server (4xx, 5xx)
-    throw new Error(error.response.data.message || "Something went wrong");
+    // Try to parse response data
+    if (typeof error.response.data === "string") {
+      // Handle HTML or plain text responses
+      if (error.response.data.includes("MulterError: Unexpected field")) {
+        errorMessage =
+          "Invalid file field names. Please check poster and trailer fields.";
+      } else {
+        errorMessage = "Server returned an unexpected response";
+      }
+    } else if (error.response.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.response.data?.errors) {
+      // Preserve backend validation errors
+      throw error.response.data; // Pass through for handleCreateMovie to process
+    }
   } else if (error.request) {
-    // Không nhận được phản hồi
-    throw new Error("No response from server");
-  } else {
-    // Lỗi khác
-    throw new Error(error.message);
+    errorMessage = "No response from server";
   }
+
+  throw new Error(errorMessage);
 };
 
 // API cho Auth
@@ -100,6 +118,52 @@ export const getMovies = async () => {
     handleError(error);
   }
 };
+
+export const getCurrentMovies = async (params) => {
+  try {
+    const response = await api.get("/movie/current", { params });
+
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const getUpcomingMovies = async (params) => {
+  try {
+    const response = await api.get("/movie/upcoming", { params });
+
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const createMovie = async (movieData) => {
+  try {
+    const response = await api.post("/movie/create", movieData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    console.log("createMovie response:", response.data);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const editMovie = async (movieData) => {
+  const formData = new FormData();
+  Object.keys(movieData).forEach((key) => {
+    formData.append(key, movieData[key] ?? "");
+  });
+  try {
+    const response = await api.put(`/movie/${movieData.idMovie}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
 export default api;
-
-
