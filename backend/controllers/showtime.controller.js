@@ -25,7 +25,7 @@ const formatShowtime = (showtime) => ({
     MovieId: showtime.MovieId,
     CinemaRoomId: showtime.CinemaRoomId,
     Duration: showtime.Duration,
-    Day: showtime.Day,
+    Day: normalizeDate(showtime.Day),
     Time: showtime.Time
 });
 
@@ -58,9 +58,10 @@ exports.getShowtimeById = async (req, res) => {
         if (!showtime) {
             return res.status(404).json({ error: 'Showtime not found', code: ERROR_CODES.SHOWTIME_NOT_FOUND });
         }
+        console.log('Showtime found:', showtime);
         res.json({
             message: 'Showtime retrieved successfully',
-            data: showtimes.map(formatShowtime)
+            data: formatShowtime(showtime)
         });
     } catch (error) {
         console.error('Error in getShowtimeById:', error);
@@ -189,11 +190,14 @@ exports.searchShowtimes = async (req, res) => {
     try {
         const { Day, Time } = req.query;
         console.log('Searching showtimes with:', { Day, Time });
-
-        if (!Day || !isValidDate(Day)) return res.status(400).json({ error: 'Day must be YYYY-MM-DD', code: ERROR_CODES.INVALID_INPUT });
+        
+        // Chuẩn hóa ngày
+        const normalizedDay = normalizeDate(Day);
+        if (!normalizedDay) return res.status(400).json({ error: 'Day must be YYYY-MM-DD', code: ERROR_CODES.INVALID_INPUT });
+        
         if (Time && !isValidTime(Time)) return res.status(400).json({ error: 'Time must be HH:mm:ss', code: ERROR_CODES.INVALID_INPUT });
         
-        const showtimes = await Showtime.searchByDayTime(Day, Time);
+        const showtimes = await Showtime.searchByDayTime(normalizedDay, Time);
         res.json({
             message: 'Showtimes search successful',
             data: showtimes.map(formatShowtime)
@@ -204,6 +208,87 @@ exports.searchShowtimes = async (req, res) => {
             error: 'Internal server error', 
             code: ERROR_CODES.SERVER_ERROR,
             details: error.message 
+        });
+    }
+};
+
+// Helper để chuẩn hóa ngày về dạng YYYY-MM-DD
+function normalizeDate(dateString) {
+    if (!dateString) return null;
+    if (typeof dateString !== 'string') {
+        // Nếu là Date object, chuyển sang ISO string
+        if (dateString instanceof Date) {
+            return dateString.toISOString().slice(0, 10);
+        }
+        // Nếu là số hoặc kiểu khác, chuyển sang string
+        dateString = String(dateString);
+    }
+    // Nếu là ISO dạng 2025-06-18T17:00:00.000Z thì lấy phần trước 'T'
+    if (dateString.includes('T')) {
+        return dateString.split('T')[0];
+    }
+    // Thay thế các ký tự không phải số hoặc dấu gạch ngang thành '-'
+    let normalized = dateString.replace(/[./\\]/g, '-');
+    // Nếu đúng định dạng YYYY-MM-DD thì trả về
+    if (/^\d{4}-\d{2}-\d{2}$/.test(normalized)) return normalized;
+    // Nếu là dạng YYYY-M-D thì thêm số 0
+    const parts = normalized.split('-');
+    if (parts.length === 3) {
+        const [y, m, d] = parts;
+        if (y.length === 4 && m.length <= 2 && d.length <= 2) {
+            return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+        }
+    }
+    return null;
+}
+
+// API: Lấy khung thời gian chiếu phim theo movieId và day
+exports.getShowtimesByMovieAndDay = async (req, res) => {
+    try {
+        const { movieId } = req.query;
+        let { day } = req.query;
+        // Chuẩn hóa ngày
+        day = normalizeDate(day);
+        if (!movieId || !uuidValidate(movieId)) {
+            return res.status(400).json({ error: 'Invalid or missing movieId (UUID)', code: ERROR_CODES.INVALID_UUID });
+        }
+        if (!day || !isValidDate(day)) {
+            return res.status(400).json({ error: 'Invalid or missing day (YYYY-MM-DD)', code: ERROR_CODES.INVALID_INPUT });
+        }
+        // Kiểm tra movieId tồn tại
+        const movie = await Movie.getMovieById(movieId);
+        if (!movie) {
+            return res.status(404).json({ error: 'Movie not found', code: ERROR_CODES.SHOWTIME_NOT_FOUND });
+        }
+        // Lấy các suất chiếu
+        const showtimes = await Showtime.searchByMovieAndDay(movieId, day);
+        if (!showtimes.length) {
+            return res.json({
+                movieId,
+                day,
+                showtimes: []
+            });
+        }
+        // Lấy tên phòng chiếu cho từng suất
+        const result = await Promise.all(showtimes.map(async (st) => {
+            const room = await CinemaRoom.getCinemaRoomById(st.CinemaRoomId);
+            return {
+                showtimeId: st.ShowtimeId,
+                time: st.Time,
+                roomName: room ? room.Name : null
+            };
+        }));
+        res.json({
+            movieId,
+            day,
+            showtimes: result
+        });
+    } catch (error) {
+        console.error('Error in getShowtimesByMovieAndDay:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            code: ERROR_CODES.SERVER_ERROR,
+            details: error.message
         });
     }
 }; 
