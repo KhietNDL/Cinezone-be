@@ -134,7 +134,7 @@ export const LayoutSelectSeat = ({
           <img
             src={seatIcon}
             alt="Double Seat"
-            className="w-[42px] h-6 rotate-180"
+            className="w-[42px] h-6 "
           />
         </button>
       );
@@ -150,9 +150,9 @@ export const LayoutSelectSeat = ({
         title={`Chair ${seatId}`}
       >
         {isSelected ? (
-          <PiArmchairFill className="w-6 h-6 rotate-180" />
+          <PiArmchairFill className="w-6 h-6 " />
         ) : (
-          <PiArmchairLight className="w-6 h-6 rotate-180" />
+          <PiArmchairLight className="w-6 h-6 " />
         )}
       </button>
     );

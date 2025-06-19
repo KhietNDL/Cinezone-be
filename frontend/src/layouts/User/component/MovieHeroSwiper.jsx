@@ -8,6 +8,7 @@ import {
   X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { slugify } from "./Slug";
 
 const MovieHeroSwiper = ({ movieData }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -281,9 +282,10 @@ const MovieHeroSwiper = ({ movieData }) => {
   }, []);
 
   const navigate = useNavigate();
-  const handleClickMovie = (idMovie) => {
-    navigate(`/${idMovie}`);
-  };
+const handleClickMovie = (movieTitle) => {
+  const slug = slugify(movieTitle);
+  navigate(`/${slug}`);
+};
 
   return (
     <div className="relative h-[500px] md:h-[600px] lg:h-[700px] w-full ">
@@ -365,7 +367,7 @@ const MovieHeroSwiper = ({ movieData }) => {
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
               <div
                 role="button"
-                onClick={() => handleClickMovie(currentMovie.MovieId)}
+                onClick={() => handleClickMovie(currentMovie.NameOfEnglish)}
                 className="bg-[#6a57f5] hover:bg-[#5a47e5] text-white px-8 py-3 rounded-full font-semibold transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg shadow-[#6a57f5]/30"
               >
                 Book Now

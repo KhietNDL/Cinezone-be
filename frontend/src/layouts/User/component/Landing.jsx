@@ -13,6 +13,8 @@ import MovieHeroSwiper from "./MovieHeroSwiper";
 import promotionMovie1 from "../../../assets/PromotionMovie1.jpg";
 import promotionMovie2 from "../../../assets/PromotionMovie2.jpg";
 import promotionMovie3 from "../../../assets/PromotionMovie3.jpg";
+
+import { slugify } from "./Slug";
 import {
   getCurrentMovies,
   getMovies,
@@ -112,9 +114,20 @@ const LandingPage = () => {
     getMovie();
   }, [itemsPerPage, currentPage]);
   const navigate = useNavigate();
-  const handleClickMovie = (idMovie) => {
-    navigate(`/${idMovie}`);
-  };
+//  const slugify = (str) => {
+//   return str
+//     .toLowerCase() // chữ thường
+//     .normalize("NFD") // chuẩn hóa chuỗi để tách dấu
+//     .replace(/[\u0300-\u036f]/g, "") // xóa dấu
+//     .replace(/[^a-z0-9\s-]/g, "") // loại bỏ ký tự đặc biệt
+//     .trim() // xóa khoảng trắng đầu/cuối
+//     .replace(/\s+/g, "-"); // thay khoảng trắng bằng dấu -
+// };
+
+const handleClickMovie = (movieTitle) => {
+  const slug = slugify(movieTitle);
+  navigate(`/${slug}`);
+};
 
   // Responsive breakpoints for Swiper
   const swiperBreakpoints = {
@@ -396,7 +409,7 @@ const LandingPage = () => {
                   </div>
                   <div
                     role="button"
-                    onClick={() => handleClickMovie(item.MovieId)}
+                    onClick={() => handleClickMovie(item.NameOfEnglish)}
                     className="bg-[#6a57f5] rounded-4xl px-6 py-2 text-white hover:bg-[#6957f5ea] text-[12px]  shadow-[#6a57f5]  shadow-sm sm:w-auto "
                   >
                     Book now
