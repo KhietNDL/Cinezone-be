@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const bookingController = require('../controllers/booking.controller');
+const { auth } = require('../middlewares/auth.middleware');
 
 /**
  * @swagger
@@ -181,5 +182,68 @@ router.get('/', bookingController.getAllBookings);
  *         description: Internal server error
  */
 router.get('/member/:memberId/latest', bookingController.getLatestBookingByMemberId);
+
+/**
+ * @swagger
+ * /api/bookings/hold:
+ *   post:
+ *     summary: Hold a booking
+ *     tags: [Bookings]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 description: User ID
+ *               showtimeId:
+ *                 type: string
+ *                 description: Showtime ID
+ *               seatIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of seat IDs to hold
+ *               promotionId:
+ *                 type: string
+ *                 description: Promotion ID (optional)
+ *     responses:
+ *       201:
+ *         description: Booking held
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Internal server error
+ */
+router.post('/hold', bookingController.holdBooking);
+
+/**
+ * @swagger
+ * /api/bookings/confirm:
+ *   post:
+ *     summary: Confirm a booking
+ *     tags: [Bookings]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               bookingId:
+ *                 type: string
+ *                 description: The ID of the booking to confirm
+ *     responses:
+ *       200:
+ *         description: Booking confirmed
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Internal server error
+ */
+router.post('/confirm', bookingController.confirmBooking);
 
 module.exports = router;
