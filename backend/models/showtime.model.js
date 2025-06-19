@@ -250,6 +250,43 @@ class Showtime {
         }
     }
 
+    static async getSeatsWithStatusByShowtime(showtimeId) {
+        // 1. Lấy CinemaRoomId từ Showtime
+        const [showtimeRows] = await db.promise().query(
+            'SELECT CinemaRoomId FROM Showtimes WHERE ShowtimeId = ? AND (IsDeleted = 0 OR IsDeleted IS NULL)',
+            [showtimeId]
+        );
+        if (!showtimeRows.length) {
+            return null;
+        }
+        const cinemaRoomId = showtimeRows[0].CinemaRoomId;
+
+        // 2. Lấy tất cả ghế của phòng chiếu này
+        const [seatRows] = await db.promise().query(
+            'SELECT SeatId, SeatNumber, Type, Price FROM Seats WHERE CinemaRoomId = ? AND IsDeleted = 0',
+            [cinemaRoomId]
+        );
+
+        // 3. Lấy trạng thái ghế từ SeatShowtime cho suất chiếu này
+        const [seatShowtimeRows] = await db.promise().query(
+            'SELECT SeatId, Status FROM SeatShowtime WHERE ShowtimeId = ?',
+            [showtimeId]
+        );
+        // Map trạng thái ghế
+        const seatStatusMap = {};
+        seatShowtimeRows.forEach(bs => {
+            seatStatusMap[bs.SeatId] = bs.Status; // Status: 'taken', 'holding'
+        });
+
+        // 4. Kết hợp dữ liệu và trả về
+        return seatRows.map(seat => ({
+            seatId: seat.SeatId,
+            seatNumber: seat.SeatNumber,
+            type: seat.Type,
+            price: Number(seat.Price),
+            status: seatStatusMap[seat.SeatId] || 'available'
+        }));
+    }
     static async searchByMovieAndDay(MovieId, Day) {
         const query = `
             SELECT * FROM Showtimes
@@ -265,4 +302,4 @@ class Showtime {
     }
 }
 
-module.exports = Showtime; 
+module.exports = Showtime;
