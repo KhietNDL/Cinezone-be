@@ -5,6 +5,7 @@ require("dotenv").config();
 const session = require("express-session");
 const passport = require("./middlewares/passport");
 const cors = require("cors");
+const cleanupExpiredBookings = require('./jobs/bookingCleanup');
 
 const app = express();
 
@@ -29,6 +30,7 @@ const seatRoutes = require('./routes/seat');
 const bookingRoutes = require('./routes/booking');
 const ticketRoutes = require('./routes/ticket');
 const bookingSeatRoutes = require('./routes/bookingseat');
+const showtimeRoutes = require('./routes/showtime');
 const seatShowtimeRoutes = require('./routes/seatshowtime');
 
 // Use routes
@@ -42,19 +44,12 @@ app.use('/api/seats', seatRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/booking-seats', bookingSeatRoutes);
-app.use('/api/seatshowtime', seatShowtimeRoutes);
+app.use('/api/showtimes', showtimeRoutes);
+app.use('/api/seatshowtimes', seatShowtimeRoutes);
 
 //port
 const PORT = process.env.PORT || 4458;
-app.use(
-  "/",
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerSpecs, {
-    customJs: '/swagger-custom.js', // Path to your custom JavaScript file
-  })
-);
 
-// Swagger UI
 app.use(
   "/",
   swaggerUi.serve,
@@ -67,3 +62,5 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Swagger documentation available at http://localhost:${PORT}/`);
 });
+
+setInterval(cleanupExpiredBookings, 60 * 1000); // Chạy mỗi phút

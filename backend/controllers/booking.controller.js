@@ -72,6 +72,26 @@ const getLatestBookingByMemberId = async (req, res) => {
   }
 };
 
+const holdBooking = async (req, res) => {
+  try {
+    //const userId = req.user.userId; // Lấy từ middleware xác thực
+    const { userId, showtimeId, seatIds, productOrders, promotionId } = req.body;
+    const result = await Booking.holdBooking({ userId, showtimeId, seatIds, productOrders, promotionId });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+const confirmBooking = async (req, res) => {
+  try {
+    const { bookingId } = req.body;
+    await Booking.confirmBooking(bookingId);
+    res.json({ message: 'Booking confirmed successfully' });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
 
 module.exports = {
   getAllBookings,
@@ -80,5 +100,7 @@ module.exports = {
   createBooking,
   updateBooking,
   deleteBooking,
-  getLatestBookingByMemberId
+  getLatestBookingByMemberId,
+  holdBooking,
+  confirmBooking
 };

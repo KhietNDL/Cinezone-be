@@ -6,15 +6,17 @@ const {
   register,
   login,
   forgotPassword,
+  verifyOtp,
   resetPassword,
   logout,
   updateProfile,
   getUserById,
 } = require("../controllers/user.controller");
 const {
-  loginValidation,
   registerValidation,
+  loginValidation,
   forgotPasswordValidation,
+  verifyOtpValidation,
   resetPasswordValidation,
   updateProfileValidation,
 } = require("../middlewares/user.validator");
@@ -198,9 +200,9 @@ router.post("/forgot-password", forgotPasswordValidation, forgotPassword);
 
 /**
  * @swagger
- * /api/auth/reset-password:
+ * /api/auth/verify-otp:
  *   post:
- *     summary: Reset password with code
+ *     summary: Verify OTP code
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -209,23 +211,51 @@ router.post("/forgot-password", forgotPasswordValidation, forgotPassword);
  *           schema:
  *             type: object
  *             required:
- *               - email
  *               - resetCode
- *               - newPassword
  *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 description: User's email address
  *               resetCode:
  *                 type: string
  *                 minLength: 6
  *                 maxLength: 6
  *                 description: 6-digit reset code received via email
+ *     responses:
+ *       200:
+ *         description: OTP verified successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: OTP verified successfully
+ *       400:
+ *         description: Validation error or invalid/expired reset code
+ *       500:
+ *         description: Server error
+ */
+router.post("/verify-otp", verifyOtpValidation, verifyOtp);
+
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Reset password with new password
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - newPassword
+ *             properties:
  *               newPassword:
  *                 type: string
- *                 minLength: 6
- *                 description: New password
+ *                 minLength: 8
+ *                 maxLength: 128
+ *                 description: New password (must contain uppercase, lowercase, number, special character)
  *     responses:
  *       200:
  *         description: Password reset successful
@@ -236,8 +266,11 @@ router.post("/forgot-password", forgotPasswordValidation, forgotPassword);
  *               properties:
  *                 message:
  *                   type: string
+ *                   example: Password reset successful
  *       400:
- *         description: Validation error or invalid/expired reset code
+ *         description: Validation error or please verify OTP first
+ *       404:
+ *         description: User not found
  *       500:
  *         description: Server error
  */
@@ -462,8 +495,15 @@ router.get(
   passport.authenticate("google", {
     session: false,
     failureRedirect: "/login",
+    failureMessage: true
   }),
   (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({
+        error: req.authInfo?.message || 'Đăng nhập Google thất bại'
+      });
+    }
+
     const token = jwt.sign(
       { id: req.user.UserId, email: req.user.Email },
       process.env.JWT_SECRET,

@@ -77,7 +77,7 @@ const { auth, isAdmin } = require('../middlewares/auth.middleware');
  *                   items:
  *                     $ref: '#/components/schemas/Promotion'
  */
-router.get('/', auth, isAdmin, getAllPromotions);
+router.get('/', getAllPromotions);
 
 /**
  * @swagger
@@ -96,7 +96,7 @@ router.get('/', auth, isAdmin, getAllPromotions);
  *       200:
  *         description: List of matching promotions
  */
-router.get('/search', auth, isAdmin, searchPromotionsByTitle);
+router.get('/search', searchPromotionsByTitle);
 
 /**
  * @swagger
@@ -116,7 +116,7 @@ router.get('/search', auth, isAdmin, searchPromotionsByTitle);
  *       200:
  *         description: Promotion details
  */
-router.get('/:id', auth, isAdmin, getPromotionById);
+router.get('/:id', getPromotionById);
 
 /**
  * @swagger

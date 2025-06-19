@@ -3,8 +3,14 @@ import logo from "../../../assets/logoWhite.png";
 import { useNavigate } from "react-router-dom";
 import { BsBell } from "react-icons/bs";
 import { IoIosArrowDown } from "react-icons/io";
+import { useAuth } from "../../../context/AuthContext";
+import { IoMdLogIn } from "react-icons/io";
+import { FaCircleUser } from "react-icons/fa6";
 const HeaderStaff = () => {
   const navigate = useNavigate();
+  const { staff } = useAuth();
+
+
   return (
     <div className="flex  w-full px-[20px] justify-between items-center bg-gradient-to-r from-[#6466F1] via-[#8B5CF6] to-[#4F46E5] text-white ">
       <div role="button" className="flex items-center">
@@ -21,24 +27,49 @@ const HeaderStaff = () => {
       </div>
 
       <div className="flex items-center justify-end space-x-8">
-        <BsBell size={20} />
-        <div className="flex items-center space-x-2">
-          <div className="border-[1px] border-solid border-amber-500 rounded-full w-[40px] h-[40px]">
-            <img
-              src="https://www.w3schools.com/howto/img_avatar.png"
-              alt="avatar"
-              loading="lazy"
-              className="w-full h-full object-cover rounded-full"
-            />
+        {/* <BsBell size={20} /> */}
+        {staff ? (
+          <div className="flex items-center space-x-2">
+            {staff.avatar ? (
+              <img
+                src={staff.avatar}
+                alt="Staff Avatar"
+                className="w-10 h-10 rounded-full object-cover cursor-pointer"
+                onClick={() => navigate("/account")}
+              />
+            ) : (
+              <MdAccountCircle
+                size={42}
+                className="cursor-pointer text-white"
+                onClick={() => navigate("/account")}
+              />
+            )}
+            <span
+              className="font-bold text-[16px] cursor-pointer hover:underline"
+              onClick={() => navigate("/account")}
+            >
+              {staff.FullName || "staff"}
+            </span>
           </div>
-          <div>
-            <p className="font-bold text-[18px] ">Tôi là ai</p>
-            <p className="text-[15px] text-slate-400">Staff</p>
+        ) : (
+          <div
+            role="button"
+            onClick={() => {
+              navigate("/login");
+            }}
+            className="group flex items-center bg-transparent border-2 rounded-4xl border-white hover:bg-white hover:text-[#5B4BE9]
+             font-bold active:scale-[1.1] transition-all duration-100 overflow-hidden"
+          >
+            <div className="text-3xl flex items-center justify-end transform transition-transform duration-300 group-hover:-translate-x-2 group-hover:w-[40px] p-[1px]">
+              <FaCircleUser />
+            </div>
+            <p
+              className="opacity-0 max-w-0 group-hover:opacity-100 group-hover:max-w-[200px] group-hover:w-[60px] transition-all duration-300 whitespace-nowrap"
+            >
+              Sign In
+            </p>
           </div>
-          <div className="ml-3">
-            <IoIosArrowDown size={20} className="text-slate-400" />
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
