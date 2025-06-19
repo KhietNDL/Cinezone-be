@@ -43,7 +43,7 @@ const SidebarStaff = () => {
       )}
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 h-full w-64 bg-white rounded-r-[10px] shadow-md z-50 transform transition-transform duration-300
+        className={`fixed top-0 left-0 h-full w-64 border-r border-gray-200 bg-white rounded-r-[10px] shadow-md z-50 transform transition-transform duration-300
         ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 md:static md:block`}
       >
         {/* Nút đóng sidebar trên mobile */}
