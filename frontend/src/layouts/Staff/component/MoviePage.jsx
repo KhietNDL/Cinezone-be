@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Button, Input, Spin, Tag, message } from "antd";
+import { Button, Input, Spin, Tag } from "antd";
 import api from "../../../services/API";
 
 import ShowtimeButton from "./ShowtimeButton";
@@ -21,8 +21,6 @@ export default function MoviePage() {
     const [movies, setMovies] = useState([]);
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState("");
-
-    //    const filteredMovies = movies.filter(c => c.NameOfEnglish.toLowerCase().includes(search.toLowerCase()));
 
     const getCurrentMovie = async () => {
         try {
