@@ -251,15 +251,19 @@ class Showtime {
     }
 
     static async getSeatsWithStatusByShowtime(showtimeId) {
-        // 1. Lấy CinemaRoomId từ Showtime
+        // 1. Lấy CinemaRoomId và Name từ Showtime JOIN CinemaRooms
         const [showtimeRows] = await db.promise().query(
-            'SELECT CinemaRoomId FROM Showtimes WHERE ShowtimeId = ? AND (IsDeleted = 0 OR IsDeleted IS NULL)',
+            `SELECT st.CinemaRoomId, cr.Name 
+             FROM Showtimes st 
+             JOIN CinemaRooms cr ON st.CinemaRoomId = cr.CinemaRoomId 
+             WHERE st.ShowtimeId = ? AND (st.IsDeleted = 0 OR st.IsDeleted IS NULL)`,
             [showtimeId]
         );
         if (!showtimeRows.length) {
             return null;
         }
         const cinemaRoomId = showtimeRows[0].CinemaRoomId;
+        const roomName = showtimeRows[0].Name;
 
         // 2. Lấy tất cả ghế của phòng chiếu này
         const [seatRows] = await db.promise().query(
@@ -279,13 +283,17 @@ class Showtime {
         });
 
         // 4. Kết hợp dữ liệu và trả về
-        return seatRows.map(seat => ({
-            seatId: seat.SeatId,
-            seatNumber: seat.SeatNumber,
-            type: seat.Type,
-            price: Number(seat.Price),
-            status: seatStatusMap[seat.SeatId] || 'available'
-        }));
+        return {
+            cinemaRoomId,
+            roomName,
+            seats: seatRows.map(seat => ({
+                seatId: seat.SeatId,
+                seatNumber: seat.SeatNumber,
+                type: seat.Type,
+                price: Number(seat.Price),
+                status: seatStatusMap[seat.SeatId] || 'available'
+            }))
+        };
     }
     static async searchByMovieAndDay(MovieId, Day) {
         const query = `
@@ -298,6 +306,65 @@ class Showtime {
         } catch (error) {
             console.error('Error in searchByMovieAndDay:', error);
             throw error;
+        }
+    }
+
+    static async getShowtimesByMovie(movieId) {
+        const sql = `
+          SELECT 
+            st.Day, cr.Name, 
+          FROM Showtimes st
+          JOIN CinemaRooms cr ON st.CinemaRoomId = cr.CinemaRoomId
+          WHERE st.MovieId = ? AND (st.IsDeleted = 0 OR st.IsDeleted IS NULL)
+          ORDER BY st.Day
+        `;
+        try {
+          const [rows] = await db.promise().query(sql, [movieId]);
+          return rows;
+        } catch (error) {
+          throw new Error("Error getting showtimes by movie: " + error.message);
+        }
+    }
+    static async getShowtimesByMovieName(movieName) {
+        const sql = `
+          SELECT 
+        mv.MovieId, 
+        st.Day
+      FROM Movies mv
+      JOIN Showtimes st ON mv.MovieId = st.MovieId
+      JOIN CinemaRooms cr ON st.CinemaRoomId = cr.CinemaRoomId
+      WHERE (mv.NameOfVietnamese = ? OR mv.NameOfEnglish = ?)
+            AND (st.IsDeleted = 0)
+      ORDER BY mv.MovieId, st.Day
+
+        `;
+        try {
+          const [rows] = await db.promise().query(sql, [movieName, movieName]);
+          return rows;
+        } catch (error) {
+          throw new Error("Error getting showtimes by movie name: " + error.message);
+        }
+    }
+    static async searchByMovieNameAndDay(movieName, day) {
+        const sql = `
+      SELECT 
+        st.ShowtimeId,
+        st.Time,
+        mv.Version,
+        cr.Name as roomName
+      FROM Movies mv
+      JOIN Showtimes st ON mv.MovieId = st.MovieId
+      JOIN CinemaRooms cr ON st.CinemaRoomId = cr.CinemaRoomId
+      WHERE (mv.NameOfVietnamese = ? OR mv.NameOfEnglish = ?)
+        AND st.Day = ?
+        AND st.IsDeleted = 0
+      ORDER BY mv.Version, st.Time
+    `;
+        try {
+            const [rows] = await db.promise().query(sql, [movieName, movieName, day]);
+            return rows;
+        } catch (error) {
+            throw new Error("Error searching showtimes by movie name and day: " + error.message);
         }
     }
 }

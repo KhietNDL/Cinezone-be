@@ -44,52 +44,7 @@ const { auth, isAdmin } = require('../middlewares/auth.middleware');
  *           description: The time of the showtime (HH:mm:ss)
  */
 
-/**
- * @swagger
- * /api/showtimes/filter:
- *   get:
- *     summary: Get showtimes by movieId and day
- *     tags: [Showtime Management]
- *     parameters:
- *       - in: query
- *         name: movieId
- *         schema:
- *           type: string
- *           format: uuid
- *         required: true
- *         description: The movie's UUID
- *       - in: query
- *         name: day
- *         schema:
- *           type: string
- *           format: date
- *         required: true
- *         description: The day of the showtime (YYYY-MM-DD)
- *     responses:
- *       200:
- *         description: List of showtimes for the movie on the given day
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 movieId:
- *                   type: string
- *                 day:
- *                   type: string
- *                 showtimes:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       showtimeId:
- *                         type: string
- *                       time:
- *                         type: string
- *                       roomName:
- *                         type: string
- */
-router.get('/filter', showtimeController.getShowtimesByMovieAndDay);
+
 
 /**
  * @swagger
@@ -341,6 +296,140 @@ router.delete('/delete/:id', auth, isAdmin, showtimeController.deleteShowtime);
 
 /**
  * @swagger
+ * /api/showtimes/movie/{movieId}/day:
+ *   get:
+ *     summary: Get day by movieId
+ *     tags: [Showtime Management]
+ *     parameters:
+ *       - in: path
+ *         name: movieId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: The movie's UUID
+ *     responses:
+ *       200:
+ *         description: List of showtimes for the movie
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 movieId:
+ *                   type: string
+ *                 showtimes:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       showtimeId:
+ *                         type: string
+ *                       day:
+ *                         type: string
+ *                       time:
+ *                         type: string
+ *                       roomName:
+ *                         type: string
+ *       400:
+ *         description: Invalid UUID
+ *       404:
+ *         description: Movie not found
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/movie/:movieId/day', showtimeController.getShowtimesByMovieId);
+
+/**
+ * @swagger
+ * /api/showtimes/movie-name/{movieName}/showtimes:
+ *   get:
+ *     summary: Get showtimes by movie name
+ *     tags: [Showtime Management]
+ *     parameters:
+ *       - in: path
+ *         name: movieName
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The name of the movie
+ *     responses:
+ *       200:
+ *         description: List of showtimes for the movie
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 movieName:
+ *                   type: string
+ *                 showtimes:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       day:
+ *                         type: string
+ *       404:
+ *         description: Movie not found
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/movie-name/:movieName/showtimes', showtimeController.getShowtimesByMovieName);
+/**
+ * @swagger
+ * /api/showtimes/time/{movieName}/day:
+ *   get:
+ *     summary: Get showtimes by movie name and day
+ *     tags: [Showtime Management]
+ *     parameters:
+ *       - in: path
+ *         name: movieName
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The movie's name (Vietnamese or English)
+ *       - in: query
+ *         name: day
+ *         schema:
+ *           type: string
+ *           format: date
+ *         required: true
+ *         description: The day of the showtime (YYYY-MM-DD)
+ *     responses:
+ *       200:
+ *         description: List of showtimes for the movie on the given day, grouped by version
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 movieName:
+ *                   type: string
+ *                 day:
+ *                   type: string
+ *                 versions:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       version:
+ *                         type: string
+ *                       showtimes:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             showtimeId:
+ *                               type: string
+ *                             time:
+ *                               type: string
+ *                             roomName:
+ *                               type: string
+ */
+router.get('/time/:movieName/day', showtimeController.getShowtimesByMovieNameAndDay);
+/**
+ * @swagger
  * /api/showtimes/{showtimeId}/seats:
  *   get:
  *     summary: Get seat map and status for a showtime
@@ -380,5 +469,6 @@ router.delete('/delete/:id', auth, isAdmin, showtimeController.deleteShowtime);
  *         description: Internal server error
  */
 router.get('/:showtimeId/seats', showtimeController.getSeatsByShowtime);
+
 
 module.exports = router;

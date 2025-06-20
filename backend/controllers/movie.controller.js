@@ -1,5 +1,6 @@
 const Movie = require("../models/movie.model");
 const bucket = require('../config/firebase');
+const { normalizeDate } = require("../middlewares/showtime.validator");
 
 const getAllMovies = async (req, res) => {
   try {
@@ -117,36 +118,7 @@ const getMoviesByGenre = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-// Lấy version, showtime, room theo movieId
-const getMovieShowtimes = async (req, res) => {
-  const { movieId } = req.params;
-  try {
-    const rows = await Movie.getMovieShowtimes(movieId);
-    // Gom nhóm theo version
-    const movieinfo = {};
-    rows.forEach(row => {
-      if (!movieinfo[row.Version]) {
-        movieinfo[row.Version] = {
-          version: row.Version,
-          showtimes: []
-        };
-      }
-      movieinfo[row.Version].showtimes.push({
-        Day: row.Day,
-        room: {
-          roomId: row.CinemaRoomId,
-          roomName: row.Name
-        }
-      });
-    });
-    res.json({
-      movieId,
-      movieinfo: Object.values(movieinfo)
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+
 
 
 const createMovie = async (req, res) => {
@@ -486,6 +458,5 @@ module.exports = {
   updateMovie,
   patchMovie,
   getCurrentMovies,
-  getUpcomingMovies,
-  getMovieShowtimes
+  getUpcomingMovies
 };
