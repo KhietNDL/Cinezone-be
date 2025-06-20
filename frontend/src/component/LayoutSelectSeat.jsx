@@ -10,6 +10,7 @@ export const LayoutSelectSeat = ({
   initialSelectedSeats = [],
   //   seatPrice = 150000,
   //   currency = "VND",
+  width=10 , height=10
 }) => {
   const [selectedSeats, setSelectedSeats] = useState(
     new Set(initialSelectedSeats)
@@ -35,7 +36,7 @@ export const LayoutSelectSeat = ({
     },
     { row: "F", seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] }, // Ghế bên trái
     { row: "G", seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] }, // Ghế ở giữa
-    {
+    { 
       row: "H",
       seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
     },
@@ -150,9 +151,9 @@ export const LayoutSelectSeat = ({
         title={`Chair ${seatId}`}
       >
         {isSelected ? (
-          <PiArmchairFill className="w-6 h-6 " />
+          <PiArmchairFill className={`w-${width} h-${height}`} />
         ) : (
-          <PiArmchairLight className="w-6 h-6 " />
+          <PiArmchairLight className={`w-${width} h-${height}`} />
         )}
       </button>
     );
@@ -336,22 +337,22 @@ export const LayoutSelectSeat = ({
       {/* Legend */}
       <div className="flex justify-center items-center space-x-6 mb-6">
         <div className="flex items-center space-x-2">
-          <PiArmchairFill size={20} className="text-[#6957f5ea]" />
+          <PiArmchairFill size={20}  className= {`w-${width} h-${height} text-[#6957f5ea]`} />
           <span className="text-sm text-gray-500">Selected</span>
         </div>
         <div className="flex items-center space-x-2">
-          <PiArmchairLight size={20} className="text-gray-400" />
+          <PiArmchairLight size={20}  className= {`w-${width} h-${height} text-gray-400`}  />
           <span className="text-sm text-gray-500">Available</span>
         </div>
         <div className="flex items-center space-x-2">
-          <PiArmchairLight size={20} className="text-[#5341dbea]" />
+          <PiArmchairLight size={20} className= {`w-${width} h-${height} text-[#5341dbea]`}  />
           <span className="text-sm text-gray-500">Taken</span>
         </div>
         <div className="flex items-center space-x-2">
           <img
             src={DoubleSeatSelected}
             alt="Double Seat"
-            className="w-[25px] h-[25px]"
+            className= {`w-${width} h-${height} `}
           />
           <span className="text-sm text-gray-500">Couple seat</span>
         </div>

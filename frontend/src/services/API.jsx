@@ -175,9 +175,27 @@ export default api;
 export const getShowtimeByMovieId = async (movieId) => {
   try {
     const response = await api.get(`/movie/${movieId}/showtimes`);
+    console.log(response.data)
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy showtime theo movieId:", error);
+    throw error;
+  }
+};
+
+export const getTimeByDay = async (movieId, day) => {
+  try {
+    const response = await api.get(`/showtimes/filter`, {
+      params: {
+        movieId: movieId,
+        day: day,
+      },
+    });
+
+    console.log(response.data)
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy showtime theo movieId va Day:", error);
     throw error;
   }
 };

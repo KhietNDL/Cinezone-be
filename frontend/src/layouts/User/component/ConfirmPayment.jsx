@@ -10,27 +10,27 @@ import { useAuth } from "../../../context/AuthContext";
 const ConfirmPayment = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
-  const [paymentMethod, setPaymentMethod] = useState(""); 
-const { user } = useAuth();
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const { user } = useAuth();
 
   const {
     selectedSeats = [],
-   
+
     totalPrice = 0,
     cinema = "CGV Crescent Mall",
-    date = "2024-06-12",
-    time = "14:00",
+    selectedDate,
+    selectedTime,
     movie,
   } = state || {};
-   if (!movie) return <div>Không có dữ liệu phim.</div>;
+  if (!movie) return <div>Không có dữ liệu phim.</div>;
 
   const handlePaymentMethod = (method) => {
     setPaymentMethod(method);
   };
 
- 
 
- 
+
+
   const handleConfirm = (e) => {
     e.preventDefault();
     if (!paymentMethod) {
@@ -39,26 +39,26 @@ const { user } = useAuth();
     }
 
     console.log("Navigating to /waiting with state:", {
-     
+
       selectedSeats,
       totalPrice,
       paymentMethod,
       cinema,
-      date,
-      time,
+      selectedDate,
+      selectedTime,
     });
 
-  
+
     navigate("/waiting", {
       state: {
-        
+
         selectedSeats,
         totalPrice,
         paymentMethod,
         cinema,
-        date,
-        time,
-        
+        selectedDate,
+        selectedTime,
+
       },
     });
   };
@@ -80,26 +80,31 @@ const { user } = useAuth();
                 <img
                   src={movie.PosterImage}
                   alt={movie.NameOfEnglish}
+
                   className="w-40 h-56 sm:w-48 sm:h-72 object-cover rounded-lg flex-shrink-0"
                 />
               </div>
+              
 
               {/* Thông tin phim */}
               <div className="flex flex-col justify-between flex-1">
-                <div > 
-                  <h2 className="text-xl sm:text-2xl font-bold mb-2 text-center sm:text-left">
+                <div >
+                  <h2 className="text-xl sm:text-2xl font-bold mb-1 text-center sm:text-left">
                     {movie.NameOfEnglish}
                   </h2>
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-4 text-xs sm:text-sm text-gray-400 mb-2">
+                  <h3 className="text-md sm:text-xl font-semibod mb-4 text-center sm:text-left ">
+                    {movie.NameOfVietnamese}
+                  </h3>
+                  <div className="flex flex-col items-start gap-2 text-xs sm:text-sm text-gray-400 mb-2">
                     <span className="flex items-center gap-1">
                       <FaRegClock /> {movie.RunningTime} min
                     </span>
                     <span className="flex items-center gap-1">
                       <FaCalendarAlt /> {new Date(movie.FromDate).toLocaleDateString("vi-VN")}
-
                     </span>
-                    <span>{movie.Genres}</span>
+                    <span>Genre: {movie.Genres}</span>
                   </div>
+
                   {/* <div className="flex items-center justify-center sm:justify-start gap-3 sm:gap-4 text-xs sm:text-sm mb-4">
                     <span className="flex items-center text-yellow-400 font-bold gap-1">
                       <FaStar /> {movie.rating} <span className="text-white">/10</span>
@@ -108,12 +113,14 @@ const { user } = useAuth();
                       <FaHeart /> {movie.feedback} feedback
                     </span>
                   </div> */}
-                  <p className="text-gray-300 text-xs sm:text-sm text-center sm:text-left leading-relaxed">
+                   <p className="text-gray-300 text-xs sm:text-sm text-center sm:text-left leading-relaxed">
                     {movie.ContentSynopsis}
                   </p>
+
                 </div>
               </div>
             </div>
+            
           </div>
 
           {/* Phần thông tin khách hàng */}
@@ -183,11 +190,11 @@ const { user } = useAuth();
             </div>
             <div>
               <p className="text-xs sm:text-sm text-gray-400">Date:</p>
-              <p className="text-sm sm:text-base font-semibold">{date}</p>
+              <p className="text-sm sm:text-base font-semibold">{selectedDate ? new Date(selectedDate).toLocaleDateString("vi-VN") : "N/A"}</p>
             </div>
             <div>
               <p className="text-xs sm:text-sm text-gray-400">Time:</p>
-              <p className="text-sm sm:text-base font-semibold">{time}</p>
+              <p className="text-sm sm:text-base font-semibold">{selectedTime}</p>
             </div>
             <div>
               <p className="text-xs sm:text-sm text-gray-400">Seats:</p>

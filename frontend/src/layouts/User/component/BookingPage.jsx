@@ -12,8 +12,10 @@ import { useAuth } from "../../../context/AuthContext";
 import Swal from "sweetalert2";
 import { slugify } from "./Slug";
 
-import { getMovies, getShowtimeByMovieId } from "../../../services/API";
+import { getMovies, getShowtimeByMovieId, getTimeByDay } from "../../../services/API";
 import { LayoutSelectSeat } from "../../../component/LayoutSelectSeat";
+import { RiMovie2AiLine } from "react-icons/ri";
+
 
 
 
@@ -21,8 +23,12 @@ const BookingPage = () => {
   // State để quản lý số lượng vé, ghế đã chọn, v.v.
 
   const [selectedSeats, setSelectedSeats] = useState([]);
-  
-const [showtimes, setShowtimes] = useState([]);
+
+  const [showtimes, setShowtimes] = useState([]);
+  const [times, setTimes] = useState([]);
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedTime, setSelectedTime] = useState([]);
+  const [timeOptions, setTimeOptions] = useState([]);
 
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const popupVideoRef = useRef(null);
@@ -35,36 +41,11 @@ const [showtimes, setShowtimes] = useState([]);
   const seatsPerRow = 8;
   const soldSeats = ["A1", "B3", "C5", "D2", "E4"]; // Ghế đã bán (ví dụ)
 
-  // Hàm xử lý chọn ghế
-const toggleSeat = (seat) => {
-  if (!user) {
-    Swal.fire({
-      icon: "info",
-      title: "Sign In !",
-      text: "Please sign in for service",
-      confirmButtonText: "Sign In",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        navigate("/login");
-      }
-    });
-    return;
-  }
-
-  if (soldSeats.includes(seat)) return; // Không cho chọn ghế đã bán
-
-  if (selectedSeats.includes(seat)) {
-    setSelectedSeats(selectedSeats.filter((s) => s !== seat));
-  } else {
-    setSelectedSeats([...selectedSeats, seat]);
-  }
-};
-
 
   const navigate = useNavigate();
   // Tính tổng giá (ví dụ: 100k/vé)
-const ticketPrice = 100000;
-const totalPrice = selectedSeats.length * ticketPrice;
+  const ticketPrice = 100000;
+  const totalPrice = selectedSeats.length * ticketPrice;
 
 
   const { slug } = useParams();
@@ -99,19 +80,37 @@ const totalPrice = selectedSeats.length * ticketPrice;
   }, [slug]);
 
   useEffect(() => {
-  const fetchShowtimes = async () => {
-    if (!movie || !movie.MovieId) return;
+    const fetchShowtimes = async () => {
+      if (!movie || !movie.MovieId) return;
 
-    try {
-      const res = await getShowtimeByMovieId(movie.MovieId);
-      setShowtimes(res.movieinfo || []);
-    } catch (error) {
-      console.error("Lỗi khi lấy showtimes:", error);
-    }
-  };
+      try {
+        const response = await getShowtimeByMovieId(movie.MovieId);
+        setShowtimes(response.movieinfo || []);
+        console.log(response.movieinfo)
 
-  fetchShowtimes();
-}, [movie]);
+      } catch (error) {
+        console.error("Lỗi khi lấy showtimes:", error);
+      }
+    };
+
+    fetchShowtimes();
+  }, [movie]);
+
+  useEffect(() => {
+    const fetchTimeByDay = async () => {
+      if (!movie?.MovieId || !selectedDate) return;
+
+      try {
+        const response = await getTimeByDay(movie.MovieId, selectedDate);
+        setTimeOptions(response.showtimes); // tuỳ API trả về là gì
+      } catch (error) {
+        console.error("Lỗi khi lấy giờ chiếu:", error);
+      }
+    };
+
+    fetchTimeByDay();
+  }, [selectedDate, movie]);
+
 
 
 
@@ -159,17 +158,20 @@ const totalPrice = selectedSeats.length * ticketPrice;
         <div className="flex flex-col justify-between flex-1">
           {/* Tên phim */}
           <div>
-            <h2 className="text-xl sm:text-2xl font-semibold mb-2 text-center sm:text-left">
-              {movie.NameOfEnglish || "Untitled"}
-            </h2>
+            <p className="text-4xl sm:text-2xl font-semibold mb-2 text-center sm:text-left">
+              {movie.NameOfEnglish || "Untitled"} (<span className="text-xl font-semibold">{movie.NameOfVietnamese}</span>)
+            </p>
+
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-4 text-xs sm:text-sm text-gray-400 mb-2">
               <span className="flex items-center gap-1">
-                <FaRegClock /> {movie.RunningTime ? `${movie.RunningTime} min` : "N/A"}
+                <FaRegClock className="text-green-400" /> {movie.RunningTime ? `${movie.RunningTime} min` : "N/A"}
               </span>
               <span className="flex items-center gap-1">
-                <FaCalendarAlt /> {movie.FromDate ? new Date(movie.FromDate).toLocaleDateString("vi-VN") : "N/A"}
+                <FaCalendarAlt className="text-blue-300" /> {movie.FromDate ? new Date(movie.FromDate).toLocaleDateString("vi-VN") : "N/A"}
               </span>
-              <span>{movie.Genres || "N/A"}</span>
+              <span className="flex items-center gap-1">
+                <RiMovie2AiLine className="text-red-600" />{movie.Genres || "N/A"}
+              </span>
             </div>
 
             {/* Mô tả */}
@@ -188,14 +190,30 @@ const totalPrice = selectedSeats.length * ticketPrice;
 
           {/* Nút */}
           <div className="flex justify-center sm:justify-start">
-            <button className="text-white bg-[#6956F5] px-4 py-2 sm:px-5 sm:py-2 rounded-full text-xs sm:text-sm hover:bg-[#6956f5bf] transition font-semibold flex items-center"
+            <button
               onClick={handleOpenPopup}
+              className="relative inline-flex items-center justify-center h-12 px-6 pr-12 rounded-full text-white text-sm font-semibold overflow-hidden group border border-white/20 backdrop-blur-md
+             transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-xl"
             >
+              {/* Nền chuyển động gradient */}
+              <span className="absolute inset-0 bg-gradient-to-r from-purple-500/30 via-indigo-500/30 to-blue-500/30 group-hover:opacity-50 blur-sm transition-opacity duration-300"></span>
 
-              <MdOutlineOndemandVideo className="mr-2" />
 
-              View trailer
+              {/* Text button */}
+              <span className="relative z-10">View trailer</span>
+
+              {/* Icon hiệu ứng rung nhẹ khi hover */}
+              <span className="absolute right-3 z-10 flex items-center justify-center h-6 w-6 transform transition-transform duration-300 group-hover:animate-wiggle">
+                <MdOutlineOndemandVideo className="text-white w-5 h-5" />
+              </span>
             </button>
+
+
+
+
+
+
+
           </div>
         </div>
       </div>
@@ -205,34 +223,87 @@ const totalPrice = selectedSeats.length * ticketPrice;
         {/* Phần thông tin rạp chiếu */}
         <div className="mb-6 p-4 sm:p-[24px]">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4">
+
+            {/* Cinema */}
             <div>
-              <label className="block text-xs sm:text-sm mb-1">Cinema</label>
-              <select className="w-full bg-gray-800/40 text-white p-2 rounded text-xs sm:text-sm">
+              <label className="block text-xs sm:text-sm mb-1 text-white ml-2 font-semibold">Cinema</label>
+              <select
+                className="w-full h-12 px-4 rounded-full text-white text-xs sm:text-sm font-medium
+                    backdrop-blur-md border border-white/20
+                   transition-all duration-300 ease-in-out hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/30 appearance-none"
+              >
                 <option>CGV Crescent Mall</option>
               </select>
             </div>
+
+            {/* Date */}
             <div>
-              <label className="block text-xs sm:text-sm mb-1">Date</label>
-              <select className="w-full bg-gray-800/40 text-white p-2 rounded text-xs sm:text-sm">
-                <option>2024-06-12</option>
+              <label className="block text-xs sm:text-sm mb-1 text-white ml-2 font-semibold">Date</label>
+              <select
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-full h-12 px-4 rounded-full text-white text-xs sm:text-sm font-medium
+                  backdrop-blur-md border border-white/20
+                   transition-all duration-300 ease-in-out hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/30 appearance-none "
+              >
+                {showtimes.flatMap((item) =>
+                  item.showtimes.map((s, index) => (
+                    <option key={index} value={s.Day}>
+                      {new Date(s.Day).toLocaleDateString("vi-VN")}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
+
+            {/* Time */}
             <div>
-              <label className="block text-xs sm:text-sm mb-1">Time</label>
-              <select className="w-full bg-gray-800/40 text-white p-2 rounded text-xs sm:text-sm">
-                <option>14:00</option>
+              <label className="block text-xs sm:text-sm mb-1 text-white ml-2 font-semibold">Times</label>
+              <select
+                className="w-full h-12 px-4 rounded-full text-white text-xs sm:text-sm font-medium
+                   backdrop-blur-md border border-white/20
+                   transition-all duration-300 ease-in-out hover:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/30 appearance-none"
+                value={selectedTime}
+                onChange={(e) => setSelectedTime(e.target.value)}
+              >
+                <option value="">Select Time</option>
+                {timeOptions.map((item) => (
+                  <option key={item.showtimeId} value={item.time}>
+                    {item.time} - {item.roomName}
+                  </option>
+                ))}
               </select>
             </div>
 
           </div>
         </div>
 
+
         {/* Phần chọn ghế */}
         <div className="mb-6 px-2 sm:px-0">
           <LayoutSelectSeat
             initialSelectedSeats={selectedSeats}
-             onSeatSelect={setSelectedSeats}
+            onSeatSelect={(seats) => {
+              if (!user) {
+                Swal.fire({
+                  icon: "info",
+                  title: "Sign In !",
+                  text: "Please sign in for service",
+                  confirmButtonText: "Sign In",
+                }).then((result) => {
+                  if (result.isConfirmed) {
+                    navigate("/login");
+                  }
+                });
+                return;
+              }
+
+              setSelectedSeats(seats);
+            }}
+            width={10}
+            height={10}
           />
+
 
         </div>
 
@@ -251,7 +322,9 @@ const totalPrice = selectedSeats.length * ticketPrice;
 
           </div>
           <button
-            className="bg-[#6956F5] hover:bg-[#6956f5bf] text-white px-4 py-2 sm:px-5 sm:py-2 rounded-full text-xs sm:text-sm flex items-center font-semibold disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto justify-center"
+            className="relative inline-flex items-center justify-center h-12 px-6 rounded-full text-white text-sm font-semibold overflow-hidden group 
+             border border-white/20 backdrop-blur-md w-full sm:w-auto transition-all duration-300 ease-in-out 
+             disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 hover:shadow-lg"
             disabled={selectedSeats.length === 0}
             onClick={() =>
               navigate("/confirmPayment", {
@@ -259,16 +332,23 @@ const totalPrice = selectedSeats.length * ticketPrice;
                   selectedSeats,
                   totalPrice,
                   cinema: "CGV Crescent Mall",
-                  date: "2024-06-12",
-                  time: "14:00",
+                  selectedDate,
+                  selectedTime,
                   movie,
                 },
               })
             }
           >
-            <FaTicketAlt className="mr-2" />
-            Continue Payment
+            {/* Nền overlay mờ khi hover */}
+            <span className="absolute inset-0 bg-gradient-to-r from-purple-500/30 via-indigo-500/30 to-blue-500/30 group-hover:opacity-50 blur-sm transition-opacity duration-300"></span>
+
+            {/* Text + icon nằm trên nền */}
+            <span className="relative z-10 flex items-center">
+              <FaTicketAlt className="mr-2 w-4 h-4" />
+              Continue Payment
+            </span>
           </button>
+
 
         </div>
       </div>
