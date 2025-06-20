@@ -120,7 +120,6 @@ const getMoviesByGenre = async (req, res) => {
 };
 
 
-
 const createMovie = async (req, res) => {
   try {
     const movieData = req.body;

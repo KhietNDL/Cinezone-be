@@ -472,3 +472,4 @@ router.get('/:showtimeId/seats', showtimeController.getSeatsByShowtime);
 
 
 module.exports = router;
+module.exports = router;

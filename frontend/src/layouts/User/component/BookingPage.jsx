@@ -7,19 +7,23 @@ import {
   FaTicketAlt,
 } from "react-icons/fa";
 import { MdChair, MdOutlineOndemandVideo } from "react-icons/md";
-import { useNavigate, useParams } from "react-router-dom";
+import { Await, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import Swal from "sweetalert2";
 import { slugify } from "./Slug";
-import axios from "axios";
+
+import { getMovies, getShowtimeByMovieId } from "../../../services/API";
+import { LayoutSelectSeat } from "../../../component/LayoutSelectSeat";
 
 const BookingPage = () => {
   // State để quản lý số lượng vé, ghế đã chọn, v.v.
-  const [numberOfTickets, setNumberOfTickets] = useState(1);
+
   const [selectedSeats, setSelectedSeats] = useState([]);
-  
+
+  const [showtimes, setShowtimes] = useState([]);
+
   const [isPopupOpen, setIsPopupOpen] = useState(false);
-const popupVideoRef = useRef(null);
+  const popupVideoRef = useRef(null);
 
   // eslint-disable-next-line no-unused-vars
   const { user, isLoading } = useAuth();
@@ -34,9 +38,9 @@ const popupVideoRef = useRef(null);
     if (!user) {
       Swal.fire({
         icon: "info",
-        title: "Bạn cần đăng nhập",
-        text: "Vui lòng đăng nhập để chọn ghế.",
-        confirmButtonText: "Đăng nhập",
+        title: "Sign In !",
+        text: "Please sign in for service",
+        confirmButtonText: "Sign In",
       }).then((result) => {
         if (result.isConfirmed) {
           navigate("/login");
@@ -49,7 +53,7 @@ const popupVideoRef = useRef(null);
 
     if (selectedSeats.includes(seat)) {
       setSelectedSeats(selectedSeats.filter((s) => s !== seat));
-    } else if (selectedSeats.length < numberOfTickets) {
+    } else {
       setSelectedSeats([...selectedSeats, seat]);
     }
   };
@@ -66,23 +70,22 @@ const popupVideoRef = useRef(null);
   useEffect(() => {
     const fetchMovie = async () => {
       try {
-        const response = await axios.get("http://cinezone.info:4458/api/movie");
-        console.log("API response:", response.data);
-        const movies = Array.isArray(response.data.data)
-          ? response.data.data
-          : response.data.data.movies || [];
+        const response = await getMovies();
+        const movies = Array.isArray(response.data)
+          ? response.data
+          : response.data.movies || [];
+
         const matchedMovie = movies.find(
           (m) => m.NameOfEnglish && slugify(m.NameOfEnglish) === slug
         );
-        console.log(matchedMovie);
 
         if (matchedMovie) {
           setMovie(matchedMovie);
         } else {
           console.warn("No movie found for slug:", slug);
         }
-      } catch (error) {
-        console.error("Lỗi khi lấy danh sách phim:", error);
+      } catch (err) {
+        console.error("Lỗi khi fetch movie:", err);
       } finally {
         setLoading(false);
       }
@@ -91,32 +94,48 @@ const popupVideoRef = useRef(null);
     fetchMovie();
   }, [slug]);
 
-  if (loading) return <div className="text-white text-center mt-20">Đang tải...</div>;
-  if (!movie) return <div className="text-white text-center mt-20">Không tìm thấy phim.</div>;
+  useEffect(() => {
+    const fetchShowtimes = async () => {
+      if (!movie || !movie.MovieId) return;
 
-   
-const handleOpenPopup = () => {
-  setIsPopupOpen(true);
-  setTimeout(() => {
-    if (popupVideoRef.current) {
-      popupVideoRef.current.load();
-      popupVideoRef.current.muted = false;
-      popupVideoRef.current.play().catch((error) => {
-        console.error("Popup video playback failed:", error);
-      });
-    }
-  }, 100);
-};
+      try {
+        const res = await getShowtimeByMovieId(movie.MovieId);
+        setShowtimes(res.movieinfo || []);
+      } catch (error) {
+        console.error("Lỗi khi lấy showtimes:", error);
+      }
+    };
 
+    fetchShowtimes();
+  }, [movie]);
 
+  if (loading)
+    return <div className="text-white text-center mt-20">Đang tải...</div>;
+  if (!movie)
+    return (
+      <div className="text-white text-center mt-20">Không tìm thấy phim.</div>
+    );
+
+  const handleOpenPopup = () => {
+    setIsPopupOpen(true);
+    setTimeout(() => {
+      if (popupVideoRef.current) {
+        popupVideoRef.current.load();
+        popupVideoRef.current.muted = false;
+        popupVideoRef.current.play().catch((error) => {
+          console.error("Popup video playback failed:", error);
+        });
+      }
+    }, 100);
+  };
 
   const handleClosePopup = () => {
-  if (popupVideoRef.current) {
-    popupVideoRef.current.pause();
-    popupVideoRef.current.currentTime = 0;
-  }
-  setIsPopupOpen(false);
-};
+    if (popupVideoRef.current) {
+      popupVideoRef.current.pause();
+      popupVideoRef.current.currentTime = 0;
+    }
+    setIsPopupOpen(false);
+  };
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] text-white p-3 sm:p-6 pt-[80px] sm:pt-[100px]">
@@ -140,10 +159,14 @@ const handleOpenPopup = () => {
             </h2>
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-4 text-xs sm:text-sm text-gray-400 mb-2">
               <span className="flex items-center gap-1">
-                <FaRegClock /> {movie.RunningTime ? `${movie.RunningTime} min` : "N/A"}
+                <FaRegClock />{" "}
+                {movie.RunningTime ? `${movie.RunningTime} min` : "N/A"}
               </span>
               <span className="flex items-center gap-1">
-                <FaCalendarAlt /> {movie.FromDate ? new Date(movie.FromDate).toLocaleDateString() : "N/A"}
+                <FaCalendarAlt />{" "}
+                {movie.FromDate
+                  ? new Date(movie.FromDate).toLocaleDateString("vi-VN")
+                  : "N/A"}
               </span>
               <span>{movie.Genres || "N/A"}</span>
             </div>
@@ -156,20 +179,19 @@ const handleOpenPopup = () => {
             {/* Rating */}
             <div className="flex items-center justify-center sm:justify-start gap-3 sm:gap-4 text-xs sm:text-sm mb-4">
               <span className="flex items-center text-yellow-400 font-bold gap-1">
-                <FaStar /> {movie.Rating || "N/A"} <span className="text-white">/10</span>
+                <FaStar /> {movie.Rating || "N/A"}{" "}
+                <span className="text-white">/10</span>
               </span>
-            
             </div>
           </div>
 
           {/* Nút */}
           <div className="flex justify-center sm:justify-start">
-            <button className="text-white bg-[#6956F5] px-4 py-2 sm:px-5 sm:py-2 rounded-full text-xs sm:text-sm hover:bg-[#6956f5bf] transition font-semibold flex items-center"
+            <button
+              className="text-white bg-[#6956F5] px-4 py-2 sm:px-5 sm:py-2 rounded-full text-xs sm:text-sm hover:bg-[#6956f5bf] transition font-semibold flex items-center"
               onClick={handleOpenPopup}
             >
-              
               <MdOutlineOndemandVideo className="mr-2" />
-               
               View trailer
             </button>
           </div>
@@ -180,7 +202,7 @@ const handleOpenPopup = () => {
       <div className="mt-0 max-w-6xl mx-auto bg-[#252642]/30 rounded-bl-xl rounded-br-xl">
         {/* Phần thông tin rạp chiếu */}
         <div className="mb-6 p-4 sm:p-[24px]">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4">
             <div>
               <label className="block text-xs sm:text-sm mb-1">Cinema</label>
               <select className="w-full bg-gray-800/40 text-white p-2 rounded text-xs sm:text-sm">
@@ -199,145 +221,25 @@ const handleOpenPopup = () => {
                 <option>14:00</option>
               </select>
             </div>
-            <div>
-              <label className="block text-xs sm:text-sm mb-1">
-                Number ticket
-              </label>
-              <select
-                className="w-full bg-gray-800/40 text-white p-2 rounded text-xs sm:text-sm"
-                value={numberOfTickets}
-                onChange={(e) => {
-                  setNumberOfTickets(Number(e.target.value));
-                  setSelectedSeats([]); // Reset ghế đã chọn
-                }}
-              >
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
-                  <option key={num} value={num}>
-                    {num}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
         </div>
 
         {/* Phần chọn ghế */}
         <div className="mb-6 px-2 sm:px-0">
-          <h2 className="text-center sm:text-start text-base sm:text-lg mb-4 font-bold px-4 sm:p-[24px]">
-            Choose seat
-          </h2>
-          <div className="text-center mb-4">
-            <div className="inline-block w-4/5 sm:w-3/4 h-[8px] sm:h-[10px] bg-[#6956F5] text-[#6956F5] py-1 rounded-t-lg rounded-tl-3xl rounded-tr-3xl font-semibold">
-              <span className="flex items-end justify-center p-2 sm:p-4 text-sm sm:text-xl">
-                SCREEN
-              </span>
-            </div>
-          </div>
-
-          {/* Seat selection - Mobile optimized */}
-          <div className="flex justify-center overflow-x-auto">
-            <div className="min-w-max">
-              <div className="grid grid-cols-10 gap-1 sm:gap-2">
-                {/* Cột số thứ tự ghế */}
-                <div></div>
-                {Array.from({ length: seatsPerRow + 1 }, (_, i) => {
-                  if (i === 4) {
-                    return <div key="aisle-header" className="w-2 sm:w-4" />;
-                  }
-                  const seatNumber = i > 4 ? i : i + 1;
-                  return (
-                    <div
-                      key={i}
-                      className="text-center text-lg sm:text-3xl text-[#6956F5] font-semibold"
-                    >
-                      {seatNumber}
-                    </div>
-                  );
-                })}
-
-                {/* Ghế và tên hàng */}
-                {rows.map((row) =>
-                  Array.from({ length: seatsPerRow + 2 }, (_, i) => {
-                    if (i === 0) {
-                      // Cột hiển thị tên hàng (A, B, C...)
-                      return (
-                        <div
-                          key={`${row}-label`}
-                          className="text-center text-lg sm:text-3xl text-[#6956F5] font-semibold pt-2 sm:pt-4"
-                        >
-                          {row}
-                        </div>
-                      );
-                    }
-
-                    if (i === 5) {
-                      // Cột lối đi
-                      return (
-                        <div key={`${row}-aisle`} className="w-2 sm:w-4" />
-                      );
-                    }
-
-                    // Tính chỉ số thực của ghế
-                    const seatIndex = i > 5 ? i - 1 : i;
-                    const seat = `${row}${seatIndex}`;
-                    const isSold = soldSeats.includes(seat);
-                    const isSelected = selectedSeats.includes(seat);
-                    return (
-                      <button
-                        key={seat}
-                        onClick={() => toggleSeat(seat)}
-                        disabled={isSold}
-                        className="w-10 h-10 sm:w-16 sm:h-16 flex items-center justify-center bg-transparent p-0 border-none outline-none"
-                      >
-                        <MdChair
-                          aria-label={`Seat ${seat} ${
-                            isSold
-                              ? "sold"
-                              : isSelected
-                              ? "selected"
-                              : "available"
-                          }`}
-                          className={`w-8 h-8 sm:w-13 sm:h-13 transition-colors
-                ${
-                  isSold
-                    ? "text-gray-500"
-                    : isSelected
-                    ? "text-blue-500"
-                    : "text-gray-300 hover:text-gray-100"
-                }`}
-                        />
-                      </button>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          </div>
+          <LayoutSelectSeat
+            initialSelectedSeats={selectedSeats}
+            onSeatSelect={setSelectedSeats}
+          />
         </div>
 
         {/* Trạng thái ghế */}
-        <div className="flex justify-center mb-6 px-4">
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-            <div className="flex items-center">
-              <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gray-700 mr-2"></div>
-              <span className="text-xs sm:text-sm">Available</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 mr-2"></div>
-              <span className="text-xs sm:text-sm">Selected</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gray-500 mr-2"></div>
-              <span className="text-xs sm:text-sm">Sold</span>
-            </div>
-          </div>
-        </div>
 
         {/* Phần tổng giá và nút thanh toán */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-4 sm:p-[24px]">
           <div className="text-center sm:text-left">
             <p className="text-xs sm:text-sm mb-1">
-              Seat: {selectedSeats.length > 0 ? selectedSeats.join(", ") : "Not yet"}
+              Seat:{" "}
+              {selectedSeats.length > 0 ? selectedSeats.join(", ") : "Not yet"}
             </p>
             <p className="text-sm sm:text-base font-semibold">
               Total price: {totalPrice.toLocaleString("vi-VN")}đ
@@ -345,12 +247,11 @@ const handleOpenPopup = () => {
           </div>
           <button
             className="bg-[#6956F5] hover:bg-[#6956f5bf] text-white px-4 py-2 sm:px-5 sm:py-2 rounded-full text-xs sm:text-sm flex items-center font-semibold disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto justify-center"
-            disabled={selectedSeats.length !== numberOfTickets}
+            disabled={selectedSeats.length === 0}
             onClick={() =>
               navigate("/confirmPayment", {
                 state: {
                   selectedSeats,
-                  numberOfTickets,
                   totalPrice,
                   cinema: "CGV Crescent Mall",
                   date: "2024-06-12",
@@ -366,7 +267,7 @@ const handleOpenPopup = () => {
         </div>
       </div>
 
-       {isPopupOpen && (
+      {isPopupOpen && (
         <div className="fixed inset-0 bg-black/30  flex items-center justify-center z-50">
           <div className="relative w-full max-w-4xl rounded-2xl">
             <video
@@ -393,7 +294,6 @@ const handleOpenPopup = () => {
         </div>
       )}
     </div>
-    
   );
 };
 

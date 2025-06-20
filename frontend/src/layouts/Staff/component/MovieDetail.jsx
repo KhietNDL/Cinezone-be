@@ -37,41 +37,43 @@ export default function MovieDetail() {
   //   describe: "The story of a young man with a dream of becoming a dragon hunter, but fate leads him to an unexpected friendship with a dragon."
   // };
 
-  useEffect(() => {
-    async function fetchMovie() {
-      setLoading(true);
-      try {
-        const res = await getMovieById(id);
-        setMovie(res.data);
-      } catch (e) {
-        setMovie(null);
-      } finally {
-        setLoading(false);
-      }
+  async function fetchMovie() {
+    setLoading(true);
+    try {
+      const res = await getMovieById(id);
+      setMovie(res.data);
+    } catch (e) {
+      setMovie(null);
+    } finally {
+      setLoading(false);
     }
+  }
+
+  async function fetchRecommended() {
+    if (!movie) return;
+    try {
+      const res = await getCurrentMovies();
+      if (res.data) {
+        // Lọc các phim cùng thể loại (Genres) và khác MovieId hiện tại
+        const currentGenres = movie.Genres?.split(',').map(g => g.trim().toLowerCase()) || [];
+        const filtered = res.data.filter(
+          m =>
+            m.MovieId !== movie.MovieId &&
+            m.Genres &&
+            m.Genres.split(',').some(g => currentGenres.includes(g.trim().toLowerCase()))
+        );
+        setRecommended(filtered);
+      }
+    } catch (e) {
+      setRecommended([]);
+    }
+  }
+
+  useEffect(() => {
     fetchMovie();
   }, [id]);
 
   useEffect(() => {
-    async function fetchRecommended() {
-      if (!movie) return;
-      try {
-        const res = await getCurrentMovies();
-        if (res.data) {
-          // Lọc các phim cùng thể loại (Genres) và khác MovieId hiện tại
-          const currentGenres = movie.Genres?.split(',').map(g => g.trim().toLowerCase()) || [];
-          const filtered = res.data.filter(
-            m =>
-              m.MovieId !== movie.MovieId &&
-              m.Genres &&
-              m.Genres.split(',').some(g => currentGenres.includes(g.trim().toLowerCase()))
-          );
-          setRecommended(filtered);
-        }
-      } catch (e) {
-        setRecommended([]);
-      }
-    }
     fetchRecommended();
   }, [movie]);
 
@@ -162,27 +164,27 @@ export default function MovieDetail() {
     return `${day}/${month}/${year}`;
   };
 
-      const swiperBreakpoints = {
-        320: {
-            slidesPerView: 1,
-            spaceBetween: 50,
-        },
-        640: {
-            slidesPerView: 2,
-            spaceBetween: 30,
-        },
-        768: {
-            slidesPerView: 3,
-            spaceBetween: 40,
-        },
-        1024: {
-            slidesPerView: 4,
-            spaceBetween: 50,
-        },
-    };
+  const swiperBreakpoints = {
+    320: {
+      slidesPerView: 1,
+      spaceBetween: 50,
+    },
+    640: {
+      slidesPerView: 2,
+      spaceBetween: 30,
+    },
+    768: {
+      slidesPerView: 3,
+      spaceBetween: 40,
+    },
+    1024: {
+      slidesPerView: 4,
+      spaceBetween: 50,
+    },
+  };
 
   return (
-    <div className='w-full p-4 flex flex-col'>
+    <div className='w-full flex flex-col p-[20px]'>
       <div className='text-3xl font-bold mb-4 text-[#9810FA]'>Movie Detail</div>
 
       <div className='flex gap-5 w-full '>

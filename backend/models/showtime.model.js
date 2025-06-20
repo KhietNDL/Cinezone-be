@@ -370,3 +370,4 @@ class Showtime {
 }
 
 module.exports = Showtime;
+module.exports = Showtime;
