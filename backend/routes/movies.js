@@ -433,27 +433,4 @@ router.patch('/:movieId', auth, isAdmin, upload.fields([
  */
 router.delete('/:movieId', auth, isAdmin, deleteMovie);
 
-/**
- * @swagger
- * /api/movie/{movieId}/showtimes:
- *   get:
- *     summary: Get showtimes for a movie by ID
- *     tags: [Movies]
- *     parameters:
- *       - in: path
- *         name: movieId
- *         required: true
- *         schema:
- *           type: string
- *         description: ID of the movie to get showtimes for
- *     responses:
- *       200:
- *         description: Successfully retrieved showtimes for the movie
- *       404:
- *         description: Movie not found
- *       500:
- *         description: Server error
- */
-router.get('/:movieId/showtimes', getMovieShowtimes);
-
 module.exports = router;
