@@ -133,6 +133,26 @@ class UserManagement {
     );
     return result.affectedRows > 0;
   }
+
+  static async getUserByCCCD(cccd) {
+    const [rows] = await db
+      .promise()
+      .query(
+        "SELECT * FROM Users WHERE CCCD = ? AND Role = 1 AND IsDeleted = 0",
+        [cccd]
+      );
+    return rows[0];
+  }
+
+  static async getUserByPhoneNumber(phoneNumber) {
+    const [rows] = await db
+      .promise()
+      .query(
+        "SELECT * FROM Users WHERE PhoneNumber = ? AND Role = 1 AND IsDeleted = 0",
+        [phoneNumber]
+      );
+    return rows[0];
+  }
 }
 
 module.exports = UserManagement;
