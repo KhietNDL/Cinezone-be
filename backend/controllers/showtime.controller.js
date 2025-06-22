@@ -318,6 +318,9 @@ exports.getShowtimesByMovieName = async (req, res) => {
             }
         });
 
+        // Sắp xếp showtimes theo ngày tăng dần
+        showtimes.sort((a, b) => a.Day.localeCompare(b.Day));
+
         res.json({
             movieName,
             showtimes

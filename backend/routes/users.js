@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { getAllUsers, getUsersbyName, getUserById, getUserByEmail, createUser, deleteUser, updateUser } = require('../controllers/user.management.controller');
-const { auth, isAdmin } = require('../middlewares/auth.middleware');
+const { getAllUsers, getUsersbyName, getUserById, getUserByEmail, createUser, deleteUser, updateUser, getUserByCCCD, getUserByPhoneNumber } = require('../controllers/user.management.controller');
+const { auth, isAdmin, isAdminOrEmployee  } = require('../middlewares/auth.middleware');
 const { validateUser } = require('../middlewares/user.management.validator');
 const {
     updateProfile,
@@ -100,7 +100,7 @@ router.get('/:userId', auth, isAdmin, getUserById);
  *       500:
  *         description: Internal server error
  */
-router.get('/email/:email', auth, isAdmin, getUserByEmail);
+router.get('/email/:email', auth, isAdminOrEmployee, getUserByEmail);
 
 // Route to create a new user
 /**
@@ -232,58 +232,54 @@ router.delete('/delete/:userId', auth, isAdmin, deleteUser);
  */
 router.put('/update/:userId', auth, isAdmin, validateUser, updateUser);
 
-router.get('/get-user/:userId', auth, getUserById);
-
 /**
  * @swagger
- * /api/user/exchange-score/{userId}:
- *   post:
- *     summary: Exchange user's score for money
- *     tags: [User]
+ * /api/user/cccd/{cccd}:
+ *   get:
+ *     summary: Get user by CCCD
+ *     tags: [User Management]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: userId
+ *         name: cccd
+ *         required: true
  *         schema:
  *           type: string
- *           format: uuid
- *         required: true
- *         description: The user ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - pointsToExchange
- *             properties:
- *               pointsToExchange:
- *                 type: integer
- *                 description: The number of points to exchange.
- *                 example: 100
+ *         description: CCCD of the user to retrieve
  *     responses:
  *       200:
- *         description: Score exchanged successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 moneyGained:
- *                   type: number
- *                 newScoreBalance:
- *                   type: number
- *       400:
- *         description: Invalid request (e.g., insufficient points, invalid user ID)
- *       401:
- *         description: Unauthorized
+ *         description: Successfully retrieved user details
  *       404:
  *         description: User not found
+ *       500:
+ *         description: Internal server error
  */
-router.post('/exchange-score/:userId', auth, exchangeScore);
+router.get('/cccd/:cccd', auth, isAdminOrEmployee, getUserByCCCD);
+
+/**
+ * @swagger
+ * /api/user/phone/{phoneNumber}:
+ *   get:
+ *     summary: Get user by phone number
+ *     tags: [User Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: phoneNumber
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Phone number of the user to retrieve
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved user details
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/phone/:phoneNumber', auth, isAdminOrEmployee, getUserByPhoneNumber);
 
 module.exports = router;

@@ -185,12 +185,30 @@ export default api;
 
 //API cho Booking FLow
 
-export const getShowtimeByMovieId = async (movieId) => {
+export const getShowtimeByMovieName = async (movieName) => {
   try {
-    const response = await api.get(`/movie/${movieId}/showtimes`);
+    const response = await api.get(`/showtimes/movie-name/${movieName}/showtimes`);
+    console.log(response.data)
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy showtime theo movieId:", error);
+    throw error;
+  }
+};
+
+export const getTimeByDay = async (movieName, day) => {
+  try {
+    const response = await api.get(`/showtimes/time/${movieName}/day`, {
+      params: {
+        movieName: movieName,
+        day: day,
+      },
+    });
+
+    console.log(response.data)
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy showtime theo movieId va Day:", error);
     throw error;
   }
 };

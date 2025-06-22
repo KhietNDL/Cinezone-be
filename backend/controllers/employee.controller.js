@@ -5,7 +5,7 @@ const User = require('../models/user.model');
 const getAllEmployees = async (req, res) => {
   try {
     const employees = await Employee.getAllEmployees();
-    // Chỉ lấy các trường cần thiết
+    // Thêm avatar_url vào kết quả trả về
     const filteredEmployees = employees.map((emp) => ({
       UserId: emp.UserId,
       FullName: emp.FullName,
@@ -16,6 +16,7 @@ const getAllEmployees = async (req, res) => {
       Address: emp.Address,
       PhoneNumber: emp.PhoneNumber,
       CreatedAt: emp.CreatedAt,
+      avatar_url: emp.avatar_url // thêm dòng này
     }));
     res.status(200).json({
       message: "Employees retrieved successfully",
@@ -31,7 +32,6 @@ const getEmployeesbyName = async (req, res) => {
   const { name } = req.query;
   try {
     const employees = await Employee.getEmployeesbyName(name);
-    // Chỉ lấy các trường cần thiết
     const filteredEmployees = employees.map((emp) => ({
       UserId: emp.UserId,
       FullName: emp.FullName,
@@ -42,6 +42,7 @@ const getEmployeesbyName = async (req, res) => {
       Address: emp.Address,
       PhoneNumber: emp.PhoneNumber,
       CreatedAt: emp.CreatedAt,
+      avatar_url: emp.avatar_url // thêm dòng này
     }));
     res.status(200).json({
       message: "Employees retrieved successfully",
@@ -60,7 +61,6 @@ const getEmployeeById = async (req, res) => {
     if (!employee) {
       return res.status(404).json({ message: "Employee not found" });
     }
-    // Chỉ lấy các trường cần thiết
     const filteredEmployee = {
       UserId: employee.UserId,
       FullName: employee.FullName,
@@ -71,6 +71,7 @@ const getEmployeeById = async (req, res) => {
       Address: employee.Address,
       PhoneNumber: employee.PhoneNumber,
       CreatedAt: employee.CreatedAt,
+      avatar_url: employee.avatar_url // thêm dòng này
     };
     res.status(200).json({
       message: "Employee retrieved successfully",
@@ -83,7 +84,6 @@ const getEmployeeById = async (req, res) => {
 };
 // Get employee by email
 const getEmployeeByEmail = async (req, res) => {
-  // Kiểm tra từng thuộc tính trước khi truy cập .email
   const email =
     (req && req.query && req.query.email) ||
     (req && req.body && req.body.email) ||
@@ -98,7 +98,6 @@ const getEmployeeByEmail = async (req, res) => {
     if (!employee) {
       return res.status(404).json({ message: "Employee not found" });
     }
-    // Chỉ lấy các trường cần thiết
     const filteredEmployee = {
       UserId: employee.UserId,
       FullName: employee.FullName,
@@ -109,6 +108,7 @@ const getEmployeeByEmail = async (req, res) => {
       Address: employee.Address,
       PhoneNumber: employee.PhoneNumber,
       CreatedAt: employee.CreatedAt,
+      avatar_url: employee.avatar_url // thêm dòng này
     };
     res.status(200).json({
       message: "Employee retrieved successfully",
@@ -149,6 +149,7 @@ const createEmployee = async (req, res) => {
         Address: employee.Address,
         PhoneNumber: employee.PhoneNumber,
         CreatedAt: employee.CreatedAt,
+        avatar_url: employee.avatar_url // thêm dòng này
       }
     });
   } catch (error) {
