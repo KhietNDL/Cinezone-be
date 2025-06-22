@@ -8,7 +8,6 @@ import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { SiTicktick } from "react-icons/si";
 import { RiFilmAiFill, RiMovie2AiFill } from "react-icons/ri";
 import {
   FaCalendarDays,
@@ -55,14 +54,21 @@ export default function ConfirmTicketsPage() {
   const total = ticket.price * ticket.seats.length;
 
   const validationSchema = Yup.object().shape({
-    memberId: Yup.string()
-      .matches(/^\d+$/, "You must enter a valid Member ID/Identity Card")
-      .required("Member ID/Identity Card is required"),
-    convertToTicket: Yup.string().required(
-      "Please select convert to ticket option"
-    ),
-    promotionCode: Yup.string().when("convertToTicket", {
-      is: "Agree",
+    memberId: Yup.string().when([], {
+      is: () => memberChecked, // chỉ validate khi đã check member
+      then: (schema) =>
+        schema
+          .matches(/^\d+$/, "You must enter a valid Member ID/Identity Card")
+          .required("Member ID/Identity Card is required"),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+    convertToTicket: Yup.string().when([], {
+      is: () => memberChecked,
+      then: (schema) => schema.required("Please select convert to ticket option"),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+    promotionCode: Yup.string().when(["convertToTicket"], {
+      is: (convertToTicket) => convertToTicket === "Agree",
       then: (schema) =>
         schema.test(
           "empty",
@@ -229,7 +235,7 @@ export default function ConfirmTicketsPage() {
                               <IoTime /> Show Time
                             </span>
                             <span className="text-gray-600">
-                              {ticket.showtime} 
+                              {ticket.showtime}
                             </span>
                           </div>
                         </div>
@@ -282,16 +288,16 @@ export default function ConfirmTicketsPage() {
                           <span className="w-[50%] font-semibold text-gray-800 ">
                             Used Score
                           </span>
-                          <span className="text-emerald-600">
-                            {displayUsedScore}
+                          <span className="text-emerald-600 font-semibold flex gap-1 items-center">
+                           <FaFire /> {displayUsedScore}
                           </span>
                         </div>
                         <div className="flex flex-col py-2 w-[50%]">
                           <span className="w-[50%] font-semibold text-gray-800 ">
                             Remaining Score
                           </span>
-                          <span className="text-emerald-600">
-                            {displayUpdatedScore}
+                          <span className="text-orange-400 font-semibold flex gap-1 items-center">
+                            <FaFire /> {displayUpdatedScore}
                           </span>
                         </div>
                         {!enoughScore && (
@@ -340,12 +346,11 @@ export default function ConfirmTicketsPage() {
                           <label
                             key={method.value}
                             className={`cursor-pointer w-48 h-32 flex flex-col items-center justify-center border-5 rounded-xl transition
-                                                                   ${
-                                                                     values.paymentMethod ===
-                                                                     method.value
-                                                                       ? "border-purple-600 bg-purple-50 shadow-lg"
-                                                                       : "border-gray-300 bg-white hover:border-purple-400"
-                                                                   } relative`}
+                                                                   ${values.paymentMethod ===
+                                method.value
+                                ? "border-purple-600 bg-purple-50 shadow-lg"
+                                : "border-gray-300 bg-white hover:border-purple-400"
+                              } relative`}
                           >
                             <Field
                               type="radio"
@@ -365,7 +370,7 @@ export default function ConfirmTicketsPage() {
                       <button
                         type="submit"
                         className="bg-purple-600 text-white px-6 py-3 rounded-lg
-                                                hover:bg-purple-800 transition duration-300 h-10 flex 
+                                                hover:bg-purple-400 transition duration-300 h-10 flex 
                                                 items-center justify-center gap-2"
                         disabled={isSubmitting}
                       >
@@ -393,12 +398,13 @@ export default function ConfirmTicketsPage() {
                     <Field
                       type="text"
                       name="memberId"
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-700"
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none
+                      bg-white focus:ring-2 focus:ring-purple-700"
                       placeholder="Member ID or Identity Card Number"
                     />
                     <button
                       type="button"
-                      className="bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-purple-800"
+                      className="bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-purple-400"
                       style={{ borderLeft: "none" }}
                       onClick={async () => {
                         try {
@@ -492,12 +498,13 @@ export default function ConfirmTicketsPage() {
                             type="text"
                             name="promotionCode"
                             disabled={values.convertToTicket === "Agree"}
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-700"
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none
+                             focus:ring-2 focus:ring-purple-700 bg-white"
                             placeholder="Promotion code..."
                           />
                           <button
                             type="button"
-                            className="bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-purple-800"
+                            className="bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-purple-400"
                             style={{ borderLeft: "none" }}
                             disabled={values.convertToTicket === "Agree"}
                             onClick={() =>
