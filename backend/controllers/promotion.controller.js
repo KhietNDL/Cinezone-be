@@ -267,11 +267,11 @@ const createPromotion = async (req, res) => {
 
 // Update promotion
 const updatePromotion = async (req, res) => {
-    upload(req, res, async function(err) {
+    upload(req, res, async function (err) {
         if (err) {
             return res.status(400).json({
                 error: err.message,
-                code: ERROR_CODES.INVALID_FILE
+                code: ERROR_CODES.INVALID_FILE,
             });
         }
 
@@ -282,7 +282,7 @@ const updatePromotion = async (req, res) => {
             if (!uuidValidate(id)) {
                 return res.status(400).json({
                     error: 'Invalid UUID format',
-                    code: ERROR_CODES.INVALID_UUID
+                    code: ERROR_CODES.INVALID_UUID,
                 });
             }
 
@@ -290,69 +290,100 @@ const updatePromotion = async (req, res) => {
             if (!promotion) {
                 return res.status(404).json({
                     error: 'Promotion not found',
-                    code: ERROR_CODES.PROMOTION_NOT_FOUND
+                    code: ERROR_CODES.PROMOTION_NOT_FOUND,
                 });
             }
 
-            // Validate promotion data
-            validatePromotionData(req, res, async () => {
-                const {
-                    title,
-                    startTime,
-                    endTime,
-                    discountValue,
-                    detail
-                } = req.body;
+            const { title, startTime, endTime, discountValue, detail } = req.body;
 
-                // Check for duplicate title (excluding current promotion)
-                if (title !== promotion.Title) {
-                    const existingPromotion = await Promotion.findByTitle(title);
-                    if (existingPromotion) {
-                        return res.status(400).json({
-                            error: 'A promotion with this title already exists',
-                            code: ERROR_CODES.DUPLICATE_TITLE
-                        });
-                    }
+            // Validate discount value if provided
+            if (discountValue) {
+                const discount = parseFloat(discountValue);
+                if (isNaN(discount) || discount < 0 || discount > 100) {
+                    return res.status(400).json({
+                        error: 'Discount value must be between 0 and 100',
+                        code: ERROR_CODES.INVALID_DISCOUNT,
+                    });
                 }
+            }
 
-                // Delete old image if new image is uploaded
-                if (req.file && promotion.Image) {
+            // Validate date range if provided
+            const newStartTime = startTime ? new Date(startTime) : new Date(promotion.StartTime);
+            const newEndTime = endTime ? new Date(endTime) : new Date(promotion.EndTime);
+
+            if (isNaN(newStartTime.getTime()) || isNaN(newEndTime.getTime())) {
+                return res.status(400).json({
+                    error: 'Invalid date format',
+                    code: ERROR_CODES.INVALID_DATE_RANGE,
+                });
+            }
+
+            if (newStartTime >= newEndTime) {
+                return res.status(400).json({
+                    error: 'End time must be after start time',
+                    code: ERROR_CODES.INVALID_DATE_RANGE,
+                });
+            }
+
+            // Check for duplicate title if provided and changed
+            if (title && title !== promotion.Title) {
+                const existingPromotion = await Promotion.findByTitle(title);
+                if (existingPromotion) {
+                    return res.status(400).json({
+                        error: 'A promotion with this title already exists',
+                        code: ERROR_CODES.DUPLICATE_TITLE,
+                    });
+                }
+            }
+
+            // Prepare update data
+            const updateData = {};
+            if (title) updateData.Title = title;
+            if (startTime) updateData.StartTime = startTime;
+            if (endTime) updateData.EndTime = endTime;
+            if (discountValue) updateData.DiscountValue = discountValue;
+            if (detail) updateData.Detail = detail;
+             if (req.user && req.user.UserId) {
+                updateData.UpdatedBy = req.user.UserId;
+            } else {
+                // Handle the case where user information is not available
+                // This might be an error condition depending on your application's logic
+                return res.status(401).json({
+                    error: 'Unauthorized: User information is missing',
+                    code: 'AUTH_001', // Example error code
+                });
+            }
+
+            // Handle image update
+            if (req.file) {
+                // Delete old image if it exists
+                if (promotion.Image) {
                     const oldImagePath = path.join(__dirname, '..', promotion.Image);
                     if (fs.existsSync(oldImagePath)) {
                         fs.unlinkSync(oldImagePath);
                     }
                 }
+                updateData.Image = `/uploads/promotions/${req.file.filename}`;
+            }
 
-                const imagePath = req.file ? `/uploads/promotions/${req.file.filename}` : promotion.Image;
-                const UpdatedBy = req.user.UserId;
+            const success = await Promotion.updatePromotion(id, updateData);
 
-                const success = await Promotion.updatePromotion(id, {
-                    Title: title,
-                    StartTime: startTime,
-                    EndTime: endTime,
-                    DiscountValue: discountValue,
-                    Detail: detail,
-                    Image: imagePath,
-                    UpdatedBy
+            if (!success) {
+                return res.status(404).json({
+                    error: 'Promotion not found or not updated',
+                    code: ERROR_CODES.PROMOTION_NOT_FOUND,
                 });
+            }
 
-                if (!success) {
-                    return res.status(404).json({
-                        error: 'Promotion not found or not updated',
-                        code: ERROR_CODES.PROMOTION_NOT_FOUND
-                    });
-                }
+            const updatedPromotion = await Promotion.getPromotionById(id);
+            const formattedPromotion = formatPromotionData(updatedPromotion);
 
-                const updatedPromotion = await Promotion.getPromotionById(id);
-                const formattedPromotion = formatPromotionData(updatedPromotion);
+            // Clear cache
+            clearPromotionCache();
 
-                // Clear cache
-                clearPromotionCache();
-
-                res.json({
-                    message: 'Promotion updated successfully',
-                    promotion: formattedPromotion
-                });
+            res.json({
+                message: 'Promotion updated successfully',
+                promotion: formattedPromotion,
             });
         } catch (error) {
             console.error('Update promotion error:', error);
@@ -362,7 +393,7 @@ const updatePromotion = async (req, res) => {
             }
             res.status(500).json({
                 error: 'Internal server error while updating promotion',
-                code: ERROR_CODES.SERVER_ERROR
+                code: ERROR_CODES.SERVER_ERROR,
             });
         }
     });

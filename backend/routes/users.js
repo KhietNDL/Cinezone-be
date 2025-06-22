@@ -3,6 +3,11 @@ const router = express.Router();
 const { getAllUsers, getUsersbyName, getUserById, getUserByEmail, createUser, deleteUser, updateUser, getUserByCCCD, getUserByPhoneNumber } = require('../controllers/user.management.controller');
 const { auth, isAdmin, isAdminOrEmployee  } = require('../middlewares/auth.middleware');
 const { validateUser } = require('../middlewares/user.management.validator');
+const {
+    updateProfile,
+    getUserById: getUserByIdController,
+    exchangeScore
+} = require('../controllers/user.controller');
 
 // Route to get all users
 /**

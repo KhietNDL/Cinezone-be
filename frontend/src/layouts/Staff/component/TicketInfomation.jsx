@@ -2,8 +2,13 @@ import React from "react";
 import { Button, Tag, Card, Result } from "antd";
 import { CheckCircleTwoTone, ExclamationCircleTwoTone, CloseCircleTwoTone } from "@ant-design/icons";
 import { Link } from "react-router-dom";
-import { FaTicket } from "react-icons/fa6";
-import { IoReloadOutline } from "react-icons/io5";
+import { FaTicket, FaFire, FaCouch, FaLocationDot, FaUser, FaPhone} from "react-icons/fa6";
+import { IoReloadOutline, IoTicketSharp, IoTime} from "react-icons/io5";
+import { RiFilmAiFill, RiMovie2AiFill, RiDiscountPercentFill   } from "react-icons/ri";
+import { FaMoneyBillWave, FaIdBadge, FaIdCard  } from "react-icons/fa";
+
+
+
 
 
 
@@ -71,7 +76,7 @@ export default function TicketInfomation({ status = "success" }) {
     <div className="p-4 w-full ">
       <h1 className="text-3xl font-bold mb-4 text-fuchsia-700">Payment</h1>
       {/* Movie Info */}
-      <div className="flex items-start gap-4 border-b border-gray-300 pb-4">
+      {/* <div className="flex items-start gap-4 border-b border-gray-300 pb-4">
         <img
           src="https://iguov8nhvyobj.vcdn.cloud/media/catalog/product/cache/1/image/1800x/71252117777b696995f01934522c402d/c/o/copy_of_250220_dr25_main_b1_localized_embbed_1_.jpg"
           alt="Poster Doraemon"
@@ -107,7 +112,7 @@ export default function TicketInfomation({ status = "success" }) {
             </span>
           </p>
         </div>
-      </div>
+      </div> */}
 
       {/* Status */}
       <div className="flex flex-col items-center justify-center my-8">
@@ -120,85 +125,81 @@ export default function TicketInfomation({ status = "success" }) {
       {/* Ticket & Member Info */}
       <div className="flex gap-2 justify-center w-full">
         {/* Ticket */}
-        <Card
-          className="w-[70%] rounded-2xl shadow-md"
-          title={
-            <span className="font-bold text-lg">
+        <div className="w-[70%] rounded-2xl shadow-md flex flex-col gap-4 p-4 bg-white border border-gray-200" >
+         
+            <div className="font-semibold text-lg  border-b border-gray-600 py-4">
               <i className="fa-solid fa-ticket mr-2"></i>Tickets
-            </span>
-          }
-        >
+            </div>
+          
+       
           <div className="flex flex-col gap-2 text-base">
             <div className="border-b border-gray-300 mb-4">
-              <div className="flex items-center pt-2 pb-2">
-                <strong className="w-[25%]">ID Ticket:</strong> <span>{ticketInfo.id}</span>
+              <div className="flex  py-2">
+                <p className="w-[50%] font-semibold flex items-center gap-1"><IoTicketSharp /> Ticket ID</p> <span className="text-gray-600">{ticketInfo.id}</span>
               </div>
-              <div className="flex items-center pt-2 pb-2">
-                <strong className="w-[26%]">Movie:</strong> <span>{ticketInfo.movie}</span>
+              <div className="flex flex-col  py-2">
+                <p className="w-[50%] font-semibold flex items-center gap-1"><RiFilmAiFill /> Movie</p> <span className="text-gray-600">{ticketInfo.movie}</span>
               </div>
-              <div className="flex items-center pt-2 pb-2">
-                <strong className="w-[25%]">Screen:</strong> <span>{ticketInfo.screen}</span>
+           <div className="flex w-full">
+               <div className="w-[50%]">
+                <div className="flex flex-col py-2">
+                  <p className="w-[50%] font-semibold flex items-center gap-1"><RiMovie2AiFill /> Screen</p> <span className="text-gray-600">{ticketInfo.screen}</span>
+                </div>
+                <div className="flex flex-col py-2">
+                  <p className="w-[50%] font-semibold flex items-center gap-1"><IoTime /> Showtime</p> <span className="text-gray-600">{ticketInfo.showtime}</span>
+                </div>
+                <div className="flex flex-col py-2">
+                  <p className="w-[50%] font-semibold flex items-center gap-1"><FaLocationDot /> Room</p> <span className="text-gray-600">{ticketInfo.room}</span>
+                </div>
               </div>
-              <div className="flex items-center pt-2 pb-2">
-                <strong className="w-[25%]">Showtime:</strong> <span>{ticketInfo.showtime}</span>
+              <div className="w-[50%]">
+                <div className="flex flex-col py-2">
+                  <p className="w-[50%] font-semibold flex items-center gap-1"><FaCouch /> Seats</p> <span className="flex items-center gap-4 text-gray-600">{ticketInfo.seats.join(", ")} <div>-</div> <div className="text-xs font-medium text-gray-600">{ticketInfo.seats.length} ticket(s)</div></span>
+                </div>
+                <div className="flex flex-col py-2">
+                  <p className="w-[50%] font-semibold flex items-center gap-1"><FaMoneyBillWave /> Price</p> <span className="text-gray-600">${ticketInfo.price} / SEAT * {ticketInfo.seats.length} </span>
+                </div>
+                <div className="flex flex-col py-2">
+                  <p className="w-[50%] font-semibold flex items-center gap-1"><RiDiscountPercentFill /> Discount</p>
+                  <span className="text-red-500 font-bold">{ticketInfo.discount}</span>
+                </div>
               </div>
-              <div className="flex items-center pt-2 pb-2">
-                <strong className="w-[25%]">Room:</strong> <span>{ticketInfo.room}</span>
-              </div>
-              {/* <div>
-              <strong>Combo:</strong>
-              <ul className="list-disc ml-6">
-                {ticketInfo.combo.map((c, idx) => (
-                  <li key={idx}>{c}</li>
-                ))}
-              </ul>
-            </div> */}
-              <div className="flex items-center pt-2 pb-2">
-                <strong className="w-[25%]">Seats:</strong> <span>{ticketInfo.seats.join(", ")}</span>
-              </div>
-              <div className="flex items-center pt-2 pb-2">
-                <strong className="w-[25%]">Price:</strong> <span>${ticketInfo.price} / SEAT * {ticketInfo.seats.length} </span>
-              </div>
-              <div className="flex items-center pt-2 pb-2">
-                <strong className="w-[25%]">Discount:</strong>{" "}
-                <span className="text-red-500">{ticketInfo.discount}</span>
-              </div>
-              <div className="flex items-center pt-2 pb-2">
-                <strong className="w-[25%]">Score for ticket converting:</strong> <span>{ticketInfo.score}</span>
+           </div>
+              <div className="flex py-2 w-full">
+                <p className="w-[50%] font-semibold flex items-center gap-1">Score for ticket converting</p> <span className="flex items-center gap-1 text-green-700 font-bold"><FaFire/>{ticketInfo.score}</span>
               </div>
             </div>
-            <div className="flex items-center pt-2 pb-2">
-              <strong className="w-[25%]">Total:</strong>{" "}
-              <span className="text-green-600 font-bold">
+            <div className="flex py-2 w-full">
+              <p className="w-[50%] text-xl font-bold">Total</p>{" "}
+              <span className="text-green-600 font-bold text-xl">
                 ${ticketInfo.totalAfterDiscount}
               </span>
             </div>
           </div>
-        </Card>
+        </div>
         {/* Member */}
-        <Card
-          className="w-[30%] rounded-2xl shadow-md"
-          title={
-            <span className="font-bold text-lg">
+        <div className="w-[30%] rounded-2xl shadow-md flex flex-col gap-4 p-4 bg-white border border-gray-200">
+          
+            <div className="font-semibold text-lg  border-b border-gray-600 py-4">
               <i className="fa-solid fa-users mr-2"></i>Member
-            </span>
-          }
-        >
+            </div>
+          
+        
           <div className="flex flex-col gap-2 text-base">
-            <div className="flex items-center pt-2 pb-2">
-              <strong className="w-[50%]" >Member ID:</strong> <span>{memberInfo.id}</span>
+            <div className="flex items-center py-2 justify-between">
+              <p className="w-[50%] text-gray-600 flex items-center gap-1" ><FaIdBadge /> Member ID</p> <span className="font-semibold">{memberInfo.id}</span>
             </div>
-            <div className="flex items-center pt-2 pb-2">
-              <strong className="w-[50%]">Identity card:</strong> <span>{memberInfo.identity}</span>
+            <div className="flex items-center py-2 justify-between">
+              <p className="w-[50%] text-gray-600 flex items-center gap-1"><FaIdCard /> Identity card</p> <span className="font-semibold">{memberInfo.identity}</span>
             </div>
-            <div className="flex items-center pt-2 pb-2">
-              <strong className="w-[50%]">Full name:</strong> <span>{memberInfo.name}</span>
+            <div className="flex items-center py-2 justify-between">
+              <p className="w-[50%] text-gray-600 flex items-center gap-1"><FaUser /> Full name</p> <span className="font-semibold">{memberInfo.name}</span>
             </div>
-            <div className="flex items-center pt-2 pb-2">
-              <strong className="w-[50%]">Phone number:</strong> <span>{memberInfo.phone}</span>
+            <div className="flex items-center py-2 justify-between">
+              <p className="w-[50%] text-gray-600 flex items-center gap-1"><FaPhone /> Phone number</p> <span className="font-semibold">{memberInfo.phone}</span>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* Action Buttons */}
