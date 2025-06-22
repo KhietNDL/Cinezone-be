@@ -214,6 +214,9 @@ router.delete('/delete/:userId', auth, isAdmin, deleteEmployee);
  *               Address:
  *                 type: string
  *                 default: ""
+ *               avatar_url:
+ *                 type: string
+ *                 default: ""
  *     responses:
  *       200:
  *         description: Employee updated successfully
@@ -225,4 +228,3 @@ router.delete('/delete/:userId', auth, isAdmin, deleteEmployee);
 router.put('/update/:userId', auth, isAdmin, validateEmployee, updateEmployee);
 
 module.exports = router;
-    
