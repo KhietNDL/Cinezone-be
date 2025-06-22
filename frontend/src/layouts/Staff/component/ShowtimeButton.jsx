@@ -1,28 +1,30 @@
-import { DatePicker, Button, Space, Typography } from 'antd';
-import dayjs from 'dayjs';
-import { useState } from 'react';
+import { Button, Space } from 'antd';
 
-
-
-const ShowtimeButton = ({ selectedDay, onSelectDay, selectedTime, onSelectTime }) => {
-
-const times = ['08:30 AM', '12:30 PM', '14:30 PM', '18:00 PM', '20:00 PM', '22:30 PM'];
-const days = ['12/06/2025', '13/06/2025', '14/06/2025', '15/06/2025', '16/06/2025'];
-  return (
-    <Space direction="vertical">
-      <h5 className='pl-15 mt-5'><i className="fa-solid fa-calendar-days "></i> Day</h5>
-      <div className='px-4  flex items-center justify-start'>
-        <Space wrap style={{ paddingLeft: "40px" }}>
+const ShowtimeButton = ({
+  selectedDay,
+  onSelectDay,
+  days = [],
+  selectedTime,
+  onSelectTime,
+  times = [],
+  showDay,
+  showTime,
+  parentVersion
+}) => (
+  <Space direction="vertical">
+    {showDay && (
+      <div className='px-4 flex items-center justify-start'>
+        <Space wrap style={{padding: "20px"}}>
           {days.map((day) => (
             <Button
               key={day}
               type={selectedDay === day ? 'primary' : 'default'}
               onClick={() => {
                 onSelectDay(day);
-                onSelectTime(null); // reset time khi đổi ngày
+                onSelectTime && onSelectTime(null);
               }}
               style={{
-                backgroundColor: selectedDay === day ? '#4F46E5' : '#fff',
+                backgroundColor: selectedDay === day ? '#8A2BE2' : '#fff',
                 color: selectedDay === day ? 'white' : 'black',
                 margin: '0 5px'
               }}
@@ -32,32 +34,39 @@ const days = ['12/06/2025', '13/06/2025', '14/06/2025', '15/06/2025', '16/06/202
           ))}
         </Space>
       </div>
-      {selectedDay && (
-        <>
-          <h5 className='pl-15'><i className="fa-solid fa-clock"></i> Time</h5>
-
-          <div className='px-4 flex items-center justify-start'>
-            <Space wrap style={{ paddingLeft: "40px" }}>
-              {times.map((time) => (
+    )}
+    {showTime && (
+      <div className='px-4 flex items-center justify-start'>
+        <Space wrap style={{ paddingLeft: "40px" }}>
+          {times.length === 0 ? (
+            <span>No showtimes</span>
+          ) : (
+            times
+              .slice()
+              .sort((a, b) => {
+                const [ha, ma] = a.time.split(':').map(Number);
+                const [hb, mb] = b.time.split(':').map(Number);
+                return ha * 60 + ma - (hb * 60 + mb);
+              })
+              .map((timeObj) => (
                 <Button
-                  key={time}
-                  type={selectedTime === time ? 'primary' : 'default'}
-                  onClick={() => onSelectTime(time)}
+                  key={timeObj.showtimeId}
+                  type={selectedTime === timeObj.time ? "primary" : "default"}
+                  onClick={() => onSelectTime(parentVersion, timeObj.time)}
                   style={{
-                    backgroundColor: selectedTime === time ? '#4F46E5' : '#fff',
-                    color: selectedTime === time ? 'white' : 'black',
+                    backgroundColor: selectedTime === timeObj.time ? '#8A2BE2' : '#fff',
+                    color: selectedTime === timeObj.time ? 'white' : 'black',
                     margin: '0 5px'
                   }}
                 >
-                  {time}
+                  {timeObj.time}
                 </Button>
-              ))}
-            </Space>
-          </div>
-        </>
-      )}
-    </Space>
-  );
-};
+              ))
+          )}
+        </Space>
+      </div>
+    )}
+  </Space>
+);
 
 export default ShowtimeButton;

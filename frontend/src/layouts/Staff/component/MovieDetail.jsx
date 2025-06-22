@@ -123,7 +123,8 @@ export default function MovieDetail() {
     },
   ];
 
-  const versions = movie.Version.split(' ').map(item => item.trim());
+  // const versions = movie.Version.split(' ').map(item => item.trim());
+  const versions = Array.isArray(movie.Version) ? movie.Version : [];
 
   const versionStyles = {
     "K": "text-white bg-cyan-800 font-bold",
@@ -178,7 +179,7 @@ export default function MovieDetail() {
       spaceBetween: 40,
     },
     1024: {
-      slidesPerView: 4,
+      slidesPerView: 5,
       spaceBetween: 50,
     },
   };
@@ -230,32 +231,6 @@ export default function MovieDetail() {
             <div className='font-semibold flex items-center gap-1'><LuChartBar /> Describe:</div>
             <p className='pt-2'>{movie.ContentSynopsis}</p>
           </div>
-          <div className='w-full '>
-            <div className="text-xl font-bold mt-8 mb-2 text-[#9810FA]">Recommended Movies</div>
-            <div className="relative">
-              {recommended.length === 0 ? (
-                <div className="text-gray-500">No recommended movies found.</div>
-              ) : (
-                <Swiper
-                  modules={[Navigation, Pagination]}
-                  navigation
-                  pagination={{ clickable: true }}
-                  slidesPerView={4}
-                  style={{ padding: "0 50px", minHeight: 300 }} // Thêm padding hai bên và tăng chiều cao
-                  breakpoints={swiperBreakpoints}
-                  className="custom-swiper-nav"
-                >
-                  {recommended.map((rec) => (
-                    <SwiperSlide key={rec.MovieId} style={{ height: 260, display: 'flex', alignItems: 'center' }}>
-                      <Link to={`/staff/movie/${rec.MovieId}`}>
-                        <ItemCard item={rec} type="movie" small />
-                      </Link>
-                    </SwiperSlide>
-                  ))}
-                </Swiper>
-              )}
-            </div>
-          </div>
         </div>
 
         <div className='w-[25%]'>
@@ -289,7 +264,33 @@ export default function MovieDetail() {
           </ul>
         </div>
       </div>
-
+ <div className='w-full '>
+            <div className="text-xl font-bold mt-8 mb-2 text-[#9810FA]">Recommended Movies</div>
+            <div className="relative">
+              {recommended.length === 0 ? (
+                <div className="text-gray-500">No recommended movies found.</div>
+              ) : (
+                <Swiper
+                  modules={[Navigation, Pagination]}
+                  navigation
+                  pagination={{ clickable: true }}
+                  slidesPerView={5}
+                  style={{ padding: "0 50px", minHeight: 300 }} // Thêm padding hai bên và tăng chiều cao
+                  breakpoints={swiperBreakpoints}
+                  className="custom-swiper-nav"
+                >
+                  {recommended.map((rec) => (
+                    <SwiperSlide key={rec.MovieId}
+                      style={{ height: 270, display: 'flex', alignItems: 'center'}}>
+                      <Link to={`/staff/movie/${rec.MovieId}`}>
+                        <ItemCard item={rec} type="movie" small />
+                      </Link>
+                    </SwiperSlide>
+                  ))}
+                </Swiper>
+              )}
+            </div>
+          </div>
     </div>
   );
 }
