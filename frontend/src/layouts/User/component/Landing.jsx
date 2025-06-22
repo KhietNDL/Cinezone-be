@@ -114,20 +114,20 @@ const LandingPage = () => {
     getMovie();
   }, [itemsPerPage, currentPage]);
   const navigate = useNavigate();
-//  const slugify = (str) => {
-//   return str
-//     .toLowerCase() // chữ thường
-//     .normalize("NFD") // chuẩn hóa chuỗi để tách dấu
-//     .replace(/[\u0300-\u036f]/g, "") // xóa dấu
-//     .replace(/[^a-z0-9\s-]/g, "") // loại bỏ ký tự đặc biệt
-//     .trim() // xóa khoảng trắng đầu/cuối
-//     .replace(/\s+/g, "-"); // thay khoảng trắng bằng dấu -
-// };
+  //  const slugify = (str) => {
+  //   return str
+  //     .toLowerCase() // chữ thường
+  //     .normalize("NFD") // chuẩn hóa chuỗi để tách dấu
+  //     .replace(/[\u0300-\u036f]/g, "") // xóa dấu
+  //     .replace(/[^a-z0-9\s-]/g, "") // loại bỏ ký tự đặc biệt
+  //     .trim() // xóa khoảng trắng đầu/cuối
+  //     .replace(/\s+/g, "-"); // thay khoảng trắng bằng dấu -
+  // };
 
-const handleClickMovie = (movieTitle) => {
-  const slug = slugify(movieTitle);
-  navigate(`/${slug}`);
-};
+  const handleClickMovie = (movieTitle) => {
+    const slug = slugify(movieTitle);
+    navigate(`/${slug}`);
+  };
 
   // Responsive breakpoints for Swiper
   const swiperBreakpoints = {

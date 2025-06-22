@@ -1,8 +1,8 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { FaStar, FaRegClock, FaCalendarAlt, FaHeart } from "react-icons/fa";
-import { BsBank } from "react-icons/bs";
-import { RiVisaFill } from "react-icons/ri";
-import { FaPaypal } from "react-icons/fa6";
+
+import { RiMovie2AiLine} from "react-icons/ri";
+
 import { useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
 
@@ -17,7 +17,7 @@ const ConfirmPayment = () => {
     selectedSeats = [],
 
     totalPrice = 0,
-    cinema = "CGV Crescent Mall",
+    selectedRoom,
     selectedDate,
     selectedTime,
     movie,
@@ -43,7 +43,7 @@ const ConfirmPayment = () => {
       selectedSeats,
       totalPrice,
       paymentMethod,
-      cinema,
+      selectedRoom,
       selectedDate,
       selectedTime,
     });
@@ -55,7 +55,7 @@ const ConfirmPayment = () => {
         selectedSeats,
         totalPrice,
         paymentMethod,
-        cinema,
+        selectedRoom,
         selectedDate,
         selectedTime,
 
@@ -66,16 +66,16 @@ const ConfirmPayment = () => {
   return (
     <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] text-white p-3 sm:p-6 pt-[80px] sm:pt-[100px]">
 
-      {/* Container chính với layout responsive */}
+      {/* container chinh responsive */}
       <div className="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-2 gap-6">
 
-        {/* Cột trái - Thông tin phim và khách hàng */}
+        {/* left-side */}
         <div className="space-y-6">
 
-          {/* Phần thông tin phim */}
-          <div className="bg-[#1e1b3a]/30 rounded-xl shadow-lg p-4 sm:p-6">
+          {/* moive info*/}
+          <div className="bg-white/5 rounded-xl shadow-lg p-4 sm:p-6">
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 h-[412px]">
-              {/* Poster */}
+
               <div className="flex justify-center sm:justify-start">
                 <img
                   src={movie.PosterImage}
@@ -84,9 +84,9 @@ const ConfirmPayment = () => {
                   className="w-40 h-56 sm:w-48 sm:h-72 object-cover rounded-lg flex-shrink-0"
                 />
               </div>
-              
 
-              {/* Thông tin phim */}
+
+              {/*info movie*/}
               <div className="flex flex-col justify-between flex-1">
                 <div >
                   <h2 className="text-xl sm:text-2xl font-bold mb-1 text-center sm:text-left">
@@ -97,12 +97,12 @@ const ConfirmPayment = () => {
                   </h3>
                   <div className="flex flex-col items-start gap-2 text-xs sm:text-sm text-gray-400 mb-2">
                     <span className="flex items-center gap-1">
-                      <FaRegClock /> {movie.RunningTime} min
+                      <FaRegClock className="text-green-400" /> {movie.RunningTime} min
                     </span>
                     <span className="flex items-center gap-1">
-                      <FaCalendarAlt /> {new Date(movie.FromDate).toLocaleDateString("vi-VN")}
+                      <FaCalendarAlt className="text-blue-300" /> {new Date(movie.FromDate).toLocaleDateString("vi-VN")}
                     </span>
-                    <span>Genre: {movie.Genres}</span>
+                    <span className="flex items-center gap-1"><RiMovie2AiLine className="text-red-600" />{movie.Genres}</span>
                   </div>
 
                   {/* <div className="flex items-center justify-center sm:justify-start gap-3 sm:gap-4 text-xs sm:text-sm mb-4">
@@ -113,18 +113,18 @@ const ConfirmPayment = () => {
                       <FaHeart /> {movie.feedback} feedback
                     </span>
                   </div> */}
-                   <p className="text-gray-300 text-xs sm:text-sm text-center sm:text-left leading-relaxed">
+                  <p className="text-gray-300 text-xs sm:text-sm text-center sm:text-left leading-relaxed">
                     {movie.ContentSynopsis}
                   </p>
 
                 </div>
               </div>
             </div>
-            
+
           </div>
 
-          {/* Phần thông tin khách hàng */}
-          <div className="bg-[#1e1b3a]/30 rounded-xl shadow-lg p-4 sm:p-6">
+          {/* user info */}
+          <div className="bg-white/5 rounded-xl shadow-lg p-4 sm:p-6">
             <h2 className="text-lg sm:text-2xl font-bold mb-4 text-center sm:text-left">
               Check your booking ticket information
             </h2>
@@ -176,17 +176,17 @@ const ConfirmPayment = () => {
           </div>
         </div>
 
-        {/* Cột phải - Thông tin đặt vé và thanh toán */}
-        <div className="bg-[#252642]/30 rounded-xl shadow-lg p-4 sm:p-6">
+        {/* right side - payment*/}
+        <div className="bg-white/5 rounded-xl shadow-lg p-4 sm:p-6">
           <h2 className="text-lg sm:text-2xl font-bold mb-4 text-center sm:text-left">
             Confirm Booking Ticket
           </h2>
 
-          {/* Thông tin đặt vé */}
+          {/* ticket info*/}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
             <div>
-              <p className="text-xs sm:text-sm text-gray-400">Cinema:</p>
-              <p className="text-sm sm:text-base font-semibold">{cinema}</p>
+              <p className="text-xs sm:text-sm text-gray-400">Room:</p>
+              <p className="text-sm sm:text-base font-semibold">{selectedRoom}</p>
             </div>
             <div>
               <p className="text-xs sm:text-sm text-gray-400">Date:</p>
@@ -204,14 +204,14 @@ const ConfirmPayment = () => {
             </div>
           </div>
 
-          {/* Tổng giá */}
-          <div className="bg-[#2E3A4E]/50 mb-4 rounded-lg p-3 sm:p-4">
+          {/* total price*/}
+          <div className="bg-[#2E3A4E]/40 mb-4 rounded-lg p-3 sm:p-4">
             <p className="text-xs sm:text-sm text-gray-400">Total price</p>
             <p className="text-xl sm:text-2xl font-bold">{totalPrice.toLocaleString("vi-VN")}đ</p>
           </div>
 
-          {/* Mã khuyến mãi */}
-          <div className="bg-[#2E3A4E]/50 p-3 sm:p-4 rounded-lg mb-3">
+          {/* promotion */}
+          <div className="bg-[#2E3A4E]/40 p-3 sm:p-4 rounded-lg mb-3">
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <input
                 type="text"
@@ -224,8 +224,8 @@ const ConfirmPayment = () => {
             </div>
           </div>
 
-          {/* Điểm tích lũy */}
-          <div className="bg-[#2E3A4E]/50 p-3 sm:p-4 rounded-lg mb-4">
+          {/* point */}
+          <div className="bg-[#2E3A4E]/40 p-3 sm:p-4 rounded-lg mb-4">
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <input
                 type="text"
@@ -238,40 +238,58 @@ const ConfirmPayment = () => {
             </div>
           </div>
 
-          {/* Phương thức thanh toán */}
+          {/* payment method */}
           <h3 className="text-base sm:text-lg mb-4 font-semibold">Payment Methods</h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
             <button
-              onClick={() => handlePaymentMethod("Bank")}
-              className={`flex flex-col items-center justify-center rounded-lg p-3 sm:p-4 h-20 sm:h-24 font-semibold transition-colors ${paymentMethod === "Bank" ? "bg-[#5B4CBD]" : "bg-[#474787]/26 hover:bg-[#2E3A4E]"
+              onClick={() => handlePaymentMethod("VnPay")}
+              className={`flex flex-col items-center justify-center rounded-lg p-3 sm:p-4 h-20 sm:h-24 font-semibold transition-colors ${paymentMethod === "VnPay" ? "bg-[#5B4CBD]" : "bg-[#474787]/26 hover:bg-[#2E3A4E]"
                 } text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#5B4CBD]`}
             >
-              <BsBank size={20} className="mb-1 text-[#b2a6ff]" />
-              <span className="text-xs sm:text-sm">Bank</span>
+              <img
+                src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-VNPAY-QR-350x65.png"
+                alt="VnPay logo"
+                className="w-20 h-10 mb-1 "
+              />
+              <span className="text-xs sm:text-sm">VnPay</span>
             </button>
             <button
-              onClick={() => handlePaymentMethod("Visa")}
-              className={`flex flex-col items-center justify-center rounded-lg p-3 sm:p-4 h-20 sm:h-24 font-semibold transition-colors ${paymentMethod === "Visa" ? "bg-[#5B4CBD]" : "bg-[#474787]/26 hover:bg-[#2E3A4E]"
+              onClick={() => handlePaymentMethod("Zalo")}
+              className={`flex flex-col items-center justify-center rounded-lg p-3 sm:p-4 h-20 sm:h-24 font-semibold transition-colors ${paymentMethod === "Zalo"
+                  ? "bg-[#5B4CBD]"
+                  : "bg-[#474787]/26 hover:bg-[#2E3A4E]"
                 } text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#5B4CBD]`}
             >
-              <RiVisaFill size={20} className="mb-1 text-[#b2a6ff]" />
-              <span className="text-xs sm:text-sm text-center">Visa/Master</span>
+             
+              <img
+                src="https://vectorseek.com/wp-content/uploads/2023/09/Zalopay-Logo-Vector.svg-.png"
+                alt="ZaloPay logo"
+                className="w-20 h-10 mb-1 "
+              />
+              <span className="text-xs sm:text-sm text-center">ZaloPay</span>
             </button>
+
             <button
-              onClick={() => handlePaymentMethod("PayPal")}
-              className={`flex flex-col items-center justify-center rounded-lg p-3 sm:p-4 h-20 sm:h-24 font-semibold transition-colors ${paymentMethod === "PayPal" ? "bg-[#5B4CBD]" : "bg-[#474787]/26 hover:bg-[#2E3A4E]"
+              onClick={() => handlePaymentMethod("Momo")}
+              className={`flex flex-col items-center justify-center rounded-lg p-3 sm:p-4 h-20 sm:h-24 font-semibold transition-colors ${paymentMethod === "Momo" ? "bg-[#5B4CBD]" : "bg-[#474787]/26 hover:bg-[#2E3A4E]"
                 } text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#5B4CBD]`}
             >
-              <FaPaypal size={20} className="mb-1 text-[#b2a6ff]" />
-              <span className="text-xs sm:text-sm">PayPal</span>
+               <img
+                src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-MoMo-Transparent-1024x1024.png"
+                alt="Momo logo"
+                className="w-20 h-10 mb-1 "
+              />
+              <span className="text-xs sm:text-sm">Momo</span>
             </button>
           </div>
 
-          {/* Nút hành động */}
+          {/* action button */}
           <div className="space-y-3">
             <button
               type="button"
-              className="bg-[#6956F5] hover:bg-[#6956f5bf] text-white px-4 py-3 sm:px-5 sm:py-4 rounded-lg flex items-center font-semibold w-full justify-center text-base sm:text-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+               className="appearance-none w-full py-3 pl-4 pr-10 text-lg font-semibold text-purple-100 bg-gradient-to-r from-[#36355a] to-[#4e408e] 
+                 border-b-2 border-purple-500 hover:border-purple-400 focus:outline-none focus:ring-0 
+                 transition duration-300 ease-in-out tracking-wide rounded-4xl"
               onClick={handleConfirm}
               disabled={!paymentMethod}
             >
@@ -279,7 +297,7 @@ const ConfirmPayment = () => {
             </button>
             <button
               type="button"
-              className="bg-transparent hover:bg-[#000000bf]/30 border-2 border-[#5B4CBD] text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg flex items-center font-semibold w-full justify-center text-base sm:text-xl transition-colors"
+              className="bg-transparent hover:bg-[#000000bf]/30 border-2 border-purple-500/70 text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-4xl flex items-center font-semibold w-full justify-center text-base sm:text-xl transition-colors"
               onClick={() => navigate("/")}
             >
               Cancel

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { GoPlus } from "react-icons/go";
 import {
   IoCalendarOutline,
@@ -17,18 +17,19 @@ import { MdMovie, MdDeleteForever } from "react-icons/md";
 import { FaRegEdit } from "react-icons/fa";
 import { RiDeleteBin5Line } from "react-icons/ri";
 import { FaUpload, FaCalendarAlt, FaClock } from "react-icons/fa";
-import { createMovie, getMovies, editMovie } from "../../../services/API";
+import {
+  createMovie,
+  getMovies,
+  editMovie,
+  deleteMovie,
+  searchMovies,
+  getUpcomingMovies,
+} from "../../../services/API";
 import { formatDateRange } from "../../../utils/dateUtils";
-
+import debounce from "lodash/debounce";
 const MovieManagement = () => {
   const [movies, setMovies] = useState([]);
-  const [upcomingMovies] = useState([
-    { date: "2024-07-03", title: "Midnight Shadows" },
-    { date: "2024-07-15", title: "Echoes of Tomorrow" },
-    { date: "2024-08-09", title: "Neon Skyline" },
-    { date: "2024-08-25", title: "Fading Lights" },
-    { date: "2024-09-12", title: "Celestial Drift" },
-  ]);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
@@ -57,6 +58,7 @@ const MovieManagement = () => {
   const [trailerUrl, setTrailerUrl] = useState(null);
   const [posterFileName, setPosterFileName] = useState("");
   const [trailerFileName, setTrailerFileName] = useState("");
+  const [upcomingMovies, setUpcomingMovies] = useState([]);
   const getMovieData = async () => {
     try {
       const response = await getMovies({
@@ -65,10 +67,10 @@ const MovieManagement = () => {
       });
       if (response.data) {
         setMovies(response.data);
+        const total = response.data.total || response.data.length;
         if (!searchMovie) {
           setTotalPages(
-            response.data.totalPages ||
-              Math.ceil(response.data.total / itemsPerPage)
+            response.data.totalPages || Math.ceil(total / itemsPerPage)
           );
         }
       }
@@ -76,38 +78,148 @@ const MovieManagement = () => {
       console.error("Error fetching movies:", error);
     }
   };
-
+  const getUpcomingMovie = async () => {
+    try {
+      const response = await getUpcomingMovies({
+        limit: itemsPerPage,
+        page: currentPage,
+      });
+      if (response.data) {
+        console.log(" response.data.data", response.data);
+        setUpcomingMovies(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching upcoming movies:", error);
+    }
+  };
   useEffect(() => {
     getMovieData();
+    getUpcomingMovie();
   }, [itemsPerPage, currentPage]);
 
-  const filteredMovies = useMemo(() => {
-    const filtered = movies.filter(
-      (mov) =>
-        (mov.NameOfEnglish &&
-          mov.NameOfEnglish.toLowerCase().includes(
-            searchMovie.toLowerCase()
-          )) ||
-        (mov.NameOfVietnamese &&
-          mov.NameOfVietnamese.toLowerCase().includes(
-            searchMovie.toLowerCase()
-          )) ||
-        (mov.ProductionCompany &&
-          mov.ProductionCompany.toLowerCase().includes(
-            searchMovie.toLowerCase()
-          ))
-    );
-    setTotalPages(Math.ceil(filtered.length / itemsPerPage));
-    return filtered;
-  }, [movies, searchMovie, itemsPerPage]);
-
   useEffect(() => {
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset to first page on search
+    debouncedSearchMovieData(searchMovie); // Use debounced function
   }, [searchMovie]);
+
+  const searchMovieData = async (searchTerm) => {
+    if (!searchTerm.trim()) {
+      getMovieData();
+      return;
+    }
+    try {
+      const response = await searchMovies({ name: searchTerm });
+      if (response.data.data) {
+        const normalizedMovies = response.data.data.map((movie) => ({
+          ...movie,
+        }));
+        setMovies(normalizedMovies);
+        const total = response.data.total || normalizedMovies.length; // Adjust based on API
+        setTotalPages(Math.ceil(total / itemsPerPage));
+        console.log("Total pages (searchMovieData):", totalPages);
+      }
+    } catch (error) {
+      console.error("Error searching movies:", error);
+      setMovies([]);
+      setTotalPages(0);
+    }
+  };
+  const debouncedSearchMovieData = debounce(searchMovieData, 500);
+  useEffect(() => {
+    setCurrentPage(1); // Reset to first page on search
+    debouncedSearchMovieData(searchMovie); // Use debounced function
+  }, [searchMovie]);
+
+  const renderPaginationButtons = () => {
+    const maxVisibleButtons = 5;
+    const halfVisible = Math.floor(maxVisibleButtons / 2);
+    let startPage = Math.max(1, currentPage - halfVisible);
+    let endPage = Math.min(totalPages, currentPage + halfVisible);
+
+    if (currentPage <= halfVisible) {
+      endPage = Math.min(maxVisibleButtons, totalPages);
+    }
+    if (currentPage + halfVisible >= totalPages) {
+      startPage = Math.max(1, totalPages - maxVisibleButtons + 1);
+    }
+
+    const pages = [];
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={`page-${i}`}
+          onClick={() => handlePageChange(i)}
+          className={`px-4 py-2 rounded ${
+            currentPage === i
+              ? "bg-blue-500 text-white"
+              : "bg-gray-200 hover:bg-gray-300"
+          }`}
+          aria-label={`Page ${i}`}
+          aria-current={currentPage === i ? "true" : undefined}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    if (startPage > 1) {
+      pages.unshift(
+        <button
+          key="ellipsis-start"
+          className="px-4 py-2 bg-gray-200 rounded cursor-default"
+          disabled
+        >
+          ...
+        </button>
+      );
+      pages.unshift(
+        <button
+          key="page-1"
+          onClick={() => handlePageChange(1)}
+          className={`px-4 py-2 rounded ${
+            currentPage === 1
+              ? "bg-blue-500 text-white"
+              : "bg-gray-200 hover:bg-gray-300"
+          }`}
+          aria-label="Page 1"
+        >
+          1
+        </button>
+      );
+    }
+    if (endPage < totalPages) {
+      pages.push(
+        <button
+          key="ellipsis-end"
+          className="px-4 py-2 bg-gray-200 rounded cursor-default"
+          disabled
+        >
+          ...
+        </button>
+      );
+      pages.push(
+        <button
+          key={`page-${totalPages}`}
+          onClick={() => handlePageChange(totalPages)}
+          className={`px-4 py-2 rounded ${
+            currentPage === totalPages
+              ? "bg-blue-500 text-white"
+              : "bg-gray-200 hover:bg-gray-300"
+          }`}
+          aria-label={`Page ${totalPages}`}
+        >
+          {totalPages}
+        </button>
+      );
+    }
+
+    return pages.length > 0 ? pages : <span>No pages to display</span>;
+  };
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
+      console.log("Page changed to:", page);
     }
   };
 
@@ -302,11 +414,14 @@ const MovieManagement = () => {
   };
 
   const handleEditMovie = async () => {
-    if (!validateForm() || !selectedMovie) return;
+    if (!validateForm() || !selectedMovie || !selectedMovie.MovieId) {
+      alert("Cannot edit: Invalid movie selection or form data.");
+      return;
+    }
 
     try {
       const movieData = new FormData();
-      movieData.append("idMovie", selectedMovie.idMovie);
+      movieData.append("MovieId", selectedMovie.MovieId); // Use MovieId
       movieData.append("NameOfVietnamese", nameOfVietnamese.trim());
       movieData.append("NameOfEnglish", nameOfEnglish.trim());
       movieData.append("FromDate", fromDate);
@@ -318,13 +433,13 @@ const MovieManagement = () => {
       movieData.append("Version", version);
       movieData.append("Genres", genres.trim());
       movieData.append("ContentSynopsis", contentSynopsis.trim());
-      if (posterImage) movieData.append("poster", posterImage); // Changed from PosterImage
-      if (trailerUrl) movieData.append("trailer", trailerUrl); // Changed from TrailerUrl
+      if (posterImage) movieData.append("poster", posterImage);
+      if (trailerUrl) movieData.append("trailer", trailerUrl);
 
       const updatedMovie = await editMovie(movieData);
       setMovies((prev) =>
         prev.map((mov) =>
-          mov.idMovie === updatedMovie.idMovie ? updatedMovie : mov
+          mov.MovieId === updatedMovie.MovieId ? updatedMovie : mov
         )
       );
       resetForm();
@@ -369,18 +484,44 @@ const MovieManagement = () => {
     setPosterImage(null);
     setTrailerUrl(null);
   };
-
+  const handleEdit = (movie) => {
+    console.log("Movie to edit:", movie); // Debug
+    if (!movie || !movie.MovieId) {
+      console.error("Invalid movie or movieId:", movie);
+      alert("Cannot delete: Invalid movie selection.");
+      return;
+    }
+    setSelectedMovie(movie);
+    setShowEditForm(true);
+  };
   const handleDelete = (movie) => {
+    console.log("Movie to delete:", movie); // Debug
+    if (!movie || !movie.MovieId) {
+      console.error("Invalid movie or movieId:", movie);
+      alert("Cannot delete: Invalid movie selection.");
+      return;
+    }
     setSelectedMovie(movie);
     setShowDeletePopup(true);
   };
 
-  const confirmDelete = () => {
-    setMovies((prev) =>
-      prev.filter((mov) => mov.idMovie !== selectedMovie.idMovie)
-    );
-    setShowDeletePopup(false);
-    setSelectedMovie(null);
+  const confirmDelete = async () => {
+    if (!selectedMovie || !selectedMovie.MovieId) {
+      alert("Cannot delete: No movie selected or invalid movie ID.");
+      return;
+    }
+
+    try {
+      await deleteMovie(selectedMovie.MovieId);
+      setMovies((prev) =>
+        prev.filter((mov) => mov.MovieId !== selectedMovie.MovieId)
+      );
+      setShowDeletePopup(false);
+      setSelectedMovie(null);
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert(`Failed to delete movie: ${error.message || "Server error"}`);
+    }
   };
 
   const handleRowClick = (movie, event) => {
@@ -600,7 +741,7 @@ const MovieManagement = () => {
                 <FaCalendarAlt size={20} className="text-red-500" />
               </div>
             </div>
-            <div className="font-bold text-[19px]">25,340</div>
+            <div className="font-bold text-[19px]">{upcomingMovies.length}</div>
           </div>
           <div className="bg-white rounded-md p-3 w-[23%] shadow-sm">
             <div className="flex items-center justify-between">
@@ -661,14 +802,14 @@ const MovieManagement = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredMovies
+                {movies
                   .slice(
                     (currentPage - 1) * itemsPerPage,
                     currentPage * itemsPerPage
                   )
                   .map((mov) => (
                     <tr
-                      key={mov.idMovie}
+                      key={mov.MovieId}
                       role="button"
                       onClick={(e) => handleRowClick(mov, e)}
                       className="border-b border-slate-200 hover:bg-slate-100 text-sm"
@@ -705,21 +846,7 @@ const MovieManagement = () => {
                           role="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSelectedMovie(mov);
-                            setNameOfVietnamese(mov.NameOfVietnamese);
-                            setNameOfEnglish(mov.NameOfEnglish);
-                            setFromDate(mov.FromDate);
-                            setToDate(mov.ToDate);
-                            setActors(mov.Actors);
-                            setProductionCompany(mov.ProductionCompany);
-                            setDirector(mov.Director);
-                            setRunningTime(mov.RunningTime);
-                            setVersion(mov.Version);
-                            setGenres(mov.Genres);
-                            setContentSynopsis(mov.ContentSynopsis);
-                            setPosterImage(null); // Không tải lại file, chỉ cần URL nếu cần
-                            setTrailerUrl(null); // Không tải lại file, chỉ cần URL nếu cần
-                            setShowEditForm(true);
+                            handleEdit(mov);
                           }}
                           className="text-blue-500 hover:text-blue-700"
                           title="Edit"
@@ -747,27 +874,19 @@ const MovieManagement = () => {
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+              className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50 hover:bg-gray-300"
+              aria-label="Previous page"
             >
               Previous
             </button>
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => handlePageChange(i + 1)}
-                className={`px-4 py-2 rounded ${
-                  currentPage === i + 1
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-200"
-                }`}
-              >
-                {i + 1}
-              </button>
-            ))}
+
+            {renderPaginationButtons()}
+
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+              className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50 hover:bg-gray-300"
+              aria-label="Next page"
             >
               Next
             </button>
@@ -782,19 +901,16 @@ const MovieManagement = () => {
                 </h2>
               </div>
               <div className="space-y-4">
-                {upcomingMovies.map((movie, index) => (
-                  <div key={index} className="relative pl-6">
+                {upcomingMovies.map((movie) => (
+                  <div key={movie.MovieId} className="relative pl-6">
                     <div className="absolute left-0 top-0 w-2 h-2 bg-indigo-600 rounded-full"></div>
-                    {index < upcomingMovies.length - 1 && (
-                      <div
-                        className="absolute left-0.5 top-3 h-full w-0.5 bg-gray-300"
-                        style={{ height: "calc(100% - 12px)" }}
-                      ></div>
-                    )}
+
                     <div className="bg-gray-100 p-2 rounded-lg">
-                      <div className="text-sm text-gray-600">{movie.date}</div>
+                      <div className="text-sm text-gray-600">
+                        {formatDateRange(movie.FromDate, movie.ToDate)}
+                      </div>
                       <div className="text-md font-medium text-gray-800">
-                        {movie.title}
+                        {movie.NameOfEnglish}
                       </div>
                     </div>
                   </div>

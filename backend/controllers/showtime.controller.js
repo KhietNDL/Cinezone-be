@@ -2,6 +2,7 @@ const Showtime = require('../models/showtime.model');
 const Movie = require('../models/movie.model');
 const CinemaRoom = require('../models/cinemaRoom.model');
 const { validate: uuidValidate } = require('uuid');
+const { normalizeDate } = require("../middlewares/showtime.validator");
 
 const ERROR_CODES = {
     SHOWTIME_NOT_FOUND: 'SHOWTIME_001',
@@ -225,35 +226,7 @@ exports.getSeatsByShowtime = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
-// Helper để chuẩn hóa ngày về dạng YYYY-MM-DD
-function normalizeDate(dateString) {
-    if (!dateString) return null;
-    if (typeof dateString !== 'string') {
-        // Nếu là Date object, chuyển sang ISO string
-        if (dateString instanceof Date) {
-            return dateString.toISOString().slice(0, 10);
-        }
-        // Nếu là số hoặc kiểu khác, chuyển sang string
-        dateString = String(dateString);
-    }
-    // Nếu là ISO dạng 2025-06-18T17:00:00.000Z thì lấy phần trước 'T'
-    if (dateString.includes('T')) {
-        return dateString.split('T')[0];
-    }
-    // Thay thế các ký tự không phải số hoặc dấu gạch ngang thành '-'
-    let normalized = dateString.replace(/[./\\]/g, '-');
-    // Nếu đúng định dạng YYYY-MM-DD thì trả về
-    if (/^\d{4}-\d{2}-\d{2}$/.test(normalized)) return normalized;
-    // Nếu là dạng YYYY-M-D thì thêm số 0
-    const parts = normalized.split('-');
-    if (parts.length === 3) {
-        const [y, m, d] = parts;
-        if (y.length === 4 && m.length <= 2 && d.length <= 2) {
-            return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-        }
-    }
-    return null;
-}
+
 
 // API: Lấy khung thời gian chiếu phim theo movieId và day
 exports.getShowtimesByMovieAndDay = async (req, res) => {
@@ -282,13 +255,11 @@ exports.getShowtimesByMovieAndDay = async (req, res) => {
                 showtimes: []
             });
         }
-        // Lấy tên phòng chiếu cho từng suất
         const result = await Promise.all(showtimes.map(async (st) => {
             const room = await CinemaRoom.getCinemaRoomById(st.CinemaRoomId);
             return {
                 showtimeId: st.ShowtimeId,
-                time: st.Time,
-                roomName: room ? room.Name : null
+                time: st.Time
             };
         }));
         res.json({
@@ -304,4 +275,97 @@ exports.getShowtimesByMovieAndDay = async (req, res) => {
             details: error.message
         });
     }
-}; 
+};
+
+exports.getShowtimesByMovieId = async (req, res) => {
+    const { movieId } = req.params;
+    try {
+        const rows = await Showtime.getShowtimesByMovie(movieId);
+        // Loại trùng theo Day + roomName
+        const unique = new Set();
+        const result = [];
+        rows.forEach(row => {
+            const key = `${row.Day}_${row.Name}`;
+            if (!unique.has(key)) {
+                unique.add(key);
+                result.push({
+                    Day: normalizeDate(row.Day),
+                });
+            }
+        });
+        res.json({
+            movieId,
+            showtimes: result
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.getShowtimesByMovieName = async (req, res) => {
+    const { movieName } = req.params;
+    try {
+        const rows = await Showtime.getShowtimesByMovieName(movieName);
+
+        // Dùng Set để loại trùng ngày
+        const uniqueDays = new Set();
+        const showtimes = [];
+        rows.forEach(row => {
+            const dayOnly = normalizeDate(row.Day);
+            if (!uniqueDays.has(dayOnly)) {
+                uniqueDays.add(dayOnly);
+                showtimes.push({ Day: dayOnly });
+            }
+        });
+
+        res.json({
+            movieName,
+            showtimes
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.getShowtimesByMovieNameAndDay = async (req, res) => {
+    const { movieName } = req.params;
+    let { day } = req.query;
+    const { normalizeDate } = require("../middlewares/showtime.validator");
+    day = normalizeDate(day);
+
+    if (!movieName || !day) {
+        return res.status(400).json({ error: 'Missing movieName or day' });
+    }
+
+    try {
+        const rows = await Showtime.searchByMovieNameAndDay(movieName, day);
+
+        // Gom nhóm theo version
+        const versionMap = {};
+        rows.forEach(row => {
+            if (!versionMap[row.Version]) {
+                versionMap[row.Version] = [];
+            }
+            // Lấy giờ:phút từ row.Time (giả sử row.Time là chuỗi "HH:mm:ss")
+            const timeHM = typeof row.Time === 'string' ? row.Time.slice(0, 5) : '';
+            versionMap[row.Version].push({
+                showtimeId: row.ShowtimeId,
+                time: timeHM,
+                roomName: row.roomName
+            });
+        });
+
+        const result = Object.entries(versionMap).map(([version, showtimes]) => ({
+            version,
+            showtimes
+        }));
+
+        res.json({
+            movieName,
+            day,
+            versions: result
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};

@@ -5,12 +5,21 @@ import DoubleSeatSelectingLight from "../assets/DoubleSeatSelectingLight.svg";
 import DoubleSeatNoneNight from "../assets/DoubleSeatNoneNight.svg";
 import DoubleSeatNoneLight from "../assets/DoubleSeatNoneLight.svg";
 import DoubleSeatSelected from "../assets/DoubleSeatSelected.svg";
+import DoubleSeatSelected4 from "../assets/DoubleSeatSelected4.svg"
+
 export const LayoutSelectSeat = ({
-  onSeatSelect = () => {},
+  onSeatSelect = () => { },
   initialSelectedSeats = [],
   //   seatPrice = 150000,
   //   currency = "VND",
-  width=10 , height=10
+   width = 10,
+  height = 10,
+  textColor = "text-gray-500", 
+  widthDouble = 10,
+  heightDouble = 10,
+
+  gapX = 2,
+
 }) => {
   const [selectedSeats, setSelectedSeats] = useState(
     new Set(initialSelectedSeats)
@@ -126,17 +135,12 @@ export const LayoutSelectSeat = ({
         <button
           key={seatId}
           onClick={() => handleSeatClick(seatId)}
-          className={`transition-all duration-200  hover:scale-105 ${
-            isTaken ? "cursor-not-allowed" : "cursor-pointer"
-          }`}
+          className={`transition-all duration-200  hover:scale-105 ${isTaken ? "cursor-not-allowed" : "cursor-pointer"
+            }`}
           disabled={isTaken}
           title={`Seat ${seatId}`}
         >
-          <img
-            src={seatIcon}
-            alt="Double Seat"
-            className="w-[42px] h-6 "
-          />
+          <img src={seatIcon} alt="Double Seat" className={`w-${widthDouble} h-${heightDouble}`} />
         </button>
       );
     }
@@ -144,9 +148,8 @@ export const LayoutSelectSeat = ({
       <button
         key={seatId}
         onClick={() => handleSeatClick(seatId)}
-        className={`transition-all duration-200 hover:scale-110 ${
-          isTaken ? "cursor-not-allowed" : "cursor-pointer"
-        } ${getSeatColor(seatId)}`}
+        className={`transition-all duration-200 hover:scale-110 ${isTaken ? "cursor-not-allowed" : "cursor-pointer"
+          } ${getSeatColor(seatId)}`}
         disabled={isTaken}
         title={`Chair ${seatId}`}
       >
@@ -179,7 +182,7 @@ export const LayoutSelectSeat = ({
         {isFirstRow && (
           <div className="flex justify-center mx-6 mb-1">
             <span className="w-6 mr-4"></span>
-            <div className="flex space-x-2">
+            <div className={`flex space-x-${gapX}`}>
               {rowData.seats.map((seatNumber) => {
                 const isGapAfter =
                   !isCoupleRow && (seatNumber === 3 || seatNumber === 9);
@@ -188,7 +191,7 @@ export const LayoutSelectSeat = ({
                     key={`label-${seatNumber}`}
                     className={isGapAfter ? "mr-10" : ""}
                   >
-                    <span className="text-xs text-gray-600 block text-center w-6 my-2">
+                    <span className={`text-xs ${textColor} block text-center w-6 my-2`}>
                       {seatNumber}
                     </span>
                   </div>
@@ -200,7 +203,7 @@ export const LayoutSelectSeat = ({
         )}
 
         <div className="flex items-center justify-evenly">
-          <span className="text-gray-500 w-6 text-sm font-medium mr-4">
+          <span className={`${textColor} w-6 text-sm font-medium mr-4`}>
             {rowData.row}
           </span>
 
@@ -208,7 +211,7 @@ export const LayoutSelectSeat = ({
             {seatElements}
           </div>
 
-          <span className="text-gray-500 w-6 text-sm font-medium ml-4">
+          <span className={`${textColor} w-6 text-sm font-medium ml-4`}>
             {rowData.row}
           </span>
         </div>
@@ -326,13 +329,13 @@ export const LayoutSelectSeat = ({
             className="opacity-0 blur-[2px] transition-opacity duration-500 group-hover:opacity-100"
           />
         </svg>
-        <div className="text-center font-bold text-[20px] mt-4 text-black">
+        <div className={`text-center font-bold text-[20px] mt-4 ${textColor}`}>
           SCREEN
         </div>
       </div>
 
       {/* Seat Layout */}
-      <div className="">{seatLayout.map((rowData) => renderRow(rowData))}</div>
+      <div className=" mt-8">{seatLayout.map((rowData) => renderRow(rowData))}</div>
 
       {/* Legend */}
       <div className="flex justify-center items-center space-x-6 mb-6">
