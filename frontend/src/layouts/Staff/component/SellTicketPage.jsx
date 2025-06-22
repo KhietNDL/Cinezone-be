@@ -177,7 +177,7 @@ const SellTicketPage = () => {
       {selectedMovie && (
         <>
           <p className="font-semibold"><i className="fa-solid fa-calendar-days"></i> Select Day</p>
-          <ShowtimeButton 
+          <ShowtimeButton
             selectedDay={selectedDay}
             onSelectDay={(day) => {
               setSelectedDay(day);
@@ -195,12 +195,12 @@ const SellTicketPage = () => {
           <p className="flex items-center gap-1 font-semibold">
             <IoTime /> Select Time
           </p>
-          <div className="flex flex-wrap gap-6 p-4">
+          <div className="flex flex-wrap gap-6 p-4 ml-7">
             {versionsAndTimes.map(ver => (
               <div key={ver.version} className="flex flex-col items-start">
                 <div
                   className={`font-bold px-5 py-2 rounded-lg mb-2
-                    ${selectedVersion === ver.version ? "scale-107 shadow-lg" : ""}
+                    ${selectedVersion === ver.version ? "scale-107 shadow-lg shadow-gray-400" : ""}
                     ${ver.version === "IMAX" ? "bg-gradient-to-r from-[#004897] to-[#0AF7FB] text-white" :
                       ver.version === "4DX" ? "bg-gradient-to-r from-[#680000] to-[#F26969] text-white" :
                         ver.version === "3D" ? "bg-gradient-to-r from-[#C88200] to-[#FFE606] text-white" :
@@ -208,21 +208,22 @@ const SellTicketPage = () => {
                             "bg-gradient-to-r from-gray-700 to-gray-400 text-white"
                     }`}
                   role="button"
+                  title={ver.version}
                   onClick={() => setSelectedVersion(ver.version)}
                 >
                   {ver.version}
-                
 
-                <ShowtimeButton
-                  parentVersion={ver.version}
-                  selectedTime={selectedTime}
-                  onSelectTime={(ver, time) => {
-                    setSelectedVersion(ver);
-                    setSelectedTime(time);
-                  }}
-                  times={ver.showtimes}
-                  showTime
-                />
+
+                  <ShowtimeButton
+                    parentVersion={ver.version}
+                    selectedTime={selectedTime}
+                    onSelectTime={(ver, time) => {
+                      setSelectedVersion(ver);
+                      setSelectedTime(time);
+                    }}
+                    times={ver.showtimes}
+                    showTime
+                  />
                 </div>
               </div>
             ))}
@@ -238,7 +239,14 @@ const SellTicketPage = () => {
       )}
 
       <div className=" text-center">
-        <Link to="/staff/ticket-selling/select-seats">
+        <Link to="/staff/ticket-selling/select-seats"
+          state={{
+            movie: selectedMovie,
+            day: selectedDay,
+            version: selectedVersion,
+            time: selectedTime,
+            room: room
+          }}>
           <Button style={{ backgroundColor: "#8A2BE2", color: "white", padding: "1rem" }}>
             <i className="fa-solid fa-couch"></i> Select seats
           </Button>
