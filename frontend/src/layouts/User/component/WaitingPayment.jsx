@@ -89,7 +89,7 @@ const WaitingPayment = () => {
       alert("Please select a payment method.");
       return;
     }
-    if (paymentMethod !== "Bank" && ((!cardHolder || !cardNumber || !expiry || !cvc))) {
+    if (paymentMethod !== "VNPay" && ((!cardHolder || !cardNumber || !expiry || !cvc))) {
       alert("Please fill out all fields.");
       return;
     }
@@ -130,7 +130,7 @@ const WaitingPayment = () => {
           Your booking has been confirmed. Enjoy your movie!
         </p>
 
-       
+
       </div>
 
       {/* Right Side - Booking Details */}
@@ -326,32 +326,45 @@ const WaitingPayment = () => {
         <div className="grid grid-cols-10 gap-3 mb-6">
           <button
             type="button"
-            className={`col-span-3 flex items-center justify-center p-3 rounded-lg font-semibold ${paymentMethod === "PayPal" ? "bg-[#6B59E6] text-white" : "bg-[#1E1B3A] text-white"
+            className={`col-span-3 flex items-center justify-center p-3 rounded-lg font-semibold ${paymentMethod === "Momo" ? "bg-[#6B59E6] text-white" : "bg-[#1E1B3A] text-white"
               }`}
-            onClick={() => setPaymentMethod("PayPal")}
+            onClick={() => setPaymentMethod("Momo")}
           >
-            <FaPaypal className="mr-2 text-[#b2a6ff]" /> PayPal
+            <img
+              src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-MoMo-Transparent-1024x1024.png"
+              alt="Momo logo"
+              className="w-20 h-10 mb-1 "
+            />
           </button>
           <button
             type="button"
-            className={`col-span-3 flex items-center justify-center p-3 rounded-lg font-semibold ${paymentMethod === "Bank" ? "bg-[#6B59E6] text-white" : "bg-[#1E1B3A] text-white"
+            className={`col-span-3 flex items-center justify-center p-3 rounded-lg font-semibold ${paymentMethod === "VNPay" ? "bg-[#6B59E6] text-white" : "bg-[#1E1B3A] text-white"
               }`}
-            onClick={() => setPaymentMethod("Bank")}
+            onClick={() => setPaymentMethod("VNPay")}
           >
-            <BsBank className="mr-2 text-[#b2a6ff]" /> Bank
+            <img
+              src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-VNPAY-QR-350x65.png"
+              alt="VnPay logo"
+              className="w-20 h-10 mb-1 "
+            />
+
           </button>
           <button
             type="button"
-            className={`col-span-4 flex items-center justify-center p-3 rounded-lg font-semibold ${paymentMethod === "Visa" ? "bg-[#6B59E6] text-white" : "bg-[#1E1B3A] text-white"
+            className={`col-span-4 flex items-center justify-center p-3 rounded-lg font-semibold ${paymentMethod === "ZaloPay" ? "bg-[#6B59E6] text-white" : "bg-[#1E1B3A] text-white"
               }`}
-            onClick={() => setPaymentMethod("Visa")}
+            onClick={() => setPaymentMethod("ZaloPay")}
           >
-            <RiVisaFill className="mr-2 text-[#b2a6ff]" /> Visa / Master Card
+            <img
+              src="https://vectorseek.com/wp-content/uploads/2023/09/Zalopay-Logo-Vector.svg-.png"
+              alt="ZaloPay logo"
+              className="w-20 h-10 mb-1 "
+            />
           </button>
         </div>
 
         {/* Payment Forms */}
-        {paymentMethod === "Bank" ? (
+        {paymentMethod === "VNPay" ? (
           <div className="flex flex-col items-center text-center mt-8">
             <img
               src={qrCodeImg}
