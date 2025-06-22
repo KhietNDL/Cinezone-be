@@ -3,6 +3,11 @@ const router = express.Router();
 const { getAllUsers, getUsersbyName, getUserById, getUserByEmail, createUser, deleteUser, updateUser } = require('../controllers/user.management.controller');
 const { auth, isAdmin } = require('../middlewares/auth.middleware');
 const { validateUser } = require('../middlewares/user.management.validator');
+const {
+    updateProfile,
+    getUserById: getUserByIdController,
+    exchangeScore
+} = require('../controllers/user.controller');
 
 // Route to get all users
 /**
@@ -226,5 +231,59 @@ router.delete('/delete/:userId', auth, isAdmin, deleteUser);
  *         description: Internal server error
  */
 router.put('/update/:userId', auth, isAdmin, validateUser, updateUser);
+
+router.get('/get-user/:userId', auth, getUserById);
+
+/**
+ * @swagger
+ * /api/user/exchange-score/{userId}:
+ *   post:
+ *     summary: Exchange user's score for money
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: The user ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - pointsToExchange
+ *             properties:
+ *               pointsToExchange:
+ *                 type: integer
+ *                 description: The number of points to exchange.
+ *                 example: 100
+ *     responses:
+ *       200:
+ *         description: Score exchanged successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 moneyGained:
+ *                   type: number
+ *                 newScoreBalance:
+ *                   type: number
+ *       400:
+ *         description: Invalid request (e.g., insufficient points, invalid user ID)
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User not found
+ */
+router.post('/exchange-score/:userId', auth, exchangeScore);
 
 module.exports = router;

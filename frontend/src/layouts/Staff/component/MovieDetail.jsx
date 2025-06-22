@@ -199,7 +199,9 @@ export default function MovieDetail() {
             </div>
 
             <div className='w-[70%] p-4'>
-              <h1 className='text-3xl font-semibold w-full py-4 border-b border-gray-500'>{movie.NameOfEnglish}</h1>
+              <h1 className='text-3xl font-semibold w-full py-4 border-b border-gray-500'>{movie.NameOfEnglish} <span 
+              className='text-[20px]'>{"("}{movie.NameOfVietnamese}{")"}</span> </h1>
+              
               <div className='mt-4 space-y-2'>
                 <p className='flex gap-6 w-full font-semibold'>Director: <span className='font-normal'>{movie.Director}</span></p>
                 <p className='flex gap-9 w-full font-semibold'>Actors: <span className='font-normal'>{movie.Actors}</span></p>

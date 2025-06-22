@@ -14,19 +14,19 @@ const ShowtimeButton = ({
   <Space direction="vertical">
     {showDay && (
       <div className='px-4 flex items-center justify-start'>
-        <Space wrap style={{padding: "20px"}}>
+        <Space wrap style={{ padding: "20px" }}>
           {days.map((day) => (
             <Button
               key={day}
-              type={selectedDay === day ? 'primary' : 'default'}
+              type="default"
               onClick={() => {
                 onSelectDay(day);
                 onSelectTime && onSelectTime(null);
               }}
               style={{
-                backgroundColor: selectedDay === day ? '#8A2BE2' : '#fff',
-                color: selectedDay === day ? 'white' : 'black',
-                margin: '0 5px'
+                border: selectedDay === day ? "2px solid #8A2BE2" : "1px solid #d9d9d9",
+                color: selectedDay === day ? "#8A2BE2" : "black",
+                margin: '0 5px',
               }}
             >
               {day}
@@ -51,12 +51,12 @@ const ShowtimeButton = ({
               .map((timeObj) => (
                 <Button
                   key={timeObj.showtimeId}
-                  type={selectedTime === timeObj.time ? "primary" : "default"}
+                  type="default"
                   onClick={() => onSelectTime(parentVersion, timeObj.time)}
                   style={{
-                    backgroundColor: selectedTime === timeObj.time ? '#8A2BE2' : '#fff',
-                    color: selectedTime === timeObj.time ? 'white' : 'black',
-                    margin: '0 5px'
+                    border: selectedTime === timeObj.time ? "2px solid #8A2BE2" : "1px solid #d9d9d9",
+                    color: selectedTime === timeObj.time ? "#8A2BE2" : "black",
+                    margin: '0 5px',
                   }}
                 >
                   {timeObj.time}

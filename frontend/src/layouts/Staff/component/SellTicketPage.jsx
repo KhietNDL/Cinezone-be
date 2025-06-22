@@ -139,7 +139,7 @@ const SellTicketPage = () => {
         />
       </div>
 
-      <p className="mt-5 font-semibold"><i className="fa-solid fa-film"></i> Select Movie</p>
+      <p className=" font-semibold mt-5"><i className="fa-solid fa-film"></i> Select Movie</p>
 
       <div className="staff-swiper">
         {loading ? (
@@ -200,12 +200,12 @@ const SellTicketPage = () => {
               <div key={ver.version} className="flex flex-col items-start">
                 <div
                   className={`font-bold px-5 py-2 rounded-lg mb-2
-                    ${selectedVersion === ver.version ? "ring-4 ring-purple-400" : ""}
+                    ${selectedVersion === ver.version ? "scale-107 shadow-lg" : ""}
                     ${ver.version === "IMAX" ? "bg-gradient-to-r from-[#004897] to-[#0AF7FB] text-white" :
                       ver.version === "4DX" ? "bg-gradient-to-r from-[#680000] to-[#F26969] text-white" :
                         ver.version === "3D" ? "bg-gradient-to-r from-[#C88200] to-[#FFE606] text-white" :
                           ver.version === "2D" ? "bg-gradient-to-r from-[#147800] to-[#5EFF41] text-white" :
-                            "bg-gray-400"
+                            "bg-gradient-to-r from-gray-700 to-gray-400 text-white"
                     }`}
                   role="button"
                   onClick={() => setSelectedVersion(ver.version)}
@@ -231,13 +231,13 @@ const SellTicketPage = () => {
       )}
 
       {selectedMovie && selectedVersion && selectedDay && selectedTime && (
-        <div className="flex items-center gap-2 mt-5">
+        <div className="flex items-center gap-2 ">
           <div className="flex items-center gap-2 font-semibold"><i className="fa-solid fa-location-dot"></i> Room:</div>
           <div className="font-bold">{room}</div>
         </div>
       )}
 
-      <div className="mt-5 text-center">
+      <div className=" text-center">
         <Link to="/staff/ticket-selling/select-seats">
           <Button style={{ backgroundColor: "#8A2BE2", color: "white", padding: "1rem" }}>
             <i className="fa-solid fa-couch"></i> Select seats

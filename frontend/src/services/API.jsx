@@ -152,12 +152,12 @@ export const createMovie = async (movieData) => {
 };
 
 export const editMovie = async (movieData) => {
-  const formData = new FormData();
-  Object.keys(movieData).forEach((key) => {
-    formData.append(key, movieData[key] ?? "");
-  });
   try {
-    const response = await api.put(`/movie/${movieData.idMovie}`, formData, {
+    const movieId = movieData.get("MovieId");
+    if (!movieId) {
+      throw new Error("MovieId is required");
+    }
+    const response = await api.put(`/movie/${movieId}`, movieData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data;
@@ -166,9 +166,22 @@ export const editMovie = async (movieData) => {
   }
 };
 
+export const deleteMovie = async (movieId) => {
+  try {
+    if (!movieId) {
+      throw new Error("Movie ID is undefined");
+    }
+    const response = await api.delete(`/movie/${movieId}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const searchMovies = async (params) => {
+  return api.get("/movie/search", { params });
+};
 export default api;
-
-
 
 //API cho Booking FLow
 

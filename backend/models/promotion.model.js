@@ -24,6 +24,16 @@ class Promotion {
     return rows[0];
   }
 
+  static async findByTitle(title) {
+    const [rows] = await db
+      .promise()
+      .query(
+        "SELECT * FROM Promotions WHERE LOWER(Title) = LOWER(?) AND IsDeleted = 0",
+        [title]
+      );
+    return rows[0];
+  }
+
   static async createPromotion(data) {
     const id = uuidv4();
     const now = new Date();
@@ -64,44 +74,29 @@ class Promotion {
 
   static async updatePromotion(id, data) {
     const now = new Date();
-    const {
-      Title,
-      StartTime,
-      EndTime,
-      DiscountValue,
-      Detail,
-      Image,
-      UpdatedBy,
-    } = data;
+    data.UpdatedAt = formatDateTime(now);
 
-    // Format datetime cho MySQL
-    const formattedStartTime = formatDateTime(new Date(StartTime));
-    const formattedEndTime = formatDateTime(new Date(EndTime));
-    const formattedUpdatedAt = formatDateTime(now);
+    const fields = [];
+    const values = [];
 
-    const [result] = await db.promise().query(
-      `UPDATE Promotions 
-         SET Title = ?, 
-             StartTime = ?, 
-             EndTime = ?, 
-             DiscountValue = ?, 
-             Detail = ?, 
-             Image = ?, 
-             UpdatedAt = ?, 
-             UpdatedBy = ? 
-         WHERE PromotionId = ? AND IsDeleted = 0`,
-      [
-        Title,
-        formattedStartTime,
-        formattedEndTime,
-        DiscountValue,
-        Detail,
-        Image,
-        formattedUpdatedAt,
-        UpdatedBy,
-        id,
-      ]
-    );
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined && key !== 'UpdatedBy' && key !== 'UpdatedAt') {
+        let formattedValue = value;
+        if ((key === 'StartTime' || key === 'EndTime') && value) {
+          formattedValue = formatDateTime(new Date(value));
+        }
+        fields.push(`${key} = ?`);
+        values.push(formattedValue);
+      }
+    }
+
+    fields.push('UpdatedAt = ?', 'UpdatedBy = ?');
+    values.push(data.UpdatedAt, data.UpdatedBy, id);
+
+
+    const sql = `UPDATE Promotions SET ${fields.join(', ')} WHERE PromotionId = ? AND IsDeleted = 0`;
+
+    const [result] = await db.promise().query(sql, values);
     return result.affectedRows > 0;
   }
 

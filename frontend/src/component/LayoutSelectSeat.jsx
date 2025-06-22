@@ -133,11 +133,7 @@ export const LayoutSelectSeat = ({
           disabled={isTaken}
           title={`Seat ${seatId}`}
         >
-          <img
-            src={seatIcon}
-            alt="Double Seat"
-            className="w-[42px] h-6 "
-          />
+          <img src={seatIcon} alt="Double Seat" className="w-[42px] h-6 " />
         </button>
       );
     }
