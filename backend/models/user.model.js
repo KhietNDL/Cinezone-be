@@ -183,6 +183,19 @@ class User {
       );
     return rows[0];
   }
+
+  static async updateScoreBalance(userId, newScoreBalance) {
+    try {
+      const [result] = await db.promise().query(
+        "UPDATE Users SET ScoreBalance = ? WHERE UserId = ?",
+        [newScoreBalance, userId]
+      );
+      return result.affectedRows > 0;
+    } catch (error) {
+      console.error("Error updating score balance:", error);
+      throw error;
+    }
+  }
 }
 
 module.exports = User;
