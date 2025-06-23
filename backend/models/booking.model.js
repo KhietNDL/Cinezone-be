@@ -235,6 +235,70 @@ WHERE ShowtimeId = (SELECT ShowtimeId FROM Bookings WHERE BookingId = ?)
       connection.release();
     }
   }
+
+
+  /**
+ * @param {string} bookingId - ID của booking
+ * @param {number} status - Trạng thái mới (ví dụ: PAID = 2)
+ * @param {number} paidAmount - Số tiền đã thanh toán
+ * @returns {object} - Kết quả cập nhật và thông báo
+ */
+  static async updateStatus(bookingId, status, paidAmount) {
+    try {
+      const [bookingRows] = await db.promise().query(
+        "SELECT BookingId, TotalAmount, Status FROM Bookings WHERE BookingId = ?",
+        [bookingId]
+      );
+
+      const booking = bookingRows[0];
+
+      if (!booking) {
+        return {
+          success: false,
+          message: "Booking not found",
+          code: "BOOKING_NOT_FOUND"
+        };
+      }
+
+      if (booking.Status === status) {
+        return {
+          success: true,
+          message: "Booking already in requested status",
+          updated: false
+        };
+      }
+
+      const amountMatches = Math.abs(Number(paidAmount) - Number(booking.TotalAmount)) < 0.01;
+      if (!amountMatches) {
+        return {
+          success: false,
+          message: "Payment amount doesn't match booking total amount",
+          code: "AMOUNT_MISMATCH",
+          expectedAmount: booking.TotalAmount,
+          actualAmount: paidAmount
+        };
+      }
+
+      const [result] = await db.promise().query(
+        "UPDATE Bookings SET Status = ?, UpdatedAt = NOW() WHERE BookingId = ?",
+        [status, bookingId]
+      );
+
+      return {
+        success: true,
+        updated: result.affectedRows > 0,
+        message: "Booking status updated successfully"
+      };
+    } catch (error) {
+      console.error('Error updating booking status:', error);
+      return {
+        success: false,
+        message: "Failed to update booking status",
+        error: error.message,
+        code: "DATABASE_ERROR"
+      };
+    }
+  }
 }
 
 module.exports = Booking;

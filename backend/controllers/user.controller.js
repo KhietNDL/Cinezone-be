@@ -287,35 +287,11 @@ const verifyOtp = async (req, res) => {
     const { resetCode } = req.body;
     const sessionEmail = req.session.reset?.email;
 
-<<<<<<< HEAD
     if (!sessionEmail) {
       return res.status(400).json({
         error: "Session expired or invalid. Please request a new code.",
         code: ERROR_CODES.USER_NOT_FOUND, // Or a more specific session error code
       });
-=======
-        // Verify reset code - tìm user có reset code hợp lệ
-        const user = await User.findByResetCode(resetCode);
-        if (!user) {
-            return res.status(400).json({
-                error: 'Invalid or expired reset code',
-                code: ERROR_CODES.INVALID_RESET_CODE
-            });
-        }
-
-        // Lưu email vào session để sử dụng ở bước reset password
-        req.session.resetEmail = user.Email;
-
-        res.json({ 
-            message: 'OTP verified successfully'
-        });
-    } catch (error) {
-        console.error('Verify OTP error:', error);
-        res.status(500).json({
-            error: 'Internal server error during OTP verification',
-            code: ERROR_CODES.SERVER_ERROR
-        });
->>>>>>> 8d8bfb0ff162784adfbfa9c80cf2116280dc5d67
     }
 
     // Find user by email from session
@@ -351,46 +327,12 @@ const resetPassword = async (req, res) => {
     const { newPassword } = req.body;
     const sessionData = req.session.reset;
 
-<<<<<<< HEAD
     // Check if OTP was verified
     if (!sessionData || !sessionData.verified) {
       return res.status(400).json({
         error: "Please verify OTP first",
         code: ERROR_CODES.PLEASE_VERIFY_OTP,
       });
-=======
-        // Lấy email từ session
-        const email = req.session.resetEmail;
-        if (!email) {
-            return res.status(400).json({
-                error: 'Please verify OTP first',
-                code: ERROR_CODES.INVALID_REQUEST
-            });
-        }
-
-        // Check if user exists
-        const user = await User.findByEmail(email);
-        if (!user) {
-            return res.status(404).json({
-                error: 'User not found',
-                code: ERROR_CODES.USER_NOT_FOUND
-            });
-        }
-
-        // Update password
-        await User.updatePassword(user.UserId, newPassword);
-
-        // Xóa session sau khi reset thành công
-        delete req.session.resetEmail;
-
-        res.json({ message: 'Password reset successful' });
-    } catch (error) {
-        console.error('Reset password error:', error);
-        res.status(500).json({
-            error: 'Internal server error during password reset',
-            code: ERROR_CODES.SERVER_ERROR
-        });
->>>>>>> 8d8bfb0ff162784adfbfa9c80cf2116280dc5d67
     }
 
     const { email } = sessionData;
@@ -700,7 +642,6 @@ const exchangeScore = async (req, res) => {
 
 
 module.exports = {
-<<<<<<< HEAD
   register,
   login,
   forgotPassword,
@@ -709,15 +650,4 @@ module.exports = {
   logout,
   updateProfile,
   getUserById,
-=======
-    register,
-    login,
-    forgotPassword,
-    verifyOtp,
-    resetPassword,
-    logout,
-    updateProfile,
-    getUserById,
-    exchangeScore
->>>>>>> 8d8bfb0ff162784adfbfa9c80cf2116280dc5d67
 };
