@@ -46,7 +46,7 @@ const EmployeeForm = ({
             <input
               type="text"
               name="username"
-              value={localFormData.username}
+              value={localFormData.UserName}
               onChange={handleInputChange}
               className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter username"
@@ -60,7 +60,7 @@ const EmployeeForm = ({
             <input
               type="password"
               name="password"
-              value={localFormData.password}
+              value={localFormData.Password}
               onChange={handleInputChange}
               className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter password"
@@ -74,7 +74,7 @@ const EmployeeForm = ({
             <input
               type="password"
               name="confirmPassword"
-              value={localFormData.confirmPassword}
+              value={localFormData.ConfirmPassword}
               onChange={handleInputChange}
               className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Confirm password"
@@ -88,7 +88,7 @@ const EmployeeForm = ({
             <input
               type="text"
               name="fullName"
-              value={localFormData.fullName}
+              value={localFormData.FullName}
               onChange={handleInputChange}
               className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter full name"
@@ -102,7 +102,7 @@ const EmployeeForm = ({
             <input
               type="date"
               name="dateOfBirth"
-              value={localFormData.dateOfBirth}
+              value={localFormData.DateOfBirth}
               onChange={handleInputChange}
               className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -114,7 +114,7 @@ const EmployeeForm = ({
             </label>
             <select
               name="gender"
-              value={localFormData.gender}
+              value={localFormData.Sex}
               onChange={handleInputChange}
               className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
@@ -131,7 +131,7 @@ const EmployeeForm = ({
             <input
               type="text"
               name="identityCard"
-              value={localFormData.identityCard}
+              value={localFormData.CCCD}
               onChange={handleInputChange}
               className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter ID card number"
@@ -145,7 +145,7 @@ const EmployeeForm = ({
             <input
               type="email"
               name="email"
-              value={localFormData.email}
+              value={localFormData.Email}
               onChange={handleInputChange}
               className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter email"
@@ -158,7 +158,7 @@ const EmployeeForm = ({
             </label>
             <textarea
               name="address"
-              value={localFormData.address}
+              value={localFormData.Address}
               onChange={handleInputChange}
               className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter address"
@@ -173,7 +173,7 @@ const EmployeeForm = ({
             <input
               type="tel"
               name="phone"
-              value={localFormData.phone}
+              value={localFormData.PhoneNumber}
               onChange={handleInputChange}
               className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter phone number"
@@ -188,7 +188,7 @@ const EmployeeForm = ({
               <input
                 type="url"
                 name="image"
-                value={localFormData.image}
+                value={localFormData.AvatarUrl}
                 onChange={handleInputChange}
                 className="flex-1 p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter image URL"

@@ -48,9 +48,16 @@ const ItemCard = ({ item, type, onSelect, selected, small }) => {
         <img
           alt={item.name}
           src={item.image}
-          className={`w-full ${small ? 'h-[100px]' : 'h-[250px]'} object-cover rounded-tl-md rounded-tr-md mx-auto`}
-        />}
-      <div className={`mt-2 p-1 font-semibold text-center uppercase flex flex-col text-gray-700 ${small ? 'text-[11px]' : 'text-md'}`}>
+          className={`w-full ${
+            small ? "h-[100px]" : "h-[250px]"
+          } object-cover rounded-tl-md rounded-tr-md mx-auto`}
+        />
+      )}
+      <div
+        className={`mt-2 p-1 font-semibold text-center uppercase flex flex-col text-gray-700 ${
+          small ? "text-[11px]" : "text-md"
+        }`}
+      >
         <div>{displayNameEN}</div>
         <div>{displayNameVN}</div>
       </div>
