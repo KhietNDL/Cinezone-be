@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getAllEmployees, getEmployeesbyName, getEmployeeById, getEmployeeByEmail, createEmployee, deleteEmployee, updateEmployee } = require('../controllers/employee.controller');
-const { auth, isAdmin } = require('../middlewares/auth.middleware');
+const { auth, isAdminOrEmployee } = require('../middlewares/auth.middleware');
 const { validateEmployee } = require('../middlewares/employee.validator');
 
 // Route to get all employees
@@ -9,17 +9,73 @@ const { validateEmployee } = require('../middlewares/employee.validator');
  * @swagger
  * /api/employee:
  *   get:
- *     summary: Get all employees
+ *     summary: Get all employees with pagination
  *     tags: [Employee Management]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of employees per page (0 = all employees)
  *     responses:
  *       200:
  *         description: Successfully retrieved all employees
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       UserId:
+ *                         type: string
+ *                       FullName:
+ *                         type: string
+ *                       DateOfBirth:
+ *                         type: string
+ *                       Sex:
+ *                         type: integer
+ *                       Email:
+ *                         type: string
+ *                       CCCD:
+ *                         type: string
+ *                       Address:
+ *                         type: string
+ *                       PhoneNumber:
+ *                         type: string
+ *                       CreatedAt:
+ *                         type: string
+ *                       avatar_url:
+ *                         type: string
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                     currentPage:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
  *       500:
  *         description: Internal server error
  */
-router.get('/', auth, isAdmin, getAllEmployees);
+router.get('/', auth, isAdminOrEmployee, getAllEmployees);
 
 // Route to get employees by name
 /**
@@ -44,7 +100,7 @@ router.get('/', auth, isAdmin, getAllEmployees);
  *         description: Internal server error
  */
 
-router.get('/searchByName', auth, isAdmin, getEmployeesbyName);
+router.get('/searchByName', auth, isAdminOrEmployee, getEmployeesbyName);
 
 // Route to get employee by ID
 /**
@@ -71,7 +127,7 @@ router.get('/searchByName', auth, isAdmin, getEmployeesbyName);
  *         description: Internal server error
  */
 
-router.get('/:userId', auth, isAdmin, getEmployeeById);
+router.get('/:userId', auth, isAdminOrEmployee, getEmployeeById);
 
 // Route to get employee by email
 /**
@@ -97,7 +153,7 @@ router.get('/:userId', auth, isAdmin, getEmployeeById);
  *       500:
  *         description: Internal server error
  */
-router.get('/email/:email', auth, isAdmin, getEmployeeByEmail);
+router.get('/email/:email', auth, isAdminOrEmployee, getEmployeeByEmail);
 
 // Export the router to create a new employee
 /**
@@ -138,7 +194,7 @@ router.get('/email/:email', auth, isAdmin, getEmployeeByEmail);
  *       500:
  *         description: Internal server error
  */
-router.post('/create', auth, isAdmin, validateEmployee, createEmployee);
+router.post('/create', auth, isAdminOrEmployee, validateEmployee, createEmployee);
 
 // Route to delete an employee
 /**
@@ -164,7 +220,7 @@ router.post('/create', auth, isAdmin, validateEmployee, createEmployee);
  *       500:
  *         description: Internal server error
  */
-router.delete('/delete/:userId', auth, isAdmin, deleteEmployee);
+router.delete('/delete/:userId', auth, isAdminOrEmployee, deleteEmployee);
 
 // Route to update an employee
 /**
@@ -225,6 +281,6 @@ router.delete('/delete/:userId', auth, isAdmin, deleteEmployee);
  *       500:
  *         description: Internal server error
  */
-router.put('/update/:userId', auth, isAdmin, validateEmployee, updateEmployee);
+router.put('/update/:userId', auth, isAdminOrEmployee, validateEmployee, updateEmployee);
 
 module.exports = router;
