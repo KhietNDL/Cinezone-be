@@ -92,7 +92,7 @@ const upload = multer({
  *                 description: Citizen ID (exactly 12 digits, optional)
  *     responses:
  *       201:
- *         description: User registered successfully
+*         description: User registered successfully
  *         content:
  *           application/json:
  *             schema:
@@ -301,7 +301,7 @@ router.post("/reset-password", resetPasswordValidation, resetPassword);
  *           application/json:
  *             schema:
  *               type: object
- *               properties:
+*               properties:
  *                 error:
  *                   type: string
  *                   example: Please authenticate.
@@ -407,7 +407,7 @@ router.get("/user/:id", auth, getUserById);
  *               dateOfBirth:
  *                 type: string
  *                 format: date
- *               phoneNumber:
+*               phoneNumber:
  *                 type: string
  *               sex:
  *                 type: integer

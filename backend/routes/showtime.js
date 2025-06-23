@@ -342,53 +342,18 @@ router.get('/movie/:movieId/day', showtimeController.getShowtimesByMovieId);
 
 /**
  * @swagger
- * /api/showtimes/movie-name/{movieName}/showtimes:
+ * /api/showtimes/movie/{movieId}/day/showtimes:
  *   get:
- *     summary: Get showtimes by movie name
+ *     summary: Get showtimes by movieId and day, grouped by version
  *     tags: [Showtime Management]
  *     parameters:
  *       - in: path
- *         name: movieName
+ *         name: movieId
  *         schema:
  *           type: string
+ *           format: uuid
  *         required: true
- *         description: The name of the movie
- *     responses:
- *       200:
- *         description: List of showtimes for the movie
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 movieName:
- *                   type: string
- *                 showtimes:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       day:
- *                         type: string
- *       404:
- *         description: Movie not found
- *       401:
- *         description: Unauthorized
- */
-router.get('/movie-name/:movieName/showtimes', showtimeController.getShowtimesByMovieName);
-/**
- * @swagger
- * /api/showtimes/time/{movieName}/day:
- *   get:
- *     summary: Get showtimes by movie name and day
- *     tags: [Showtime Management]
- *     parameters:
- *       - in: path
- *         name: movieName
- *         schema:
- *           type: string
- *         required: true
- *         description: The movie's name (Vietnamese or English)
+ *         description: The movie's UUID
  *       - in: query
  *         name: day
  *         schema:
@@ -404,7 +369,7 @@ router.get('/movie-name/:movieName/showtimes', showtimeController.getShowtimesBy
  *             schema:
  *               type: object
  *               properties:
- *                 movieName:
+ *                 movieId:
  *                   type: string
  *                 day:
  *                   type: string
@@ -426,8 +391,13 @@ router.get('/movie-name/:movieName/showtimes', showtimeController.getShowtimesBy
  *                               type: string
  *                             roomName:
  *                               type: string
+ *       400:
+ *         description: Missing movieId or day
+ *       500:
+ *         description: Internal server error
  */
-router.get('/time/:movieName/day', showtimeController.getShowtimesByMovieNameAndDay);
+router.get('/movie/:movieId/day/showtimes', showtimeController.getShowtimesByMovieIdAndDay);
+
 /**
  * @swagger
  * /api/showtimes/{showtimeId}/seats:
@@ -471,5 +441,4 @@ router.get('/time/:movieName/day', showtimeController.getShowtimesByMovieNameAnd
 router.get('/:showtimeId/seats', showtimeController.getSeatsByShowtime);
 
 
-module.exports = router;
 module.exports = router;
