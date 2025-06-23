@@ -5,21 +5,29 @@ import DoubleSeatSelectingLight from "../assets/DoubleSeatSelectingLight.svg";
 import DoubleSeatNoneNight from "../assets/DoubleSeatNoneNight.svg";
 import DoubleSeatNoneLight from "../assets/DoubleSeatNoneLight.svg";
 import DoubleSeatSelected from "../assets/DoubleSeatSelected.svg";
-import DoubleSeatSelected4 from "../assets/DoubleSeatSelected4.svg"
+import DoubleSeatSelected4 from "../assets/DoubleSeatSelected4.svg";
+
 
 export const LayoutSelectSeat = ({
+
   onSeatSelect = () => { },
   initialSelectedSeats = [],
-  //   seatPrice = 150000,
-  //   currency = "VND",
-  width = 10,
-  height = 10,
-  textColor = "text-gray-500", 
-  widthDouble = 10,
-  heightDouble = 10,
-
-  gapX = 2,
-
+  width = 30,
+  height = 30,
+  textColor = "text-gray-500",
+  widthDouble = 42,
+  heightDouble = 24,
+  gapX = 4,
+  seatColors = {
+    available: "text-gray-500",
+    selected: "text-[#5341DB]",
+    taken: "text-[#6A7282]",
+    coupleSeat: {
+      available: DoubleSeatNoneLight,
+      selected: DoubleSeatSelectingLight,
+      taken: DoubleSeatSelected4,
+    },
+  },
 }) => {
   const [selectedSeats, setSelectedSeats] = useState(
     new Set(initialSelectedSeats)
@@ -30,7 +38,7 @@ export const LayoutSelectSeat = ({
       row: "A",
       seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
     },
-    { row: "B", seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] }, // Hàng trống
+    { row: "B", seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
     {
       row: "C",
       seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
@@ -43,13 +51,13 @@ export const LayoutSelectSeat = ({
       row: "E",
       seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
     },
-    { row: "F", seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] }, // Ghế bên trái
-    { row: "G", seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] }, // Ghế ở giữa
-    { 
+    { row: "F", seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
+    { row: "G", seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
+    {
       row: "H",
       seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
     },
-    { row: "I", seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] }, // Ghế ở giữa
+    { row: "I", seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
     { row: "J", seats: [1, 2, 3, 4, 5, 6, 7, 8, 9] },
   ];
 
@@ -95,6 +103,20 @@ export const LayoutSelectSeat = ({
     "A9",
   ]);
 
+  const gapClass = {
+    0: "space-x-0",
+    1: "space-x-1",
+    2: "space-x-2",
+    3: "space-x-3",
+    4: "space-x-4",
+    5: "space-x-5",
+    6: "space-x-6",
+    7: "space-x-7",
+    8: "space-x-8",
+    9: "space-x-9",
+    10: "space-x-10",
+  };
+
   const handleSeatClick = (seatId) => {
     if (takenSeats.has(seatId)) return;
 
@@ -111,11 +133,11 @@ export const LayoutSelectSeat = ({
 
   const getSeatColor = (seatId) => {
     if (takenSeats.has(seatId)) {
-      return "text-[#5341dbea]";
+      return seatColors.taken;
     } else if (selectedSeats.has(seatId)) {
-      return "text-[#6a57f5]";
+      return seatColors.selected;
     } else {
-      return "text-gray-500";
+      return seatColors.available;
     }
   };
 
@@ -124,26 +146,33 @@ export const LayoutSelectSeat = ({
     const isSelected = selectedSeats.has(seatId);
     const isTaken = takenSeats.has(seatId);
     const isCoupleSeat = row === "J";
+
     if (isCoupleSeat) {
-      let seatIcon = DoubleSeatNoneLight;
+      let seatIcon = seatColors.coupleSeat.available;
       if (isTaken) {
-        seatIcon = DoubleSeatSelected;
+        seatIcon = seatColors.coupleSeat.taken;
       } else if (isSelected) {
-        seatIcon = DoubleSeatSelectingLight;
+        seatIcon = seatColors.coupleSeat.selected;
       }
       return (
         <button
           key={seatId}
           onClick={() => handleSeatClick(seatId)}
-          className={`transition-all duration-200  hover:scale-105 ${isTaken ? "cursor-not-allowed" : "cursor-pointer"
+          className={`transition-all duration-200 hover:scale-105 ${isTaken ? "cursor-not-allowed" : "cursor-pointer"
             }`}
           disabled={isTaken}
           title={`Seat ${seatId}`}
         >
-          <img src={seatIcon} alt="Double Seat" className={`w-${widthDouble} h-${heightDouble}`} />
+          <img
+            src={seatIcon}
+            alt="Double Seat"
+            className={`w-${widthDouble} h-${heightDouble}`}
+            style={{ width: `${widthDouble}px`, height: `${heightDouble}px` }}
+          />
         </button>
       );
     }
+
     return (
       <button
         key={seatId}
@@ -153,10 +182,12 @@ export const LayoutSelectSeat = ({
         disabled={isTaken}
         title={`Chair ${seatId}`}
       >
-        {isSelected ? (
-          <PiArmchairFill className={`w-${width} h-${height}`} />
+        {isTaken ? (
+          <PiArmchairFill className={`w-${width} h-${height}`} style={{ width: `${width}px`, height: `${height}px` }}  />
+        ) : isSelected ? (
+          <PiArmchairFill className={`w-${width} h-${height}`} style={{ width: `${width}px`, height: `${height}px` }} />
         ) : (
-          <PiArmchairLight className={`w-${width} h-${height}`} />
+          <PiArmchairLight className={`w-${width} h-${height}`} style={{ width: `${width}px`, height: `${height}px` }} />
         )}
       </button>
     );
@@ -182,7 +213,7 @@ export const LayoutSelectSeat = ({
         {isFirstRow && (
           <div className="flex justify-center mx-6 mb-1">
             <span className="w-6 mr-4"></span>
-            <div className={`flex space-x-${gapX}`}>
+            <div className={`flex ${gapClass[gapX] || "space-x-2"}`}>
               {rowData.seats.map((seatNumber) => {
                 const isGapAfter =
                   !isCoupleRow && (seatNumber === 3 || seatNumber === 9);
@@ -219,13 +250,10 @@ export const LayoutSelectSeat = ({
     );
   };
 
-  //   const totalPrice = selectedSeats.size * seatPrice;
-
   return (
-    <div className=" text-white rounded-lg ">
+    <div className="text-white rounded-lg">
       {/* Screen */}
       <div className="w-full h-[40px] relative overflow-hidden group">
-        {/* SVG cho đường cong gradient */}
         <svg
           width="100%"
           height="100%"
@@ -234,7 +262,6 @@ export const LayoutSelectSeat = ({
           preserveAspectRatio="none"
           style={{ background: "transparent" }}
         >
-          {/* Định nghĩa gradient từ nhạt đến đậm ở giữa */}
           <defs>
             <linearGradient
               id="purpleGradient"
@@ -299,7 +326,6 @@ export const LayoutSelectSeat = ({
             </linearGradient>
           </defs>
 
-          {/* Đường cong với hiệu ứng glow */}
           <path
             d="M 0 20 Q 400 0 800 20"
             stroke="url(#purpleGlow)"
@@ -309,7 +335,6 @@ export const LayoutSelectSeat = ({
             className="blur-[1px] transition-all duration-500 group-hover:blur-[0px] group-hover:stroke-[7px] group-hover:[stroke:url(#purpleGlowHover)]"
           />
 
-          {/* Đường cong chính */}
           <path
             d="M 0 20 Q 400 0 800 20"
             stroke="url(#purpleGradient)"
@@ -319,7 +344,6 @@ export const LayoutSelectSeat = ({
             className="transition-all duration-500 group-hover:stroke-[6px] group-hover:[stroke:url(#purpleGradientHover)]"
           />
 
-          {/* Ánh sáng nhẹ phía dưới khi hover */}
           <path
             d="M 0 20 Q 400 0 800 20"
             stroke="url(#lightGlowBelow)"
@@ -335,27 +359,28 @@ export const LayoutSelectSeat = ({
       </div>
 
       {/* Seat Layout */}
-      <div className=" mt-8">{seatLayout.map((rowData) => renderRow(rowData))}</div>
+      <div className="mt-8">{seatLayout.map((rowData) => renderRow(rowData))}</div>
 
       {/* Legend */}
       <div className="flex justify-center items-center space-x-6 mb-6">
         <div className="flex items-center space-x-2">
-          <PiArmchairFill size={20}  className= {`w-${width} h-${height} text-[#6957f5ea]`} />
+          <PiArmchairFill size={20} className={`w-${width} h-${height} ${seatColors.selected}`} style={{ width: `${width}px`, height: `${height}px` }} />
           <span className="text-sm text-gray-500">Selected</span>
         </div>
         <div className="flex items-center space-x-2">
-          <PiArmchairLight size={20}  className= {`w-${width} h-${height} text-gray-400`}  />
+          <PiArmchairLight size={20} className={`w-${width} h-${height} ${seatColors.available}`} style={{ width: `${width}px`, height: `${height}px` }} />
           <span className="text-sm text-gray-500">Available</span>
         </div>
         <div className="flex items-center space-x-2">
-          <PiArmchairLight size={20} className= {`w-${width} h-${height} text-[#5341dbea]`}  />
+          <PiArmchairFill size={20} className={`w-${width} h-${height} ${seatColors.taken}`} style={{ width: `${width}px`, height: `${height}px`}} />
           <span className="text-sm text-gray-500">Taken</span>
         </div>
         <div className="flex items-center space-x-2">
           <img
-            src={DoubleSeatSelected}
+            src={DoubleSeatNoneLight}
             alt="Double Seat"
-            className= {`w-${width} h-${height} `}
+            className={`w-${widthDouble} h-${heightDouble}`}
+            style={{ width: `${widthDouble}px`, height: `${heightDouble}px` }}
           />
           <span className="text-sm text-gray-500">Couple seat</span>
         </div>

@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Button, Input, Spin, Tag, message } from "antd";
-import api from "../../../services/API";
-
+import { Input, Spin } from "antd";
 import ShowtimeButton from "./ShowtimeButton";
 import { Link } from "react-router-dom";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -10,9 +8,7 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { Pagination, Navigation } from "swiper/modules";
 import "./SwiperButton.css";
-import { RiMovie2AiFill } from "react-icons/ri";
 import ItemCard from "./ItemCard";
-
 import {
   getCurrentMovies,
   searchMovies,
@@ -24,12 +20,16 @@ export default function MoviePage() {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
 
-  //    const filteredMovies = movies.filter(c => c.NameOfEnglish.toLowerCase().includes(search.toLowerCase()));
+  const toSlug = (str) =>
+    str
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // bỏ dấu tiếng Việt
+      .replace(/[^a-z0-9]+/g, '-') // thay ký tự đặc biệt bằng -
+      .replace(/^-+|-+$/g, ''); // bỏ - ở đầu/cuối
 
   const getCurrentMovie = async () => {
     try {
       const response = await getCurrentMovies();
-
       if (response.data) {
         setMovies(response.data);
       }
@@ -89,12 +89,11 @@ export default function MoviePage() {
             placeholder="Search movie..."
             style={{ width: 250 }}
             value={search}
-            onChange={(e) => handleSearch(e.target.value)}
+            onChange={e => handleSearch(e.target.value)}
           />
         </div>
         <h5 className="mt-5">
-          <i className="fa-solid fa-film"></i> Select Movie to view details and
-          showtimes
+          <i className="fa-solid fa-film"></i> Select Movie to view details and showtimes
         </h5>
 
         <div className="staff-swiper">
@@ -117,16 +116,14 @@ export default function MoviePage() {
               {movies.map((movie) => (
                 <SwiperSlide key={movie.MovieId}>
                   <div className="flex justify-center p-2 w-[260px]">
-                    <Link to={`/staff/movie/${movie.MovieId}`}>
+                    <Link to={`/staff/movie/${toSlug(movie.NameOfEnglish)}`}>
                       <ItemCard
                         item={movie}
                         type="movie"
                         selected={selectedMovie?.MovieId === movie.MovieId}
                         onSelect={() =>
                           setSelectedMovie(
-                            selectedMovie?.MovieId === movie.MovieId
-                              ? null
-                              : movie
+                            selectedMovie?.MovieId === movie.MovieId ? null : movie
                           )
                         }
                       />

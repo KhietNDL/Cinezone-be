@@ -6,6 +6,8 @@ import { LayoutSelectSeat } from "../../../component/LayoutSelectSeat";
 import DoubleSeatNoneLight from "../../../assets/DoubleSeatNoneLight.svg";
 import { PiArmchairLight, PiArmchairFill } from "react-icons/pi";
 import { getMovieById } from "../../../services/APIForStaff/API";
+import DoubleSeatSelected4 from "../../../assets/DoubleSeatSelected4.svg";
+import DoubleSeatSelectingLight from "../../../assets/DoubleSeatSelectingLight.svg"
 
 const NORMAL_PRICE = 100000;
 // const VIP_PRICE = NORMAL_PRICE * 1.5;
@@ -147,6 +149,22 @@ const SelectSeatsPage = () => {
                         initialSelectedSeats={selectedSeats}
                         onSeatSelect={setSelectedSeats}
                         textColor="text-[#6A57F5]"
+                        gapX={4}
+                        width={30}
+                        height={30}
+                        widthDouble={42}
+                        heightDouble={24}
+                        seatColors={{
+                            available: "text-gray-500",
+                            selected: "text-[#5341DB]",
+                            taken: "text-[#6A7282]",
+                            coupleSeat: {
+                                available: DoubleSeatNoneLight,
+                                selected: DoubleSeatSelectingLight,
+                                taken: DoubleSeatSelected4,
+                            }
+                        }}
+
                     />
                 </div>
 
