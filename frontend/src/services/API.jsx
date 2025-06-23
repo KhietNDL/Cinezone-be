@@ -87,7 +87,10 @@ export const logout = async () => {
 };
 export const forgot = async (credentials) => {
   try {
-    const response = await api.post("/auth/forgot-password", credentials);
+    // Defensive check: Ensure the body is an object with an email key.
+    const body =
+      typeof credentials === "string" ? { email: credentials } : credentials;
+    const response = await api.post("/auth/forgot-password", body);
     return response.data;
   } catch (error) {
     handleError(error);
@@ -95,35 +98,30 @@ export const forgot = async (credentials) => {
 };
 export const verification = async (credentials) => {
   try {
-    const response = await api.post("/auth/verify-otp", credentials);
+    const response = await api.post("/auth/verify-otp", credentials, {
+      withCredentials: true,
+      headers: { "Content-Type": "application/json" },
+    });
     return response.data;
   } catch (error) {
     handleError(error);
   }
 };
+
+
 export const resetPassword = async (credentials) => {
   try {
-    const response = await api.post("/auth/reset-password", credentials);
+    const response = await api.post("/auth/reset-password", credentials, {
+      withCredentials: true, // Quan trọng: gửi cookies/session
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
     return response.data;
   } catch (error) {
     handleError(error);
   }
 };
-// Trong file API service
-// API cho reset password - đã fix
-// export const resetPassword = async (credentials) => {
-//   try {
-//     const response = await api.post("/auth/reset-password", credentials, {
-//       withCredentials: true, // Quan trọng: gửi cookies/session
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//     });
-//     return response.data;
-//   } catch (error) {
-//     handleError(error);
-//   }
-// };
 
 // API cho User
 export const getUser = async (id) => {
