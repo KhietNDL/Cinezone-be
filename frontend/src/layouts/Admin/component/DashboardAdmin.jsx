@@ -83,14 +83,14 @@ const DashboardAdmin = () => {
 
   const COLORS = ["#0088FE", "#FFBB28", "#8884d8"];
   return (
-    <div className="p-[20px] flex items-center justify-between">
+    <div className="flex items-center justify-between">
       <div className="w-[70%] space-y-4">
         <div className="flex items-center justify-between w-full">
           <div className="bg-white rounded-md p-3 w-[23%] shadow-sm ">
             <div className="flex items-center justify-between">
               <p className="text-slate-500">Total Tickets Sold</p>
 
-              <div className="p-2 bg-amber-50 rounded-full">
+              <div className="p-2 bg-am ber-50 rounded-full">
                 <FaTicket size={20} color="gold" />
               </div>
             </div>

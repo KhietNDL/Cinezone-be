@@ -131,7 +131,7 @@ const TicketBookingManagement = () => {
   };
 
   return (
-    <div className="p-[20px] flex items-center h-full justify-between">
+    <div className="flex items-center h-full justify-between">
       <div className="w-[90%] space-y-4">
         {/* Stats Cards */}
         <div className="flex items-center justify-between w-full">
@@ -148,7 +148,7 @@ const TicketBookingManagement = () => {
                     <IconComponent size={24} />
                   </div>
                 </div>{" "}
-                <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+                <p className="font-bold text-[19px]">{stat.value}</p>
               </div>
             );
           })}

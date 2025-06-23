@@ -12,7 +12,14 @@ export const LayoutSelectSeat = ({
   initialSelectedSeats = [],
   //   seatPrice = 150000,
   //   currency = "VND",
-  textColor = "text-gray-800",
+  width = 10,
+  height = 10,
+  textColor = "text-gray-500", 
+  widthDouble = 10,
+  heightDouble = 10,
+
+  gapX = 2,
+
 }) => {
   const [selectedSeats, setSelectedSeats] = useState(
     new Set(initialSelectedSeats)
@@ -38,7 +45,7 @@ export const LayoutSelectSeat = ({
     },
     { row: "F", seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] }, // Ghế bên trái
     { row: "G", seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] }, // Ghế ở giữa
-    {
+    { 
       row: "H",
       seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
     },
@@ -120,7 +127,7 @@ export const LayoutSelectSeat = ({
     if (isCoupleSeat) {
       let seatIcon = DoubleSeatNoneLight;
       if (isTaken) {
-        seatIcon = DoubleSeatSelected4;
+        seatIcon = DoubleSeatSelected;
       } else if (isSelected) {
         seatIcon = DoubleSeatSelectingLight;
       }
@@ -133,7 +140,7 @@ export const LayoutSelectSeat = ({
           disabled={isTaken}
           title={`Seat ${seatId}`}
         >
-          <img src={seatIcon} alt="Double Seat" className="w-[42px] h-6 " />
+          <img src={seatIcon} alt="Double Seat" className={`w-${widthDouble} h-${heightDouble}`} />
         </button>
       );
     }
@@ -146,12 +153,10 @@ export const LayoutSelectSeat = ({
         disabled={isTaken}
         title={`Chair ${seatId}`}
       >
-        {isTaken ? (
-          <PiArmchairFill className="w-6 h-6 text-gray-500" />
-        ) : isSelected ? (
-          <PiArmchairFill className="w-6 h-6 " />
+        {isSelected ? (
+          <PiArmchairFill className={`w-${width} h-${height}`} />
         ) : (
-          <PiArmchairLight className="w-6 h-6 " />
+          <PiArmchairLight className={`w-${width} h-${height}`} />
         )}
       </button>
     );
@@ -177,7 +182,7 @@ export const LayoutSelectSeat = ({
         {isFirstRow && (
           <div className="flex justify-center mx-6 mb-1">
             <span className="w-6 mr-4"></span>
-            <div className="flex space-x-2">
+            <div className={`flex space-x-${gapX}`}>
               {rowData.seats.map((seatNumber) => {
                 const isGapAfter =
                   !isCoupleRow && (seatNumber === 3 || seatNumber === 9);
@@ -330,27 +335,27 @@ export const LayoutSelectSeat = ({
       </div>
 
       {/* Seat Layout */}
-      <div className="">{seatLayout.map((rowData) => renderRow(rowData))}</div>
+      <div className=" mt-8">{seatLayout.map((rowData) => renderRow(rowData))}</div>
 
       {/* Legend */}
       <div className="flex justify-center items-center space-x-6 mb-6">
         <div className="flex items-center space-x-2">
-          <PiArmchairFill size={20} className="text-[#6957f5ea]" />
+          <PiArmchairFill size={20}  className= {`w-${width} h-${height} text-[#6957f5ea]`} />
           <span className="text-sm text-gray-500">Selected</span>
         </div>
         <div className="flex items-center space-x-2">
-          <PiArmchairLight size={20} className="text-gray-400" />
+          <PiArmchairLight size={20}  className= {`w-${width} h-${height} text-gray-400`}  />
           <span className="text-sm text-gray-500">Available</span>
         </div>
         <div className="flex items-center space-x-2">
-          <PiArmchairFill size={20} className="text-gray-500" />
+          <PiArmchairLight size={20} className= {`w-${width} h-${height} text-[#5341dbea]`}  />
           <span className="text-sm text-gray-500">Taken</span>
         </div>
         <div className="flex items-center space-x-2">
           <img
             src={DoubleSeatSelected}
             alt="Double Seat"
-            className="w-[25px] h-[25px]"
+            className= {`w-${width} h-${height} `}
           />
           <span className="text-sm text-gray-500">Couple seat</span>
         </div>

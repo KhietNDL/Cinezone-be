@@ -124,7 +124,6 @@ const MovieHeroSwiper = ({ movieData }) => {
   useEffect(() => {
     const video = videoRef.current;
     if (video && currentMovie.TrailerUrl) {
-      console.log("Attempting to auto-play video");
       video.load();
 
       const handleCanPlay = () => {
@@ -200,19 +199,16 @@ const MovieHeroSwiper = ({ movieData }) => {
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY;
-      console.log("Scroll position:", scrollPosition);
 
       if (scrollPosition > 300) {
         // Scroll xuống - chỉ pause video, không reset
         if (isVideoPlaying && !pausedByScroll) {
-          console.log("Pausing video due to scroll");
           pauseVideo();
           setPausedByScroll(true);
         }
       } else if (scrollPosition <= 300) {
         // Scroll lên - resume video từ vị trí hiện tại
         if (pausedByScroll && !isVideoPlaying && !isPopupOpen) {
-          console.log("Resuming video on scroll up");
           resumeVideo();
           setPausedByScroll(false);
         }
