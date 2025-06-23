@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { getMovieById } from '../../../services/APIForStaff/API';
 import { FaStar, FaRegStar, FaStarHalfAlt } from 'react-icons/fa';
 import { LuChartBar } from "react-icons/lu";
@@ -11,9 +11,8 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { Navigation, Pagination } from "swiper/modules";
-import { Link } from "react-router-dom";
 import './SwiperButton.css'
-import { getDaysByMovieName, getVersionsAndTimesByMovieAndDay } from '../../../services/APIForStaff/API';
+//import { getDaysByMovieName, getVersionsAndTimesByMovieAndDay } from '../../../services/APIForStaff/API';
 
 export default function MovieDetail() {
 
@@ -23,19 +22,37 @@ export default function MovieDetail() {
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const [imageError, setImageError] = useState({});
   const [recommended, setRecommended] = useState([]);
+  const { slug } = useParams();
 
+  const toSlug = (str) =>
+    str
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
 
   async function fetchMovie() {
     setLoading(true);
     try {
-      const res = await getMovieById(id);
-      setMovie(res.data);
+      const res = await getCurrentMovies();
+      if (res.data) {
+        const found = res.data.find(
+          m => toSlug(m.NameOfEnglish) === slug
+        );
+        setMovie(found || null);
+      } else {
+        setMovie(null);
+      }
     } catch (e) {
       setMovie(null);
     } finally {
       setLoading(false);
     }
   }
+
+    useEffect(() => {
+    fetchMovie();
+  }, [slug]);
 
   async function fetchRecommended() {
     if (!movie) return;
@@ -187,9 +204,9 @@ export default function MovieDetail() {
             </div>
 
             <div className='w-[70%] p-4'>
-              <h1 className='text-3xl font-semibold w-full py-4 border-b border-gray-500'>{movie.NameOfEnglish} <span 
-              className='text-[20px]'>{"("}{movie.NameOfVietnamese}{")"}</span> </h1>
-              
+              <h1 className='text-3xl font-semibold w-full py-4 border-b border-gray-500'>{movie.NameOfEnglish} <span
+                className='text-[20px]'>{"("}{movie.NameOfVietnamese}{")"}</span> </h1>
+
               <div className='mt-4 space-y-2'>
                 <p className='flex gap-6 w-full font-semibold'>Director: <span className='font-normal'>{movie.Director}</span></p>
                 <p className='flex gap-9 w-full font-semibold'>Actors: <span className='font-normal'>{movie.Actors}</span></p>
@@ -254,33 +271,34 @@ export default function MovieDetail() {
           </ul>
         </div>
       </div>
- <div className='w-full '>
-            <div className="text-xl font-bold mt-8 mb-2 text-[#9810FA]">Recommended Movies</div>
-            <div className="relative">
-              {recommended.length === 0 ? (
-                <div className="text-gray-500">No recommended movies found.</div>
-              ) : (
-                <Swiper
-                  modules={[Navigation, Pagination]}
-                  navigation
-                  pagination={{ clickable: true }}
-                  slidesPerView={5}
-                  style={{ padding: "0 50px", minHeight: 300 }} // Thêm padding hai bên và tăng chiều cao
-                  breakpoints={swiperBreakpoints}
-                  className="custom-swiper-nav"
-                >
-                  {recommended.map((rec) => (
-                    <SwiperSlide key={rec.MovieId}
-                      style={{ height: 270, display: 'flex', alignItems: 'center'}}>
-                      <Link to={`/staff/movie/${rec.MovieId}`}>
-                        <ItemCard item={rec} type="movie" small />
-                      </Link>
-                    </SwiperSlide>
-                  ))}
-                </Swiper>
-              )}
-            </div>
-          </div>
+      <div className='w-full '>
+        <div className="text-xl font-bold mt-8 mb-2 text-[#9810FA]">Recommended Movies</div>
+        <div className="relative">
+          {recommended.length === 0 ? (
+            <div className="text-gray-500">No recommended movies found.</div>
+          ) : (
+            <Swiper
+              modules={[Navigation, Pagination]}
+              navigation
+              pagination={{ clickable: true }}
+              slidesPerView={5}
+              style={{ padding: "0 50px", minHeight: 300 }} // Thêm padding hai bên và tăng chiều cao
+              breakpoints={swiperBreakpoints}
+              className="custom-swiper-nav"
+            >
+              {recommended.map((rec) => (
+                <SwiperSlide key={rec.MovieId}
+                  style={{ height: 270, display: 'flex', alignItems: 'center' }}>
+                    
+                  <Link to={`/staff/movie/${toSlug(rec.NameOfEnglish)}`}>
+                    <ItemCard item={rec} type="movie" small />
+                  </Link>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -5,18 +5,24 @@ require("dotenv").config();
 const session = require("express-session");
 const passport = require("./middlewares/passport");
 const cors = require("cors");
-const cleanupExpiredBookings = require('./jobs/bookingCleanup');
+const cleanupExpiredBookings = require("./jobs/bookingCleanup");
 
 const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 app.use(
   session({ secret: "your_secret", resave: false, saveUninitialized: true })
 );
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(cors());
+app.use(cors(
+  {
+    origin: "http://localhost:5173",
+    credentials: true,
+  }
+));
 app.use(express.static('public')); // Serve static files from the public directory
 
 // Import routes
@@ -57,7 +63,7 @@ app.use(
   "/",
   swaggerUi.serve,
   swaggerUi.setup(swaggerSpecs, {
-    customJs: '/swagger-custom.js', // Path to your custom JavaScript file
+    customJs: "/swagger-custom.js", // Path to your custom JavaScript file
   })
 );
 
