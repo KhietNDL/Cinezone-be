@@ -198,6 +198,64 @@ const updateUser = async (req, res) => {
   }
 };
 
+// Get user by CCCD
+const getUserByCCCD = async (req, res) => {
+  const { cccd } = req.params;
+  try {
+    const user = await UserManagement.getUserByCCCD(cccd);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const filteredUser = {
+      UserId: user.UserId,
+      FullName: user.FullName,
+      DateOfBirth: user.DateOfBirth,
+      Sex: user.Sex,
+      Email: user.Email,
+      PhoneNumber: user.PhoneNumber,
+      Address: user.Address,
+      CCCD: user.CCCD,
+      avatar_url: user.avatar_url,
+      CreatedAt: user.CreatedAt,
+    };
+    res.status(200).json({
+      message: "User retrieved successfully",
+      user: filteredUser,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Get user by Phone Number
+const getUserByPhoneNumber = async (req, res) => {
+  const { phoneNumber } = req.params;
+  try {
+    const user = await UserManagement.getUserByPhoneNumber(phoneNumber);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const filteredUser = {
+      UserId: user.UserId,
+      FullName: user.FullName,
+      DateOfBirth: user.DateOfBirth,
+      Sex: user.Sex,
+      Email: user.Email,
+      PhoneNumber: user.PhoneNumber,
+      Address: user.Address,
+      CCCD: user.CCCD,
+      avatar_url: user.avatar_url,
+      CreatedAt: user.CreatedAt,
+    };
+    res.status(200).json({
+      message: "User retrieved successfully",
+      user: filteredUser,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getAllUsers,
   getUsersbyName,
@@ -206,4 +264,6 @@ module.exports = {
   createUser,
   deleteUser,
   updateUser,
+  getUserByCCCD,
+  getUserByPhoneNumber,
 };

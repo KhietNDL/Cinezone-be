@@ -1,8 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { getAllUsers, getUsersbyName, getUserById, getUserByEmail, createUser, deleteUser, updateUser } = require('../controllers/user.management.controller');
-const { auth, isAdmin } = require('../middlewares/auth.middleware');
+const { getAllUsers, getUsersbyName, getUserById, getUserByEmail, createUser, deleteUser, updateUser, getUserByCCCD, getUserByPhoneNumber } = require('../controllers/user.management.controller');
+const { auth, isAdmin, isAdminOrEmployee  } = require('../middlewares/auth.middleware');
 const { validateUser } = require('../middlewares/user.management.validator');
+const {
+    updateProfile,
+    getUserById: getUserByIdController,
+    exchangeScore
+} = require('../controllers/user.controller');
 
 // Route to get all users
 /**
@@ -95,7 +100,7 @@ router.get('/:userId', auth, isAdmin, getUserById);
  *       500:
  *         description: Internal server error
  */
-router.get('/email/:email', auth, isAdmin, getUserByEmail);
+router.get('/email/:email', auth, isAdminOrEmployee, getUserByEmail);
 
 // Route to create a new user
 /**
@@ -226,5 +231,55 @@ router.delete('/delete/:userId', auth, isAdmin, deleteUser);
  *         description: Internal server error
  */
 router.put('/update/:userId', auth, isAdmin, validateUser, updateUser);
+
+/**
+ * @swagger
+ * /api/user/cccd/{cccd}:
+ *   get:
+ *     summary: Get user by CCCD
+ *     tags: [User Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: cccd
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: CCCD of the user to retrieve
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved user details
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/cccd/:cccd', auth, isAdminOrEmployee, getUserByCCCD);
+
+/**
+ * @swagger
+ * /api/user/phone/{phoneNumber}:
+ *   get:
+ *     summary: Get user by phone number
+ *     tags: [User Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: phoneNumber
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Phone number of the user to retrieve
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved user details
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/phone/:phoneNumber', auth, isAdminOrEmployee, getUserByPhoneNumber);
 
 module.exports = router;

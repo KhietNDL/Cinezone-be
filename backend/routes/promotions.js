@@ -77,7 +77,7 @@ const { auth, isAdmin } = require('../middlewares/auth.middleware');
  *                   items:
  *                     $ref: '#/components/schemas/Promotion'
  */
-router.get('/', getAllPromotions);
+router.get('/getAll', getAllPromotions);
 
 /**
  * @swagger
@@ -157,7 +157,7 @@ router.get('/:id', getPromotionById);
  *       201:
  *         description: Promotion created successfully
  */
-router.post('/', auth, isAdmin, createPromotion);
+router.post('/create', auth, isAdmin, createPromotion);
 
 /**
  * @swagger
@@ -201,7 +201,7 @@ router.post('/', auth, isAdmin, createPromotion);
  *       200:
  *         description: Promotion updated successfully
  */
-router.put('/:id', auth, isAdmin, updatePromotion);
+router.put('/update/:id', auth, isAdmin, updatePromotion);
 
 /**
  * @swagger
@@ -223,6 +223,6 @@ router.put('/:id', auth, isAdmin, updatePromotion);
  *       200:
  *         description: Promotion deleted successfully
  */
-router.delete('/:id', auth, isAdmin, deletePromotion);
+router.delete('/delete/:id', auth, isAdmin, deletePromotion);
 
 module.exports = router;

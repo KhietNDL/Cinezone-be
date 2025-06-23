@@ -1,41 +1,4 @@
-// src/services/API.jsx
-import axios from "axios";
-
-// Lấy baseURL từ biến môi trường .env
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-// Tạo instance của Axios với cấu hình mặc định
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    console.log("Token gửi lên:", token);
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// Xử lý lỗi chung
-const handleError = (error) => {
-  if (error.response) {
-    // Lỗi từ server (4xx, 5xx)
-    throw new Error(error.response.data.message || "Something went wrong");
-  } else if (error.request) {
-    // Không nhận được phản hồi
-    throw new Error("No response from server");
-  } else {
-    // Lỗi khác
-    throw new Error(error.message);
-  }
-};
+import api from "../API.jsx";
 
 // show Current Movies
 export const getCurrentMovies = async () => {
@@ -61,6 +24,46 @@ export const searchMovies = async (name) => {
 export const getMovieById = async (id) => {
   try {
     const response = await api.get(`/movie/${id}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+// Lấy showtimes theo movieId (lấy version và ngày chiếu)
+export const getShowtimesByMovieId = async (movieId) => {
+  try {
+    const response = await api.get(`/movie/${movieId}/showtimes`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+// Lấy showtimes theo movieId và day
+export const getShowtimesByMovieAndDay = async (movieId, day) => {
+  try {
+    const response = await api.get(`/showtimes/filter?movieId=${movieId}&day=${day}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+// Lấy days theo tên phim
+export const getDaysByMovieName = async (movieName) => {
+  try {
+    const response = await api.get(`/showtimes/movie-name/${encodeURIComponent(movieName)}/showtimes`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+// Lấy versions & times theo tên phim và ngày
+export const getVersionsAndTimesByMovieAndDay = async (movieName, day) => {
+  try {
+    const response = await api.get(`/showtimes/time/${encodeURIComponent(movieName)}/day?day=${day}`);
     return response.data;
   } catch (error) {
     handleError(error);

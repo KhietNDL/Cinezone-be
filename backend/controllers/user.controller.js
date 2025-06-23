@@ -299,8 +299,8 @@ const verifyOtp = async (req, res) => {
             });
         }
 
-        // Lưu userId vào session để sử dụng ở bước reset password
-        req.session.resetUserId = user.UserId;
+        // Lưu email vào session để sử dụng ở bước reset password
+        req.session.resetEmail = user.Email;
 
         res.json({ 
             message: 'OTP verified successfully'
@@ -319,9 +319,9 @@ const resetPassword = async (req, res) => {
     try {
         const { newPassword } = req.body;
 
-        // Lấy userId từ session
-        const userId = req.session.resetUserId;
-        if (!userId) {
+        // Lấy email từ session
+        const email = req.session.resetEmail;
+        if (!email) {
             return res.status(400).json({
                 error: 'Please verify OTP first',
                 code: ERROR_CODES.INVALID_REQUEST
@@ -329,7 +329,7 @@ const resetPassword = async (req, res) => {
         }
 
         // Check if user exists
-        const user = await User.findById(userId);
+        const user = await User.findByEmail(email);
         if (!user) {
             return res.status(404).json({
                 error: 'User not found',
@@ -338,10 +338,10 @@ const resetPassword = async (req, res) => {
         }
 
         // Update password
-        await User.updatePassword(userId, newPassword);
+        await User.updatePassword(user.UserId, newPassword);
 
         // Xóa session sau khi reset thành công
-        delete req.session.resetUserId;
+        delete req.session.resetEmail;
 
         res.json({ message: 'Password reset successful' });
     } catch (error) {
@@ -560,6 +560,46 @@ const getUserById = async (req, res) => {
     }
 };
 
+const exchangeScore = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { pointsToExchange } = req.body;
+
+        if (!uuidValidate(userId)) {
+            return res.status(400).json({ error: 'Invalid user ID format', code: ERROR_CODES.INVALID_UUID });
+        }
+
+        const points = parseInt(pointsToExchange, 10);
+        if (isNaN(points) || points <= 0) {
+            return res.status(400).json({ error: 'Invalid points value', code: ERROR_CODES.INVALID_REQUEST });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found', code: ERROR_CODES.USER_NOT_FOUND });
+        }
+
+        if (user.ScoreBalance < points) {
+            return res.status(400).json({ error: 'Insufficient score balance' });
+        }
+
+        const moneyGained = points * 1000;
+        const newScoreBalance = user.ScoreBalance - points;
+
+        await User.updateScoreBalance(userId, newScoreBalance);
+
+        res.json({
+            message: 'Score exchanged successfully',
+            moneyGained,
+            newScoreBalance,
+        });
+    } catch (error) {
+        console.error('Exchange score error:', error);
+        res.status(500).json({ error: 'Internal server error', code: ERROR_CODES.SERVER_ERROR });
+    }
+};
+
+
 module.exports = {
     register,
     login,
@@ -568,5 +608,6 @@ module.exports = {
     resetPassword,
     logout,
     updateProfile,
-    getUserById
+    getUserById,
+    exchangeScore
 };

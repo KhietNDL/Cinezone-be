@@ -95,25 +95,26 @@ class Employee {
     const DateOfBirth = keepOld(employeeData.DateOfBirth, current.DateOfBirth);
     const Sex = keepOld(employeeData.Sex, current.Sex);
     const CCCD = keepOld(employeeData.CCCD, current.CCCD);
-    const Email = keepOld(employeeData.Email, current.Email);
+    // BỎ Email
     const PhoneNumber = keepOld(employeeData.PhoneNumber, current.PhoneNumber);
     const Address = keepOld(employeeData.Address, current.Address);
+    const avatar_url = keepOld(employeeData.avatar_url, current.avatar_url); // THÊM DÒNG NÀY
     // Password: chỉ hash lại nếu có truyền mới và khác rỗng, không thì giữ nguyên
     let hashedPassword = current.Password;
     if (employeeData.Password && employeeData.Password !== "") {
       hashedPassword = await bcrypt.hash(employeeData.Password, 10);
     }
     const [result] = await db.promise().query(
-      "UPDATE Users SET FullName = ?, DateOfBirth = ?, Password = ?, Sex = ?, CCCD = ?, Email = ?, PhoneNumber = ?, Address = ? WHERE UserId = ? AND Role = 2",
+      "UPDATE Users SET FullName = ?, DateOfBirth = ?, Password = ?, Sex = ?, CCCD = ?, PhoneNumber = ?, Address = ?, avatar_url = ? WHERE UserId = ? AND Role = 2",
       [
         FullName,
         DateOfBirth,
         hashedPassword,
         Sex,
         CCCD,
-        Email,
         PhoneNumber,
         Address,
+        avatar_url,
         userId,
       ]
     );

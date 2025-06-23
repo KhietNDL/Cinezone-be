@@ -13,6 +13,7 @@ import "swiper/css/pagination";
 import { Navigation, Pagination } from "swiper/modules";
 import { Link } from "react-router-dom";
 import './SwiperButton.css'
+import { getDaysByMovieName, getVersionsAndTimesByMovieAndDay } from '../../../services/APIForStaff/API';
 
 export default function MovieDetail() {
 
@@ -23,19 +24,6 @@ export default function MovieDetail() {
   const [imageError, setImageError] = useState({});
   const [recommended, setRecommended] = useState([]);
 
-  // const movie = {
-  //   image: "https://static.wikia.nocookie.net/howtotrainyourdragon/images/6/6a/How_To_Train_Your_Dragon_2025_Teaser_Poster.jpg",
-  //   name: "How to train your dragon",
-  //   director: "Dean DeBlois",
-  //   actors: "Mason Thames, Nico Parker, Gerard Butler",
-  //   genres: "Action, Adventure, Comedy, Fantasy",
-  //   date: "13/06/2025",
-  //   time: "12:30 PM, 18:00 PM",
-  //   duration: "126 minutes",
-  //   version: "K, 4DX, IMAX, SCREENX, STARIUM, ULTRA 4DX",
-  //   rating: 4.5,
-  //   describe: "The story of a young man with a dream of becoming a dragon hunter, but fate leads him to an unexpected friendship with a dragon."
-  // };
 
   async function fetchMovie() {
     setLoading(true);
@@ -123,7 +111,8 @@ export default function MovieDetail() {
     },
   ];
 
-  const versions = movie.Version.split(' ').map(item => item.trim());
+  // const versions = movie.Version.split(' ').map(item => item.trim());
+  const versions = Array.isArray(movie.Version) ? movie.Version : [];
 
   const versionStyles = {
     "K": "text-white bg-cyan-800 font-bold",
@@ -178,7 +167,7 @@ export default function MovieDetail() {
       spaceBetween: 40,
     },
     1024: {
-      slidesPerView: 4,
+      slidesPerView: 5,
       spaceBetween: 50,
     },
   };
@@ -198,13 +187,15 @@ export default function MovieDetail() {
             </div>
 
             <div className='w-[70%] p-4'>
-              <h1 className='text-3xl font-semibold w-full py-4 border-b border-gray-500'>{movie.NameOfEnglish}</h1>
+              <h1 className='text-3xl font-semibold w-full py-4 border-b border-gray-500'>{movie.NameOfEnglish} <span 
+              className='text-[20px]'>{"("}{movie.NameOfVietnamese}{")"}</span> </h1>
+              
               <div className='mt-4 space-y-2'>
                 <p className='flex gap-6 w-full font-semibold'>Director: <span className='font-normal'>{movie.Director}</span></p>
                 <p className='flex gap-9 w-full font-semibold'>Actors: <span className='font-normal'>{movie.Actors}</span></p>
                 <p className='flex gap-8 w-full font-semibold'>Genres: <span className='font-normal'>{movie.Genres}</span></p>
-                <p className='flex gap-12 w-full font-semibold'>Date: <span className='font-normal'>{formatDate(movie.FromDate)}</span></p>
-                <p className='flex gap-12 w-full font-semibold'>Time: <span className='font-normal'>{movie.time}</span></p>
+                <p className='flex gap-12 w-full font-semibold'>Date: <span className='font-normal'>{formatDate(movie.FromDate)} - {formatDate(movie.ToDate)}</span></p>
+                {/* <p className='flex gap-12 w-full font-semibold'>Time: <span className='font-normal'>{movie.time}</span></p> */}
                 <p className='flex gap-5 w-full font-semibold'>Duration: <span className='font-normal'>{movie.RunningTime}m</span></p>
                 <div className="flex gap-2 flex-wrap mt-4">
                   {versions.map((ver, index) => (
@@ -229,32 +220,6 @@ export default function MovieDetail() {
           <div className='p-4 w-full border-b border-gray-700'>
             <div className='font-semibold flex items-center gap-1'><LuChartBar /> Describe:</div>
             <p className='pt-2'>{movie.ContentSynopsis}</p>
-          </div>
-          <div className='w-full '>
-            <div className="text-xl font-bold mt-8 mb-2 text-[#9810FA]">Recommended Movies</div>
-            <div className="relative">
-              {recommended.length === 0 ? (
-                <div className="text-gray-500">No recommended movies found.</div>
-              ) : (
-                <Swiper
-                  modules={[Navigation, Pagination]}
-                  navigation
-                  pagination={{ clickable: true }}
-                  slidesPerView={4}
-                  style={{ padding: "0 50px", minHeight: 300 }} // Thêm padding hai bên và tăng chiều cao
-                  breakpoints={swiperBreakpoints}
-                  className="custom-swiper-nav"
-                >
-                  {recommended.map((rec) => (
-                    <SwiperSlide key={rec.MovieId} style={{ height: 260, display: 'flex', alignItems: 'center' }}>
-                      <Link to={`/staff/movie/${rec.MovieId}`}>
-                        <ItemCard item={rec} type="movie" small />
-                      </Link>
-                    </SwiperSlide>
-                  ))}
-                </Swiper>
-              )}
-            </div>
           </div>
         </div>
 
@@ -289,7 +254,33 @@ export default function MovieDetail() {
           </ul>
         </div>
       </div>
-
+ <div className='w-full '>
+            <div className="text-xl font-bold mt-8 mb-2 text-[#9810FA]">Recommended Movies</div>
+            <div className="relative">
+              {recommended.length === 0 ? (
+                <div className="text-gray-500">No recommended movies found.</div>
+              ) : (
+                <Swiper
+                  modules={[Navigation, Pagination]}
+                  navigation
+                  pagination={{ clickable: true }}
+                  slidesPerView={5}
+                  style={{ padding: "0 50px", minHeight: 300 }} // Thêm padding hai bên và tăng chiều cao
+                  breakpoints={swiperBreakpoints}
+                  className="custom-swiper-nav"
+                >
+                  {recommended.map((rec) => (
+                    <SwiperSlide key={rec.MovieId}
+                      style={{ height: 270, display: 'flex', alignItems: 'center'}}>
+                      <Link to={`/staff/movie/${rec.MovieId}`}>
+                        <ItemCard item={rec} type="movie" small />
+                      </Link>
+                    </SwiperSlide>
+                  ))}
+                </Swiper>
+              )}
+            </div>
+          </div>
     </div>
   );
 }
