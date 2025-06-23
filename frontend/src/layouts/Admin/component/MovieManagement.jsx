@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { GoPlus } from "react-icons/go";
 import {
   IoCalendarOutline,
@@ -27,9 +27,11 @@ import {
 } from "../../../services/API";
 import { formatDateRange } from "../../../utils/dateUtils";
 import debounce from "lodash/debounce";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 const MovieManagement = () => {
   const [movies, setMovies] = useState([]);
-
   const [currentPage, setCurrentPage] = useState(1);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
@@ -42,7 +44,7 @@ const MovieManagement = () => {
   const itemsPerPage = 7;
   const [totalPages, setTotalPages] = useState(0);
 
-  // State riêng cho từng trường
+  // State for each field
   const [nameOfVietnamese, setNameOfVietnamese] = useState("");
   const [nameOfEnglish, setNameOfEnglish] = useState("");
   const [fromDate, setFromDate] = useState("");
@@ -59,6 +61,11 @@ const MovieManagement = () => {
   const [posterFileName, setPosterFileName] = useState("");
   const [trailerFileName, setTrailerFileName] = useState("");
   const [upcomingMovies, setUpcomingMovies] = useState([]);
+  const [posterPreview, setPosterPreview] = useState(null);
+  const [trailerPreview, setTrailerPreview] = useState(null);
+
+  const posterUploadRef = useRef(null);
+  const trailerUploadRef = useRef(null);
   const getMovieData = async () => {
     try {
       const response = await getMovies({
@@ -78,6 +85,7 @@ const MovieManagement = () => {
       console.error("Error fetching movies:", error);
     }
   };
+
   const getUpcomingMovie = async () => {
     try {
       const response = await getUpcomingMovies({
@@ -92,14 +100,15 @@ const MovieManagement = () => {
       console.error("Error fetching upcoming movies:", error);
     }
   };
+
   useEffect(() => {
     getMovieData();
     getUpcomingMovie();
   }, [itemsPerPage, currentPage]);
 
   useEffect(() => {
-    setCurrentPage(1); // Reset to first page on search
-    debouncedSearchMovieData(searchMovie); // Use debounced function
+    setCurrentPage(1);
+    debouncedSearchMovieData(searchMovie);
   }, [searchMovie]);
 
   const searchMovieData = async (searchTerm) => {
@@ -125,10 +134,6 @@ const MovieManagement = () => {
     }
   };
   const debouncedSearchMovieData = debounce(searchMovieData, 500);
-  useEffect(() => {
-    setCurrentPage(1); // Reset to first page on search
-    debouncedSearchMovieData(searchMovie); // Use debounced function
-  }, [searchMovie]);
 
   const renderPaginationButtons = () => {
     const maxVisibleButtons = 5;
@@ -282,9 +287,11 @@ const MovieManagement = () => {
       if (field === "PosterImage") {
         setPosterImage(file);
         setPosterFileName(file.name);
+        setPosterPreview(URL.createObjectURL(file));
       } else if (field === "TrailerUrl") {
         setTrailerUrl(file);
         setTrailerFileName(file.name);
+        setTrailerPreview(URL.createObjectURL(file));
       }
     }
   };
@@ -302,69 +309,73 @@ const MovieManagement = () => {
       { value: version, name: "Version" },
       { value: genres, name: "Genres" },
       { value: contentSynopsis, name: "Content" },
-      { value: posterImage, name: "Poster Image" },
-      { value: trailerUrl, name: "Trailer URL" },
+      { value: posterImage || posterFileName, name: "Poster Image" }, // Allow existing file name
+      { value: trailerUrl || trailerFileName, name: "Trailer URL" }, // Allow existing file name
     ];
 
     for (const field of requiredFields) {
       if (
-        !field.value ||
-        (typeof field.value === "string" && !field.value.trim())
+        !field.value &&
+        (typeof field.value !== "string" || !field.value.trim())
       ) {
-        alert(`${field.name} là bắt buộc`);
+        alert(`${field.name} is required`);
         return false;
       }
     }
 
     // Validate NameOfVietnamese for Vietnamese characters with accents
-    const vietnameseRegex = /^[A-Za-z0-9À-ỹ\s,.:-]+$/; // Thêm số (0-9) và dấu hai chấm (:)
+    const vietnameseRegex = /^[A-Za-z0-9À-ỹ\s,.:-]+$/;
     if (!vietnameseRegex.test(nameOfVietnamese.trim())) {
       alert(
-        "Tên phim tiếng Việt phải chứa các ký tự hợp lệ (chữ cái, số, dấu tiếng Việt, dấu cách, dấu phẩy, dấu chấm, dấu gạch ngang, dấu hai chấm)"
+        "Vietnamese movie name must contain valid characters (letters, numbers, Vietnamese accents, spaces, commas, periods, hyphens, colons)"
       );
       return false;
     }
-    // Require at least one Vietnamese accented character
     const hasVietnameseAccent = /[À-ỹ]/.test(nameOfVietnamese.trim());
     if (!hasVietnameseAccent) {
       console.error(
         "Vietnamese movie name must contain at least one accented character"
       );
-      alert("Tên phim tiếng Việt phải chứa ít nhất một ký tự có dấu");
+      alert(
+        "Vietnamese movie name must contain at least one accented character"
+      );
       return false;
     }
 
     // Validate NameOfEnglish for English characters
-    const englishRegex = /^[A-Za-z0-9\s,.:-]+$/; // Thêm dấu hai chấm (:) cho tên tiếng Anh
+    const englishRegex = /^[A-Za-z0-9\s,.:-]+$/;
     if (!englishRegex.test(nameOfEnglish.trim())) {
       alert(
-        "Tên phim tiếng Anh chỉ được chứa chữ cái, số, dấu cách, dấu phẩy, dấu chấm, dấu gạch ngang, dấu hai chấm"
+        "English movie name must contain only letters, numbers, spaces, commas, periods, hyphens, colons"
       );
       return false;
     }
 
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!dateRegex.test(fromDate)) {
-      alert("Ngày bắt đầu phải có định dạng yyyy-mm-dd");
+      alert("From date must be in yyyy-mm-dd format");
       return false;
     }
     if (!dateRegex.test(toDate)) {
-      alert("Ngày kết thúc phải có định dạng yyyy-mm-dd");
+      alert("To date must be in yyyy-mm-dd format");
       return false;
     }
 
     const runningTimeNum = parseInt(runningTime, 10);
     if (isNaN(runningTimeNum) || runningTimeNum <= 0) {
-      alert("Thời lượng phim phải là số nguyên dương");
+      alert("Duration must be a positive integer");
       return false;
     }
 
-    if (new Date(fromDate) > new Date(toDate)) {
-      alert("Ngày bắt đầu phải trước ngày kết thúc");
+    const fromDateObj = new Date(fromDate);
+    const toDateObj = new Date(toDate);
+
+    if (fromDateObj >= toDateObj) {
+      alert("To date must be after from date (same day not allowed)");
       return false;
     }
-    if (new Date(fromDate) < new Date("2025-06-19T01:06:00+07:00")) {
-      alert("Ngày bắt đầu không được là ngày trong quá khứ");
+    if (fromDateObj < new Date("2025-06-19T01:06:00+07:00")) {
+      alert("From date must not be in the past");
       return false;
     }
 
@@ -394,6 +405,7 @@ const MovieManagement = () => {
       setMovies((prev) => [...prev, newMovie]);
       resetForm();
       setShowAddForm(false);
+      toast.success("Movie added successfully!");
     } catch (error) {
       if (
         error.response?.data?.errors &&
@@ -414,14 +426,9 @@ const MovieManagement = () => {
   };
 
   const handleEditMovie = async () => {
-    if (!validateForm() || !selectedMovie || !selectedMovie.MovieId) {
-      alert("Cannot edit: Invalid movie selection or form data.");
-      return;
-    }
-
     try {
       const movieData = new FormData();
-      movieData.append("MovieId", selectedMovie.MovieId); // Use MovieId
+      movieData.append("MovieId", selectedMovie.MovieId);
       movieData.append("NameOfVietnamese", nameOfVietnamese.trim());
       movieData.append("NameOfEnglish", nameOfEnglish.trim());
       movieData.append("FromDate", fromDate);
@@ -434,7 +441,11 @@ const MovieManagement = () => {
       movieData.append("Genres", genres.trim());
       movieData.append("ContentSynopsis", contentSynopsis.trim());
       if (posterImage) movieData.append("poster", posterImage);
+      else if (posterFileName && !posterImage)
+        movieData.append("poster", posterFileName); // Send existing file name if no new upload
       if (trailerUrl) movieData.append("trailer", trailerUrl);
+      else if (trailerFileName && !trailerUrl)
+        movieData.append("trailer", trailerFileName); // Send existing file name if no new upload
 
       const updatedMovie = await editMovie(movieData);
       setMovies((prev) =>
@@ -445,6 +456,7 @@ const MovieManagement = () => {
       resetForm();
       setShowEditForm(false);
       setSelectedMovie(null);
+      toast.success("Movie updated successfully!");
     } catch (error) {
       console.error("Error editing movie:", {
         response: error.response?.data,
@@ -483,17 +495,43 @@ const MovieManagement = () => {
     setContentSynopsis("");
     setPosterImage(null);
     setTrailerUrl(null);
+    setPosterFileName("");
+    setTrailerFileName("");
+    setPosterPreview(null);
+    setTrailerPreview(null);
   };
   const handleEdit = (movie) => {
-    console.log("Movie to edit:", movie); // Debug
-    if (!movie || !movie.MovieId) {
-      console.error("Invalid movie or movieId:", movie);
-      alert("Cannot delete: Invalid movie selection.");
-      return;
-    }
     setSelectedMovie(movie);
+    setNameOfVietnamese(movie.NameOfVietnamese || "");
+    setNameOfEnglish(movie.NameOfEnglish || "");
+    const formatDate = (dateStr) => {
+      if (!dateStr) return "";
+      const date = new Date(dateStr);
+      return date.toISOString().split("T")[0];
+    };
+    setFromDate(formatDate(movie.FromDate));
+    setToDate(formatDate(movie.ToDate));
+    setActors(movie.Actors || "");
+    setProductionCompany(movie.ProductionCompany || "");
+    setDirector(movie.Director || "");
+    setRunningTime(movie.RunningTime ? movie.RunningTime.toString() : "");
+    setVersion(movie.Version || "2D");
+    setGenres(movie.Genres || ""); // Đảm bảo genres là chuỗi
+    setContentSynopsis(movie.ContentSynopsis || "");
+    setPosterFileName(movie.PosterImage || "");
+    setTrailerFileName(movie.trailer || "");
+    setPosterImage(null);
+    setTrailerUrl(null);
+    // Set previews if URLs are available (optional, depends on your API)
+    if (movie.PosterImage && movie.PosterImage.startsWith("http")) {
+      setPosterPreview(movie.PosterImage);
+    }
+    if (movie.trailer && movie.trailer.startsWith("http")) {
+      setTrailerPreview(movie.trailer);
+    }
     setShowEditForm(true);
   };
+
   const handleDelete = (movie) => {
     console.log("Movie to delete:", movie); // Debug
     if (!movie || !movie.MovieId) {
@@ -506,11 +544,6 @@ const MovieManagement = () => {
   };
 
   const confirmDelete = async () => {
-    if (!selectedMovie || !selectedMovie.MovieId) {
-      alert("Cannot delete: No movie selected or invalid movie ID.");
-      return;
-    }
-
     try {
       await deleteMovie(selectedMovie.MovieId);
       setMovies((prev) =>
@@ -518,9 +551,9 @@ const MovieManagement = () => {
       );
       setShowDeletePopup(false);
       setSelectedMovie(null);
+      toast.success("Movie deleted successfully!");
     } catch (error) {
       console.error("Delete error:", error);
-      alert(`Failed to delete movie: ${error.message || "Server error"}`);
     }
   };
 
@@ -720,10 +753,10 @@ const MovieManagement = () => {
 
   return (
     <div
-      className="p-[20px] flex items-center h-full justify-between"
+      className="flex items-center h-full justify-between"
       onClick={handleOutsideClick}
     >
-      <div className="w-[70%] space-y-4">
+      <div className="w-[90%] space-y-4 h-[calc(100vh_-_7rem)]">
         <div className="flex items-center justify-between w-full">
           <div className="bg-white rounded-md p-3 w-[23%] shadow-sm">
             <div className="flex items-center justify-between">
@@ -750,7 +783,7 @@ const MovieManagement = () => {
                 <PiChartLineDownBold size={20} className="text-blue-500" />
               </div>
             </div>
-            <div className="font-bold text-[19px]">25,340</div>
+            {movies.filter((movie) => movie.isDeleted === 1).length}
           </div>
           <div className="bg-white rounded-md p-3 w-[23%] shadow-sm">
             <div className="flex items-center justify-between">
@@ -759,7 +792,14 @@ const MovieManagement = () => {
                 <FaClock size={20} className="text-red-500" />
               </div>
             </div>
-            <div className="font-bold text-[19px]">25,340</div>
+            {movies.length
+              ? Math.round(
+                  movies.reduce(
+                    (sum, movie) => sum + (movie.RunningTime || 0),
+                    0
+                  ) / movies.length
+                )
+              : 0}
           </div>
         </div>
         <div className="w-full py-3 space-y-4">
@@ -789,10 +829,11 @@ const MovieManagement = () => {
               </div>
             </div>
           </div>
-          <div className="bg-white min-h-[340px] max-h-[340px] p-4 rounded-md shadow-sm">
+          <div className="bg-white  p-4 rounded-md shadow-sm">
             <table className="w-full table-auto border-collapse">
               <thead>
                 <tr className="text-left text-slate-500 text-sm border-b border-slate-200">
+                  <th className="py-2">Poster Movie</th>
                   <th className="py-2">Name Movie (ENG)</th>
                   <th className="py-2">Name Movie (VN)</th>
                   <th className="py-2 text-center">Release Date</th>
@@ -814,6 +855,14 @@ const MovieManagement = () => {
                       onClick={(e) => handleRowClick(mov, e)}
                       className="border-b border-slate-200 hover:bg-slate-100 text-sm"
                     >
+                      <td className="py-2 text-center">
+                        <img
+                          src={mov.PosterImage}
+                          alt=""
+                          className="w-[80px] h-[100px] rounded-lg"
+                        />
+                      </td>
+
                       {mov.NameOfEnglish.length > 20 ? (
                         <td className="py-2">
                           {mov.NameOfEnglish.slice(0, 20) + "..."}
@@ -835,34 +884,36 @@ const MovieManagement = () => {
                         {mov.RunningTime} mins
                       </td>
                       <td className="py-2 text-center">{mov.Version}</td>
-                      <td className="flex items-center justify-between py-2">
-                        <div
-                          role="button"
-                          className="text-blue-500 hover:text-blue-700"
-                        >
-                          <IoEyeOutline size={20} />
-                        </div>
-                        <div
-                          role="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEdit(mov);
-                          }}
-                          className="text-blue-500 hover:text-blue-700"
-                          title="Edit"
-                        >
-                          <FaRegEdit size={20} />
-                        </div>
-                        <div
-                          role="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(mov);
-                          }}
-                          className="text-red-400 hover:text-red-600"
-                          title="Delete"
-                        >
-                          <RiDeleteBin5Line size={20} />
+                      <td className=" py-2">
+                        <div className="flex items-center justify-between">
+                          <div
+                            role="button"
+                            className="text-blue-500 hover:text-blue-700"
+                          >
+                            <IoEyeOutline size={20} />
+                          </div>
+                          <div
+                            role="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit(mov);
+                            }}
+                            className="text-blue-500 hover:text-blue-700"
+                            title="Edit"
+                          >
+                            <FaRegEdit size={20} />
+                          </div>
+                          <div
+                            role="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(mov);
+                            }}
+                            className="text-red-400 hover:text-red-600"
+                            title="Delete"
+                          >
+                            <RiDeleteBin5Line size={20} />
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -892,530 +943,503 @@ const MovieManagement = () => {
             </button>
           </div>
         </div>
-        <div className="flex items-center top-[25%] justify-center w-[28%] fixed right-[-40px]">
-          <div className="flex items-center justify-center">
-            <div className="bg-white p-10 py-6 rounded-[20px] shadow-sm w-full">
-              <div className="flex items-center space-x-1 justify-between mb-6">
-                <h2 className="text-lg font-bold text-gray-800">
-                  Upcoming Releases
-                </h2>
-              </div>
-              <div className="space-y-4">
-                {upcomingMovies.map((movie) => (
-                  <div key={movie.MovieId} className="relative pl-6">
-                    <div className="absolute left-0 top-0 w-2 h-2 bg-indigo-600 rounded-full"></div>
 
-                    <div className="bg-gray-100 p-2 rounded-lg">
-                      <div className="text-sm text-gray-600">
-                        {formatDateRange(movie.FromDate, movie.ToDate)}
-                      </div>
-                      <div className="text-md font-medium text-gray-800">
-                        {movie.NameOfEnglish}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-        {showAddForm && (
-          <div className="fixed inset-0 bg-black/30 bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-[600px] max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-800">
-                    Add New Movie
-                  </h2>
-                  <p className="text-gray-500 text-sm mt-1">
-                    Fill in the details below to add a movie entry.
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+        {(showAddForm || showEditForm) && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[95vh] overflow-hidden">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 text-white">
+                <div className="flex items-center justify-between">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Movie name (VN) <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter movie name in Vietnamese"
-                      value={nameOfVietnamese}
-                      onChange={(e) =>
-                        handleInputChange("NameOfVietnamese", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Movie name (ENG) <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter movie name in English"
-                      value={nameOfEnglish}
-                      onChange={(e) =>
-                        handleInputChange("NameOfEnglish", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      From date <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      value={fromDate || ""}
-                      onChange={(e) =>
-                        handleInputChange("FromDate", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      To date <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      value={toDate || ""}
-                      onChange={(e) =>
-                        handleInputChange("ToDate", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Actors <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter main actors"
-                      value={actors || ""}
-                      onChange={(e) =>
-                        handleInputChange("Actors", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Production Company <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter production company"
-                      value={productionCompany || ""}
-                      onChange={(e) =>
-                        handleInputChange("ProductionCompany", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Director <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter director"
-                      value={director || ""}
-                      onChange={(e) =>
-                        handleInputChange("Director", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Duration (minutes) <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="e.g. 120"
-                      value={runningTime || ""}
-                      onChange={(e) =>
-                        handleInputChange("RunningTime", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Version <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={version || "2D"}
-                      onChange={(e) =>
-                        handleInputChange("Version", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="2D">2D</option>
-                      <option value="3D">3D</option>
-                      <option value="IMAX">IMAX</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Genres <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter genres (e.g., Action, Comedy)"
-                      value={genres || ""}
-                      onChange={(e) =>
-                        handleInputChange("Genres", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Content <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      placeholder="Enter movie synopsis or description"
-                      value={contentSynopsis || ""}
-                      onChange={(e) =>
-                        handleInputChange("ContentSynopsis", e.target.value)
-                      }
-                      rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    />
-                  </div>
-                  <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center">
-                    <FaUpload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                    <input
-                      type="file"
-                      accept="image/png, image/jpeg"
-                      onChange={(e) => handleFileChange("PosterImage", e)}
-                      className="hidden"
-                      id="posterUpload"
-                    />
-                    <label
-                      htmlFor="posterUpload"
-                      className="text-blue-600 hover:text-blue-800 font-medium cursor-pointer"
-                    >
-                      Upload image
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {posterFileName || "PNG, JPG up to 10MB"}
+                    <h2 className="text-2xl font-bold">
+                      {showEditForm ? "Edit Movie" : "Add New Movie"}
+                    </h2>
+                    <p className="text-blue-100 text-sm mt-1">
+                      {showEditForm
+                        ? "Update the details below to edit the movie entry"
+                        : "Fill in the details below to add a movie entry"}
                     </p>
                   </div>
-                </div>
-
-                <div className="grid grid-cols-1">
-                  <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center">
-                    <FaUpload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                    <input
-                      type="file"
-                      accept="video/*"
-                      onChange={(e) => handleFileChange("TrailerUrl", e)}
-                      className="hidden"
-                      id="trailerUpload"
-                    />
-                    <label
-                      htmlFor="trailerUpload"
-                      className="text-blue-600 hover:text-blue-800 font-medium cursor-pointer"
+                  <button
+                    onClick={handleCloseMovieForm}
+                    className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                  >
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
                     >
-                      Upload trailer
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {trailerFileName || "Video files up to 50MB"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3 mt-6 pt-4 border-t">
-                <button
-                  onClick={handleCloseMovieForm}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md font-medium"
-                >
-                  Back
-                </button>
-                <button
-                  onClick={handleCreateMovie}
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-        {showEditForm && (
-          <div className="fixed inset-0 bg-black/30 bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-[600px] max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-800">
-                    Edit Movie
-                  </h2>
-                  <p className="text-gray-500 text-sm mt-1">
-                    Update the details below to edit the movie entry.
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Movie name (VN) <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter movie name in Vietnamese"
-                      value={nameOfVietnamese}
-                      onChange={(e) =>
-                        handleInputChange("NameOfVietnamese", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Movie name (ENG) <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter movie name in English"
-                      value={nameOfEnglish}
-                      onChange={(e) =>
-                        handleInputChange("NameOfEnglish", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      From date <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      value={fromDate || ""}
-                      onChange={(e) =>
-                        handleInputChange("FromDate", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      To date <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      value={toDate || ""}
-                      onChange={(e) =>
-                        handleInputChange("ToDate", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Actors <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter main actors"
-                      value={actors || ""}
-                      onChange={(e) =>
-                        handleInputChange("Actors", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Production Company <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter production company"
-                      value={productionCompany || ""}
-                      onChange={(e) =>
-                        handleInputChange("ProductionCompany", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Director <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter director"
-                      value={director || ""}
-                      onChange={(e) =>
-                        handleInputChange("Director", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Duration (minutes) <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="e.g. 120"
-                      value={runningTime || ""}
-                      onChange={(e) =>
-                        handleInputChange("RunningTime", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Version <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={version || "2D"}
-                      onChange={(e) =>
-                        handleInputChange("Version", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="2D">2D</option>
-                      <option value="3D">3D</option>
-                      <option value="IMAX">IMAX</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Genres <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter genres (e.g., Action, Comedy)"
-                      value={genres || ""}
-                      onChange={(e) =>
-                        handleInputChange("Genres", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Content <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      placeholder="Enter movie synopsis or description"
-                      value={contentSynopsis || ""}
-                      onChange={(e) =>
-                        handleInputChange("ContentSynopsis", e.target.value)
-                      }
-                      rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Poster Image <span className="text-red-500">*</span>
-                    </label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center">
-                      <FaUpload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                      <input
-                        type="file"
-                        accept="image/png, image/jpeg"
-                        onChange={(e) => handleFileChange("PosterImage", e)}
-                        className="hidden"
-                        id="posterUpload"
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
                       />
-                      <label
-                        htmlFor="posterUpload"
-                        className="text-blue-600 hover:text-blue-800 font-medium cursor-pointer"
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Form Content */}
+              <div className="p-6 overflow-y-auto max-h-[calc(95vh-170px)]">
+                <div className="space-y-6">
+                  {/* Movie Names */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                      <svg
+                        className="w-5 h-5 mr-2 text-blue-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
                       >
-                        Upload image
-                      </label>
-                      <p className="text-xs text-gray-500 mt-1">
-                        PNG, JPG up to 10MB
-                      </p>
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2h4a1 1 0 110 2h-1v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6H3a1 1 0 110-2h4z"
+                        />
+                      </svg>
+                      Movie Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Movie Name (Vietnamese){" "}
+                          <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Tên phim tiếng Việt"
+                          value={nameOfVietnamese}
+                          onChange={(e) =>
+                            handleInputChange(
+                              "NameOfVietnamese",
+                              e.target.value
+                            )
+                          }
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Movie Name (English){" "}
+                          <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="English movie name"
+                          value={nameOfEnglish}
+                          onChange={(e) =>
+                            handleInputChange("NameOfEnglish", e.target.value)
+                          }
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Date Range */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                      <svg
+                        className="w-5 h-5 mr-2 text-green-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                      Screening Period
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          From Date <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="date"
+                          value={fromDate || ""}
+                          onChange={(e) =>
+                            handleInputChange("FromDate", e.target.value)
+                          }
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          To Date <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="date"
+                          value={toDate || ""}
+                          onChange={(e) =>
+                            handleInputChange("ToDate", e.target.value)
+                          }
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Production Details */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                      <svg
+                        className="w-5 h-5 mr-2 text-purple-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                        />
+                      </svg>
+                      Production Details
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Main Actors <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Actor 1, Actor 2, Actor 3..."
+                          value={actors || ""}
+                          onChange={(e) =>
+                            handleInputChange("Actors", e.target.value)
+                          }
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Production Company{" "}
+                          <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Studio name"
+                          value={productionCompany || ""}
+                          onChange={(e) =>
+                            handleInputChange(
+                              "ProductionCompany",
+                              e.target.value
+                            )
+                          }
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Director <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Director name"
+                          value={director || ""}
+                          onChange={(e) =>
+                            handleInputChange("Director", e.target.value)
+                          }
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Duration (minutes){" "}
+                          <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          placeholder="120"
+                          value={runningTime || ""}
+                          onChange={(e) =>
+                            handleInputChange("RunningTime", e.target.value)
+                          }
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Technical Details */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                      <svg
+                        className="w-5 h-5 mr-2 text-orange-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                        />
+                      </svg>
+                      Technical Specifications
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Version <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={version || "2D"}
+                          onChange={(e) =>
+                            handleInputChange("Version", e.target.value)
+                          }
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        >
+                          <option value="2D">2D</option>
+                          <option value="3D">3D</option>
+                          <option value="IMAX">IMAX</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Genres <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          multiple
+                          value={
+                            genres ? genres.split(", ").filter(Boolean) : []
+                          }
+                          onChange={(e) => {
+                            const selectedOptions = Array.from(
+                              e.target.selectedOptions,
+                              (option) => option.value
+                            );
+                            handleInputChange(
+                              "Genres",
+                              selectedOptions.join(", ").trim() || ""
+                            );
+                          }}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all h-32"
+                        >
+                          <option value="Action">Action</option>
+                          <option value="Romance">Romance</option>
+                          <option value="Comedy">Comedy</option>
+                          <option value="Drama">Drama</option>
+                          <option value="Horror">Horror</option>
+                          <option value="Sci-Fi">Sci-Fi</option>
+                          <option value="Fantasy">Fantasy</option>
+                          <option value="Adventure">Adventure</option>
+                          <option value="Thriller">Thriller</option>
+                          <option value="Animation">Animation</option>
+                        </select>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Hold Ctrl/Cmd to select multiple genres
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Content and Media */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                      <svg
+                        className="w-5 h-5 mr-2 text-red-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                      Content & Media
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Movie Synopsis <span className="text-red-500">*</span>
+                        </label>
+                        <textarea
+                          placeholder="Enter a compelling movie description..."
+                          value={contentSynopsis || ""}
+                          onChange={(e) =>
+                            handleInputChange("ContentSynopsis", e.target.value)
+                          }
+                          rows={6}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Poster Image <span className="text-red-500">*</span>
+                        </label>
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                          {posterPreview ? (
+                            <div className="relative">
+                              <img
+                                src={posterPreview}
+                                alt="Poster Preview"
+                                className="w-full h-48 object-cover rounded-lg"
+                              />
+                              <button
+                                onClick={() => {
+                                  handleFileChange("PosterImage", {
+                                    target: { files: [] },
+                                  });
+                                  setPosterFileName("");
+                                  setPosterPreview(null);
+                                  if (posterUploadRef.current) {
+                                    posterUploadRef.current.value = "";
+                                  }
+                                }}
+                                className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 transition-colors"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ) : (
+                            <div>
+                              <svg
+                                className="mx-auto h-12 w-12 text-gray-400 mb-4"
+                                stroke="currentColor"
+                                fill="none"
+                                viewBox="0 0 48 48"
+                              >
+                                <path
+                                  d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                  strokeWidth={2}
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                              <input
+                                type="file"
+                                accept="image/png, image/jpeg"
+                                onChange={(e) =>
+                                  handleFileChange("PosterImage", e)
+                                }
+                                className="hidden"
+                                id="posterUpload"
+                                ref={posterUploadRef}
+                              />
+                              <label
+                                htmlFor="posterUpload"
+                                className="text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
+                              >
+                                Click to upload poster
+                              </label>
+                              <p className="text-xs text-gray-500 mt-2">
+                                PNG, JPG up to 10MB
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Trailer Upload */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                      <svg
+                        className="w-5 h-5 mr-2 text-indigo-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                        />
+                      </svg>
+                      Movie Trailer
+                    </h3>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                      {trailerPreview ? (
+                        <div className="relative">
+                          <video
+                            src={trailerPreview}
+                            controls
+                            className="w-full h-48 object-cover rounded-lg"
+                          />
+                          <button
+                            onClick={() => {
+                              handleFileChange("TrailerUrl", {
+                                target: { files: [] },
+                              });
+                              setTrailerFileName("");
+                              setTrailerPreview(null);
+                              if (trailerUploadRef.current) {
+                                trailerUploadRef.current.value = "";
+                              }
+                            }}
+                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 transition-colors"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <svg
+                            className="mx-auto h-12 w-12 text-gray-400 mb-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                            />
+                          </svg>
+                          <input
+                            type="file"
+                            accept="video/*"
+                            onChange={(e) => handleFileChange("TrailerUrl", e)}
+                            className="hidden"
+                            id="trailerUpload"
+                            ref={trailerUploadRef}
+                          />
+                          <label
+                            htmlFor="trailerUpload"
+                            className="text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
+                          >
+                            Click to upload trailer
+                          </label>
+                          <p className="text-xs text-gray-500 mt-2">
+                            Video files up to 50MB
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-1">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Trailer URL <span className="text-red-500">*</span>
-                    </label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center">
-                      <FaUpload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                      <input
-                        type="file"
-                        accept="video/*"
-                        onChange={(e) => handleFileChange("TrailerUrl", e)}
-                        className="hidden"
-                        id="trailerUpload"
-                      />
-                      <label
-                        htmlFor="trailerUpload"
-                        className="text-blue-600 hover:text-blue-800 font-medium cursor-pointer"
-                      >
-                        Upload trailer
-                      </label>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Video files up to 50MB
-                      </p>
-                    </div>
-                  </div>
-                </div>
               </div>
 
-              <div className="flex justify-end space-x-3 mt-6 pt-4 border-t">
+              {/* Footer */}
+              <div className="bg-gray-50 px-6 py-4 border-slate-300 border-t flex justify-end space-x-3">
                 <button
                   onClick={handleCloseMovieForm}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md font-medium"
+                  className="px-6 py-3 text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg font-medium transition-colors"
                 >
-                  Back
+                  Cancel
                 </button>
                 <button
-                  onClick={handleEditMovie}
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium"
+                  onClick={showEditForm ? handleEditMovie : handleCreateMovie}
+                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg"
                 >
-                  Save
+                  {showEditForm ? "Save Changes" : "Create Movie"}
                 </button>
               </div>
             </div>
@@ -1429,6 +1453,17 @@ const MovieManagement = () => {
           />
         )}
       </div>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        // pauseOnHover
+      />
     </div>
   );
 };

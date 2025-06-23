@@ -1,4 +1,36 @@
-import api from "../API.jsx";
+ import api from "../API.jsx";
+
+ const handleError = (error) => {
+  console.error("API Error:", {
+    status: error.response?.status,
+    data: error.response?.data,
+    message: error.message,
+    request: error.request,
+  });
+
+  let errorMessage = error.message || "Unknown error";
+  if (error.response) {
+    // Try to parse response data
+    if (typeof error.response.data === "string") {
+      // Handle HTML or plain text responses
+      if (error.response.data.includes("MulterError: Unexpected field")) {
+        errorMessage =
+          "Invalid file field names. Please check poster and trailer fields.";
+      } else {
+        errorMessage = "Server returned an unexpected response";
+      }
+    } else if (error.response.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.response.data?.errors) {
+      // Preserve backend validation errors
+      throw error.response.data; // Pass through for handleCreateMovie to process
+    }
+  } else if (error.request) {
+    errorMessage = "No response from server";
+  }
+
+  throw new Error(errorMessage);
+};
 
 // show Current Movies
 export const getCurrentMovies = async () => {

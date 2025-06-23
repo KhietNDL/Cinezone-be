@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getPromotion } from "../../../services/API";
 
 const Copy = ({ className }) => (
   <svg
@@ -104,92 +105,19 @@ const Gift = ({ className }) => (
   </svg>
 );
 
-const promotions = [
-  {
-    id: 1,
-    name: "Summer Sale",
-    code: "SUMMER25",
-    type: "discount",
-    startDate: "2024-06-01",
-    endDate: "2024-08-31",
-    description: "25% off on all summer shows",
-    image: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c",
-    discount: "25%",
-    featured: true,
-  },
-  {
-    id: 2,
-    name: "Buy 1 Get 1",
-    code: "FRIBOGO",
-    type: "special",
-    startDate: "2024-01-05",
-    endDate: "2024-12-31",
-    description: "Special family package including snacks",
-    image: "https://images.unsplash.com/photo-1585647347483-22b66260dfff",
-    discount: "50%",
-    featured: false,
-  },
-  {
-    id: 3,
-    name: "Student Discount",
-    code: "STUDENT20",
-    type: "discount",
-    startDate: "2024-02-01",
-    endDate: "2024-05-31",
-    description: "20% off for students with valid ID",
-    image: "https://images.unsplash.com/photo-1598899134739-24c46f58b8c0",
-    discount: "20%",
-    featured: true,
-  },
-  {
-    id: 4,
-    name: "Weekend Special",
-    code: "WEEKEND30",
-    type: "special",
-    startDate: "2024-03-01",
-    endDate: "2024-07-31",
-    description: "30% off for weekend movie sessions",
-    image: "https://images.unsplash.com/photo-1598899134739-24c46f58b8c0",
-    discount: "30%",
-    featured: true,
-  },
-  {
-    id: 5,
-    name: "VIP Experience",
-    code: "VIP2024",
-    type: "special",
-    startDate: "2024-01-01",
-    endDate: "2024-12-31",
-    description: "Premium seats + complimentary drinks",
-    image: "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0",
-    discount: "40%",
-    featured: false,
-  },
-  {
-    id: 6,
-    name: "Family Pack",
-    code: "FAMILY15",
-    type: "discount",
-    startDate: "2024-04-01",
-    endDate: "2024-09-30",
-    description: "15% off for groups of 4 or more",
-    image: "https://images.unsplash.com/photo-1536440136628-849c177e76a1",
-    discount: "15%",
-    featured: false,
-  },
-];
-
 const MoviePromotions = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  // eslint-disable-next-line no-unused-vars
   const [sortBy] = useState("startDate");
-  const [copiedCode, setCopiedCode] = useState("");
+  // const [copiedCode, setCopiedCode] = useState("");
   const [showSearch, setShowSearch] = useState(false);
-
-  const handleCopy = (code) => {
-    navigator.clipboard.writeText(code);
-    setCopiedCode(code);
-    setTimeout(() => setCopiedCode(""), 2000);
-  };
+  const [promotions, setPromotions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  // const handleCopy = (code) => {
+  //   navigator.clipboard.writeText(code);
+  //   setCopiedCode(code);
+  //   setTimeout(() => setCopiedCode(""), 2000);
+  // };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -199,19 +127,26 @@ const MoviePromotions = () => {
       day: "numeric",
     });
   };
-
-  const filteredPromotions = promotions
-    .filter(
-      (promo) =>
-        promo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        promo.code.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => {
-      if (sortBy === "startDate") {
-        return new Date(a.startDate) - new Date(b.startDate);
+  useEffect(() => {
+    const fetchPromotions = async () => {
+      try {
+        const data = await getPromotion();
+        console.log("Dữ liệu promotion: ", data);
+        setPromotions(data.promotions);
+      } catch (error) {
+        console.error("Failed to fetch promotions:", error);
+      } finally {
+        setLoading(false);
       }
-      return a.name.localeCompare(b.name);
-    });
+    };
+
+    fetchPromotions();
+  }, []);
+  const filteredPromotions = promotions
+    .filter((promo) =>
+      promo.Title.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => new Date(a.StartTime) - new Date(b.StartTime));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] relative overflow-hidden">
@@ -327,15 +262,15 @@ const MoviePromotions = () => {
           </div>
 
           {/* Enhanced Promotions Grid */}
-          {filteredPromotions.length === 0 ? (
+          {loading ? (
+            <div className="text-white text-center text-2xl font-bold py-12">
+              Loading promotions...
+            </div>
+          ) : filteredPromotions.length === 0 ? (
             <div className="text-center py-24 bg-gradient-to-br from-black/40 to-purple-900/20 backdrop-blur-xl rounded-3xl border border-purple-500/20 shadow-2xl">
-              <div className="relative w-32 h-32 mx-auto mb-8 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full p-8 shadow-2xl">
-                <Search className="w-16 h-16 text-white" />
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-600/50 to-pink-600/50 rounded-full blur-xl animate-pulse"></div>
-              </div>
-              <h3 className="text-3xl font-bold text-white mb-4">
+              <div className="text-3xl font-bold text-white mb-4">
                 No promotions found
-              </h3>
+              </div>
               <p className="text-xl text-gray-300">
                 Try searching for something else
               </p>
@@ -354,23 +289,16 @@ const MoviePromotions = () => {
                     animationDelay: `${index * 150}ms`,
                   }}
                 >
-                  {/* Enhanced Featured Badge */}
-                  {promo.featured && (
-                    <div className="absolute top-6 right-6 z-20 bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 text-black px-4 py-2 rounded-full text-sm font-black shadow-lg animate-pulse">
-                      ⭐ FEATURED
-                    </div>
-                  )}
-
                   {/* Enhanced Discount Badge */}
-                  <div className="absolute top-6 left-6 z-20 bg-gradient-to-r from-purple-600 via-violet-600 to-purple-700 text-white px-6 py-3 rounded-2xl font-black text-xl shadow-2xl border border-purple-400/50">
-                    {promo.discount} OFF
+                  <div className="absolute top-6 left-6 z-20 ...">
+                    {promo.DiscountValue}% OFF
                   </div>
 
                   {/* Enhanced Image with Overlay */}
                   <div className="relative h-72 overflow-hidden">
                     <img
-                      src={promo.image}
-                      alt={promo.name}
+                      src={promo.Image || "/default-promo.jpg"} // fallback nếu Image = null
+                      alt={promo.Title}
                       className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-125 group-hover:rotate-2"
                       loading="lazy"
                     />
@@ -386,41 +314,13 @@ const MoviePromotions = () => {
                     <div className="absolute bottom-0 right-0 w-32 h-32 bg-pink-500/20 translate-x-16 translate-y-16 blur-2xl"></div>
 
                     <div className="relative p-8 z-10">
-                      {/* Header */}
-                      <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 rounded-lg h-10 bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
-                            <Tag className="w-5 h-5 text-white" />
-                          </div>
-                          <div>
-                            <h4 className="text-white font-bold text-lg">
-                              {promo.type === "discount"
-                                ? "Discount"
-                                : "Special"}
-                            </h4>
-                            <p className="text-purple-300 text-sm">
-                              Limited Time
-                            </p>
-                          </div>
-                        </div>
-                        <div
-                          className={`px-4 py-2 text-xs font-bold rounded-lg ${
-                            promo.type === "discount"
-                              ? "bg-green-500/20 text-green-300 border border-green-500/30"
-                              : "bg-blue-500/20 text-blue-300 border border-blue-500/30"
-                          }`}
-                        >
-                          {promo.type === "discount" ? "SAVE NOW" : "EXCLUSIVE"}
-                        </div>
-                      </div>
-
                       {/* Title */}
                       <div className="mb-6">
                         <h2 className="text-2xl font-black text-white mb-2 leading-tight">
-                          {promo.name}
+                          {promo.Title}
                         </h2>
                         <p className="text-gray-300 text-sm leading-relaxed">
-                          {promo.description}
+                          {promo.Detail}
                         </p>
                       </div>
 
@@ -434,48 +334,9 @@ const MoviePromotions = () => {
                             Valid Until
                           </p>
                           <p className="text-purple-300 text-xs">
-                            {formatDate(promo.startDate)} -{" "}
-                            {formatDate(promo.endDate)}
+                            {formatDate(promo.StartTime)} -{" "}
+                            {formatDate(promo.EndTime)}
                           </p>
-                        </div>
-                      </div>
-
-                      {/* Promo Code Section */}
-                      <div className="relative">
-                        <div className="absolute inset-0  bg-gradient-to-r from-purple-600/20 to-pink-600/20 blur-xl"></div>
-                        <div className="relative rounded-lg bg-gradient-to-r from-white/10 to-white/5 backdrop-blur-xl border border-white/20 p-6">
-                          <div className="text-center mb-4">
-                            <p className="text-purple-300 text-xs font-bold uppercase tracking-widest mb-2">
-                              Promo Code
-                            </p>
-                            <div className="relative inline-block">
-                              <code className="text-white font-mono text-2xl rounded-lg font-black px-4 py-2 bg-gradient-to-r from-purple-600/30 to-pink-600/30 border border-purple-400/40">
-                                {promo.code}
-                              </code>
-                            </div>
-                          </div>
-
-                          <button
-                            onClick={() => handleCopy(promo.code)}
-                            className="w-full group relative rounded-lg text-white font-bold py-4 px-6 transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg hover:shadow-purple-500/25"
-                            style={{
-                              backgroundColor: "#6957f5ea",
-                            }}
-                          >
-                            <div className="flex items-center justify-center gap-3">
-                              <Copy className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
-                              <span className="text-lg">
-                                {copiedCode === promo.code
-                                  ? "✅ Copied!"
-                                  : "Copy Code"}
-                              </span>
-                            </div>
-
-                            {/* Success overlay */}
-                            {copiedCode === promo.code && (
-                              <div className="absolute inset-0 bg-green-500/20 animate-ping"></div>
-                            )}
-                          </button>
                         </div>
                       </div>
 

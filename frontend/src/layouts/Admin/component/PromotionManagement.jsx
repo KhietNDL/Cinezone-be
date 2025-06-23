@@ -266,7 +266,7 @@ const PromotionManagement = () => {
   };
 
   return (
-    <div className="p-[20px] flex items-center h-full justify-between">
+    <div className="flex items-center h-full justify-between">
       {/* Header Stats */}
       <div className="w-[70%] space-y-4">
         <div className="flex items-center justify-between w-full">

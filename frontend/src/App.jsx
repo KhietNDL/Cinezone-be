@@ -33,8 +33,9 @@ import EditAccount from "./layouts/User/component/EditAccount";
 import HistoryActivity from "./layouts/User/component/HistoryActivity";
 
 import TicketBookingManagement from "./layouts/Admin/component/TicketBookingMangement";
-import TicketDetails from "./layouts/User/component/TicketDetails";
 import PromotionManagement from "./layouts/Admin/component/PromotionManagement";
+import ResetPassword from "./auth/resetPassword/resetPassword";
+
 import { UserManagement } from "./layouts/Admin/component/UserManagement";
 import MoviePage from "./layouts/Staff/component/MoviePage";
 import MovieDetail from "./layouts/Staff/component/MovieDetail";
@@ -46,16 +47,16 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/:slug" element={<BookingPage />} />
 
-
           <Route path="/login" element={<MovieTheaterLogin />} />
           <Route path="/register" element={<RegistrationPage />} />
           <Route path="/forgot" element={<ForgotPasswordPage />} />
           <Route path="/verification" element={<EmailVerification />} />
+          <Route path="/resetPassword" element={<ResetPassword />} />
+          <Route path="/:idMovie" element={<BookingPage />} />
 
           <Route path="/confirmPayment" element={<ConfirmPayment />} />
           <Route path="/promotions" element={<MoviePromotions />} />
           <Route path="/waiting" element={<WaitingPayment />} />
-          <Route path="/ticket" element={<TicketDetails />} />
 
           <Route path="/account" element={<AccountImformation />}>
             <Route path="*" element={<AccountImformation />} />
@@ -91,12 +92,11 @@ function App() {
             path="/staff/ticket-selling/ticket-infomation"
             element={<TicketInfomation />}
           />
-
+          <Route path="/staff/combo-selling" element={<ComboPage />} />
           <Route
             path="/staff/ticket-selling/view-ticket"
             element={<PrintTicket />}
           />
-          <Route path="/staff/combo-selling" element={<ComboPage />} />
         </Route>
       </Routes>
       <ToastContainer />

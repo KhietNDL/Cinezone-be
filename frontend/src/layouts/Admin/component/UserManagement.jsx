@@ -206,7 +206,7 @@ export const UserManagement = () => {
   }
 
   return (
-    <div className="p-[20px] flex items-center h-full justify-between">
+    <div className="flex items-center h-full justify-between">
       <div className="w-[90%] space-y-4">
         {/* Stats Cards */}
         <div className="flex items-center justify-between w-full">
@@ -217,7 +217,7 @@ export const UserManagement = () => {
                 <MdPeopleAlt size={20} className="text-blue-500" />
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900">1200</div>
+            <div className="text-[19px] font-bold text-gray-900">1200</div>
           </div>
           <div className="bg-white rounded-md p-3 w-[23%] shadow-sm">
             <div className="flex items-center justify-between">

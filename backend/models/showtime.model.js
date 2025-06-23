@@ -312,11 +312,11 @@ class Showtime {
     static async getShowtimesByMovie(movieId) {
         const sql = `
           SELECT 
-            st.Day, cr.Name, 
-          FROM Showtimes st
-          JOIN CinemaRooms cr ON st.CinemaRoomId = cr.CinemaRoomId
-          WHERE st.MovieId = ? AND (st.IsDeleted = 0 OR st.IsDeleted IS NULL)
-          ORDER BY st.Day
+            st.Day
+          FROM Version vs
+          JOIN Showtimes st ON vs.VersionId = st.VersionId
+          WHERE vs.MovieId = ? AND (st.IsDeleted = 0 OR st.IsDeleted IS NULL)
+          ORDER BY st.Day;
         `;
         try {
           const [rows] = await db.promise().query(sql, [movieId]);
@@ -345,26 +345,29 @@ class Showtime {
           throw new Error("Error getting showtimes by movie name: " + error.message);
         }
     }
-    static async searchByMovieNameAndDay(movieName, day) {
+    static async searchByMovieIdAndDay(movieId, day) {
         const sql = `
       SELECT 
         st.ShowtimeId,
         st.Time,
-        mv.Version,
-        cr.Name as roomName
+        vs.VersionType,
+        cr.Name as roomName,
+		mv.NameOfEnglish,
+        mv.NameOfVietnamese
       FROM Movies mv
-      JOIN Showtimes st ON mv.MovieId = st.MovieId
+      JOIN Version vs ON mv.MovieId = vs.MovieId
+      JOIN Showtimes st ON vs.VersionId = st.VersionId
       JOIN CinemaRooms cr ON st.CinemaRoomId = cr.CinemaRoomId
-      WHERE (mv.NameOfVietnamese = ? OR mv.NameOfEnglish = ?)
+      WHERE mv.MovieId = ?
         AND st.Day = ?
         AND st.IsDeleted = 0
-      ORDER BY mv.Version, st.Time
+      ORDER BY vs.VersionType, st.Time
     `;
         try {
-            const [rows] = await db.promise().query(sql, [movieName, movieName, day]);
+            const [rows] = await db.promise().query(sql, [movieId, day]);
             return rows;
         } catch (error) {
-            throw new Error("Error searching showtimes by movie name and day: " + error.message);
+            throw new Error("Error searching showtimes by movieId and day: " + error.message);
         }
     }
 }
