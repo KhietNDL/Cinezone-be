@@ -13,6 +13,7 @@ import "swiper/css/pagination";
 import { Navigation, Pagination } from "swiper/modules";
 import { Link } from "react-router-dom";
 import './SwiperButton.css'
+import { getDaysByMovieName, getVersionsAndTimesByMovieAndDay } from '../../../services/APIForStaff/API';
 
 export default function MovieDetail() {
 
@@ -23,19 +24,6 @@ export default function MovieDetail() {
   const [imageError, setImageError] = useState({});
   const [recommended, setRecommended] = useState([]);
 
-  // const movie = {
-  //   image: "https://static.wikia.nocookie.net/howtotrainyourdragon/images/6/6a/How_To_Train_Your_Dragon_2025_Teaser_Poster.jpg",
-  //   name: "How to train your dragon",
-  //   director: "Dean DeBlois",
-  //   actors: "Mason Thames, Nico Parker, Gerard Butler",
-  //   genres: "Action, Adventure, Comedy, Fantasy",
-  //   date: "13/06/2025",
-  //   time: "12:30 PM, 18:00 PM",
-  //   duration: "126 minutes",
-  //   version: "K, 4DX, IMAX, SCREENX, STARIUM, ULTRA 4DX",
-  //   rating: 4.5,
-  //   describe: "The story of a young man with a dream of becoming a dragon hunter, but fate leads him to an unexpected friendship with a dragon."
-  // };
 
   async function fetchMovie() {
     setLoading(true);
@@ -206,8 +194,8 @@ export default function MovieDetail() {
                 <p className='flex gap-6 w-full font-semibold'>Director: <span className='font-normal'>{movie.Director}</span></p>
                 <p className='flex gap-9 w-full font-semibold'>Actors: <span className='font-normal'>{movie.Actors}</span></p>
                 <p className='flex gap-8 w-full font-semibold'>Genres: <span className='font-normal'>{movie.Genres}</span></p>
-                <p className='flex gap-12 w-full font-semibold'>Date: <span className='font-normal'>{formatDate(movie.FromDate)}</span></p>
-                <p className='flex gap-12 w-full font-semibold'>Time: <span className='font-normal'>{movie.time}</span></p>
+                <p className='flex gap-12 w-full font-semibold'>Date: <span className='font-normal'>{formatDate(movie.FromDate)} - {formatDate(movie.ToDate)}</span></p>
+                {/* <p className='flex gap-12 w-full font-semibold'>Time: <span className='font-normal'>{movie.time}</span></p> */}
                 <p className='flex gap-5 w-full font-semibold'>Duration: <span className='font-normal'>{movie.RunningTime}m</span></p>
                 <div className="flex gap-2 flex-wrap mt-4">
                   {versions.map((ver, index) => (

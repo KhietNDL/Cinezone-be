@@ -16,7 +16,14 @@ app.use(
 );
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(cors());
+app.use(cors(
+  {
+    origin :'http://localhost:5173',
+    credentials:true,
+
+  }
+  
+));
 app.use(express.static('public')); // Serve static files from the public directory
 
 // Import routes
