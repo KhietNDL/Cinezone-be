@@ -344,8 +344,10 @@ export default api;
 
 export const getShowtimeByMovieName = async (movieName) => {
   try {
-    const response = await api.get(`/showtimes/movie-name/${movieName}/showtimes`);
-    console.log(response.data)
+    const response = await api.get(
+      `/showtimes/movie-name/${movieName}/showtimes`
+    );
+    console.log(response.data);
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy showtime theo movieId:", error);
@@ -362,7 +364,7 @@ export const getTimeByDay = async (movieName, day) => {
       },
     });
 
-    console.log(response.data)
+    console.log(response.data);
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy showtime theo movieId va Day:", error);

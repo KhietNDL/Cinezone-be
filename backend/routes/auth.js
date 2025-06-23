@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const multer = require('multer');
-const UserController = require('../controllers/user.controller');
+const multer = require("multer");
+const UserController = require("../controllers/user.controller");
 const {
   register,
   login,
@@ -29,16 +29,16 @@ const upload = multer({
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
   fileFilter: (req, file, cb) => {
     // check type file
-    if (file.fieldname === 'avatar_url') {
-      if (file.mimetype.startsWith('image/')) {
+    if (file.fieldname === "avatar_url") {
+      if (file.mimetype.startsWith("image/")) {
         cb(null, true);
       } else {
-        cb(new Error('Avatart must be an image file'));
+        cb(new Error("Avatart must be an image file"));
       }
     } else {
       cb(null, true);
     }
-  }
+  },
 });
 
 /**
@@ -441,10 +441,11 @@ router.get("/user/:id", auth, getUserById);
  *       500:
  *         description: Server error
  */
-router.put("/profile/:id", 
-  auth, 
-  upload.fields([{ name: 'avatar', maxCount: 1 }]),
-  updateProfileValidation, 
+router.put(
+  "/profile/:id",
+  auth,
+  upload.fields([{ name: "avatar", maxCount: 1 }]),
+  updateProfileValidation,
   UserController.updateProfile
 );
 
@@ -473,7 +474,7 @@ router.get(
  *     tags: [Authentication]
  *     responses:
  *       200:
-    *         description: Login successful, return token and user
+ *         description: Login successful, return token and user
  *         content:
  *           application/json:
  *             schema:
@@ -500,12 +501,12 @@ router.get(
   passport.authenticate("google", {
     session: false,
     failureRedirect: "/login",
-    failureMessage: true
+    failureMessage: true,
   }),
   (req, res) => {
     if (!req.user) {
       return res.status(401).json({
-        error: req.authInfo?.message || 'Đăng nhập Google thất bại'
+        error: req.authInfo?.message || "Đăng nhập Google thất bại",
       });
     }
 
