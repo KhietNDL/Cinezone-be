@@ -78,7 +78,7 @@ function App() {
           <Route index element={<SellTicketPage />} />
           <Route path="/staff/ticket-selling" element={<SellTicketPage />} />
           <Route path="/staff/movie" element={<MoviePage />} />
-          <Route path="/staff/movie/:id" element={<MovieDetail />} />
+          <Route path="/staff/movie/:slug" element={<MovieDetail />} />
           <Route
             path="/staff/ticket-selling/select-seats"
             element={<SelectSeatsPage />}

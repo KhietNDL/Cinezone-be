@@ -22,6 +22,13 @@ export default function MoviePage() {
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState("");
 
+    const toSlug = (str) =>
+    str
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // bỏ dấu tiếng Việt
+        .replace(/[^a-z0-9]+/g, '-') // thay ký tự đặc biệt bằng -
+        .replace(/^-+|-+$/g, ''); // bỏ - ở đầu/cuối
+
     const getCurrentMovie = async () => {
         try {
             const response = await getCurrentMovies();
@@ -118,7 +125,7 @@ export default function MoviePage() {
                             {movies.map((movie) => (
                                 <SwiperSlide key={movie.MovieId}>
                                     <div className="flex justify-center p-2 w-[260px]">
-                                        <Link to={`/staff/movie/${movie.MovieId}`}>
+                                        <Link to={`/staff/movie/${toSlug(movie.NameOfEnglish)}`}>
                                             <ItemCard
                                                 item={movie}
                                                 type="movie"
