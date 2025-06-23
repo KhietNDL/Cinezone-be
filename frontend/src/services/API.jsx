@@ -274,6 +274,72 @@ export const deleteMovie = async (movieId) => {
 export const searchMovies = async (params) => {
   return api.get("/movie/search", { params });
 };
+
+export const getEmployee = async () => {
+  try {
+    const response = await api.get("/employee");
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+export const createEmployee = async (employeeData) => {
+  try {
+    const response = await api.post("/employee/create", employeeData, {
+      headers: {
+        "Content-Type": "application/json", // Explicitly set to JSON
+      },
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+export const deleteEmployee = async (userId) => {
+  try {
+    const response = await api.delete(`/employee/delete/${userId}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const updateEmployee = async (employeeId, employeeData) => {
+  try {
+    if (!employeeId) {
+      throw new Error("EmployeeId is required");
+    }
+
+    const response = await api.put(
+      `/employee/update/${employeeId}`,
+      employeeData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    // console.error("API Error:", error.response?.data || error.message); // Log detailed error
+    handleError(error);
+    throw error; // Propagate error to caller for better handling
+  }
+};
+export const searchEmployees = async (name) => {
+  try {
+    if (!name || typeof name !== "string" || name.trim() === "") {
+      throw new Error("Name is required and must be a non-empty string");
+    }
+    const response = await api.get(`/employee/searchByName`, {
+      params: { name: name.trim() },
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};
 export default api;
 
 //API cho Booking FLow
