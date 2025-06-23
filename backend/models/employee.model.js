@@ -3,11 +3,42 @@ const bcrypt = require("bcrypt");
 const { v4: uuidv4 } = require("uuid");
 
 class Employee {
-  static async getAllEmployees() {
-    const [rows] = await db
-      .promise()
-      .query("SELECT * FROM Users WHERE Role = 2 AND IsDeleted = 0");
-    return rows;
+  static async getAllEmployees(page = 1, limit = 0) {
+    if (limit <= 0) {
+      const [rows] = await db
+        .promise()
+        .query("SELECT * FROM Users WHERE Role = 2 AND IsDeleted = 0");
+      return {
+        employees: rows,
+        pagination: {
+          total: rows.length,
+          currentPage: 1,
+          totalPages: 1,
+          limit: rows.length,
+        },
+      };
+    } else {
+      const offset = (page - 1) * limit;
+      const [rows] = await db
+        .promise()
+        .query(
+          "SELECT * FROM Users WHERE Role = 2 AND IsDeleted = 0 LIMIT ? OFFSET ?",
+          [limit, offset]
+        );
+      const [countResult] = await db
+        .promise()
+        .query("SELECT COUNT(*) as total FROM Users WHERE Role = 2 AND IsDeleted = 0");
+      const totalEmployees = countResult[0].total;
+      return {
+        employees: rows,
+        pagination: {
+          total: totalEmployees,
+          currentPage: page,
+          totalPages: Math.ceil(totalEmployees / limit),
+          limit,
+        },
+      };
+    }
   }
   static async getEmployeesbyName(name) {
     const [rows] = await db
@@ -95,7 +126,7 @@ class Employee {
     const DateOfBirth = keepOld(employeeData.DateOfBirth, current.DateOfBirth);
     const Sex = keepOld(employeeData.Sex, current.Sex);
     const CCCD = keepOld(employeeData.CCCD, current.CCCD);
-    // BỎ Email
+    const Email = keepOld(employeeData.Email, current.Email);
     const PhoneNumber = keepOld(employeeData.PhoneNumber, current.PhoneNumber);
     const Address = keepOld(employeeData.Address, current.Address);
     const avatar_url = keepOld(employeeData.avatar_url, current.avatar_url); // THÊM DÒNG NÀY
@@ -105,12 +136,13 @@ class Employee {
       hashedPassword = await bcrypt.hash(employeeData.Password, 10);
     }
     const [result] = await db.promise().query(
-      "UPDATE Users SET FullName = ?, DateOfBirth = ?, Password = ?, Sex = ?, CCCD = ?, PhoneNumber = ?, Address = ?, avatar_url = ? WHERE UserId = ? AND Role = 2",
+      "UPDATE Users SET FullName = ?, DateOfBirth = ?, Password = ?, Sex = ?, Email = ?,CCCD = ?, PhoneNumber = ?, Address = ?, avatar_url = ? WHERE UserId = ? AND Role = 2",
       [
         FullName,
         DateOfBirth,
         hashedPassword,
         Sex,
+        Email,
         CCCD,
         PhoneNumber,
         Address,

@@ -104,8 +104,8 @@ class Booking {
     userId,
     showtimeId,
     seatIds,
-    productOrders,
-    promotionId,
+    productIds,
+    promotionTitle,
   }) {
     const connection = await db.promise().getConnection();
     try {
@@ -132,9 +132,18 @@ class Booking {
 
       // 2. Kiểm tra khuyến mãi (giả sử luôn hợp lệ hoặc bạn tự bổ sung)
       let discount = 0;
-      if (promotionId) {
-        // TODO: kiểm tra hợp lệ, hạn dùng, điều kiện...
-        // discount = ...
+      let promotionId = null;
+
+      if (promotionTitle) {
+        const [promotion] = await connection.query(
+          `SELECT DiscountValue, PromotionId FROM Promotions WHERE Title = ? AND IsDeleted = 0`,
+          [promotionTitle]
+        );
+        if (promotion.length === 0) {
+          throw new Error("Promotion not found");
+        }
+        discount = promotion[0].DiscountValue || 0;
+        promotionId = promotion[0].PromotionId;
       }
 
       // 3. Tính tổng tiền
@@ -142,21 +151,17 @@ class Booking {
         `SELECT SUM(Price) as total FROM Seats WHERE SeatId IN (?)`,
         [seatIds]
       );
-      let totalAmount = seatInfo[0].total || 0;
-      // Nếu có sản phẩm
-      if (productOrders && productOrders.length > 0) {
-        const productIds = productOrders.map((p) => p.productId);
+      let totalAmount = Number(seatInfo[0].total) || 0;
+
+      if (Array.isArray(productIds) && productIds.length > 0) {
         const [products] = await connection.query(
-          `SELECT ProductId, Price FROM Products WHERE ProductId IN (?)`,
+          `SELECT SUM(Price) as total FROM Products WHERE ProductId IN (?)`,
           [productIds]
         );
-        const priceMap = {};
-        products.forEach((p) => (priceMap[p.ProductId] = p.Price));
-        productOrders.forEach((p) => {
-          totalAmount += (priceMap[p.productId] || 0) * p.quantity;
-        });
+        totalAmount += Number(products[0].total) || 0;
       }
-      totalAmount -= discount;
+
+      totalAmount -= (totalAmount * discount) / 100;
 
       // 4. Tạo booking
       const bookingId = uuidv4();
@@ -171,7 +176,7 @@ class Booking {
           showtimeId,
           now,
           totalAmount,
-          promotionId,
+          promotionId, // <-- Dùng biến này
           expiresAt,
           now,
         ]

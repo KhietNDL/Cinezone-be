@@ -75,8 +75,8 @@ const getLatestBookingByMemberId = async (req, res) => {
 const holdBooking = async (req, res) => {
   try {
     //const userId = req.user.userId; // Lấy từ middleware xác thực
-    const { userId, showtimeId, seatIds, productOrders, promotionId } = req.body;
-    const result = await Booking.holdBooking({ userId, showtimeId, seatIds, productOrders, promotionId });
+    const { userId, showtimeId, seatIds, productIds, promotionTitle } = req.body;
+    const result = await Booking.holdBooking({ userId, showtimeId, seatIds, productIds, promotionTitle });
     res.json(result);
   } catch (err) {
     res.status(400).json({ error: err.message });
