@@ -9,7 +9,8 @@ const UserLayout = () => {
     location.pathname === "/login" ||
     location.pathname === "/register" ||
     location.pathname === "/forgot" ||
-    location.pathname === "/verification";
+    location.pathname === "/verification" ||
+    location.pathname === "/resetPassword";
 
   return (
     <div className="relative w-full bg-black">

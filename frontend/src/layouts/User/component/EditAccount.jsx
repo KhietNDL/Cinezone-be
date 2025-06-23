@@ -1,24 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
-import { Image, Upload } from "antd";
-import { PlusOutlined } from "@ant-design/icons";
+import { Image } from "antd";
 import { updateAccount } from "../../../services/API";
 import { useAuth } from "../../../context/AuthContext";
 
 const EditAccount = () => {
-  const { user, isLoading: authLoading } = useAuth();
-
+  const { user, isLoading: authLoading, setUser } = useAuth();
+  const fileInputRef = useRef(null);
   const [profileData, setProfileData] = useState({
-    id: "", // Thêm id vào state
+    id: "",
     fullName: "",
-    password: "",
     dateOfBirth: "",
     phoneNumber: "",
     sex: "",
     email: "",
     cccd: "",
     address: "",
-    avatar_url: "",
+    avatar: "",
   });
   // eslint-disable-next-line no-unused-vars
   const [loading, setLoading] = useState(false);
@@ -27,121 +25,60 @@ const EditAccount = () => {
   const [editData, setEditData] = useState({
     id: "",
     fullName: "",
-    password: "",
     dateOfBirth: "",
     phoneNumber: "",
     sex: "",
     email: "",
     cccd: "",
     address: "",
-    avatar_url: "",
+    avatar: "",
   });
   const [updateLoading, setUpdateLoading] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewImage, setPreviewImage] = useState("");
-  const [fileList, setFileList] = useState([]);
+  const [newAvatarFile, setNewAvatarFile] = useState(null);
+  const [currentAvatarUrl, setCurrentAvatarUrl] = useState("");
+
   useEffect(() => {
     if (user) {
       console.log("User Information", user);
       const profileInfo = {
-        id: user.UserId,
-        fullName: user.FullName,
-        dateOfBirth: user.DateOfBirth,
-        phoneNumber: user.PhoneNumber,
-        sex: user.Sex,
-        email: user.Email,
-        cccd: user.cccd || "",
-        address: user.Address || user.address || "",
-        avatar_url: user.avatar_url || user.Avatar_url || "",
-        password: "",
+        id: user.userId,
+        fullName: user.fullName,
+        dateOfBirth: user.dateOfBirth,
+        phoneNumber: user.phoneNumber,
+        sex: user.sex,
+        email: user.email,
+        cccd: user.cccd,
+        address: user.address,
+        avatar: user.avatar_url,
       };
 
       console.log("Profile Info:", profileInfo);
 
       setProfileData(profileInfo);
       setEditData(profileInfo);
-      if (profileInfo.avatar_url) {
-        setFileList([
-          {
-            uid: "-1",
-            name: "profile-image.png",
-            status: "done",
-            url: profileInfo.avatar_url,
-          },
-        ]);
-      }
+      setCurrentAvatarUrl(profileInfo.avatar || "");
     }
   }, [user]);
 
-  const getBase64 = (file) =>
-    new Promise((resolve, reject) => {
+  // Handle file input change
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file && validateFile(file)) {
+      setNewAvatarFile(file);
+
+      // Create preview URL
       const reader = new FileReader();
+      reader.onload = (e) => {
+        setCurrentAvatarUrl(e.target.result);
+      };
       reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = (error) => reject(error);
-    });
-
-  const handlePreview = async (file) => {
-    if (!file.url && !file.preview) {
-      file.preview = await getBase64(file.originFileObj);
-    }
-    setPreviewImage(file.url || file.preview);
-    setPreviewOpen(true);
-  };
-
-  const handleChange = ({ fileList: newFileList }) => {
-    setFileList(newFileList);
-
-    if (newFileList.length > 0) {
-      const lastFile = newFileList[newFileList.length - 1];
-
-      if (lastFile.status === "done" && lastFile.response) {
-        if (lastFile.response.url) {
-          setEditData((prev) => ({
-            ...prev,
-            avatar_url: lastFile.response.url,
-          }));
-        }
-      } else if (lastFile.status === "done" && lastFile.url) {
-        setEditData((prev) => ({
-          ...prev,
-          avatar_url: lastFile.url,
-        }));
-      } else if (lastFile.originFileObj) {
-        getBase64(lastFile.originFileObj).then((base64Url) => {
-          setEditData((prev) => ({
-            ...prev,
-            avatar_url: base64Url,
-          }));
-        });
-      }
-    } else {
-      setEditData((prev) => ({
-        ...prev,
-        avatar_url: "",
-      }));
     }
   };
 
-  // eslint-disable-next-line no-unused-vars
-  const uploadButton = (
-    <button
-      style={{
-        border: 0,
-        background: "none",
-      }}
-      type="button"
-    >
-      <PlusOutlined />
-      <div
-        style={{
-          marginTop: 8,
-        }}
-      >
-        Upload
-      </div>
-    </button>
-  );
+  // Trigger file input click
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
 
   const handleEditProfile = () => {
     setIsEditing(true);
@@ -150,18 +87,10 @@ const EditAccount = () => {
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditData({ ...profileData });
-
-    if (profileData.avatar_url) {
-      setFileList([
-        {
-          uid: "-1",
-          name: "profile-image.png",
-          status: "done",
-          url: profileData.avatar_url,
-        },
-      ]);
-    } else {
-      setFileList([]);
+    setNewAvatarFile(null);
+    setCurrentAvatarUrl(profileData.avatar || "");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
@@ -174,47 +103,201 @@ const EditAccount = () => {
         toast.error("User ID is missing. Please try logging in again.");
         return;
       }
-      const updateData = {
-        ...editData,
-        ...(editData.password && editData.password.trim() !== ""
-          ? { password: editData.password }
-          : {}),
-      };
 
-      console.log("Data being sent to API:", updateData);
+      // Validate required fields before sending
+      const requiredFields = ["fullName", "email"];
+      const missingFields = requiredFields.filter(
+        (field) => !editData[field]?.trim()
+      );
 
-      const response = await updateAccount(updateData);
+      if (missingFields.length > 0) {
+        toast.error(
+          `Please fill in required fields: ${missingFields.join(", ")}`
+        );
+        return;
+      }
 
+      // Create FormData for sending data
+      const formData = new FormData();
+
+      // Add all profile data with proper validation
+      formData.append("fullName", (editData.fullName || "").trim());
+
+      // Handle date formatting properly
+      const dateOfBirth = editData.dateOfBirth || profileData.dateOfBirth;
+      if (dateOfBirth) {
+        // Chuyển đổi thành định dạng YYYY-MM-DD
+        const formattedDate = new Date(dateOfBirth).toISOString().split("T")[0];
+        formData.append("dateOfBirth", formattedDate);
+      }
+
+      formData.append("phoneNumber", (editData.phoneNumber || "").trim());
+      formData.append("sex", editData.sex || profileData.sex || "");
+      formData.append("email", (editData.email || "").trim());
+      formData.append("cccd", (editData.cccd || "").trim());
+      formData.append("address", (editData.address || "").trim());
+
+      // Handle avatar logic more clearly
+      if (newAvatarFile) {
+        // New file uploaded - send the file
+        formData.append("avatar", newAvatarFile);
+        console.log("Sending new avatar file:", newAvatarFile.name);
+      } else if (profileData.avatar && currentAvatarUrl) {
+        // Keep existing avatar
+        formData.append("avatar", profileData.avatar);
+        console.log("Keeping existing avatar URL");
+      } else {
+        // No avatar - let server handle default
+        console.log("No avatar data being sent");
+      }
+      console.log("eded", formData);
+      // Debug logging with better formatting
+      console.log("=== FormData being sent to API ===");
+      console.log("User ID:", editData.id);
+      console.log("Has new avatar file:", !!newAvatarFile);
+      console.log("Existing avatar URL:", profileData.avatar);
+
+      // Log all FormData contents
+      console.log("--- FormData Contents ---");
+      for (let [key, value] of formData.entries()) {
+        if (key === "avatar" && value instanceof File) {
+          console.log(
+            `${key}: File - ${value.name} (${value.size} bytes, ${value.type})`
+          );
+        } else {
+          console.log(`${key}: ${value}`);
+        }
+      }
+      console.log("========================");
+
+      // Make API call with better error handling
+      const response = await updateAccount(editData.id, formData);
       console.log("API Response:", response);
 
-      if (response && response.isSuccess) {
-        setProfileData({ ...editData });
-        toast.success(
-          response.message || "Profile information has been updated"
-        );
+      // Check for successful response
+      if (
+        response &&
+        (response.success === true ||
+          response.message?.toLowerCase().includes("success") ||
+          response.status === "success")
+      ) {
+        // Update profileData with new data
+        const updatedData = {
+          ...profileData,
+          ...editData,
+          avatar_url:
+            response.user?.avatar_url ||
+            response.avatar_url ||
+            editData.avatar ||
+            profileData.avatar,
+        };
+
+        setProfileData(updatedData);
+
+        // Update AuthContext with latest user data
+        setUser((prev) => ({
+          ...prev,
+          ...updatedData,
+          userId: prev.userId, // Preserve userId
+        }));
+
+        // Update current avatar URL
+        if (response.user?.avatar_url || response.avatar_url) {
+          const newAvatarUrl = response.user?.avatar_url || response.avatar_url;
+          setCurrentAvatarUrl(newAvatarUrl);
+        }
+
+        toast.success("Profile updated successfully!");
         setIsEditing(false);
+        setNewAvatarFile(null);
+        setImageError(false); // Reset image error state
       } else {
+        // Handle API response errors
         const errorMessage =
+          response?.error?.message ||
           response?.errorMessage ||
           response?.message ||
+          response?.error ||
           "Unable to update profile information";
+
+        console.error("API Error Response:", response);
         toast.error(errorMessage);
-        console.error("API Error:", response);
       }
     } catch (error) {
       console.error("Error updating profile:", error);
+
+      // Handle different types of errors
       if (error.response) {
-        console.error("Error Response:", error.response.data);
-        toast.error(error.response.data?.message || "Server error occurred");
+        // Server responded with error status
+        const status = error.response.status;
+        const errorData = error.response.data;
+
+        console.error("Error Response Status:", status);
+        console.error("Error Response Data:", errorData);
+
+        let errorMessage = "Server error occurred";
+
+        if (status === 400) {
+          errorMessage =
+            errorData?.error || errorData?.message || "Invalid data provided";
+        } else if (status === 401) {
+          errorMessage = "Please log in again";
+        } else if (status === 403) {
+          errorMessage = "You don't have permission to update this profile";
+        } else if (status === 404) {
+          errorMessage = "Profile not found";
+        } else if (status === 413) {
+          errorMessage = "File size too large. Please choose a smaller image";
+        } else if (status === 422) {
+          errorMessage = errorData?.error || "Invalid data format";
+        } else if (status >= 500) {
+          errorMessage =
+            errorData?.error ||
+            errorData?.message ||
+            "Internal server error. Please try again later";
+        }
+
+        toast.error(errorMessage);
       } else if (error.request) {
+        // Network error
         console.error("Network Error:", error.request);
-        toast.error("Network error. Please check your connection.");
+        toast.error(
+          "Network error. Please check your internet connection and try again."
+        );
+      } else if (error.code === "NETWORK_ERROR") {
+        toast.error("Unable to connect to server. Please try again later.");
       } else {
-        toast.error("An unexpected error occurred");
+        // Other errors
+        console.error("Unexpected Error:", error);
+        toast.error("An unexpected error occurred. Please try again.");
       }
     } finally {
       setUpdateLoading(false);
     }
+  };
+
+  // Additional helper function to validate file types
+  const validateFile = (file) => {
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+    ];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Please select a valid image file (JPEG, PNG, GIF, or WebP)");
+      return false;
+    }
+
+    if (file.size > maxSize) {
+      toast.error("File size must be less than 5MB");
+      return false;
+    }
+
+    return true;
   };
 
   const handleInputChange = (e) => {
@@ -226,7 +309,7 @@ const EditAccount = () => {
   };
 
   const renderProfileImage = () => {
-    if (!profileData.avatar_url || imageError) {
+    if (!currentAvatarUrl || imageError) {
       const initial = profileData.fullName
         ? profileData.fullName.charAt(0).toUpperCase()
         : "?";
@@ -239,32 +322,12 @@ const EditAccount = () => {
 
     return (
       <img
-        src={profileData.avatar_url}
+        src={currentAvatarUrl}
         alt="Profile"
         className="w-full h-full object-cover"
         onError={() => setImageError(true)}
       />
     );
-  };
-
-  const customUploadRequest = async ({ file, onSuccess, onError }) => {
-    try {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        const base64Url = reader.result;
-
-        setEditData((prev) => ({
-          ...prev,
-          avatar_url: base64Url,
-        }));
-
-        onSuccess({ url: base64Url }, file);
-      };
-    } catch (error) {
-      console.error("Upload error:", error);
-      onError(error);
-    }
   };
 
   if (authLoading) {
@@ -309,6 +372,37 @@ const EditAccount = () => {
                   {renderProfileImage()}
                 </div>
                 <div className="absolute bottom-2 right-2 w-6 h-6 bg-green-400 rounded-full border-3 border-white"></div>
+
+                {/* Camera Icon - Show only in edit mode */}
+                {isEditing && (
+                  <button
+                    type="button"
+                    onClick={handleUploadClick}
+                    className="absolute bottom-0 right-0 w-10 h-10 bg-white hover:bg-gray-50 text-purple-600 rounded-full flex items-center justify-center shadow-lg border-2 border-purple-200 transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2"
+                    title="Change avatar"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                  </button>
+                )}
               </div>
               <div>
                 <h1 className="text-3xl font-bold mb-2">
@@ -344,6 +438,15 @@ const EditAccount = () => {
           </div>
         </div>
 
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+
         {/* Content area */}
         <div className="bg-white h-full rounded-b-2xl ">
           {!isEditing ? (
@@ -370,7 +473,7 @@ const EditAccount = () => {
                   </h3>
                   <div className="space-y-4">
                     <div className="flex items-center p-3 bg-white rounded-lg shadow-sm">
-                      <span className="font-semibold text-purple-700 w-32">
+                      <span className="font-semibold text-purple-700 flex-shrink-0 mr-1">
                         Full Name:
                       </span>
                       <span className="text-gray-700">
@@ -378,7 +481,7 @@ const EditAccount = () => {
                       </span>
                     </div>
                     <div className="flex items-center p-3 bg-white rounded-lg shadow-sm">
-                      <span className="font-semibold text-purple-700 w-32">
+                      <span className="font-semibold text-purple-700 flex-shrink-0 mr-1">
                         Date of Birth:
                       </span>
                       <span className="text-gray-700">
@@ -390,7 +493,7 @@ const EditAccount = () => {
                       </span>
                     </div>
                     <div className="flex items-center p-3 bg-white rounded-lg shadow-sm">
-                      <span className="font-semibold text-purple-700 w-32">
+                      <span className="font-semibold text-purple-700 flex-shrink-0 mr-1">
                         Gender:
                       </span>
                       <span className="text-gray-700">
@@ -426,7 +529,7 @@ const EditAccount = () => {
                   </h3>
                   <div className="space-y-4">
                     <div className="flex items-center p-3 bg-white rounded-lg shadow-sm">
-                      <span className="font-semibold text-indigo-700 w-32">
+                      <span className="font-semibold text-indigo-700 flex-shrink-0 mr-1">
                         Email:
                       </span>
                       <span className="text-gray-700">
@@ -434,7 +537,7 @@ const EditAccount = () => {
                       </span>
                     </div>
                     <div className="flex items-center p-3 bg-white rounded-lg shadow-sm">
-                      <span className="font-semibold text-indigo-700 w-32">
+                      <span className="font-semibold text-indigo-700 flex-shrink-0 mr-1">
                         Phone Number:
                       </span>
                       <span className="text-gray-700">
@@ -451,7 +554,7 @@ const EditAccount = () => {
               <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl p-8 shadow-lg border border-purple-200">
                 <h2 className="text-2xl font-bold text-purple-800 mb-8 flex items-center">
                   <svg
-                    className="w-7 h-7 mr-3"
+                    className="w-7 h-7 mr-1"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -478,7 +581,7 @@ const EditAccount = () => {
                         name="fullName"
                         value={editData.fullName}
                         onChange={handleInputChange}
-                        className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm"
+                        className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm outline-none"
                         placeholder="Enter full name"
                         disabled={updateLoading}
                       />
@@ -493,8 +596,8 @@ const EditAccount = () => {
                         name="email"
                         value={editData.email}
                         onChange={handleInputChange}
-                        className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm"
-                        placeholder="Enter email address"
+                        className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm outline-none"
+                        placeholder="Enter email"
                         disabled={updateLoading}
                       />
                     </div>
@@ -508,7 +611,7 @@ const EditAccount = () => {
                         name="phoneNumber"
                         value={editData.phoneNumber}
                         onChange={handleInputChange}
-                        className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm"
+                        className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm outline-none"
                         placeholder="Enter phone number"
                         disabled={updateLoading}
                       />
@@ -521,28 +624,32 @@ const EditAccount = () => {
                       <input
                         type="date"
                         name="dateOfBirth"
-                        value={editData.dateOfBirth}
+                        value={
+                          editData.dateOfBirth
+                            ? editData.dateOfBirth.split("T")[0]
+                            : ""
+                        }
                         onChange={handleInputChange}
-                        className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm"
+                        className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm outline-none"
                         disabled={updateLoading}
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-semibold text-purple-700 mb-2">
-                        Gender
+                        Sex
                       </label>
                       <select
                         name="sex"
                         value={editData.sex}
                         onChange={handleInputChange}
-                        className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm"
+                        className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm outline-none"
                         disabled={updateLoading}
                       >
                         <option value="">Select gender</option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                        <option value="Other">Other</option>
+                        <option value="2">Male</option>
+                        <option value="1">Female</option>
+                        <option value="3">Other</option>
                       </select>
                     </div>
                   </div>
@@ -551,30 +658,15 @@ const EditAccount = () => {
                   <div className="space-y-6">
                     <div>
                       <label className="block text-sm font-semibold text-purple-700 mb-2">
-                        Password
-                      </label>
-                      <input
-                        type="password"
-                        name="password"
-                        value={editData.password}
-                        onChange={handleInputChange}
-                        className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm"
-                        placeholder="Enter new password (leave blank to keep current)"
-                        disabled={updateLoading}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-purple-700 mb-2">
-                        CCCD (ID Number)
+                        Citizen identification
                       </label>
                       <input
                         type="text"
                         name="cccd"
                         value={editData.cccd}
                         onChange={handleInputChange}
-                        className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm"
-                        placeholder="Enter ID number"
+                        className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm outline-none"
+                        placeholder="Enter citizen identification"
                         disabled={updateLoading}
                       />
                     </div>
@@ -588,61 +680,10 @@ const EditAccount = () => {
                         value={editData.address}
                         onChange={handleInputChange}
                         rows="3"
-                        className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm resize-none"
+                        className="w-full p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm resize-none outline-none"
                         placeholder="Enter address"
                         disabled={updateLoading}
                       />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-purple-700 mb-2">
-                        Profile Picture
-                      </label>
-                      <div>
-                        <Upload
-                          listType="picture-card"
-                          fileList={fileList}
-                          onPreview={handlePreview}
-                          onChange={handleChange}
-                          customRequest={customUploadRequest}
-                          maxCount={1}
-                          className="purple-upload w-full"
-                        >
-                          {fileList.length >= 1 ? null : (
-                            <div className="text-center p-4">
-                              <svg
-                                className="w-12 h-12 mx-auto text-purple-400 mb-2"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                                />
-                              </svg>
-                              <p className="text-purple-600 font-medium">
-                                Upload Image
-                              </p>
-                            </div>
-                          )}
-                        </Upload>
-                      </div>
-                      {previewImage && (
-                        <Image
-                          wrapperStyle={{ display: "none" }}
-                          preview={{
-                            visible: previewOpen,
-                            onVisibleChange: (visible) =>
-                              setPreviewOpen(visible),
-                            afterOpenChange: (visible) =>
-                              !visible && setPreviewImage(""),
-                          }}
-                          src={previewImage}
-                        />
-                      )}
                     </div>
                   </div>
                 </div>
@@ -650,14 +691,14 @@ const EditAccount = () => {
                 {/* Action buttons */}
                 <div className="flex justify-end space-x-4 pt-6 border-t border-purple-200">
                   <button
-                    className="px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all duration-200 transform hover:scale-105 shadow-md"
+                    className="px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all duration-200 transform hover:scale-105 shadow-md outline-none"
                     onClick={handleCancelEdit}
                     disabled={updateLoading}
                   >
                     Cancel
                   </button>
                   <button
-                    className={`px-8 py-3 font-semibold rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center ${
+                    className={`px-8 py-3 font-semibold rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center outline-none ${
                       updateLoading
                         ? "bg-purple-400 cursor-not-allowed"
                         : "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white"
@@ -668,7 +709,7 @@ const EditAccount = () => {
                     {updateLoading ? (
                       <>
                         <svg
-                          className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                          className="animate-spin -ml-1 mr-1 h-5 w-5 text-white"
                           xmlns="http://www.w3.org/2000/svg"
                           fill="none"
                           viewBox="0 0 24 24"

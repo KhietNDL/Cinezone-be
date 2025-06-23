@@ -13,35 +13,30 @@ class User {
   static async findByUsername(username) {
     const [rows] = await db
       .promise()
-      .query("SELECT * FROM Users WHERE Username = ? AND IsDeleted = 0", [username]);
+      .query("SELECT * FROM Users WHERE Username = ? AND IsDeleted = 0", [
+        username,
+      ]);
     return rows[0];
   }
 
   static async create(userData) {
     try {
-      const { 
-        password, 
-        fullName, 
-        dateOfBirth, 
-        sex, 
-        email, 
-        phoneNumber,
-        cccd,
-      } = userData;
+      const { password, fullName, dateOfBirth, sex, email, phoneNumber, cccd } =
+        userData;
 
       const userId = uuidv4();
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
       const now = new Date();
 
-      console.log('Creating user with data:', {
+      console.log("Creating user with data:", {
         userId,
         fullName,
         dateOfBirth,
         sex,
         email,
         phoneNumber,
-        cccd
+        cccd,
       });
 
       const [result] = await db.promise().query(
@@ -61,7 +56,7 @@ class User {
           1,
           false,
           0,
-          cccd
+          cccd,
         ]
       );
 
@@ -71,7 +66,7 @@ class User {
 
       return userId;
     } catch (error) {
-      console.error('Error creating user:', error);
+      console.error("Error creating user:", error);
       throw error;
     }
   }
@@ -146,7 +141,11 @@ class User {
   }
 
   static async findByGoogleId(googleId) {
-    const [rows] = await db.promise().query('SELECT * FROM Users WHERE GoogleId = ? AND IsDeleted = 0', [googleId]);
+    const [rows] = await db
+      .promise()
+      .query("SELECT * FROM Users WHERE GoogleId = ? AND IsDeleted = 0", [
+        googleId,
+      ]);
     return rows[0];
   }
 
@@ -155,21 +154,21 @@ class User {
       const { googleId, fullName, email } = userData;
       const userId = uuidv4();
       const now = new Date();
-      
+
       const [result] = await db.promise().query(
         `INSERT INTO Users (
           UserId, GoogleId, FullName, Email, CreatedAt, Role, IsEmailVerified, IsDeleted
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [userId, googleId, fullName, email, now, 1, true, 0]
       );
-      
+
       if (result.affectedRows === 0) {
-        throw new Error('Failed to insert Google user into database');
+        throw new Error("Failed to insert Google user into database");
       }
-      
+
       return userId;
     } catch (error) {
-      console.error('Error creating Google user:', error);
+      console.error("Error creating Google user:", error);
       throw error;
     }
   }

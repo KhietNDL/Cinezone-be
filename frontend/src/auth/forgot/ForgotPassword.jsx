@@ -1,11 +1,15 @@
+// 1. MovieForgotPassword.jsx - Updated to store email
 import { useState, useEffect } from "react";
 import { Mail, ArrowLeft, Film, Star, Shield, Clock } from "lucide-react";
 import imageLogin1 from "../../assets/imageLogin1.jpg";
 import imageLogin2 from "../../assets/imageLogin2.jpg";
 import imageLogin3 from "../../assets/imageLogin3.jpg";
 import imageLogin4 from "../../assets/imageLogin4.jpg";
+import { useNavigate } from "react-router-dom";
+import { forgot } from "../../services/API";
 
 const MovieForgotPassword = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
   });
@@ -14,12 +18,10 @@ const MovieForgotPassword = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [focusedField, setFocusedField] = useState("");
   const [currentBgIndex, setCurrentBgIndex] = useState(0);
+  const [apiError, setApiError] = useState("");
 
-  // Movie backgrounds - mock images for demo
-  // Movie backgrounds - poster phim
   const movieBackgrounds = [imageLogin1, imageLogin2, imageLogin3, imageLogin4];
 
-  // Auto change background every 4 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentBgIndex(
@@ -37,6 +39,7 @@ const MovieForgotPassword = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
+    setApiError("");
 
     if (!formData.email) {
       newErrors.email = "Email is required";
@@ -48,20 +51,31 @@ const MovieForgotPassword = () => {
 
     if (Object.keys(newErrors).length === 0) {
       setIsLoading(true);
-      setTimeout(() => {
-        setIsLoading(false);
+
+      try {
+        const result = await forgot({ email: formData.email });
+        console.log("Password reset email sent:", result);
         setIsSuccess(true);
-      }, 2000);
+        // Navigate to verification page with email in state
+        navigate("/verification", { state: { email: formData.email } });
+      } catch (error) {
+        console.error("Error sending password reset:", error);
+        setApiError(
+          error?.message || "Có lỗi xảy ra khi gửi email. Vui lòng thử lại."
+        );
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
   const handleBackToLogin = () => {
-    // Reset form khi quay lại login
     setFormData({ email: "" });
     setErrors({});
     setIsSuccess(false);
     setIsLoading(false);
-    // navigate("/login"); // Uncomment when using with router
+    setApiError("");
+    navigate("/login");
   };
 
   return (
@@ -122,7 +136,6 @@ const MovieForgotPassword = () => {
       {/* Main content */}
       <div className="flex items-center justify-center min-h-screen sm:px-10 lg:px-20 relative z-20 py-8">
         <div className="relative w-full max-w-lg">
-          {/* Glass morphism card */}
           <div className="backdrop-blur-xl bg-white/10 p-8 rounded-2xl shadow-2xl border border-white/10 hover:bg-white/15 transition-all duration-500">
             {!isSuccess ? (
               <>
@@ -142,7 +155,6 @@ const MovieForgotPassword = () => {
                 </div>
 
                 <div className="space-y-6">
-                  {/* Email Input - Completely fixed layout */}
                   <div className="relative group mb-8">
                     <div
                       className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors duration-300 z-10 ${
@@ -168,7 +180,6 @@ const MovieForgotPassword = () => {
                         setFormData({ ...formData, email: e.target.value })
                       }
                     />
-                    {/* Fixed error message position */}
                     <div className="absolute -bottom-6 left-0 w-full">
                       {errors.email && (
                         <p className="text-sm text-red-400 animate-pulse">
@@ -177,6 +188,15 @@ const MovieForgotPassword = () => {
                       )}
                     </div>
                   </div>
+
+                  {/* API Error Message */}
+                  {apiError && (
+                    <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-3 mb-4">
+                      <p className="text-sm text-red-400 text-center">
+                        {apiError}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Reset Button */}
                   <div>
@@ -187,7 +207,7 @@ const MovieForgotPassword = () => {
                       className={`w-full py-3 px-6 rounded-xl font-semibold text-lg transition-all duration-150 transform ${
                         isLoading
                           ? "bg-gray-600 cursor-not-allowed text-gray-300"
-                          : "bg-gradient-to-r from-purple-400 to-purple-600 text-white active:scale-[1.05] hover:brightness-105 shadow-lg"
+                          : "bg-gradient-to-r from-purple-600 to-purple-600 text-white active:scale-[1.05] hover:brightness-105 shadow-lg"
                       }`}
                     >
                       {isLoading ? (
@@ -216,46 +236,44 @@ const MovieForgotPassword = () => {
             ) : (
               /* Success State */
               <div className="text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 lg:w-28 lg:h-28 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl lg:rounded-3xl mb-4 sm:mb-6 shadow-xl animate-pulse">
-                  <Mail className="text-white w-8 h-8 sm:w-10 sm:h-10 lg:w-14 lg:h-14" />
-                </div>
-                <h2 className="text-2xl sm:text-3xl lg:text-5xl font-extrabold bg-gradient-to-r from-white via-green-200 to-emerald-200 bg-clip-text text-transparent mb-4 sm:mb-6 lg:mb-8">
-                  Check Your Email
-                </h2>
-                <div className="space-y-3 sm:space-y-4 lg:space-y-6 text-gray-300">
-                  <p className="text-sm sm:text-lg lg:text-xl">
+                <div className="mb-8">
+                  <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl mb-4 shadow-xl animate-pulse">
+                    <Mail className="text-white w-10 h-10" />
+                  </div>
+                  <h2 className="text-2xl font-extrabold text-white mb-3">
+                    Check Your Email
+                  </h2>
+                  <p className="text-gray-300 text-md">
                     We've sent password reset instructions to:
                   </p>
-                  <p className="font-semibold text-white text-sm sm:text-lg lg:text-2xl bg-white/10 py-2 sm:py-3 lg:py-4 px-3 sm:px-4 lg:px-6 rounded-xl lg:rounded-2xl border border-white/10 break-all">
-                    {formData.email}
-                  </p>
-                  <p className="text-sm sm:text-lg lg:text-xl">
-                    Click the link in the email to reset your password.
-                  </p>
-                  <div className="flex items-center justify-center text-xs sm:text-sm lg:text-lg text-gray-400 mt-4 sm:mt-6 lg:mt-8">
-                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 mr-1 sm:mr-2" />
-                    Link expires in 15 minutes
-                  </div>
                 </div>
 
-                <div className="mt-6 sm:mt-8 lg:mt-12 space-y-3 sm:space-y-4 lg:space-y-5">
-                  <button
-                    onClick={() => {
-                      setIsSuccess(false);
-                      setFormData({ email: "" });
-                    }}
-                    className="w-full py-3 sm:py-4 lg:py-6 px-4 sm:px-6 lg:px-8 rounded-xl font-medium text-sm sm:text-lg lg:text-xl text-orange-400 bg-white/5 border border-orange-400/30 hover:bg-orange-400/10 hover:text-orange-300 transition-all duration-300"
-                  >
-                    Resend Email
-                  </button>
+                <div className="space-y-6">
+                  <div className="mb-8">
+                    <p className="font-semibold text-white text-lg bg-white/10 py-3 px-4 rounded-xl border border-white/10 break-all">
+                      {formData.email}
+                    </p>
+                  </div>
 
-                  <button
-                    onClick={handleBackToLogin}
-                    className="w-full py-3 sm:py-4 lg:py-6 px-4 sm:px-6 lg:px-8 rounded-xl font-medium text-sm sm:text-lg lg:text-xl text-gray-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white transition-all duration-300"
-                  >
-                    <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 mr-2 sm:mr-3 inline" />
-                    Back to Login
-                  </button>
+                  {/* API Error */}
+                  {apiError && (
+                    <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-3 mb-4">
+                      <p className="text-sm text-red-400 text-center">
+                        {apiError}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Back to Login */}
+                  <div>
+                    <button
+                      onClick={handleBackToLogin}
+                      className="w-full py-3 px-6 rounded-xl font-medium text-lg text-gray-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-gray-500 transition-all duration-300 transform hover:scale-105"
+                    >
+                      <ArrowLeft className="w-5 h-5 mr-3 inline" />
+                      Back to Login
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

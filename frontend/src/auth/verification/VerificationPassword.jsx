@@ -1,13 +1,17 @@
 /* eslint-disable no-unused-vars */
 import { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Mail, Film, Star, RotateCcw } from "lucide-react";
-
 import imageLogin1 from "../../assets/imageLogin1.jpg";
 import imageLogin2 from "../../assets/imageLogin2.jpg";
 import imageLogin3 from "../../assets/imageLogin3.jpg";
 import imageLogin4 from "../../assets/imageLogin4.jpg";
-// eslint-disable-next-line no-unused-vars
-const EmailVerification = ({ userId }) => {
+import { verification, forgot } from "../../services/API";
+
+const EmailVerification = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const email = location.state?.email;
   const [verificationCode, setVerificationCode] = useState([
     "",
     "",
@@ -25,10 +29,15 @@ const EmailVerification = ({ userId }) => {
   const [currentBgIndex, setCurrentBgIndex] = useState(0);
   const inputRefs = useRef([]);
 
-  // Movie backgrounds - same as login form
   const movieBackgrounds = [imageLogin1, imageLogin2, imageLogin3, imageLogin4];
 
-  // Auto change background every 4 seconds
+  useEffect(() => {
+    if (!email) {
+      console.error("No email provided in location state. Redirecting...");
+      navigate("/forgot-password");
+    }
+  }, [email, navigate]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentBgIndex(
@@ -39,25 +48,23 @@ const EmailVerification = ({ userId }) => {
     return () => clearInterval(interval);
   }, [movieBackgrounds.length]);
 
-  // Countdown timer
   useEffect(() => {
     if (timeLeft > 0) {
       const timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
-      return () => clearInterval(timer);
+      return () => clearTimeout(timer);
     }
   }, [timeLeft]);
 
-  // Success redirect simulation
   useEffect(() => {
     if (isSuccess) {
       const redirectTimer = setTimeout(() => {
-        // navigate("/login"); // Uncomment when using with router
-        console.log("Redirecting to login...");
+        navigate("/resetPassword", { state: { from: "/verification" } });
+        console.log("Redirecting to reset password...");
       }, 2000);
 
       return () => clearTimeout(redirectTimer);
     }
-  }, [isSuccess]);
+  }, [isSuccess, navigate]);
 
   const handleInputChange = (index, value) => {
     if (!/^[0-9]*$/.test(value)) return;
@@ -79,7 +86,9 @@ const EmailVerification = ({ userId }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     const code = verificationCode.join("");
+    console.log("Email của tôi", email);
 
     if (code.length !== 6) {
       setError("Please enter complete 6-digit code");
@@ -90,17 +99,26 @@ const EmailVerification = ({ userId }) => {
     setError("");
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const credentials = {
+        resetCode: code,
+        email: email,
+      };
 
-      // Simulate success (you can replace with actual API call)
-      if (code === "123456") {
+      const response = await verification(credentials);
+
+      if (response) {
+        if (response.token) {
+          localStorage.setItem("token", response.token);
+        }
+        if (response.user) {
+          localStorage.setItem("user", JSON.stringify(response.user));
+        }
+
         setIsSuccess(true);
-      } else {
-        setError("Invalid verification code!");
       }
     } catch (error) {
-      setError("Verification failed. Please try again!");
+      console.error("Verification error:", error);
+      setError(error?.message || "Verification failed. Please try again!");
     } finally {
       setLoading(false);
     }
@@ -116,14 +134,19 @@ const EmailVerification = ({ userId }) => {
     setError("");
 
     try {
-      // Simulate resend API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await forgot({ email });
+
       setTimeLeft(300);
       setVerificationCode(["", "", "", "", "", ""]);
       setAttempts(attempts + 1);
       inputRefs.current[0]?.focus();
+
+      console.log("New verification code requested for:", email);
     } catch (error) {
-      setError("Failed to resend code. Please try again later!");
+      console.error("Resend error:", error);
+      setError(
+        error?.message || "Failed to resend code. Please try again later!"
+      );
     } finally {
       setResendLoading(false);
     }
@@ -164,7 +187,7 @@ const EmailVerification = ({ userId }) => {
                   Your email has been successfully verified
                 </p>
                 <p className="text-gray-400 text-sm">
-                  Redirecting to login page...
+                  Redirecting to reset password page...
                 </p>
               </div>
             </div>
@@ -237,6 +260,11 @@ const EmailVerification = ({ userId }) => {
               <p className="text-gray-300 text-md mb-2">
                 Please enter the 6-digit code sent to your email
               </p>
+              {email && (
+                <p className="text-purple-300 text-sm mb-2">
+                  Code sent to: {email}
+                </p>
+              )}
               <p className="text-purple-300 text-sm">
                 Time remaining: {Math.floor(timeLeft / 60)}:
                 {String(timeLeft % 60).padStart(2, "0")}
@@ -323,16 +351,6 @@ const EmailVerification = ({ userId }) => {
                 </p>
               )}
             </div>
-
-            {/* <p className="mt-8 text-center text-base text-gray-300">
-              Didn't receive the code?{" "}
-              <a
-                href="#"
-                className="font-semibold text-purple-400 hover:text-purple-300 hover:underline"
-              >
-                Send again
-              </a>
-            </p> */}
           </div>
         </div>
       </div>
