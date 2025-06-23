@@ -196,7 +196,12 @@ router.post("/login", loginValidation, login);
  *       500:
  *         description: Server error
  */
-router.post("/forgot-password", forgotPasswordValidation, forgotPassword);
+const debugMiddleware = (req, res, next) => {
+  console.log(`[DEBUG] Request for: ${req.method} ${req.originalUrl}`);
+  console.log('[DEBUG] Request Body:', JSON.stringify(req.body, null, 2));
+  next();
+};
+router.post("/forgot-password", debugMiddleware, forgotPasswordValidation, forgotPassword);
 
 /**
  * @swagger
@@ -234,7 +239,7 @@ router.post("/forgot-password", forgotPasswordValidation, forgotPassword);
  *       500:
  *         description: Server error
  */
-router.post("/verify-otp", verifyOtpValidation, verifyOtp);
+router.post("/verify-otp", debugMiddleware, verifyOtpValidation, verifyOtp);
 
 /**
  * @swagger
