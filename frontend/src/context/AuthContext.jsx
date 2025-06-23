@@ -21,6 +21,7 @@ export const AuthProvider = ({ children }) => {
           localStorage.removeItem("token");
           localStorage.removeItem("userId");
           setUser(null); // <- thêm dòng này
+          setUser(null);
         }
       } else {
         setUser(null); // <- thêm dòng này nếu không có token
@@ -33,12 +34,10 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const signIn = async (token, userId) => {
-    console.log("signIn called with token:", token); // Log token
     localStorage.setItem("token", token);
-    localStorage.setItem("userId", userId); // lưu id vào
+    localStorage.setItem("userId", userId);
     try {
       const userData = await getUser(userId);
-      console.log("User data from signIn:", userData); // Log user data
       setUser(userData.user);
     } catch (error) {
       console.error("Failed to fetch user in signIn:", error);
@@ -49,15 +48,12 @@ export const AuthProvider = ({ children }) => {
 
   const signOut = async () => {
     try {
-      console.log("Signing out");
-      await logout(); // gọi API logout
-
+      await logout();
       localStorage.removeItem("token");
       localStorage.removeItem("userId");
       setUser(null);
     } catch (error) {
       console.error("Logout failed:", error);
-      // Dù lỗi vẫn xóa local data để đảm bảo logout sạch
       localStorage.removeItem("token");
       localStorage.removeItem("userId");
       setUser(null);

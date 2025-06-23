@@ -5,9 +5,10 @@ import imageLogin2 from "../../assets/imageLogin2.jpg";
 import imageLogin3 from "../../assets/imageLogin3.jpg";
 import imageLogin4 from "../../assets/imageLogin4.jpg";
 import { Link, useNavigate } from "react-router-dom";
-import { register } from "../../services/API";
+
 import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
+import { register } from "../../services/API";
 
 const RegistrationForm = () => {
   // eslint-disable-next-line no-unused-vars
@@ -17,6 +18,7 @@ const RegistrationForm = () => {
   const [errors, setErrors] = useState({});
   const [currentBgIndex, setCurrentBgIndex] = useState(0);
   const navigate = useNavigate();
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -28,8 +30,6 @@ const RegistrationForm = () => {
   });
   const signIn = useAuth();
   const movieBackgrounds = [imageLogin1, imageLogin2, imageLogin3, imageLogin4];
-
-  // Effect cho background slideshow
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentBgIndex((prev) => (prev + 1) % movieBackgrounds.length);
@@ -91,31 +91,25 @@ const RegistrationForm = () => {
     } else if (/\s/.test(password)) {
       newErrors.password = "Password must not contain whitespace";
     } else if (
-      !/(?=.*[a-z])/.test(password) || // ít nhất 1 chữ thường
-      !/(?=.*[A-Z])/.test(password) || // ít nhất 1 chữ hoa
-      !/(?=.*\d)/.test(password) || // ít nhất 1 số
-      !/(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/.test(password) // ít nhất 1 ký tự đặc biệt
+      !/(?=.*[a-z])/.test(password) ||
+      !/(?=.*[A-Z])/.test(password) ||
+      !/(?=.*\d)/.test(password) ||
+      !/(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/.test(password)
     ) {
       newErrors.password =
         "Password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character";
     }
-    // Phone Number
     if (!formData.phoneNumber.trim()) {
       newErrors.phoneNumber = "Phone number is required";
     } else if (!/^\d{10}$/.test(formData.phoneNumber)) {
       newErrors.phoneNumber = "Phone number must be exactly 10 digits";
     }
-
-    // Date of birth
     if (!formData.dateOfBirth.trim()) {
       newErrors.dateOfBirth = "Date of birth is required";
     }
-
-    // Sex
     if (!formData.sex.trim()) {
       newErrors.sex = "Sex is required";
     }
-    // Identification Card
     if (!formData.cccd.trim()) {
       newErrors.cccd = "Identification Card is required";
     } else if (!/^\d{12}$/.test(formData.cccd)) {
@@ -128,8 +122,6 @@ const RegistrationForm = () => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-
-    // Nếu là email, tự động chuyển thành chữ thường (lowercase)
     const newValue = name === "email" ? value.toLowerCase() : value;
 
     setFormData((prev) => ({
@@ -144,7 +136,20 @@ const RegistrationForm = () => {
       });
     }
   };
-
+  const handleGoogleLogin = async () => {
+    // setIsGoogleLoading(true);
+    // try {
+    //   const response = await loginGoogle();
+    //   await signIn(response.token, response.user.userId);
+    //   toast.success("Google login successful!");
+    //   navigate("/");
+    // } catch (error) {
+    //   console.error("Google login error:", error);
+    //   toast.error("Google login failed. Please try again.");
+    // } finally {
+    //   setIsGoogleLoading(false);
+    // }
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -171,7 +176,7 @@ const RegistrationForm = () => {
         navigate("/login");
       }, 2000);
       if (response.token) {
-        signIn(response.token); // Gọi signIn từ AuthContext
+        signIn(response.token);
       }
     } catch (error) {
       setIsLoading(false);
@@ -559,6 +564,55 @@ const RegistrationForm = () => {
                   </Link>
                 </p>
               </div>
+            </div>
+            {/* Divider */}
+            <div className="relative mb-6 mt-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/20"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-transparent text-gray-300">OR</span>
+              </div>
+            </div>
+            {/* Google Sign In Button */}
+            <div className="mb-6">
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={isGoogleLoading}
+                className="w-full py-3 px-6 rounded-xl font-semibold text-lg transition-all duration-200 transform hover:scale-[1.02] hover:shadow-lg
+                       bg-white text-gray-700 border border-gray-300 flex items-center justify-center space-x-3
+                       disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {isGoogleLoading ? (
+                  <div className="flex items-center justify-center space-x-3 ">
+                    <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-700 rounded-full animate-spin"></div>
+                    <span className="text-base">Signing in with Google...</span>
+                  </div>
+                ) : (
+                  <>
+                    <svg className="w-3 h-3" viewBox="0 0 24 24">
+                      <path
+                        fill="#4285F4"
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                      />
+                      <path
+                        fill="#34A853"
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                      />
+                      <path
+                        fill="#FBBC05"
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                      />
+                      <path
+                        fill="#EA4335"
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                      />
+                    </svg>
+                    <span>Continue with Google</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

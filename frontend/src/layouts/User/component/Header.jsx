@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../../../assets/logoWeb.png";
-import { FaSearch } from "react-icons/fa";
+import { FaSearch, FaUser } from "react-icons/fa";
 import { useAuth } from "../../../context/AuthContext";
 import { MdAccountCircle } from "react-icons/md";
 
@@ -63,16 +63,16 @@ const Header = () => {
 
         {user ? (
           <div className="flex items-center space-x-2">
-            {user.avatar ? (
+            {user.avatar_url ? (
               <img
-                src={user.avatar}
+                src={user.avatar_url}
                 alt="User Avatar"
                 className="w-10 h-10 rounded-full object-cover cursor-pointer"
                 onClick={() => navigate("/account")}
               />
             ) : (
-              <MdAccountCircle
-                size={42}
+              <FaUser
+                size={25}
                 className="cursor-pointer text-white"
                 onClick={() => navigate("/account")}
               />
