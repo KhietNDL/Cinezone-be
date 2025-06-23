@@ -333,7 +333,7 @@ const WaitingPayment = () => {
             <img
               src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-MoMo-Transparent-1024x1024.png"
               alt="Momo logo"
-              className="w-20 h-10 mb-1 "
+              className="w-14 h-10 mb-1 "
             />
           </button>
           <button
@@ -345,7 +345,7 @@ const WaitingPayment = () => {
             <img
               src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-VNPAY-QR-350x65.png"
               alt="VnPay logo"
-              className="w-20 h-10 mb-1 "
+              className="w-14 h-6 mb-1 "
             />
 
           </button>
@@ -358,7 +358,7 @@ const WaitingPayment = () => {
             <img
               src="https://vectorseek.com/wp-content/uploads/2023/09/Zalopay-Logo-Vector.svg-.png"
               alt="ZaloPay logo"
-              className="w-20 h-10 mb-1 "
+              className="w-28 h-6 mb-1 "
             />
           </button>
         </div>

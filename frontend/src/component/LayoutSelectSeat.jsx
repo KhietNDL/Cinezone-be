@@ -8,6 +8,7 @@ import DoubleSeatSelected from "../assets/DoubleSeatSelected.svg";
 import DoubleSeatSelected4 from "../assets/DoubleSeatSelected4.svg"
 
 export const LayoutSelectSeat = ({
+  
   onSeatSelect = () => { },
   initialSelectedSeats = [],
   //   seatPrice = 150000,
@@ -19,6 +20,10 @@ export const LayoutSelectSeat = ({
   heightDouble = 10,
 
   gapX = 2,
+
+
+
+  
 
 }) => {
   const [selectedSeats, setSelectedSeats] = useState(
@@ -94,6 +99,19 @@ export const LayoutSelectSeat = ({
     "A8",
     "A9",
   ]);
+  const gapClass = {
+    0: "space-x-0",
+    1: "space-x-1",
+    2: "space-x-2",
+    3: "space-x-3",
+    4: "space-x-4",
+    5: "space-x-5",
+    6: "space-x-6",
+    7: "space-x-7",
+    8: "space-x-8",
+    9: "space-x-9",
+    10: "space-x-10",
+  };
 
   const handleSeatClick = (seatId) => {
     if (takenSeats.has(seatId)) return;
@@ -182,7 +200,7 @@ export const LayoutSelectSeat = ({
         {isFirstRow && (
           <div className="flex justify-center mx-6 mb-1">
             <span className="w-6 mr-4"></span>
-            <div className={`flex space-x-${gapX}`}>
+         <div className={`flex ${gapClass[gapX] || "space-x-2"}`}>
               {rowData.seats.map((seatNumber) => {
                 const isGapAfter =
                   !isCoupleRow && (seatNumber === 3 || seatNumber === 9);

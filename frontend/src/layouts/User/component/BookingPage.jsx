@@ -64,7 +64,7 @@ const BookingPage = () => {
 
   useEffect(() => {
     const fetchShowtimes = async () => {
-      if (!movie?.MovieId) return;
+      if (!movie?.NameOfEnglish) return;
       try {
         const response = await getShowtimeByMovieName(movie.NameOfEnglish);
         setShowtimes(response.showtimes || []);
@@ -131,7 +131,7 @@ const BookingPage = () => {
           </h1>
           <div className="flex flex-col gap-2 text-sm text-gray-300 mt-1">
             <span className="flex items-center gap-1">
-              <FaRegClock className="text-green-400" /> {movie.RunningTime} phút
+              <FaRegClock className="text-green-400" /> {movie.RunningTime} min
             </span>
             <span className="flex items-center gap-1">
               <FaCalendarAlt className="text-blue-400" /> {new Date(movie.FromDate).toLocaleDateString("vi-VN")}

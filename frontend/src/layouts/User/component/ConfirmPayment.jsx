@@ -249,9 +249,9 @@ const ConfirmPayment = () => {
               <img
                 src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-VNPAY-QR-350x65.png"
                 alt="VnPay logo"
-                className="w-20 h-10 mb-1 "
+                className="w-20 h-6 mb-1 "
               />
-              <span className="text-xs sm:text-sm">VnPay</span>
+        
             </button>
             <button
               onClick={() => handlePaymentMethod("Zalo")}
@@ -264,9 +264,9 @@ const ConfirmPayment = () => {
               <img
                 src="https://vectorseek.com/wp-content/uploads/2023/09/Zalopay-Logo-Vector.svg-.png"
                 alt="ZaloPay logo"
-                className="w-20 h-10 mb-1 "
+                className="w-20 h-8 mb-1 "
               />
-              <span className="text-xs sm:text-sm text-center">ZaloPay</span>
+             
             </button>
 
             <button
@@ -277,9 +277,9 @@ const ConfirmPayment = () => {
                <img
                 src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-MoMo-Transparent-1024x1024.png"
                 alt="Momo logo"
-                className="w-20 h-10 mb-1 "
+                className="w-12 h-10 mb-1 "
               />
-              <span className="text-xs sm:text-sm">Momo</span>
+              
             </button>
           </div>
 
