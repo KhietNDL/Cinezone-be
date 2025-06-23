@@ -207,7 +207,12 @@ router.get('/member/:memberId/latest', bookingController.getLatestBookingByMembe
  *                 items:
  *                   type: string
  *                 description: Array of seat IDs to hold
- *               promotionId:
+ *               productIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of product IDs to hold
+ *               promotionTitle:
  *                 type: string
  *                 description: Promotion ID (optional)
  *     responses:
