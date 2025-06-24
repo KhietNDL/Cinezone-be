@@ -1,20 +1,25 @@
 const Movie = require("../models/movie.model");
 const bucket = require('../config/firebase');
-const { normalizeDate } = require("../middlewares/showtime.validator");
 
 const getAllMovies = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = req.query.limit !== undefined ? parseInt(req.query.limit) : 0;
-    
-    const result = await Movie.getAllMovies(page, limit);
-    
+    const sortBy = req.query.sortBy; 
+    const sortOrder = req.query.sortOrder;
+
+    const result = await Movie.getAllMovies(
+      parseInt(page),
+      parseInt(limit),
+      sortBy,
+      sortOrder);
+
     if (limit > 0 && page > 1 && result.movies.length === 0) {
-      return res.status(400).json({ 
-        error: "Page number exceeds available pages" 
+      return res.status(400).json({
+        error: "Page number exceeds available pages"
       });
     }
-    
+
     if (result.movies.length === 0) {
       return res.status(200).json({
         status: "success",
@@ -23,7 +28,7 @@ const getAllMovies = async (req, res) => {
         pagination: result.pagination
       });
     }
-    
+
     res.status(200).json({
       status: "success",
       data: result.movies,
@@ -77,7 +82,6 @@ const getMovieById = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-// Lấy version, showtime, room theo movieId
 
 
 
@@ -87,18 +91,18 @@ const getMoviesByGenre = async (req, res) => {
     if (!genre) {
       return res.status(400).json({ error: "Genre is required" });
     }
-    
+
     const page = parseInt(req.query.page) || 1;
     const limit = req.query.limit !== undefined ? parseInt(req.query.limit) : 0;
-    
+
     const result = await Movie.getMoviesByGenre(genre, page, limit);
-    
+
     if (limit > 0 && page > 1 && result.movies.length === 0) {
-      return res.status(400).json({ 
-        error: "Page number exceeds available pages" 
+      return res.status(400).json({
+        error: "Page number exceeds available pages"
       });
     }
-    
+
     if (result.movies.length === 0) {
       return res.status(200).json({
         status: "success",
@@ -107,7 +111,7 @@ const getMoviesByGenre = async (req, res) => {
         pagination: result.pagination
       });
     }
-    
+
     res.status(200).json({
       status: "success",
       data: result.movies,
@@ -123,70 +127,70 @@ const getMoviesByGenre = async (req, res) => {
 const createMovie = async (req, res) => {
   try {
     const movieData = req.body;
-    
+
     movieData.CreatedBy = req.user.UserId;
-    
+
     // upload poster (if provided)
     if (req.files && req.files.poster && req.files.poster[0]) {
       const posterFile = req.files.poster[0];
       const posterFileName = `posters/${Date.now()}-${posterFile.originalname.replace(/\s+/g, '_')}`;
       const posterBlob = bucket.file(posterFileName);
-      
+
       // Upload poster to Firebase
       const posterStream = posterBlob.createWriteStream({
         metadata: { contentType: posterFile.mimetype }
       });
-      
+
       await new Promise((resolve, reject) => {
         posterStream.on('error', reject);
         posterStream.on('finish', resolve);
         posterStream.end(posterFile.buffer);
       });
-      
+
       const [url] = await posterBlob.getSignedUrl({
         action: 'read',
         expires: '03-01-2500',
       });
-      
+
       // const url = await posterBlob.getDownloadURL(); dùng khi url đơn giản hơn
-      
+
       // Update URL poster into movie data
       movieData.PosterImage = url;
     }
-    
+
     // upload trailer (if provided)
     if (req.files && req.files.trailer && req.files.trailer[0]) {
       const trailerFile = req.files.trailer[0];
       const trailerFileName = `trailers/${Date.now()}-${trailerFile.originalname.replace(/\s+/g, '_')}`;
       const trailerBlob = bucket.file(trailerFileName);
-      
+
       // Upload trailer to Firebase
       const trailerStream = trailerBlob.createWriteStream({
         metadata: { contentType: trailerFile.mimetype }
       });
-      
+
       await new Promise((resolve, reject) => {
         trailerStream.on('error', reject);
         trailerStream.on('finish', resolve);
         trailerStream.end(trailerFile.buffer);
       });
-      
+
       const [trailerUrl] = await trailerBlob.getSignedUrl({
         action: 'read',
         expires: '03-01-2500',
       });
-      
+
       movieData.TrailerUrl = trailerUrl;
     }
-    
+
     if (movieData.RunningTime) {
       movieData.RunningTime = parseInt(movieData.RunningTime);
     }
-    
+
     // cretye movie after update
     const movieId = await Movie.createMovie(movieData);
     const movie = await Movie.getMovieById(movieId);
-    
+
     res.status(201).json({
       status: "success",
       message: "Movie created successfully",
@@ -216,74 +220,82 @@ const deleteMovie = async (req, res) => {
   }
 };
 
+const deleteFirebaseFileByUrl = async (fileUrl) => {
+  if (!fileUrl) return;
+  try {
+    // Tìm path file trong URL
+    const match = fileUrl.match(/(?:posters|trailers)\/[^?]+/);
+    if (match && match[0]) {
+      await bucket.file(match[0]).delete();
+      console.log("Deleted old file from Firebase:", match[0]);
+    }
+  } catch (err) {
+    console.log("Failed to delete old file from Firebase:", err.message);
+  }
+};
+
 const updateMovie = async (req, res) => {
   const { movieId } = req.params;
   try {
     const movieData = req.body;
-    
     movieData.UpdatedBy = req.user.UserId;
-    
+
+    const existingMovie = await Movie.getMovieById(movieId);
+    if (!existingMovie) {
+      return res.status(404).json({ error: "Movie not found" });
+    }
+
     if (req.files && req.files.poster && req.files.poster[0]) {
+      await deleteFirebaseFileByUrl(existingMovie.PosterImage);
+
       const posterFile = req.files.poster[0];
       const posterFileName = `posters/${Date.now()}-${posterFile.originalname.replace(/\s+/g, '_')}`;
       const posterBlob = bucket.file(posterFileName);
-      
-      // Upload poster to Firebase
       const posterStream = posterBlob.createWriteStream({
         metadata: { contentType: posterFile.mimetype }
       });
-      
       await new Promise((resolve, reject) => {
         posterStream.on('error', reject);
         posterStream.on('finish', resolve);
         posterStream.end(posterFile.buffer);
       });
-      
       const [url] = await posterBlob.getSignedUrl({
         action: 'read',
         expires: '03-01-2500',
       });
-      
-      // const url = await posterBlob.getDownloadURL();
-      
-      // update URL poster into movie data
       movieData.PosterImage = url;
     }
-    
-    // Upload trailer (if provided)
+
     if (req.files && req.files.trailer && req.files.trailer[0]) {
+      await deleteFirebaseFileByUrl(existingMovie.TrailerUrl);
+
       const trailerFile = req.files.trailer[0];
       const trailerFileName = `trailers/${Date.now()}-${trailerFile.originalname.replace(/\s+/g, '_')}`;
       const trailerBlob = bucket.file(trailerFileName);
-      
-      // Upload trailer to Firebase
       const trailerStream = trailerBlob.createWriteStream({
         metadata: { contentType: trailerFile.mimetype }
       });
-      
       await new Promise((resolve, reject) => {
         trailerStream.on('error', reject);
         trailerStream.on('finish', resolve);
         trailerStream.end(trailerFile.buffer);
       });
-      
       const [trailerUrl] = await trailerBlob.getSignedUrl({
         action: 'read',
         expires: '03-01-2500',
       });
-      
       movieData.TrailerUrl = trailerUrl;
     }
-    
+
     if (movieData.RunningTime) {
       movieData.RunningTime = parseInt(movieData.RunningTime);
     }
-    
+
     const success = await Movie.updateMovie(movieId, movieData);
     if (!success) {
       return res.status(404).json({ error: "Movie not found" });
     }
-    
+
     const updatedMovie = await Movie.getMovieById(movieId);
     res.status(200).json({
       status: "success",
@@ -300,7 +312,6 @@ const patchMovie = async (req, res) => {
   try {
     const { movieId } = req.params;
     const movieData = req.body;
-    
     delete movieData.poster;
     delete movieData.trailer;
 
@@ -309,67 +320,68 @@ const patchMovie = async (req, res) => {
         delete movieData[key];
       }
     });
-    
+
     movieData.UpdatedBy = req.user.UserId;
-    
+
+    const existingMovie = await Movie.getMovieById(movieId);
+    if (!existingMovie) {
+      return res.status(404).json({ error: "Movie not found" });
+    }
+
     if (req.files && req.files.poster && req.files.poster[0]) {
+      await deleteFirebaseFileByUrl(existingMovie.PosterImage);
+
       const posterFile = req.files.poster[0];
       const posterFileName = `posters/${Date.now()}-${posterFile.originalname.replace(/\s+/g, '_')}`;
       const posterBlob = bucket.file(posterFileName);
-      
       const posterStream = posterBlob.createWriteStream({
         metadata: { contentType: posterFile.mimetype }
       });
-      
       await new Promise((resolve, reject) => {
         posterStream.on('error', reject);
         posterStream.on('finish', resolve);
         posterStream.end(posterFile.buffer);
       });
-      
       const [url] = await posterBlob.getSignedUrl({
         action: 'read',
         expires: '03-01-2500',
       });
-      
       movieData.PosterImage = url;
     }
-    
+
     if (req.files && req.files.trailer && req.files.trailer[0]) {
+      await deleteFirebaseFileByUrl(existingMovie.TrailerUrl);
+
       const trailerFile = req.files.trailer[0];
       const trailerFileName = `trailers/${Date.now()}-${trailerFile.originalname.replace(/\s+/g, '_')}`;
       const trailerBlob = bucket.file(trailerFileName);
-      
       const trailerStream = trailerBlob.createWriteStream({
         metadata: { contentType: trailerFile.mimetype }
       });
-      
       await new Promise((resolve, reject) => {
         trailerStream.on('error', reject);
         trailerStream.on('finish', resolve);
         trailerStream.end(trailerFile.buffer);
       });
-      
       const [trailerUrl] = await trailerBlob.getSignedUrl({
         action: 'read',
         expires: '03-01-2500',
       });
-      
       movieData.TrailerUrl = trailerUrl;
     }
-    
+
     if (movieData.RunningTime) {
       movieData.RunningTime = parseInt(movieData.RunningTime);
     }
-    
+
     const success = await Movie.patchMovie(movieId, movieData);
-    
+
     if (!success) {
       return res.status(404).json({ error: "Movie not found" });
     }
-    
+
     const updatedMovie = await Movie.getMovieById(movieId);
-    
+
     res.status(200).json({
       status: "success",
       message: "Movie updated successfully",
@@ -385,15 +397,15 @@ const getCurrentMovies = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = req.query.limit !== undefined ? parseInt(req.query.limit) : 0;
-    
+
     const result = await Movie.getCurrentMovies(page, limit);
-    
+
     if (limit > 0 && page > 1 && result.movies.length === 0) {
-      return res.status(400).json({ 
-        error: "Page number exceeds available pages" 
+      return res.status(400).json({
+        error: "Page number exceeds available pages"
       });
     }
-    
+
     if (result.movies.length === 0) {
       return res.status(200).json({
         status: "success",
@@ -402,7 +414,7 @@ const getCurrentMovies = async (req, res) => {
         pagination: result.pagination
       });
     }
-    
+
     res.status(200).json({
       status: "success",
       data: result.movies,
@@ -418,15 +430,15 @@ const getUpcomingMovies = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = req.query.limit !== undefined ? parseInt(req.query.limit) : 0;
-    
+
     const result = await Movie.getUpcomingMovies(page, limit);
-    
+
     if (limit > 0 && page > 1 && result.movies.length === 0) {
-      return res.status(400).json({ 
-        error: "Page number exceeds available pages" 
+      return res.status(400).json({
+        error: "Page number exceeds available pages"
       });
     }
-    
+
     if (result.movies.length === 0) {
       return res.status(200).json({
         status: "success",
@@ -435,7 +447,7 @@ const getUpcomingMovies = async (req, res) => {
         pagination: result.pagination
       });
     }
-    
+
     res.status(200).json({
       status: "success",
       data: result.movies,
