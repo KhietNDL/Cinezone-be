@@ -2,54 +2,50 @@ const db = require("../config/database");
 const { v4: uuidv4 } = require("uuid");
 
 class Movie {
-  // get all movies
-  static async getAllMovies(page = 1, limit = 0) {
-    // if limit = 0 ,get all movies
-    if (limit <= 0) {
-      const [rows] = await db
-        .promise()
-        .query(
-          "SELECT * FROM Movies WHERE IsDeleted = 0 ORDER BY FromDate DESC"
-        );
-      return {
-        movies: rows,
-        pagination: {
-          total: rows.length,
-          currentPage: 1,
-          totalPages: 1,
-          limit: rows.length,
-        },
-      };
-    }
-    // if limit > 0, paginate the results
-    else {
+  static async getAllMovies(page = 1, limit = 0, sortBy = 'FromDate', sortOrder = 'desc') {
+    const allowedSortFields = ['NameOfVietnamese', 'NameOfEnglish', 'FromDate', 'ToDate'];
+    if (!allowedSortFields.includes(sortBy)) sortBy = 'FromDate';
+    sortOrder = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+
+    let moviesQuery = `SELECT * FROM Movies WHERE IsDeleted = 0 ORDER BY ${sortBy} ${sortOrder}`;
+    let moviesParams = [];
+    if (limit > 0) {
       const offset = (page - 1) * limit;
-
-      // get movies with pagination
-      const [rows] = await db
-        .promise()
-        .query(
-          "SELECT * FROM Movies WHERE IsDeleted = 0 ORDER BY FromDate DESC LIMIT ? OFFSET ?",
-          [limit, offset]
-        );
-
-      // count total movies
-      const [countResult] = await db
-        .promise()
-        .query("SELECT COUNT(*) as total FROM Movies WHERE IsDeleted = 0");
-
-      const totalMovies = countResult[0].total;
-
-      return {
-        movies: rows,
-        pagination: {
-          total: totalMovies,
-          currentPage: page,
-          totalPages: Math.ceil(totalMovies / limit),
-          limit,
-        },
-      };
+      moviesQuery += " LIMIT ? OFFSET ?";
+      moviesParams = [limit, offset];
     }
+    const [movies] = await db.promise().query(moviesQuery, moviesParams);
+
+    const movieIds = movies.map(m => m.MovieId);
+    let versions = [];
+    if (movieIds.length > 0) {
+      const [versionRows] = await db.promise().query(
+        `SELECT * FROM Version WHERE MovieId IN (${movieIds.map(() => '?').join(',')}) AND IsDeleted = 0`,
+        movieIds
+      );
+      versions = versionRows;
+    }
+
+    const moviesWithVersions = movies.map(movie => ({
+      ...movie,
+      versions: versions.filter(v => v.MovieId === movie.MovieId)
+    }));
+
+    let totalMovies = movies.length;
+    if (limit > 0) {
+      const [countResult] = await db.promise().query("SELECT COUNT(*) as total FROM Movies WHERE IsDeleted = 0");
+      totalMovies = countResult[0].total;
+    }
+
+    return {
+      movies: moviesWithVersions,
+      pagination: {
+        total: totalMovies,
+        currentPage: page,
+        totalPages: limit > 0 ? Math.ceil(totalMovies / limit) : 1,
+        limit: limit > 0 ? limit : movies.length,
+      },
+    };
   }
 
   static async getMoviesByName(name) {
@@ -68,55 +64,62 @@ class Movie {
       .query("SELECT * FROM Movies WHERE MovieId = ? AND IsDeleted = 0", [
         movieId,
       ]);
-    return rows[0];
+    const movie = rows[0];
+    if (!movie) return null;
+
+    const [versions] = await db
+      .promise()
+      .query("SELECT * FROM Version WHERE MovieId = ? AND IsDeleted = 0", [
+        movieId,
+      ]);
+
+    return {
+      ...movie,
+      versions: versions,
+    };
   }
 
   static async getMoviesByGenre(genre, page = 1, limit = 0) {
-    if (limit <= 0) {
-      const [rows] = await db
-        .promise()
-        .query(
-          "SELECT * FROM Movies WHERE Genres LIKE ? AND IsDeleted = 0 ORDER BY FromDate DESC",
-          [`%${genre}%`]
-        );
-      return {
-        movies: rows,
-        pagination: {
-          total: rows.length,
-          currentPage: 1,
-          totalPages: 1,
-          limit: rows.length,
-        },
-      };
-    } else {
+    let moviesQuery = "SELECT * FROM Movies WHERE Genres LIKE ? AND IsDeleted = 0 ORDER BY FromDate DESC";
+    let moviesParams = [`%${genre}%`];
+    if (limit > 0) {
       const offset = (page - 1) * limit;
+      moviesQuery += " LIMIT ? OFFSET ?";
+      moviesParams.push(limit, offset);
+    }
+    const [movies] = await db.promise().query(moviesQuery, moviesParams);
 
-      const [rows] = await db
-        .promise()
-        .query(
-          "SELECT * FROM Movies WHERE Genres LIKE ? AND IsDeleted = 0 ORDER BY FromDate DESC LIMIT ? OFFSET ?",
-          [`%${genre}%`, limit, offset]
-        );
+    const movieIds = movies.map(m => m.MovieId);
+    let versions = [];
+    if (movieIds.length > 0) {
+      const [versionRows] = await db.promise().query(
+        `SELECT * FROM Version WHERE MovieId IN (${movieIds.map(() => '?').join(',')}) AND IsDeleted = 0`,
+        movieIds
+      );
+      versions = versionRows;
+    }
+    const moviesWithVersions = movies.map(movie => ({
+      ...movie,
+      versions: versions.filter(v => v.MovieId === movie.MovieId)
+    }));
 
+    let totalMovies = movies.length;
+    if (limit > 0) {
       const [countResult] = await db
         .promise()
-        .query(
-          "SELECT COUNT(*) as total FROM Movies WHERE Genres LIKE ? AND IsDeleted = 0",
-          [`%${genre}%`]
-        );
-
-      const totalMovies = countResult[0].total;
-
-      return {
-        movies: rows,
-        pagination: {
-          total: totalMovies,
-          currentPage: page,
-          totalPages: Math.ceil(totalMovies / limit),
-          limit,
-        },
-      };
+        .query("SELECT COUNT(*) as total FROM Movies WHERE Genres LIKE ? AND IsDeleted = 0", [`%${genre}%`]);
+      totalMovies = countResult[0].total;
     }
+
+    return {
+      movies: moviesWithVersions,
+      pagination: {
+        total: totalMovies,
+        currentPage: page,
+        totalPages: limit > 0 ? Math.ceil(totalMovies / limit) : 1,
+        limit: limit > 0 ? limit : movies.length,
+      },
+    };
   }
 
   static async createMovie(movieData) {
@@ -130,35 +133,73 @@ class Movie {
       ProductionCompany,
       Director,
       RunningTime,
-      Version,
       TrailerUrl,
+      IframeUrl,
       Genres,
       ContentSynopsis,
       PosterImage,
+      CreatedBy,
     } = movieData;
+    let versions = movieData.versions;
 
-    const [result] = await db
-      .promise()
-      .query(
-        "INSERT INTO Movies (MovieId, NameOfVietnamese, NameOfEnglish, FromDate, ToDate, Actors, ProductionCompany, Director, RunningTime, Version, TrailerUrl, Genres, ContentSynopsis, PosterImage, IsDeleted, CreatedAt, CreatedBy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NOW(), ?)",
-        [
-          MovieId,
-          NameOfVietnamese,
-          NameOfEnglish,
-          FromDate,
-          ToDate,
-          Actors,
-          ProductionCompany,
-          Director,
-          RunningTime,
-          Version,
-          TrailerUrl,
-          Genres,
-          ContentSynopsis,
-          PosterImage,
-          movieData.CreatedBy,
-        ]
-      );
+    if (typeof versions === 'string') {
+      try { versions = JSON.parse(versions); } catch { versions = []; }
+    }
+
+    if (Array.isArray(versions)) {
+      versions = versions.flatMap(v => {
+        if (typeof v === 'string') {
+          try {
+            const parsed = JSON.parse(v);
+            return Array.isArray(parsed) ? parsed : [parsed];
+          } catch {
+            return [];
+          }
+        }
+        return [v];
+      });
+    }
+
+    if (versions && !Array.isArray(versions)) {
+      versions = [versions];
+    }
+
+    console.log('versions to insert:', versions, typeof versions, Array.isArray(versions));
+    if (Array.isArray(versions)) {
+      versions.forEach((v, i) => console.log(`version[${i}]`, v));
+    }
+
+    await db.promise().query(
+      "INSERT INTO Movies (MovieId, NameOfVietnamese, NameOfEnglish, FromDate, ToDate, Actors, ProductionCompany, Director, RunningTime, TrailerUrl, IframeUrl, Genres, ContentSynopsis, PosterImage, IsDeleted, CreatedAt, CreatedBy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NOW(), ?)",
+      [
+        MovieId,
+        NameOfVietnamese,
+        NameOfEnglish,
+        FromDate,
+        ToDate,
+        Actors,
+        ProductionCompany,
+        Director,
+        RunningTime,
+        TrailerUrl,
+        IframeUrl,
+        Genres,
+        ContentSynopsis,
+        PosterImage,
+        CreatedBy,
+      ]
+    );
+
+    if (Array.isArray(versions) && versions.length > 0) {
+      for (const v of versions) {
+        console.log('Insert version:', v);
+        await db.promise().query(
+          "INSERT INTO Version (VersionId, MovieId, VersionType, Language, IsDeleted, CreatedAt, CreatedBy) VALUES (?, ?, ?, ?, 0, NOW(), ?)",
+          [uuidv4(), MovieId, v.VersionType, v.Language, CreatedBy]
+        );
+      }
+    }
+
     return MovieId;
   }
 
@@ -204,8 +245,8 @@ class Movie {
     );
     const Director = keepOld(movieData.Director, current.Director);
     const RunningTime = keepOld(movieData.RunningTime, current.RunningTime);
-    const Version = keepOld(movieData.Version, current.Version);
     const TrailerUrl = keepOld(movieData.TrailerUrl, current.TrailerUrl);
+    const IframeUrl = keepOld(movieData.IframeUrl, current.IframeUrl);
     const Genres = keepOld(movieData.Genres, current.Genres);
     const ContentSynopsis = keepOld(
       movieData.ContentSynopsis,
@@ -216,7 +257,7 @@ class Movie {
     const [result] = await db
       .promise()
       .query(
-        "UPDATE Movies SET NameOfVietnamese = ?, NameOfEnglish = ?, FromDate = ?, ToDate = ?, Actors = ?, ProductionCompany = ?, Director = ?, RunningTime = ?, Version = ?, TrailerUrl = ?, Genres = ?, ContentSynopsis = ?, PosterImage = ?, UpdatedAt = NOW(), UpdatedBy = ? WHERE MovieId = ? AND IsDeleted = 0",
+        "UPDATE Movies SET NameOfVietnamese = ?, NameOfEnglish = ?, FromDate = ?, ToDate = ?, Actors = ?, ProductionCompany = ?, Director = ?, RunningTime = ?, TrailerUrl = ?, IframeUrl = ?, Genres = ?, ContentSynopsis = ?, PosterImage = ?, UpdatedAt = NOW(), UpdatedBy = ? WHERE MovieId = ? AND IsDeleted = 0",
         [
           NameOfVietnamese,
           NameOfEnglish,
@@ -226,8 +267,8 @@ class Movie {
           ProductionCompany,
           Director,
           RunningTime,
-          Version,
           TrailerUrl,
+          IframeUrl,
           Genres,
           ContentSynopsis,
           PosterImage,
@@ -235,6 +276,20 @@ class Movie {
           movieId,
         ]
       );
+
+    if (Array.isArray(movieData.versions)) {
+      await db.promise().query(
+        "DELETE FROM Version WHERE MovieId = ?",
+        [movieId]
+      );
+      for (const v of movieData.versions) {
+        await db.promise().query(
+          "INSERT INTO Version (VersionId, MovieId, VersionType, Language, IsDeleted, CreatedAt, CreatedBy) VALUES (?, ?, ?, ?, 0, NOW(), ?)",
+          [uuidv4(), movieId, v.VersionType, v.Language, movieData.UpdatedBy]
+        );
+      }
+    }
+
     return result.affectedRows > 0;
   }
 
@@ -247,10 +302,12 @@ class Movie {
     const updateFields = [];
     const values = [];
 
-    console.log("Patching movie with data:", JSON.stringify(movieData));
-
     for (const [field, value] of Object.entries(movieData)) {
-      if (value !== undefined && field !== "UpdatedBy") {
+      if (
+        value !== undefined &&
+        field !== "UpdatedBy" &&
+        field !== "versions"
+      ) {
         updateFields.push(`${field} = ?`);
         values.push(value);
       }
@@ -263,118 +320,124 @@ class Movie {
       values.push(movieData.UpdatedBy);
     }
 
-    if (updateFields.length === 0) {
-      console.log("No fields to update");
+    if (updateFields.length === 0 && !Array.isArray(movieData.versions)) {
       return true;
     }
 
     values.push(movieId);
 
-    const sql = `UPDATE Movies SET ${updateFields.join(
-      ", "
-    )} WHERE MovieId = ? AND IsDeleted = 0`;
-    console.log("SQL:", sql);
-    console.log("Values:", values);
-
-    try {
-      const [result] = await db.promise().query(sql, values);
-      return result.affectedRows > 0;
-    } catch (error) {
-      console.error("SQL Error:", error);
-      return false;
+    if (updateFields.length > 0) {
+      const sql = `UPDATE Movies SET ${updateFields.join(
+        ", "
+      )} WHERE MovieId = ? AND IsDeleted = 0`;
+      try {
+        await db.promise().query(sql, values);
+      } catch (error) {
+        console.error("SQL Error:", error);
+        return false;
+      }
     }
+
+    if (Array.isArray(movieData.versions)) {
+      await db.promise().query(
+        "DELETE FROM Version WHERE MovieId = ?",
+        [movieId]
+      );
+      for (const v of movieData.versions) {
+        await db.promise().query(
+          "INSERT INTO Version (VersionId, MovieId, VersionType, Language, IsDeleted, CreatedAt, CreatedBy) VALUES (?, ?, ?, ?, 0, NOW(), ?)",
+          [uuidv4(), movieId, v.VersionType, v.Language, movieData.UpdatedBy]
+        );
+      }
+    }
+
+    return true;
   }
 
   static async getCurrentMovies(page = 1, limit = 0) {
-    if (limit <= 0) {
-      const [rows] = await db
-        .promise()
-        .query(
-          "SELECT * FROM Movies WHERE FromDate <= CURDATE() AND ToDate >= CURDATE() AND IsDeleted = 0 ORDER BY FromDate DESC"
-        );
-      return {
-        movies: rows,
-        pagination: {
-          total: rows.length,
-          currentPage: 1,
-          totalPages: 1,
-          limit: rows.length,
-        },
-      };
-    } else {
+    let moviesQuery = "SELECT * FROM Movies WHERE FromDate <= CURDATE() AND ToDate >= CURDATE() AND IsDeleted = 0 ORDER BY FromDate DESC";
+    let moviesParams = [];
+    if (limit > 0) {
       const offset = (page - 1) * limit;
+      moviesQuery += " LIMIT ? OFFSET ?";
+      moviesParams.push(limit, offset);
+    }
+    const [movies] = await db.promise().query(moviesQuery, moviesParams);
 
-      const [rows] = await db
-        .promise()
-        .query(
-          "SELECT * FROM Movies WHERE FromDate <= CURDATE() AND ToDate >= CURDATE() AND IsDeleted = 0 ORDER BY FromDate DESC LIMIT ? OFFSET ?",
-          [limit, offset]
-        );
+    const movieIds = movies.map(m => m.MovieId);
+    let versions = [];
+    if (movieIds.length > 0) {
+      const [versionRows] = await db.promise().query(
+        `SELECT * FROM Version WHERE MovieId IN (${movieIds.map(() => '?').join(',')}) AND IsDeleted = 0`,
+        movieIds
+      );
+      versions = versionRows;
+    }
+    const moviesWithVersions = movies.map(movie => ({
+      ...movie,
+      versions: versions.filter(v => v.MovieId === movie.MovieId)
+    }));
 
+    let totalMovies = movies.length;
+    if (limit > 0) {
       const [countResult] = await db
         .promise()
-        .query(
-          "SELECT COUNT(*) as total FROM Movies WHERE FromDate <= CURDATE() AND ToDate >= CURDATE() AND IsDeleted = 0"
-        );
-
-      const totalMovies = countResult[0].total;
-
-      return {
-        movies: rows,
-        pagination: {
-          total: totalMovies,
-          currentPage: page,
-          totalPages: Math.ceil(totalMovies / limit),
-          limit,
-        },
-      };
+        .query("SELECT COUNT(*) as total FROM Movies WHERE FromDate <= CURDATE() AND ToDate >= CURDATE() AND IsDeleted = 0");
+      totalMovies = countResult[0].total;
     }
+
+    return {
+      movies: moviesWithVersions,
+      pagination: {
+        total: totalMovies,
+        currentPage: page,
+        totalPages: limit > 0 ? Math.ceil(totalMovies / limit) : 1,
+        limit: limit > 0 ? limit : movies.length,
+      },
+    };
   }
 
   static async getUpcomingMovies(page = 1, limit = 0) {
-    if (limit <= 0) {
-      const [rows] = await db
-        .promise()
-        .query(
-          "SELECT * FROM Movies WHERE FromDate > CURDATE() AND IsDeleted = 0 ORDER BY FromDate ASC"
-        );
-      return {
-        movies: rows,
-        pagination: {
-          total: rows.length,
-          currentPage: 1,
-          totalPages: 1,
-          limit: rows.length,
-        },
-      };
-    } else {
+    let moviesQuery = "SELECT * FROM Movies WHERE FromDate > CURDATE() AND IsDeleted = 0 ORDER BY FromDate ASC";
+    let moviesParams = [];
+    if (limit > 0) {
       const offset = (page - 1) * limit;
+      moviesQuery += " LIMIT ? OFFSET ?";
+      moviesParams.push(limit, offset);
+    }
+    const [movies] = await db.promise().query(moviesQuery, moviesParams);
 
-      const [rows] = await db
-        .promise()
-        .query(
-          "SELECT * FROM Movies WHERE FromDate > CURDATE() AND IsDeleted = 0 ORDER BY FromDate ASC LIMIT ? OFFSET ?",
-          [limit, offset]
-        );
+    const movieIds = movies.map(m => m.MovieId);
+    let versions = [];
+    if (movieIds.length > 0) {
+      const [versionRows] = await db.promise().query(
+        `SELECT * FROM Version WHERE MovieId IN (${movieIds.map(() => '?').join(',')}) AND IsDeleted = 0`,
+        movieIds
+      );
+      versions = versionRows;
+    }
+    const moviesWithVersions = movies.map(movie => ({
+      ...movie,
+      versions: versions.filter(v => v.MovieId === movie.MovieId)
+    }));
 
+    let totalMovies = movies.length;
+    if (limit > 0) {
       const [countResult] = await db
         .promise()
-        .query(
-          "SELECT COUNT(*) as total FROM Movies WHERE FromDate > CURDATE() AND IsDeleted = 0"
-        );
-
-      const totalMovies = countResult[0].total;
-
-      return {
-        movies: rows,
-        pagination: {
-          total: totalMovies,
-          currentPage: page,
-          totalPages: Math.ceil(totalMovies / limit),
-          limit,
-        },
-      };
+        .query("SELECT COUNT(*) as total FROM Movies WHERE FromDate > CURDATE() AND IsDeleted = 0");
+      totalMovies = countResult[0].total;
     }
+
+    return {
+      movies: moviesWithVersions,
+      pagination: {
+        total: totalMovies,
+        currentPage: page,
+        totalPages: limit > 0 ? Math.ceil(totalMovies / limit) : 1,
+        limit: limit > 0 ? limit : movies.length,
+      },
+    };
   }
 
   static async getMovieShowtimesByVietnameseName(nameOfVietnamese) {
