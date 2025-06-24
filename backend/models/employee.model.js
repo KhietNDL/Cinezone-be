@@ -108,48 +108,16 @@ class Employee {
     return result.affectedRows > 0;
   }
   static async updateEmployee(userId, employeeData) {
-    // Lấy thông tin employee hiện tại
-    const [rows] = await db.promise().query(
-      "SELECT * FROM Users WHERE UserId = ? AND Role = 2",
-      [userId]
-    );
-    const current = rows[0];
-    if (!current) return false;
+    if (!userId || !employeeData || Object.keys(employeeData).length === 0) return false;
 
-    // Chỉ cập nhật trường được truyền vào, còn lại giữ nguyên
-    function keepOld(newVal, oldVal) {
-      return newVal === undefined || newVal === null || newVal === ""
-        ? oldVal
-        : newVal;
-    }
-    const FullName = keepOld(employeeData.FullName, current.FullName);
-    const DateOfBirth = keepOld(employeeData.DateOfBirth, current.DateOfBirth);
-    const Sex = keepOld(employeeData.Sex, current.Sex);
-    const CCCD = keepOld(employeeData.CCCD, current.CCCD);
-    const Email = keepOld(employeeData.Email, current.Email);
-    const PhoneNumber = keepOld(employeeData.PhoneNumber, current.PhoneNumber);
-    const Address = keepOld(employeeData.Address, current.Address);
-    const avatar_url = keepOld(employeeData.avatar_url, current.avatar_url); // THÊM DÒNG NÀY
-    // Password: chỉ hash lại nếu có truyền mới và khác rỗng, không thì giữ nguyên
-    let hashedPassword = current.Password;
-    if (employeeData.Password && employeeData.Password !== "") {
-      hashedPassword = await bcrypt.hash(employeeData.Password, 10);
-    }
-    const [result] = await db.promise().query(
-      "UPDATE Users SET FullName = ?, DateOfBirth = ?, Password = ?, Sex = ?, Email = ?,CCCD = ?, PhoneNumber = ?, Address = ?, avatar_url = ? WHERE UserId = ? AND Role = 2",
-      [
-        FullName,
-        DateOfBirth,
-        hashedPassword,
-        Sex,
-        Email,
-        CCCD,
-        PhoneNumber,
-        Address,
-        avatar_url,
-        userId,
-      ]
-    );
+    const updateKeys = Object.keys(employeeData);
+    const updateValues = Object.values(employeeData);
+
+    const setClauses = updateKeys.map((key) => `\`${key}\` = ?`).join(", ");
+    const query = `UPDATE Users SET ${setClauses}, UpdatedAt = NOW() WHERE UserId = ? AND IsDeleted = 0`;
+    const values = [...updateValues, userId];
+
+    const [result] = await db.promise().query(query, values);
     return result.affectedRows > 0;
   }
 }

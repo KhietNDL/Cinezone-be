@@ -1,12 +1,5 @@
 const { body, validationResult } = require('express-validator');
 const Employee = require('../models/employee.model');
-const validate = (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
-    next();
-};
 // Validation rules
 const employeeValidationRules = () => {
     return [

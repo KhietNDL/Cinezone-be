@@ -167,27 +167,33 @@ router.get('/email/:email', auth, isAdminOrEmployee, getEmployeeByEmail);
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
  *               FullName:
  *                 type: string
+ *               Password:
+ *                 type: string
  *               DateOfBirth:
  *                 type: string
  *                 format: date
- *               Password:
+ *               PhoneNumber:
  *                 type: string
  *               Sex:
  *                 type: integer
- *               CCCD:
- *                 type: string
  *               Email:
  *                 type: string
- *               PhoneNumber:
+ *               CCCD:
  *                 type: string
  *               Address:
  *                 type: string
+ *               avatar:
+ *                 type: string
+ *                 format: binary
+ *               avatar_url:
+ *                 type: string
+ *                 description: "URL of the avatar image (optional, usually auto-generated after upload)"
  *     responses:
  *       201:
  *         description: Employee created successfully
@@ -241,7 +247,7 @@ router.delete('/delete/:userId', auth, isAdminOrEmployee, deleteEmployee);
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
@@ -269,6 +275,10 @@ router.delete('/delete/:userId', auth, isAdminOrEmployee, deleteEmployee);
  *                 default: ""
  *               Address:
  *                 type: string
+ *                 default: ""
+ *               avatar:
+ *                 type: string
+ *                 format: binary
  *                 default: ""
  *               avatar_url:
  *                 type: string
