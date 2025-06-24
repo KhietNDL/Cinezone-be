@@ -3,6 +3,8 @@ const router = express.Router();
 const { getAllEmployees, getEmployeesbyName, getEmployeeById, getEmployeeByEmail, createEmployee, deleteEmployee, updateEmployee } = require('../controllers/employee.controller');
 const { auth, isAdminOrEmployee } = require('../middlewares/auth.middleware');
 const { validateEmployee } = require('../middlewares/employee.validator');
+const multer = require('multer');
+const upload = multer(); // hoặc cấu hình storage nếu cần
 
 // Route to get all employees
 /**
@@ -251,37 +253,34 @@ router.delete('/delete/:userId', auth, isAdminOrEmployee, deleteEmployee);
  *           schema:
  *             type: object
  *             properties:
- *               FullName:
+ *               fullName:
  *                 type: string
  *                 default: ""
- *               DateOfBirth:
+ *               dateOfBirth:
  *                 type: string
  *                 format: date
  *                 default: ""
- *               Password:
+ *               password:
  *                 type: string
  *                 default: ""
- *               Sex:
+ *               sex:
  *                 type: integer
  *                 default: null
- *               CCCD:
+ *               cccd:
  *                 type: string
  *                 default: ""
- *               Email:
+ *               email:
  *                 type: string
  *                 default: ""
- *               PhoneNumber:
+ *               phoneNumber:
  *                 type: string
  *                 default: ""
- *               Address:
+ *               address:
  *                 type: string
  *                 default: ""
  *               avatar:
  *                 type: string
  *                 format: binary
- *                 default: ""
- *               avatar_url:
- *                 type: string
  *                 default: ""
  *     responses:
  *       200:
@@ -291,6 +290,16 @@ router.delete('/delete/:userId', auth, isAdminOrEmployee, deleteEmployee);
  *       500:
  *         description: Internal server error
  */
-router.put('/update/:userId', auth, isAdminOrEmployee, validateEmployee, updateEmployee);
+router.put(
+  '/update/:userId',
+  auth,
+  isAdminOrEmployee,
+  upload.fields([
+    { name: 'avatar', maxCount: 1 }
+    // Không cần liệt kê các trường text, multer sẽ tự parse
+  ]),
+  validateEmployee,
+  updateEmployee
+);
 
 module.exports = router;
