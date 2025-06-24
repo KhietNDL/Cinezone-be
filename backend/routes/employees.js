@@ -1,8 +1,18 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { getAllEmployees, getEmployeesbyName, getEmployeeById, getEmployeeByEmail, createEmployee, deleteEmployee, updateEmployee } = require('../controllers/employee.controller');
-const { auth, isAdminOrEmployee } = require('../middlewares/auth.middleware');
-const { validateEmployee } = require('../middlewares/employee.validator');
+const {
+  getAllEmployees,
+  getEmployeesbyName,
+  getEmployeeById,
+  getEmployeeByEmail,
+  createEmployee,
+  deleteEmployee,
+  updateEmployee,
+} = require("../controllers/employee.controller");
+const { auth, isAdminOrEmployee } = require("../middlewares/auth.middleware");
+const { validateEmployee } = require("../middlewares/employee.validator");
+const multer = require("multer");
+const upload = multer();
 
 // Route to get all employees
 /**
@@ -75,7 +85,7 @@ const { validateEmployee } = require('../middlewares/employee.validator');
  *       500:
  *         description: Internal server error
  */
-router.get('/', auth, isAdminOrEmployee, getAllEmployees);
+router.get("/", auth, isAdminOrEmployee, getAllEmployees);
 
 // Route to get employees by name
 /**
@@ -100,7 +110,7 @@ router.get('/', auth, isAdminOrEmployee, getAllEmployees);
  *         description: Internal server error
  */
 
-router.get('/searchByName', auth, isAdminOrEmployee, getEmployeesbyName);
+router.get("/searchByName", auth, isAdminOrEmployee, getEmployeesbyName);
 
 // Route to get employee by ID
 /**
@@ -127,7 +137,7 @@ router.get('/searchByName', auth, isAdminOrEmployee, getEmployeesbyName);
  *         description: Internal server error
  */
 
-router.get('/:userId', auth, isAdminOrEmployee, getEmployeeById);
+router.get("/:userId", auth, isAdminOrEmployee, getEmployeeById);
 
 // Route to get employee by email
 /**
@@ -153,7 +163,7 @@ router.get('/:userId', auth, isAdminOrEmployee, getEmployeeById);
  *       500:
  *         description: Internal server error
  */
-router.get('/email/:email', auth, isAdminOrEmployee, getEmployeeByEmail);
+router.get("/email/:email", auth, isAdminOrEmployee, getEmployeeByEmail);
 
 // Export the router to create a new employee
 /**
@@ -167,26 +177,26 @@ router.get('/email/:email', auth, isAdminOrEmployee, getEmployeeByEmail);
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
- *               FullName:
+ *               fullName:
  *                 type: string
- *               DateOfBirth:
+ *               password:
+ *                 type: string
+ *               dateOfBirth:
  *                 type: string
  *                 format: date
- *               Password:
+ *               phoneNumber:
  *                 type: string
- *               Sex:
+ *               sex:
  *                 type: integer
- *               CCCD:
+ *               email:
  *                 type: string
- *               Email:
+ *               cccd:
  *                 type: string
- *               PhoneNumber:
- *                 type: string
- *               Address:
+ *               address:
  *                 type: string
  *     responses:
  *       201:
@@ -194,7 +204,14 @@ router.get('/email/:email', auth, isAdminOrEmployee, getEmployeeByEmail);
  *       500:
  *         description: Internal server error
  */
-router.post('/create', auth, isAdminOrEmployee, validateEmployee, createEmployee);
+router.post(
+  "/create",
+  auth,
+  isAdminOrEmployee,
+  upload.fields([{ name: "avatar", maxCount: 1 }]),
+  validateEmployee,
+  createEmployee
+);
 
 // Route to delete an employee
 /**
@@ -220,7 +237,7 @@ router.post('/create', auth, isAdminOrEmployee, validateEmployee, createEmployee
  *       500:
  *         description: Internal server error
  */
-router.delete('/delete/:userId', auth, isAdminOrEmployee, deleteEmployee);
+router.delete("/delete/:userId", auth, isAdminOrEmployee, deleteEmployee);
 
 // Route to update an employee
 /**
@@ -241,37 +258,38 @@ router.delete('/delete/:userId', auth, isAdminOrEmployee, deleteEmployee);
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
- *               FullName:
+ *               fullName:
  *                 type: string
  *                 default: ""
- *               DateOfBirth:
+ *               dateOfBirth:
  *                 type: string
  *                 format: date
  *                 default: ""
- *               Password:
+ *               password:
  *                 type: string
  *                 default: ""
- *               Sex:
+ *               sex:
  *                 type: integer
  *                 default: null
- *               CCCD:
+ *               cccd:
  *                 type: string
  *                 default: ""
- *               Email:
+ *               email:
  *                 type: string
  *                 default: ""
- *               PhoneNumber:
+ *               phoneNumber:
  *                 type: string
  *                 default: ""
- *               Address:
+ *               address:
  *                 type: string
  *                 default: ""
- *               avatar_url:
+ *               avatar:
  *                 type: string
+ *                 format: binary
  *                 default: ""
  *     responses:
  *       200:
@@ -281,6 +299,13 @@ router.delete('/delete/:userId', auth, isAdminOrEmployee, deleteEmployee);
  *       500:
  *         description: Internal server error
  */
-router.put('/update/:userId', auth, isAdminOrEmployee, validateEmployee, updateEmployee);
+router.put(
+  "/update/:userId",
+  auth,
+  isAdminOrEmployee,
+  upload.fields([{ name: "avatar", maxCount: 1 }]),
+  validateEmployee,
+  updateEmployee
+);
 
 module.exports = router;
