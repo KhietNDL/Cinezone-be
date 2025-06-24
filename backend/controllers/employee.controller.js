@@ -2,7 +2,6 @@ const Employee = require("../models/employee.model");
 const jwt = require("jsonwebtoken");
 const User = require('../models/user.model');
 const bucket = require("../config/firebase"); // Thêm dòng này ở đầu file
-const bcrypt = require("bcrypt");
 // Get all employees
 const getAllEmployees = async (req, res) => {
   try {
@@ -170,9 +169,7 @@ const createEmployee = async (req, res) => {
         Email: employee.Email,
         CCCD: employee.CCCD,
         Address: employee.Address,
-        PhoneNumber: employee.PhoneNumber,
-        CreatedAt: employee.CreatedAt,
-        avatar_url: employee.avatar_url // thêm dòng này
+        PhoneNumber: employee.PhoneNumber
       }
     });
   } catch (error) {
@@ -202,10 +199,7 @@ const deleteEmployee = async (req, res) => {
 // Update employee
 const updateEmployee = async (req, res) => {
   const { userId } = req.params;
-  const updates = req.body;
-
-  // Xóa trường avatar nếu có (tránh lưu buffer vào DB)
-  delete updates.avatar;
+  const employeeData = req.body;
 
   try {
     // Lấy thông tin employee hiện tại để xác định avatar cũ
@@ -250,7 +244,7 @@ const updateEmployee = async (req, res) => {
           expires: "03-01-2500",
         });
 
-        updates.avatar_url = avatarUrl;
+        employeeData.avatar_url = avatarUrl;
       } catch (firebaseError) {
         console.error("Firebase operation failed:", firebaseError);
         return res.status(500).json({
@@ -259,68 +253,16 @@ const updateEmployee = async (req, res) => {
       }
     }
 
-    // Chỉ cho phép update các trường này
-    const allowedUpdates = [
-      "FullName",
-      "Password",
-      "DateOfBirth",
-      "PhoneNumber",
-      "Sex",
-      "Email",
-      "CCCD",
-      "Address",
-      "avatar_url",
-    ];
-
-    // Lọc các trường hợp lệ và không rỗng
-    const filteredUpdates = {};
-    Object.keys(updates).forEach((key) => {
-      if (
-        allowedUpdates.includes(key) &&
-        updates[key] !== undefined &&
-        updates[key] !== null &&
-        updates[key] !== ""
-      ) {
-        filteredUpdates[key] = updates[key];
-      }
-    });
-
-    if (Object.keys(filteredUpdates).length === 0) {
-      return res.status(400).json({ error: "No valid updates provided" });
-    }
-
-    // Hash password nếu có cập nhật
-    if (filteredUpdates.Password) {
-      filteredUpdates.Password = await bcrypt.hash(filteredUpdates.Password, 10);
-    }
+    // Xóa trường avatar nếu có (tránh lưu buffer vào DB)
+    delete employeeData.avatar;
 
     // Cập nhật employee
-    const result = await Employee.updateEmployee(userId, filteredUpdates);
-    if (!result) {
-      return res.status(404).json({ message: "Employee not found or update failed" });
+    const result = await Employee.updateEmployee(userId, employeeData);
+    if (result) {
+      res.status(200).json({ message: "Employee updated successfully" });
+    } else {
+      res.status(404).json({ message: "Employee not found or update failed" });
     }
-
-    // Lấy lại thông tin employee đã cập nhật
-    const updatedEmployee = await Employee.getEmployeeById(userId);
-
-    // Trả về thông tin đã cập nhật (ẩn password)
-    const filteredEmployee = {
-      UserId: updatedEmployee.UserId,
-      FullName: updatedEmployee.FullName,
-      DateOfBirth: updatedEmployee.DateOfBirth,
-      Sex: updatedEmployee.Sex,
-      Email: updatedEmployee.Email,
-      CCCD: updatedEmployee.CCCD,
-      Address: updatedEmployee.Address,
-      PhoneNumber: updatedEmployee.PhoneNumber,
-      CreatedAt: updatedEmployee.CreatedAt,
-      avatar_url: updatedEmployee.avatar_url,
-    };
-
-    res.status(200).json({
-      message: "Employee updated successfully",
-      employee: filteredEmployee,
-    });
   } catch (error) {
     console.error("Update employee error:", error);
     res.status(500).json({ error: error.message });

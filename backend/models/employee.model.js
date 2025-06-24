@@ -70,31 +70,30 @@ class Employee {
   static async createEmployee(employeeData) {
     const UserId = uuidv4();
     const {
-      FullName,
-      DateOfBirth,
-      Password,
-      Sex,
-      CCCD,
-      Email,
-      PhoneNumber,
-      Address,
+      fullName,
+      dateOfBirth,
+      password,
+      sex,
+      cccd,
+      email,
+      phoneNumber,
+      address,
     } = employeeData;
-    // Hash password trước khi lưu
-    const hashedPassword = await bcrypt.hash(Password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
     const [result] = await db
       .promise()
       .query(
         "INSERT INTO Users (UserId, FullName, DateOfBirth, Password, Sex, CCCD, Email, PhoneNumber, Address, Role, IsDeleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 2, 0)",
         [
           UserId,
-          FullName,
-          DateOfBirth,
+          fullName,
+          dateOfBirth,
           hashedPassword,
-          Sex,
-          CCCD,
-          Email,
-          PhoneNumber,
-          Address,
+          sex,
+          cccd,
+          email,
+          phoneNumber,
+          address,
         ]
       );
     return UserId;

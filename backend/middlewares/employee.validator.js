@@ -1,6 +1,12 @@
 const { body, validationResult } = require('express-validator');
 const Employee = require('../models/employee.model');
-
+const validate = (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+};
 // Validation rules
 const employeeValidationRules = () => {
     return [
@@ -8,6 +14,7 @@ const employeeValidationRules = () => {
         body('password')
             .notEmpty().withMessage('Password is required')
             .isLength({ min: 8, max: 128 }).withMessage('Password must be between 8 and 128 characters')
+            .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,128}$/)
             .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,128}$/)
             .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number and one special character')
             .not().contains(' ').withMessage('Password cannot contain spaces'),
