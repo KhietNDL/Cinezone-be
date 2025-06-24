@@ -24,7 +24,7 @@ const options = {
     ],
     servers: [
       {
-        url: 'http://localhost:4458', // Đổi port về đúng với backend
+        url: 'http://localhost:4458',
         description: 'Development server',
       },
     ],
@@ -185,7 +185,7 @@ const options = {
               type: 'string',
               description: 'URL of the promotion image'
             },
-            
+
           }
         },
         CreatePromotionRequest: {
@@ -276,6 +276,96 @@ const options = {
               type: 'array',
               items: {
                 $ref: '#/components/schemas/Promotion'
+              }
+            }
+          }
+        },
+        PaymentMethod: {
+          type: 'object',
+          properties: {
+            MethodId: {
+              type: 'string',
+              description: 'Unique identifier for the payment method'
+            },
+            Name: {
+              type: 'string',
+              description: 'Name of the payment method'
+            },
+            IsActive: {
+              type: 'boolean',
+              description: 'Status of the payment method'
+            }
+          }
+        },
+        Payment: {
+          type: 'object',
+          properties: {
+            PaymentId: {
+              type: 'string',
+              description: 'Unique identifier for the payment'
+            },
+            Amount: {
+              type: 'number',
+              description: 'Payment amount'
+            },
+            Provider: {
+              type: 'string',
+              description: 'Payment provider (MOMO, CASH, etc.)'
+            },
+            PaymentReference: {
+              type: 'string',
+              description: 'Reference ID for the payment'
+            },
+            Status: {
+              type: 'string',
+              enum: ['PENDING', 'COMPLETED', 'FAILED', 'CANCELLED'],
+              description: 'Payment status'
+            },
+            BookingId: {
+              type: 'string',
+              description: 'ID of the associated booking'
+            },
+            MethodId: {
+              type: 'string',
+              description: 'ID of the payment method used'
+            },
+            CreatedAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Payment creation timestamp'
+            },
+            CreatedBy: {
+              type: 'string',
+              description: 'ID of user who created the payment'
+            }
+          }
+        },
+        MomoPaymentResponse: {
+          type: 'object',
+          properties: {
+            status: {
+              type: 'string',
+              example: 'success'
+            },
+            message: {
+              type: 'string',
+              example: 'Momo payment initialized'
+            },
+            data: {
+              type: 'object',
+              properties: {
+                paymentId: {
+                  type: 'string',
+                  description: 'ID của payment'
+                },
+                payUrl: {
+                  type: 'string',
+                  description: 'URL thanh toán Momo'
+                },
+                orderId: {
+                  type: 'string',
+                  description: 'ID của đơn hàng'
+                }
               }
             }
           }

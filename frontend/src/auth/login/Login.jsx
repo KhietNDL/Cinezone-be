@@ -19,6 +19,7 @@ const MovieTheaterLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  // eslint-disable-next-line no-unused-vars
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   // eslint-disable-next-line no-unused-vars
   const [focusedField, setFocusedField] = useState("");
@@ -86,26 +87,8 @@ const MovieTheaterLogin = () => {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setIsGoogleLoading(true);
-    try {
-      // TODO: Implement Google OAuth login
-      // Example:
-      // const response = await googleLogin();
-      // await signIn(response.token, response.user.userId);
-      // toast.success("Google login successful!");
-      // navigate("/");
-      //window.location.href = "http://cinezone.info:4458/api/auth/google";
-
-      // Temporary placeholder
-      console.log("Google login initiated");
-      toast.info("Google login feature coming soon!");
-    } catch (error) {
-      console.error("Google login error:", error);
-      toast.error("Google login failed. Please try again.");
-    } finally {
-      setIsGoogleLoading(false);
-    }
+  const handleGoogleLogin = () => {
+    window.location.href = "http://cinezone.info:4458/api/auth/google";
   };
 
   return (

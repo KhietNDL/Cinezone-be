@@ -228,54 +228,6 @@ exports.getSeatsByShowtime = async (req, res) => {
 };
 
 
-// API: Lấy khung thời gian chiếu phim theo movieId và day
-exports.getShowtimesByMovieAndDay = async (req, res) => {
-    try {
-        const { movieId } = req.query;
-        let { day } = req.query;
-        // Chuẩn hóa ngày
-        day = normalizeDate(day);
-        if (!movieId || !uuidValidate(movieId)) {
-            return res.status(400).json({ error: 'Invalid or missing movieId (UUID)', code: ERROR_CODES.INVALID_UUID });
-        }
-        if (!day || !isValidDate(day)) {
-            return res.status(400).json({ error: 'Invalid or missing day (YYYY-MM-DD)', code: ERROR_CODES.INVALID_INPUT });
-        }
-        // Kiểm tra movieId tồn tại
-        const movie = await Movie.getMovieById(movieId);
-        if (!movie) {
-            return res.status(404).json({ error: 'Movie not found', code: ERROR_CODES.SHOWTIME_NOT_FOUND });
-        }
-        // Lấy các suất chiếu
-        const showtimes = await Showtime.searchByMovieAndDay(movieId, day);
-        if (!showtimes.length) {
-            return res.json({
-                movieId,
-                day,
-                showtimes: []
-            });
-        }
-        const result = await Promise.all(showtimes.map(async (st) => {
-            const room = await CinemaRoom.getCinemaRoomById(st.CinemaRoomId);
-            return {
-                showtimeId: st.ShowtimeId,
-                time: st.Time
-            };
-        }));
-        res.json({
-            movieId,
-            day,
-            showtimes: result
-        });
-    } catch (error) {
-        console.error('Error in getShowtimesByMovieAndDay:', error);
-        res.status(500).json({
-            error: 'Internal server error',
-            code: ERROR_CODES.SERVER_ERROR,
-            details: error.message
-        });
-    }
-};
 
 exports.getShowtimesByMovieId = async (req, res) => {
     const { movieId } = req.params;
@@ -293,6 +245,9 @@ exports.getShowtimesByMovieId = async (req, res) => {
                 });
             }
         });
+
+        // Sắp xếp theo ngày
+        result.sort((a, b) => a.Day.localeCompare(b.Day));
         res.json({
             movieId,
             showtimes: result
@@ -302,56 +257,30 @@ exports.getShowtimesByMovieId = async (req, res) => {
     }
 };
 
-exports.getShowtimesByMovieName = async (req, res) => {
-    const { movieName } = req.params;
-    try {
-        const rows = await Showtime.getShowtimesByMovieName(movieName);
 
-        // Dùng Set để loại trùng ngày
-        const uniqueDays = new Set();
-        const showtimes = [];
-        rows.forEach(row => {
-            const dayOnly = normalizeDate(row.Day);
-            if (!uniqueDays.has(dayOnly)) {
-                uniqueDays.add(dayOnly);
-                showtimes.push({ Day: dayOnly });
-            }
-        });
 
-        // Sắp xếp showtimes theo ngày tăng dần
-        showtimes.sort((a, b) => a.Day.localeCompare(b.Day));
-
-        res.json({
-            movieName,
-            showtimes
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
-
-exports.getShowtimesByMovieNameAndDay = async (req, res) => {
-    const { movieName } = req.params;
+exports.getShowtimesByMovieIdAndDay = async (req, res) => {
+    const { movieId } = req.params;
     let { day } = req.query;
-    const { normalizeDate } = require("../middlewares/showtime.validator");
     day = normalizeDate(day);
 
-    if (!movieName || !day) {
-        return res.status(400).json({ error: 'Missing movieName or day' });
+    if (!movieId || !day) {
+        return res.status(400).json({ error: 'Missing movieId or day' });
     }
 
     try {
-        const rows = await Showtime.searchByMovieNameAndDay(movieName, day);
+        const rows = await Showtime.searchByMovieIdAndDay(movieId, day);
 
         // Gom nhóm theo version
         const versionMap = {};
         rows.forEach(row => {
-            if (!versionMap[row.Version]) {
-                versionMap[row.Version] = [];
+            const version = row.VersionType;
+            if (!versionMap[version]) {
+                versionMap[version] = [];
             }
             // Lấy giờ:phút từ row.Time (giả sử row.Time là chuỗi "HH:mm:ss")
             const timeHM = typeof row.Time === 'string' ? row.Time.slice(0, 5) : '';
-            versionMap[row.Version].push({
+            versionMap[version].push({
                 showtimeId: row.ShowtimeId,
                 time: timeHM,
                 roomName: row.roomName
@@ -364,7 +293,7 @@ exports.getShowtimesByMovieNameAndDay = async (req, res) => {
         }));
 
         res.json({
-            movieName,
+            movieId,
             day,
             versions: result
         });
