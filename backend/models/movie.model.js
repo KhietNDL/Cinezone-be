@@ -277,17 +277,49 @@ class Movie {
         ]
       );
 
-    if (Array.isArray(movieData.versions)) {
-      await db.promise().query(
-        "DELETE FROM Version WHERE MovieId = ?",
-        [movieId]
-      );
-      for (const v of movieData.versions) {
-        await db.promise().query(
-          "INSERT INTO Version (VersionId, MovieId, VersionType, Language, IsDeleted, CreatedAt, CreatedBy) VALUES (?, ?, ?, ?, 0, NOW(), ?)",
-          [uuidv4(), movieId, v.VersionType, v.Language, movieData.UpdatedBy]
-        );
+    let versions = movieData.versions;
+    console.log('[updateMovie] Input versions:', versions, typeof versions);
+
+    if (typeof versions === 'string') {
+      try { 
+        versions = JSON.parse(versions); 
+        console.log('[updateMovie] Parsed versions from string:', versions);
+      } catch (e) { 
+        console.error('[updateMovie] Error parsing versions string:', e);
+        versions = []; 
       }
+    }
+
+    if (versions && !Array.isArray(versions)) {
+      versions = [versions];
+      console.log('[updateMovie] Converted to array:', versions);
+    }
+
+    if (Array.isArray(versions) && versions.length > 0) {
+      console.log('[updateMovie] Versions to process:', versions.length);
+      
+      try {
+        await db.promise().query("DELETE FROM Version WHERE MovieId = ?", [movieId]);
+        console.log('[updateMovie] Deleted existing versions for movie:', movieId);
+        
+        for (const v of versions) {
+          console.log('[updateMovie] Inserting version:', v);
+          
+          if (v && v.VersionType && v.Language) {
+            await db.promise().query(
+              "INSERT INTO Version (VersionId, MovieId, VersionType, Language, IsDeleted, CreatedAt, CreatedBy) VALUES (?, ?, ?, ?, 0, NOW(), ?)",
+              [uuidv4(), movieId, v.VersionType, v.Language, movieData.UpdatedBy || 'system']
+            );
+            console.log('[updateMovie] Version inserted successfully');
+          } else {
+            console.error('[updateMovie] Invalid version data:', v);
+          }
+        }
+      } catch (error) {
+        console.error('[updateMovie] Error processing versions:', error);
+      }
+    } else {
+      console.log('[updateMovie] No versions to process');
     }
 
     return result.affectedRows > 0;
@@ -320,7 +352,7 @@ class Movie {
       values.push(movieData.UpdatedBy);
     }
 
-    if (updateFields.length === 0 && !Array.isArray(movieData.versions)) {
+    if (updateFields.length === 0 && !movieData.versions) {
       return true;
     }
 
@@ -338,17 +370,49 @@ class Movie {
       }
     }
 
-    if (Array.isArray(movieData.versions)) {
-      await db.promise().query(
-        "DELETE FROM Version WHERE MovieId = ?",
-        [movieId]
-      );
-      for (const v of movieData.versions) {
-        await db.promise().query(
-          "INSERT INTO Version (VersionId, MovieId, VersionType, Language, IsDeleted, CreatedAt, CreatedBy) VALUES (?, ?, ?, ?, 0, NOW(), ?)",
-          [uuidv4(), movieId, v.VersionType, v.Language, movieData.UpdatedBy]
-        );
+    let versions = movieData.versions;
+    console.log('[patchMovie] Input versions:', versions, typeof versions);
+
+    if (typeof versions === 'string') {
+      try { 
+        versions = JSON.parse(versions); 
+        console.log('[patchMovie] Parsed versions from string:', versions);
+      } catch (e) { 
+        console.error('[patchMovie] Error parsing versions string:', e);
+        versions = []; 
       }
+    }
+
+    if (versions && !Array.isArray(versions)) {
+      versions = [versions];
+      console.log('[patchMovie] Converted to array:', versions);
+    }
+
+    if (Array.isArray(versions) && versions.length > 0) {
+      console.log('[patchMovie] Versions to process:', versions.length);
+      
+      try {
+        await db.promise().query("DELETE FROM Version WHERE MovieId = ?", [movieId]);
+        console.log('[patchMovie] Deleted existing versions for movie:', movieId);
+        
+        for (const v of versions) {
+          console.log('[patchMovie] Inserting version:', v);
+          
+          if (v && v.VersionType && v.Language) {
+            await db.promise().query(
+              "INSERT INTO Version (VersionId, MovieId, VersionType, Language, IsDeleted, CreatedAt, CreatedBy) VALUES (?, ?, ?, ?, 0, NOW(), ?)",
+              [uuidv4(), movieId, v.VersionType, v.Language, movieData.UpdatedBy || 'system']
+            );
+            console.log('[patchMovie] Version inserted successfully');
+          } else {
+            console.error('[patchMovie] Invalid version data:', v);
+          }
+        }
+      } catch (error) {
+        console.error('[patchMovie] Error processing versions:', error);
+      }
+    } else {
+      console.log('[patchMovie] No versions to process');
     }
 
     return true;
