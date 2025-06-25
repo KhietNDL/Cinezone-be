@@ -6,9 +6,11 @@ const {
   createPromotion,
   updatePromotion,
   deletePromotion,
-  searchPromotionsByTitle
+  searchPromotionsByTitle,
 } = require('../controllers/promotion.controller');
 const { auth, isAdmin } = require('../middlewares/auth.middleware');
+const multer = require('multer');
+const upload = multer();
 
 /**
  * @swagger
@@ -62,6 +64,19 @@ const { auth, isAdmin } = require('../middlewares/auth.middleware');
  *   get:
  *     summary: Get all promotions
  *     tags: [Promotion Management]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of promotions per page (0 = all promotions)
  *     responses:
  *       200:
  *         description: List of all promotions
@@ -153,11 +168,17 @@ router.get('/:id', getPromotionById);
  *               image:
  *                 type: string
  *                 format: binary
+ *               status:
+ *                 type: integer
+ *                 description: Status of the promotion
+ *               code:
+ *                 type: string
+ *                 description: Promotion code
  *     responses:
  *       201:
  *         description: Promotion created successfully
  */
-router.post('/create', auth, isAdmin, createPromotion);
+router.post('/create', auth, isAdmin, upload.fields([{name: 'image', maxCount: 1}]), createPromotion);
 
 /**
  * @swagger
@@ -197,11 +218,17 @@ router.post('/create', auth, isAdmin, createPromotion);
  *               image:
  *                 type: string
  *                 format: binary
+ *               status:
+ *                 type: integer
+ *                 description: Status of the promotion
+ *               code:
+ *                 type: string
+ *                 description: Promotion code
  *     responses:
  *       200:
  *         description: Promotion updated successfully
  */
-router.put('/update/:id', auth, isAdmin, updatePromotion);
+router.put('/update/:id', auth, isAdmin, upload.fields([{name: 'image', maxCount: 1}]), updatePromotion);
 
 /**
  * @swagger
