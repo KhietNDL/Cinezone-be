@@ -32,6 +32,7 @@ const handleError = (error) => {
   throw new Error(errorMessage);
 };
 
+
 // show Current Movies
 export const getCurrentMovies = async () => {
   try {
@@ -45,7 +46,9 @@ export const getCurrentMovies = async () => {
 // search movie bằng tên
 export const searchMovies = async (name) => {
   try {
-    const response = await api.get(`/movie/search?name=${encodeURIComponent(name)}`);
+    const response = await api.get(
+      `/movie/search?name=${encodeURIComponent(name)}`
+    );
     return response.data;
   } catch (error) {
     handleError(error);

@@ -1,30 +1,34 @@
 const { body, validationResult } = require('express-validator');
 const Employee = require('../models/employee.model');
-
+const validate = (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+};
 // Validation rules
 const employeeValidationRules = () => {
     return [
         // Password validation
-        body('Password')
+        body('password')
             .notEmpty().withMessage('Password is required')
             .isLength({ min: 8, max: 128 }).withMessage('Password must be between 8 and 128 characters')
-            .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]*$/)
+            .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,128}$/)
+            .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,128}$/)
             .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number and one special character')
             .not().contains(' ').withMessage('Password cannot contain spaces'),
 
         // Full Name validation
-        body('FullName')
+        body('fullName')
             .notEmpty().withMessage('Full name is required')
             .isLength({ min: 6, max: 100 }).withMessage('Full name must be between 6 and 100 characters')
             .matches(/^[a-zA-ZÀ-ỹ\s]*$/).withMessage('Full name cannot contain numbers or special characters')
             .trim()
-            .customSanitizer(value => {
-                // Remove extra spaces between words
-                return value.replace(/\s+/g, ' ');
-            }),
+            .customSanitizer(value => value.replace(/\s+/g, ' ')),
 
         // Date of Birth validation
-        body('DateOfBirth')
+        body('dateOfBirth')
             .notEmpty().withMessage('Date of birth is required')
             .isISO8601().withMessage('Date of birth must be in YYYY-MM-DD format')
             .custom((value) => {
@@ -37,29 +41,49 @@ const employeeValidationRules = () => {
             }),
 
         // Email validation
-        body('Email')
+        body('email')
             .notEmpty().withMessage('Email is required')
             .isEmail().withMessage('Invalid email format')
             .isLength({ max: 255 }).withMessage('Email cannot exceed 255 characters')
-            .normalizeEmail() // Convert to lowercase
-            .custom(async (value) => {
+            .normalizeEmail()
+            .custom(async (value, { req }) => {
                 const existingEmployee = await Employee.getEmployeeByEmail(value);
-                if (existingEmployee) {
-                    throw new Error('Email already exists in the system');
+                // Nếu là update, cho phép giữ email cũ
+                if (req.method === 'PUT' && req.params.userId) {
+                    if (
+                        existingEmployee &&
+                        String(existingEmployee.UserId).trim() !== String(req.params.userId).trim()
+                    ) {
+                        throw new Error('Email already exists in the system');
+                    }
+                } else {
+                    if (existingEmployee) {
+                        throw new Error('Email already exists in the system');
+                    }
                 }
                 return true;
             })
             .not().contains(' ').withMessage('Email cannot contain spaces'),
 
         // Phone Number validation
-        body('PhoneNumber')
+        body('phoneNumber')
             .notEmpty().withMessage('Phone number is required')
             .matches(/^[0-9]{10}$/).withMessage('Phone number must be 10 digits'),
 
         // CCCD validation
-        body('CCCD')
+        body('cccd')
             .notEmpty().withMessage('Citizen ID is required')
-            .matches(/^[0-9]{12}$/).withMessage('Citizen ID must be 12 digits')
+            .matches(/^[0-9]{12}$/).withMessage('Citizen ID must be 12 digits'),
+
+        // Sex validation
+        body('sex')
+            .notEmpty().withMessage('Sex is required')
+            .isInt({ min: 1, max: 3 }).withMessage('Sex must be 1 (male), 2 (female), or 3 (other)'),
+
+        // Address validation
+        body('address')
+            .optional()
+            .isString().withMessage('Address must be a string')
     ];
 };
 

@@ -69,9 +69,13 @@ const register = async (req, res) => {
     }
 
     // Generate JWT token
-    const token = jwt.sign({ userId: user.UserId }, process.env.JWT_SECRET, {
-      expiresIn: "24h",
-    });
+    const token = jwt.sign(
+      { userId: user.UserId, role: user.Role },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "24h",
+      }
+    );
 
     res.status(201).json({
       message: "User registered successfully",
@@ -119,9 +123,13 @@ const login = async (req, res) => {
     }
 
     // Generate JWT token
-    const token = jwt.sign({ userId: user.UserId }, process.env.JWT_SECRET, {
-      expiresIn: "24h",
-    });
+    const token = jwt.sign(
+      { userId: user.UserId, role: user.Role },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "24h",
+      }
+    );
 
     res.json({
       message: "Login successful",
@@ -155,8 +163,7 @@ const forgotPassword = async (req, res) => {
     const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Update user with reset code and set expiry time (15 minutes)
-    const resetCodeExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
-    await User.updateResetCode(email, resetCode, resetCodeExpiry);
+    await User.updateResetCode(email, resetCode);
 
     // Store email in session for OTP verification
     req.session.reset = {
@@ -285,22 +292,25 @@ const forgotPassword = async (req, res) => {
 const verifyOtp = async (req, res) => {
   try {
     const { resetCode } = req.body;
-    const sessionEmail = req.session.reset?.email;
+    const sessionData = req.session.reset;
 
-    if (!sessionEmail) {
+    // Check if session data exists
+    if (!sessionData || !sessionData.email) {
       return res.status(400).json({
-        error: "Session expired or invalid. Please request a new code.",
-        code: ERROR_CODES.USER_NOT_FOUND, // Or a more specific session error code
+        error: "Session expired or invalid. Please request a new reset code.",
+        code: ERROR_CODES.INVALID_RESET_CODE,
       });
     }
 
-    // Find user by email from session
-    const user = await User.findByEmail(sessionEmail);
+    const { email } = sessionData;
+
+    // Find user by email
+    const user = await User.findByEmail(email);
     if (
       !user ||
-      !user.ResetCode ||
-      user.ResetCode !== resetCode ||
-      new Date() > new Date(user.ResetCodeExpiry)
+      !user.reset_code ||
+      user.reset_code !== resetCode ||
+      new Date() > new Date(user.reset_code_expires)
     ) {
       return res.status(400).json({
         error: "Invalid or expired reset code",
@@ -308,8 +318,11 @@ const verifyOtp = async (req, res) => {
       });
     }
 
-    // Mark as verified in session
-    req.session.reset.verified = true;
+    // save session data
+    req.session.reset = {
+      email: user.Email,
+      verified: true,
+    };
 
     res.status(200).json({ message: "OTP verified successfully" });
   } catch (error) {
@@ -337,7 +350,7 @@ const resetPassword = async (req, res) => {
 
     const { email } = sessionData;
 
-    // Check if user exists (should not happen if session is valid, but good practice)
+    // Check if user exists
     const user = await User.findByEmail(email);
     if (!user) {
       return res.status(404).json({
@@ -602,44 +615,53 @@ const getUserById = async (req, res) => {
 };
 
 const exchangeScore = async (req, res) => {
-    try {
-        const { userId } = req.params;
-        const { pointsToExchange } = req.body;
+  try {
+    const { userId } = req.params;
+    const { pointsToExchange } = req.body;
 
-        if (!uuidValidate(userId)) {
-            return res.status(400).json({ error: 'Invalid user ID format', code: ERROR_CODES.INVALID_UUID });
-        }
-
-        const points = parseInt(pointsToExchange, 10);
-        if (isNaN(points) || points <= 0) {
-            return res.status(400).json({ error: 'Invalid points value', code: ERROR_CODES.INVALID_REQUEST });
-        }
-
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(404).json({ error: 'User not found', code: ERROR_CODES.USER_NOT_FOUND });
-        }
-
-        if (user.ScoreBalance < points) {
-            return res.status(400).json({ error: 'Insufficient score balance' });
-        }
-
-        const moneyGained = points * 1000;
-        const newScoreBalance = user.ScoreBalance - points;
-
-        await User.updateScoreBalance(userId, newScoreBalance);
-
-        res.json({
-            message: 'Score exchanged successfully',
-            moneyGained,
-            newScoreBalance,
-        });
-    } catch (error) {
-        console.error('Exchange score error:', error);
-        res.status(500).json({ error: 'Internal server error', code: ERROR_CODES.SERVER_ERROR });
+    if (!uuidValidate(userId)) {
+      return res.status(400).json({
+        error: "Invalid user ID format",
+        code: ERROR_CODES.INVALID_UUID,
+      });
     }
-};
 
+    const points = parseInt(pointsToExchange, 10);
+    if (isNaN(points) || points <= 0) {
+      return res.status(400).json({
+        error: "Invalid points value",
+        code: ERROR_CODES.INVALID_REQUEST,
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ error: "User not found", code: ERROR_CODES.USER_NOT_FOUND });
+    }
+
+    if (user.ScoreBalance < points) {
+      return res.status(400).json({ error: "Insufficient score balance" });
+    }
+
+    const moneyGained = points * 1000;
+    const newScoreBalance = user.ScoreBalance - points;
+
+    await User.updateScoreBalance(userId, newScoreBalance);
+
+    res.json({
+      message: "Score exchanged successfully",
+      moneyGained,
+      newScoreBalance,
+    });
+  } catch (error) {
+    console.error("Exchange score error:", error);
+    res
+      .status(500)
+      .json({ error: "Internal server error", code: ERROR_CODES.SERVER_ERROR });
+  }
+};
 
 module.exports = {
   register,

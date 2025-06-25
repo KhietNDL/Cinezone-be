@@ -12,7 +12,6 @@ const {
   patchMovie,
   getCurrentMovies,
   getUpcomingMovies,
-  getMovieShowtimes
 } = require('../controllers/movie.controller');
 const { auth, isAdmin } = require('../middlewares/auth.middleware');
 const { validateMovie, validatePatchMovie } = require('../middlewares/movie.validator');
@@ -45,7 +44,7 @@ const upload = multer({
  * @swagger
  * /api/movie:
  *   get:
- *     summary: Get movies with flexible pagination
+ *     summary: Get movies with flexible pagination and sorting
  *     tags: [Movies]
  *     parameters:
  *       - in: query
@@ -60,6 +59,20 @@ const upload = multer({
  *           type: integer
  *           default: 0
  *         description: Number of movies per page (0 = all movies)
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [NameOfVietnamese, NameOfEnglish, FromDate, ToDate]
+ *           default: FromDate
+ *         description: Field to sort by
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: desc
+ *         description: Sort order (asc or desc)
  *     responses:
  *       200:
  *         description: List of movies with pagination info
@@ -238,12 +251,25 @@ router.get('/:movieId', getMovieById);
  *                 type: string
  *               RunningTime:
  *                 type: integer
- *               Version:
- *                 type: string
  *               Genres:
  *                 type: string
  *               ContentSynopsis:
  *                 type: string
+ *               versions:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     VersionType:
+ *                       type: string
+ *                     Language:
+ *                       type: string
+ *                 description: List of versions
+ *                 example:
+ *                   - VersionType: "2D"
+ *                     Language: "Vietnamese"
+ *                   - VersionType: "3D"
+ *                     Language: "English"
  *               poster:
  *                 type: string
  *                 format: binary
@@ -252,6 +278,9 @@ router.get('/:movieId', getMovieById);
  *                 type: string
  *                 format: binary
  *                 description: Will be saved as TrailerUrl in database
+ *               IframeUrl:
+ *                 type: string
+ *                 description: YouTube embed link
  *     responses:
  *       201:
  *         description: Movie created successfully
@@ -304,18 +333,29 @@ router.post('/create', auth, isAdmin, upload.fields([
  *                 type: string
  *               RunningTime:
  *                 type: string
- *               Version:
- *                 type: string
  *               Genres:
  *                 type: string
  *               ContentSynopsis:
  *                 type: string
+ *               versions:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     VersionType:
+ *                       type: string
+ *                     Language:
+ *                       type: string
+ *                 description: List of versions
  *               poster:
  *                 type: string
  *                 format: binary
  *               trailer:
  *                 type: string
  *                 format: binary
+ *               IframeUrl:
+ *                 type: string
+ *                 description: YouTube embed link
  *     responses:
  *       200:
  *         description: Movie updated successfully
@@ -378,15 +418,22 @@ router.put('/:movieId', auth, isAdmin, upload.fields([
  *               RunningTime:
  *                 type: integer
  *                 description: Movie duration in minutes
- *               Version:
- *                 type: string
- *                 description: Movie version information
  *               Genres:
  *                 type: string
  *                 description: Movie genres (comma separated)
  *               ContentSynopsis:
  *                 type: string
  *                 description: Movie description/synopsis
+ *               versions:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     VersionType:
+ *                       type: string
+ *                     Language:
+ *                       type: string
+ *                 description: List of versions
  *               poster:
  *                 type: string
  *                 format: binary
@@ -395,6 +442,9 @@ router.put('/:movieId', auth, isAdmin, upload.fields([
  *                 type: string
  *                 format: binary
  *                 description: Movie trailer video
+ *               IframeUrl:
+ *                 type: string
+ *                 description: YouTube embed link
  *     responses:
  *       200:
  *         description: Movie updated successfully

@@ -1,12 +1,32 @@
 const Employee = require("../models/employee.model");
 const jwt = require("jsonwebtoken");
 const User = require('../models/user.model');
+const bucket = require("../config/firebase"); // Thêm dòng này ở đầu file
 // Get all employees
 const getAllEmployees = async (req, res) => {
   try {
-    const employees = await Employee.getAllEmployees();
+    const page = parseInt(req.query.page) || 1;
+    const limit = req.query.limit !== undefined ? parseInt(req.query.limit) : 0;
+
+    const result = await Employee.getAllEmployees(page, limit);
+
+    if (limit > 0 && page > 1 && result.employees.length === 0) {
+      return res.status(400).json({
+        error: "Page number exceeds available pages"
+      });
+    }
+
+    if (result.employees.length === 0) {
+      return res.status(200).json({
+        status: "success",
+        message: "No employees found",
+        data: [],
+        pagination: result.pagination
+      });
+    }
+
     // Thêm avatar_url vào kết quả trả về
-    const filteredEmployees = employees.map((emp) => ({
+    const filteredEmployees = result.employees.map((emp) => ({
       UserId: emp.UserId,
       FullName: emp.FullName,
       DateOfBirth: emp.DateOfBirth,
@@ -16,11 +36,13 @@ const getAllEmployees = async (req, res) => {
       Address: emp.Address,
       PhoneNumber: emp.PhoneNumber,
       CreatedAt: emp.CreatedAt,
-      avatar_url: emp.avatar_url // thêm dòng này
+      avatar_url: emp.avatar_url
     }));
+
     res.status(200).json({
-      message: "Employees retrieved successfully",
-      employees: filteredEmployees,
+      status: "success",
+      data: filteredEmployees,
+      pagination: result.pagination
     });
   } catch (error) {
     console.error("Get all employees error:", error);
@@ -147,9 +169,7 @@ const createEmployee = async (req, res) => {
         Email: employee.Email,
         CCCD: employee.CCCD,
         Address: employee.Address,
-        PhoneNumber: employee.PhoneNumber,
-        CreatedAt: employee.CreatedAt,
-        avatar_url: employee.avatar_url // thêm dòng này
+        PhoneNumber: employee.PhoneNumber
       }
     });
   } catch (error) {
@@ -180,7 +200,63 @@ const deleteEmployee = async (req, res) => {
 const updateEmployee = async (req, res) => {
   const { userId } = req.params;
   const employeeData = req.body;
+
   try {
+    // Lấy thông tin employee hiện tại để xác định avatar cũ
+    const existingEmployee = await Employee.getEmployeeById(userId);
+    if (!existingEmployee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    // Xử lý upload avatar nếu có file gửi lên
+    if (req.files && req.files.avatar && req.files.avatar[0]) {
+      try {
+        // Xóa avatar cũ trên Firebase nếu có
+        if (existingEmployee.avatar_url) {
+          try {
+            const fileNameMatch = existingEmployee.avatar_url.match(/firebasestorage\.app\/([^?]+)/);
+            if (fileNameMatch && fileNameMatch[1]) {
+              const oldFilePath = fileNameMatch[1];
+              await bucket.file(oldFilePath).delete().catch(() => {});
+            }
+          } catch (error) {
+            console.log("Error deleting old avatar:", error);
+          }
+        }
+
+        // Upload avatar mới lên Firebase
+        const avatarFile = req.files.avatar[0];
+        const avatarFileName = `avatars/${Date.now()}-${avatarFile.originalname.replace(/\s+/g, "_")}`;
+        const avatarBlob = bucket.file(avatarFileName);
+
+        const avatarStream = avatarBlob.createWriteStream({
+          metadata: { contentType: avatarFile.mimetype },
+        });
+
+        await new Promise((resolve, reject) => {
+          avatarStream.on("error", reject);
+          avatarStream.on("finish", resolve);
+          avatarStream.end(avatarFile.buffer);
+        });
+
+        const [avatarUrl] = await avatarBlob.getSignedUrl({
+          action: "read",
+          expires: "03-01-2500",
+        });
+
+        employeeData.avatar_url = avatarUrl;
+      } catch (firebaseError) {
+        console.error("Firebase operation failed:", firebaseError);
+        return res.status(500).json({
+          error: "Firebase operation failed during profile update",
+        });
+      }
+    }
+
+    // Xóa trường avatar nếu có (tránh lưu buffer vào DB)
+    delete employeeData.avatar;
+
+    // Cập nhật employee
     const result = await Employee.updateEmployee(userId, employeeData);
     if (result) {
       res.status(200).json({ message: "Employee updated successfully" });

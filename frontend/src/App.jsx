@@ -39,6 +39,8 @@ import ResetPassword from "./auth/resetPassword/resetPassword";
 import { UserManagement } from "./layouts/Admin/component/UserManagement";
 import MoviePage from "./layouts/Staff/component/MoviePage";
 import MovieDetail from "./layouts/Staff/component/MovieDetail";
+import GoogleCallback from "./auth/login/GoogleCallback";
+
 function App() {
   return (
     <AuthProvider>
@@ -50,6 +52,7 @@ function App() {
           <Route path="/login" element={<MovieTheaterLogin />} />
           <Route path="/register" element={<RegistrationPage />} />
           <Route path="/forgot" element={<ForgotPasswordPage />} />
+          <Route path="/login/google/callback" element={<GoogleCallback />} />
           <Route path="/verification" element={<EmailVerification />} />
           <Route path="/resetPassword" element={<ResetPassword />} />
           <Route path="/:idMovie" element={<BookingPage />} />
