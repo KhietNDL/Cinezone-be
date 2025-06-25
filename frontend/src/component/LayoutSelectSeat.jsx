@@ -1,248 +1,289 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { PiArmchairLight, PiArmchairFill } from "react-icons/pi";
-import DoubleSeatSelectingNight from "../assets/DoubleSeatSelectingNight.svg";
-import DoubleSeatSelectingLight from "../assets/DoubleSeatSelectingLight.svg";
-import DoubleSeatNoneNight from "../assets/DoubleSeatNoneNight.svg";
-import DoubleSeatNoneLight from "../assets/DoubleSeatNoneLight.svg";
-import DoubleSeatSelected from "../assets/DoubleSeatSelected.svg";
-import DoubleSeatSelected4 from "../assets/DoubleSeatSelected4.svg";
-
+import { MdOutlineChair } from "react-icons/md";
 
 export const LayoutSelectSeat = ({
-
   onSeatSelect = () => { },
   initialSelectedSeats = [],
+  seatDataFromAPI = [],
+  totalSeats = 80,
+  maxSeatsPerRow = 14,
+  maxRows = 10,
+  containerWidth = "750px",
   width = 30,
   height = 30,
   textColor = "text-gray-500",
-  widthDouble = 42,
-  heightDouble = 24,
-  gapX = 4,
+  widthDouble = 60,
+  heightDouble = 30,
+  
+  aisleWidth = 60,
+  seatSpacing = 12,
+  seatSpacingCouple = 0,
   seatColors = {
-    available: "text-gray-500",
+    available: "text-green-600",
     selected: "text-[#5341DB]",
-    taken: "text-[#6A7282]",
-    coupleSeat: {
-      available: DoubleSeatNoneLight,
-      selected: DoubleSeatSelectingLight,
-      taken: DoubleSeatSelected4,
-    },
+    taken: "text-red-600",
+    vip: "text-yellow-600",
+    normal: "text-gray-700",
+    couple: "text-pink-600",
   },
 }) => {
-  const [selectedSeats, setSelectedSeats] = useState(
-    new Set(initialSelectedSeats)
-  );
+  const [selectedSeats, setSelectedSeats] = useState(new Set(initialSelectedSeats));
+  const [seatLayout, setSeatLayout] = useState([]);
 
-  const seatLayout = [
-    {
-      row: "A",
-      seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-    },
-    { row: "B", seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
-    {
-      row: "C",
-      seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-    },
-    {
-      row: "D",
-      seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-    },
-    {
-      row: "E",
-      seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-    },
-    { row: "F", seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
-    { row: "G", seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
-    {
-      row: "H",
-      seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-    },
-    { row: "I", seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
-    { row: "J", seats: [1, 2, 3, 4, 5, 6, 7, 8, 9] },
-  ];
+  // Tạo seat map từ API data với seatId làm key
+  const seatMap = {};
+  seatDataFromAPI.forEach((seat) => {
+    seatMap[seat.seatNumber] = seat;
+  });
 
-  const takenSeats = new Set([
-    "J2",
-    "J3",
-    "H5",
-    "H6",
-    "H12",
-    "H13",
-    "G2",
-    "G3",
-    "G4",
-    "G13",
-    "G14",
-    "G15",
-    "G16",
-    "F1",
-    "F2",
-    "F3",
-    "F15",
-    "F16",
-    "E1",
-    "E2",
-    "E3",
-    "C1",
-    "C2",
-    "C3",
-    "C4",
-    "C5",
-    "C6",
-    "B5",
-    "B6",
-    "B7",
-    "B8",
-    "B9",
-    "A3",
-    "A4",
-    "A5",
-    "A6",
-    "A7",
-    "A8",
-    "A9",
-  ]);
+  // Group seats by row từ API data với cải thiện logic chia ghế
+  const groupSeatsByRow = () => {
+    const rows = {};
 
-  const gapClass = {
-    0: "space-x-0",
-    1: "space-x-1",
-    2: "space-x-2",
-    3: "space-x-3",
-    4: "space-x-4",
-    5: "space-x-5",
-    6: "space-x-6",
-    7: "space-x-7",
-    8: "space-x-8",
-    9: "space-x-9",
-    10: "space-x-10",
+    seatDataFromAPI.forEach((seat) => {
+      const row = seat.seatNumber[0]; // A, B, C...
+      const number = parseInt(seat.seatNumber.slice(1)); // 1, 2, 3...
+
+      if (!rows[row]) {
+        rows[row] = [];
+      }
+
+      rows[row].push({
+        ...seat,
+        number,
+        isCouple: seat.type === 'Couple'
+      });
+    });
+
+    // Sort rows A-Z và tạo layout cân đối
+    const sortedRows = Object.entries(rows)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([row, seats]) => {
+        const sortedSeats = seats.sort((a, b) => a.number - b.number);
+        
+        // Chia ghế thành 2 bên một cách thông minh
+        // Ưu tiên chia đều, nếu lẻ thì bên trái nhiều hơn 1 ghế
+        const totalSeats = sortedSeats.length;
+        const leftSideCount = Math.ceil(totalSeats / 2);
+        
+        return {
+          row,
+          seats: sortedSeats,
+          leftSeats: sortedSeats.slice(0, leftSideCount),
+          rightSeats: sortedSeats.slice(leftSideCount),
+          isDouble: sortedSeats.some(s => s.type === 'Couple')
+        };
+      });
+
+    return sortedRows;
   };
 
-  const handleSeatClick = (seatId) => {
-    if (takenSeats.has(seatId)) return;
+  console.log("SEAT DATA: ", seatDataFromAPI);
+  
+  useEffect(() => {
+    if (seatDataFromAPI.length > 0) {
+      const layout = groupSeatsByRow();
+      setSeatLayout(layout);
+    }
+  }, [seatDataFromAPI]);
+
+  const handleSeatClick = (seatNumber) => {
+    const seat = seatMap[seatNumber];
+    if (!seat || seat.status === "taken") return;
 
     const newSelectedSeats = new Set(selectedSeats);
-    if (newSelectedSeats.has(seatId)) {
-      newSelectedSeats.delete(seatId);
+    if (newSelectedSeats.has(seatNumber)) {
+      newSelectedSeats.delete(seatNumber);
     } else {
-      newSelectedSeats.add(seatId);
+      newSelectedSeats.add(seatNumber);
     }
 
     setSelectedSeats(newSelectedSeats);
-    onSeatSelect(Array.from(newSelectedSeats));
+
+    // Trả về thông tin ghế đã chọn với tổng giá
+    const selectedSeatDetails = Array.from(newSelectedSeats).map(seatNum => seatMap[seatNum]);
+    const totalPrice = selectedSeatDetails.reduce((sum, seat) => sum + seat.price, 0);
+
+    onSeatSelect({
+      seats: selectedSeatDetails,
+      totalPrice: totalPrice,
+      count: selectedSeatDetails.length
+    });
   };
 
-  const getSeatColor = (seatId) => {
-    if (takenSeats.has(seatId)) {
-      return seatColors.taken;
-    } else if (selectedSeats.has(seatId)) {
-      return seatColors.selected;
-    } else {
-      return seatColors.available;
+  const getSeatColor = (seat) => {
+    const { seatNumber, status, type } = seat;
+
+    if (status === "taken") return seatColors.taken;
+    if (selectedSeats.has(seatNumber)) return seatColors.selected;
+
+    // Màu theo loại ghế
+    switch (type) {
+      case 'VIP':
+        return seatColors.vip;
+      case 'Normal':
+        return seatColors.normal;
+      case 'Couple':
+        return seatColors.couple;
+      default:
+        return seatColors.available;
     }
   };
 
-  const renderSeat = (row, seatNumber) => {
-    const seatId = `${row}${seatNumber}`;
-    const isSelected = selectedSeats.has(seatId);
-    const isTaken = takenSeats.has(seatId);
-    const isCoupleSeat = row === "J";
+  const renderSeat = (seat) => {
+    const { seatId, seatNumber, status, type, price } = seat;
+    const isSelected = selectedSeats.has(seatNumber);
+    const isTaken = status === "taken";
+    const isCouple = type === 'Couple';
 
-    if (isCoupleSeat) {
-      let seatIcon = seatColors.coupleSeat.available;
-      if (isTaken) {
-        seatIcon = seatColors.coupleSeat.taken;
-      } else if (isSelected) {
-        seatIcon = seatColors.coupleSeat.selected;
-      }
+    // Render ghế đôi (Couple)
+    if (isCouple) {
       return (
-        <button
+        <div 
           key={seatId}
-          onClick={() => handleSeatClick(seatId)}
-          className={`transition-all duration-200 hover:scale-105 ${isTaken ? "cursor-not-allowed" : "cursor-pointer"
-            }`}
-          disabled={isTaken}
-          title={`Seat ${seatId}`}
+          className="relative inline-block"
+          style={{ marginRight: `${seatSpacingCouple}px` }}
         >
-          <img
-            src={seatIcon}
-            alt="Double Seat"
-            className={`w-${widthDouble} h-${heightDouble}`}
-            style={{ width: `${widthDouble}px`, height: `${heightDouble}px` }}
-          />
-        </button>
+          <button
+            onClick={() => handleSeatClick(seatNumber)}
+            className={`transition-all duration-200 hover:scale-105 ${
+              isTaken ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+            } ${getSeatColor(seat)} relative group`}
+            disabled={isTaken}
+            title={`${type} Seat ${seatNumber} - ${price.toLocaleString()}đ - ${status}`}
+          >
+            <MdOutlineChair 
+              style={{ 
+                width: `${widthDouble}px`, 
+                height: `${heightDouble}px`,
+                display: 'block'
+              }} 
+            />
+
+            {/* Tooltip */}
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+              {seatNumber} - {price.toLocaleString()}đ
+            </div>
+          </button>
+        </div>
       );
     }
 
+    // Render ghế đơn (Normal/VIP)
     return (
-      <button
+      <div 
         key={seatId}
-        onClick={() => handleSeatClick(seatId)}
-        className={`transition-all duration-200 hover:scale-110 ${isTaken ? "cursor-not-allowed" : "cursor-pointer"
-          } ${getSeatColor(seatId)}`}
-        disabled={isTaken}
-        title={`Chair ${seatId}`}
+        className="relative inline-block"
+        style={{ marginRight: `${seatSpacing}px` }}
       >
-        {isTaken ? (
-          <PiArmchairFill className={`w-${width} h-${height}`} style={{ width: `${width}px`, height: `${height}px` }}  />
-        ) : isSelected ? (
-          <PiArmchairFill className={`w-${width} h-${height}`} style={{ width: `${width}px`, height: `${height}px` }} />
-        ) : (
-          <PiArmchairLight className={`w-${width} h-${height}`} style={{ width: `${width}px`, height: `${height}px` }} />
-        )}
-      </button>
+        <button
+          onClick={() => handleSeatClick(seatNumber)}
+          className={`transition-all duration-200 hover:scale-110 ${
+            isTaken ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+          } ${getSeatColor(seat)} relative group`}
+          disabled={isTaken}
+          title={`${type} Seat ${seatNumber} - ${price.toLocaleString()}đ - ${status}`}
+        >
+          {isTaken || isSelected ? (
+            <PiArmchairFill 
+              style={{ 
+                width: `${width}px`, 
+                height: `${height}px`,
+                display: 'block'
+              }} 
+            />
+          ) : (
+            <PiArmchairLight 
+              style={{ 
+                width: `${width}px`, 
+                height: `${height}px`,
+                display: 'block'
+              }} 
+            />
+          )}
+
+          {/* Tooltip */}
+          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+            {seatNumber} - {price.toLocaleString()}đ
+          </div>
+        </button>
+      </div>
     );
   };
 
-  const renderRow = (rowData) => {
-    const isFirstRow = rowData.row === "A";
-    const isCoupleRow = rowData.row === "J";
+  // Tính toán width của hàng rộng nhất để căn chỉnh
+  const getMaxRowWidth = () => {
+    let maxLeftWidth = 0;
+    let maxRightWidth = 0;
 
-    const seatElements = rowData.seats.map((seatNumber) => {
-      const seatId = `${rowData.row}${seatNumber}`;
-      const isGapAfter = !isCoupleRow && (seatNumber === 3 || seatNumber === 9);
+    seatLayout.forEach((row) => {
+      // Tính width của left side
+      const leftWidth = row.leftSeats.reduce((total, seat) => {
+        const seatWidth = seat.type === 'Couple' ? widthDouble : width;
+        return total + seatWidth + seatSpacing;
+      }, 0);
 
-      return (
-        <div key={seatId} className={isGapAfter ? "mr-10" : ""}>
-          {renderSeat(rowData.row, seatNumber)}
-        </div>
-      );
+      // Tính width của right side
+      const rightWidth = row.rightSeats.reduce((total, seat) => {
+        const seatWidth = seat.type === 'Couple' ? widthDouble : width;
+        return total + seatWidth + seatSpacing;
+      }, 0);
+
+      maxLeftWidth = Math.max(maxLeftWidth, leftWidth);
+      maxRightWidth = Math.max(maxRightWidth, rightWidth);
     });
 
-    return (
-      <div key={rowData.row} className="my-2">
-        {isFirstRow && (
-          <div className="flex justify-center mx-6 mb-1">
-            <span className="w-6 mr-4"></span>
-            <div className={`flex ${gapClass[gapX] || "space-x-2"}`}>
-              {rowData.seats.map((seatNumber) => {
-                const isGapAfter =
-                  !isCoupleRow && (seatNumber === 3 || seatNumber === 9);
-                return (
-                  <div
-                    key={`label-${seatNumber}`}
-                    className={isGapAfter ? "mr-10" : ""}
-                  >
-                    <span className={`text-xs ${textColor} block text-center w-6 my-2`}>
-                      {seatNumber}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-            <span className="w-6 ml-4"></span>
-          </div>
-        )}
+    return { maxLeftWidth, maxRightWidth };
+  };
 
-        <div className="flex items-center justify-evenly">
-          <span className={`${textColor} w-6 text-sm font-medium mr-4`}>
+  const { maxLeftWidth, maxRightWidth } = getMaxRowWidth();
+
+  const renderRow = (rowData) => {
+    return (
+      <div key={rowData.row} className="flex items-center justify-center mb-4">
+        {/* Row label - Left */}
+        <div className="w-8 flex justify-center">
+          <span className={`${textColor} text-sm font-medium`}>
             {rowData.row}
           </span>
+        </div>
 
-          <div className="flex space-x-2 mt-1 justify-evenly">
-            {seatElements}
-          </div>
+        {/* Left side seats */}
+        <div 
+          className="flex items-center justify-end" 
+          style={{ width: `${maxLeftWidth}px` }}
+        >
+          {rowData.leftSeats.map((seat, index) => (
+            <div key={seat.seatId} className="last:mr-0">
+              {renderSeat(seat)}
+            </div>
+          ))}
+        </div>
 
-          <span className={`${textColor} w-6 text-sm font-medium ml-4`}>
+        {/* Aisle */}
+        <div
+          className="flex items-center justify-center"
+          style={{ width: `${aisleWidth}px` }}
+        >
+          <div className="w-px h-6 bg-gray-600 opacity-30"></div>
+        </div>
+
+        {/* Right side seats */}
+        <div 
+          className="flex items-center justify-start" 
+          style={{ width: `${maxRightWidth}px` }}
+        >
+          {rowData.rightSeats.map((seat, index) => (
+            <div key={seat.seatId} className="last:mr-0">
+              {renderSeat(seat)}
+            </div>
+          ))}
+        </div>
+
+        {/* Row label - Right */}
+        <div className="w-8 flex justify-center">
+          <span className={`${textColor} text-sm font-medium`}>
             {rowData.row}
           </span>
         </div>
@@ -250,141 +291,92 @@ export const LayoutSelectSeat = ({
     );
   };
 
+  // Tính tổng giá của ghế đã chọn
+  const getTotalPrice = () => {
+    return Array.from(selectedSeats).reduce((total, seatNumber) => {
+      const seat = seatMap[seatNumber];
+      return total + (seat ? seat.price : 0);
+    }, 0);
+  };
+
   return (
-    <div className="text-white rounded-lg">
+    <div className="text-white rounded-lg" style={{ width: containerWidth }}>
       {/* Screen */}
-      <div className="w-full h-[40px] relative overflow-hidden group">
+      <div className="w-full h-[60px] relative overflow-hidden group mb-8">
         <svg
           width="100%"
-          height="100%"
+          height="40"
           viewBox="0 0 800 40"
-          className="absolute inset-0 transition-transform duration-500 group-hover:scale-110"
+          className="absolute top-0 left-0 transition-transform duration-500 group-hover:scale-110"
           preserveAspectRatio="none"
-          style={{ background: "transparent" }}
         >
           <defs>
-            <linearGradient
-              id="purpleGradient"
-              x1="0%"
-              y1="0%"
-              x2="100%"
-              y2="0%"
-            >
+            <linearGradient id="purpleGradient" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#6a57f5" stopOpacity="0.1" />
               <stop offset="25%" stopColor="#6a57f5" stopOpacity="0.4" />
               <stop offset="50%" stopColor="#6a57f5" stopOpacity="1" />
               <stop offset="75%" stopColor="#6a57f5" stopOpacity="0.4" />
               <stop offset="100%" stopColor="#6a57f5" stopOpacity="0.1" />
             </linearGradient>
-
-            <linearGradient id="purpleGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#6a57f5" stopOpacity="0.1" />
-              <stop offset="25%" stopColor="#6a57f5" stopOpacity="0.5" />
-              <stop offset="50%" stopColor="#6a57f5" stopOpacity="1" />
-              <stop offset="75%" stopColor="#6a57f5" stopOpacity="0.5" />
-              <stop offset="100%" stopColor="#6a57f5" stopOpacity="0.1" />
-            </linearGradient>
-
-            <linearGradient
-              id="purpleGlowHover"
-              x1="0%"
-              y1="0%"
-              x2="100%"
-              y2="0%"
-            >
-              <stop offset="0%" stopColor="#b0a8ff" stopOpacity="0" />
-              <stop offset="25%" stopColor="#b0a8ff" stopOpacity="0.7" />
-              <stop offset="50%" stopColor="#c9c2ff" stopOpacity="1" />
-              <stop offset="75%" stopColor="#b0a8ff" stopOpacity="0.7" />
-              <stop offset="100%" stopColor="#b0a8ff" stopOpacity="0" />
-            </linearGradient>
-
-            <linearGradient
-              id="purpleGradientHover"
-              x1="0%"
-              y1="0%"
-              x2="100%"
-              y2="0%"
-            >
-              <stop offset="0%" stopColor="#b0a8ff" stopOpacity="0.01" />
-              <stop offset="25%" stopColor="#b0a8ff" stopOpacity="0.6" />
-              <stop offset="50%" stopColor="#c9c2ff" stopOpacity="1" />
-              <stop offset="75%" stopColor="#b0a8ff" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="#b0a8ff" stopOpacity="0.01" />
-            </linearGradient>
-
-            <linearGradient
-              id="lightGlowBelow"
-              x1="0%"
-              y1="0%"
-              x2="100%"
-              y2="100%"
-            >
-              <stop offset="0%" stopColor="#c9c2ff" stopOpacity="0.3" />
-              <stop offset="50%" stopColor="#c9c2ff" stopOpacity="0.1" />
-              <stop offset="100%" stopColor="#c9c2ff" stopOpacity="0" />
-            </linearGradient>
           </defs>
-
-          <path
-            d="M 0 20 Q 400 0 800 20"
-            stroke="url(#purpleGlow)"
-            strokeWidth="6"
-            strokeLinecap="round"
-            fill="none"
-            className="blur-[1px] transition-all duration-500 group-hover:blur-[0px] group-hover:stroke-[7px] group-hover:[stroke:url(#purpleGlowHover)]"
-          />
-
           <path
             d="M 0 20 Q 400 0 800 20"
             stroke="url(#purpleGradient)"
             strokeWidth="4"
             strokeLinecap="round"
             fill="none"
-            className="transition-all duration-500 group-hover:stroke-[6px] group-hover:[stroke:url(#purpleGradientHover)]"
-          />
-
-          <path
-            d="M 0 20 Q 400 0 800 20"
-            stroke="url(#lightGlowBelow)"
-            strokeWidth="12"
-            strokeLinecap="round"
-            fill="none"
-            className="opacity-0 blur-[2px] transition-opacity duration-500 group-hover:opacity-100"
           />
         </svg>
-        <div className={`text-center font-bold text-[20px] mt-4 ${textColor}`}>
+        <div className={`text-center font-bold text-lg mt-6  ${textColor}`}>
           SCREEN
         </div>
       </div>
 
       {/* Seat Layout */}
-      <div className="mt-8">{seatLayout.map((rowData) => renderRow(rowData))}</div>
+      <div className="flex flex-col space-y-2"> {/* Tăng space-y từ space-y-1 lên space-y-2 */}
+        {seatLayout.map((row) => renderRow(row))}
+      </div>
 
       {/* Legend */}
-      <div className="flex justify-center items-center space-x-6 mb-6">
+      <div className="mt-8 flex justify-center flex-wrap gap-6 text-sm">
         <div className="flex items-center space-x-2">
-          <PiArmchairFill size={20} className={`w-${width} h-${height} ${seatColors.selected}`} style={{ width: `${width}px`, height: `${height}px` }} />
-          <span className="text-sm text-gray-500">Selected</span>
+          <PiArmchairLight className={seatColors.normal} size={20} />
+          <span className="text-gray-400">Normal</span>
         </div>
         <div className="flex items-center space-x-2">
-          <PiArmchairLight size={20} className={`w-${width} h-${height} ${seatColors.available}`} style={{ width: `${width}px`, height: `${height}px` }} />
-          <span className="text-sm text-gray-500">Available</span>
+          <PiArmchairLight className={seatColors.vip} size={20} />
+          <span className="text-gray-400">VIP</span>
         </div>
         <div className="flex items-center space-x-2">
-          <PiArmchairFill size={20} className={`w-${width} h-${height} ${seatColors.taken}`} style={{ width: `${width}px`, height: `${height}px`}} />
-          <span className="text-sm text-gray-500">Taken</span>
+          <MdOutlineChair className={seatColors.couple} size={20} />
+          <span className="text-gray-400">Couple</span>
         </div>
         <div className="flex items-center space-x-2">
-          <img
-            src={DoubleSeatNoneLight}
-            alt="Double Seat"
-            className={`w-${widthDouble} h-${heightDouble}`}
-            style={{ width: `${widthDouble}px`, height: `${heightDouble}px` }}
-          />
-          <span className="text-sm text-gray-500">Couple seat</span>
+          <PiArmchairFill className={seatColors.selected} size={20} />
+          <span className="text-gray-400">Selected</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <PiArmchairFill className={seatColors.taken} size={20} />
+          <span className="text-gray-400">Sold</span>
         </div>
       </div>
+
+      {/* Selected Seats Info */}
+      {selectedSeats.size > 0 && (
+        <div className="mt-6 p-4 bg-white/5 rounded-lg backdrop-blur-sm">
+          <div className="text-center">
+            <p className="text-sm text-gray-300 mb-2">
+              Selected: <span className="font-semibold">{selectedSeats.size}</span> seats
+            </p>
+            <p className="text-sm text-gray-300 mb-3">
+              Seats: <span className="font-semibold">{Array.from(selectedSeats).join(', ')}</span>
+            </p>
+            <p className="text-xl font-bold text-white">
+              Total price: <span className="text-[#ffffff] font-normal">{getTotalPrice().toLocaleString()}đ</span>
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
