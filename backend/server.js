@@ -74,4 +74,4 @@ app.listen(PORT, '0.0.0.0',() => {
 });
 
 setInterval(cleanupExpiredBookings, 60 * 1000); // Chạy mỗi phút
-cleanupOldSeats();
+//cleanupOldSeats();

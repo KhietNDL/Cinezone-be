@@ -326,7 +326,7 @@ WHERE ShowtimeId = (SELECT ShowtimeId FROM Bookings WHERE BookingId = ?)
       u.FullName AS buyerName,
       u.PhoneNumber AS buyerPhone,
       mv.NameOfVietnamese,
-	  mv.NameOfEnglish,
+	    mv.NameOfEnglish,
       s.Day,
       s.Time,
       cr.Name
@@ -345,8 +345,9 @@ WHERE ShowtimeId = (SELECT ShowtimeId FROM Bookings WHERE BookingId = ?)
     // Lấy danh sách ghế
     const [seats] = await db.promise().query(
       `
-    SELECT ss.SeatId
+    SELECT s.SeatNumber
     FROM SeatShowtime ss
+    JOIN Seats s ON ss.SeatId = s.SeatId
     WHERE ss.ShowtimeId = (
       SELECT ShowtimeId FROM Bookings WHERE BookingId = ?
     ) AND ss.Status IN ('taken', 'holding')
@@ -364,7 +365,7 @@ WHERE ShowtimeId = (SELECT ShowtimeId FROM Bookings WHERE BookingId = ?)
       showTime: rows[0].Time,
       startTime: rows[0].StartTime,
       room: rows[0].Name,
-      seats: seats.map(s => s.SeatId),
+      seats: seats.map(s => s.SeatNumber),
       totalAmount: rows[0].TotalAmount,
       buyerName: rows[0].buyerName,
       buyerPhone: rows[0].buyerPhone,
