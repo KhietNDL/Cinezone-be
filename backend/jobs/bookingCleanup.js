@@ -24,7 +24,7 @@ async function cleanupExpiredBookings() {
 
     // 2. Đổi trạng thái booking sang "cancelled"
     await connection.query(
-      `UPDATE Bookings SET Status = 3 WHERE BookingId IN (?)`,
+      `UPDATE Bookings SET Status = 4 WHERE BookingId IN (?)`,
       [expiredIds]
     );
 

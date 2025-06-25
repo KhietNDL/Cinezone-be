@@ -1,16 +1,53 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import logo from "../../../assets/logoWhite.png";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
-import { FaCircleUser } from "react-icons/fa6";
+import { FaCircleUser, FaXmark  } from "react-icons/fa6";
+import { MdAccountCircle, MdOutlineLogout } from "react-icons/md";
+import { FaRegIdCard } from "react-icons/fa";
+
 const HeaderStaff = () => {
   const navigate = useNavigate();
-  const { staff } = useAuth();
+  const { user, signOut } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  const handleClickOutside = (event) => {
+    if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      setIsDropdownOpen(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      setIsLoading(true);
+      await signOut();
+      setIsOpen(false);
+      navigate("/");
+    } catch (error) {
+      console.error("Lỗi khi đăng xuất:", error);
+      setIsOpen(false);
+      navigate("/");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
-    <div className="flex  w-full px-[20px] justify-between items-center bg-gradient-to-r from-[#6466F1]
-     via-[#8B5CF6] to-[#4F46E5] text-white ">
+    <div className="flex w-full px-[20px] justify-between items-center bg-gradient-to-r from-[#6466F1] via-[#8B5CF6] to-[#4F46E5] text-white">
       <div role="button" className="flex items-center">
         <img
           src={logo}
@@ -20,34 +57,62 @@ const HeaderStaff = () => {
           onClick={() => {
             navigate("/staff");
           }}
-          className=" w-[140px] h-[70px] object-cover p-0"
+          className="w-[140px] h-[70px] object-cover p-0"
         />
       </div>
 
       <div className="flex items-center justify-end space-x-8">
-       
-        {staff ? (
-          <div className="flex items-center space-x-2">
-            {staff.avatar ? (
-              <img
-                src={staff.avatar}
-                alt="Staff Avatar"
-                className="w-10 h-10 rounded-full object-cover cursor-pointer"
-                onClick={() => navigate("/account")}
-              />
-            ) : (
-              <MdAccountCircle
-                size={42}
-                className="cursor-pointer text-white"
-                onClick={() => navigate("/account")}
-              />
-            )}
-            <span
-              className="font-bold text-[16px] cursor-pointer hover:underline"
-              onClick={() => navigate("/account")}
+        {user ? (
+          <div className="relative" ref={dropdownRef}>
+            <div
+              className="flex items-center bg-white rounded-4xl cursor-pointer group hover:bg-gray-100 transition-colors duration-200"
+              onClick={toggleDropdown}
             >
-              {staff.FullName || "staff"}
-            </span>
+              {user.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt="Staff Avatar"
+                  className="w-10 h-10 rounded-full object-cover p-0.5 "
+                />
+              ) : (
+                <MdAccountCircle
+                  size={42}
+                  className="text-[#604CE9] group-hover:text-[#5038E9]"
+                />
+              )}
+              <span className="font-bold text-[16px] bg-white text-[#604CE9] py-1 px-2 rounded-2xl group-hover:bg-gray-100 transition-colors duration-200">
+                {user.fullName || user.FullName || "Staff"}
+              </span>
+            </div>
+
+            {isDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-300 rounded-2xl shadow-lg z-10">
+                <div className="">
+                  <button
+                    onClick={() => {
+                      navigate("/account");
+                      setIsDropdownOpen(false);
+                    }}
+                    className="flex items-center font-semibold gap-1 cursor-pointer rounded-2xl w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-[#604CE9] hover:text-white"
+                  >
+                    <FaRegIdCard className="text-xl"/>
+                    Profile Staff
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation(); // Add this line
+                      setIsOpen(true);
+                      setIsDropdownOpen(false);
+                    }}
+                    className="cursor-pointer rounded-2xl w-full text-left px-4 py-2 text-sm text-gray-700
+                     hover:bg-[#604CE9] hover:text-white flex items-center gap-1 font-semibold"
+                  >
+                    <MdOutlineLogout className="text-xl" />
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div
@@ -55,20 +120,67 @@ const HeaderStaff = () => {
             onClick={() => {
               navigate("/login");
             }}
-            className="group flex items-center bg-transparent border-2 rounded-4xl border-white hover:bg-white
-             hover:text-[#5B4BE9] font-bold active:scale-[1.1] transition-all duration-100 overflow-hidden">
-
-            <div className="text-3xl flex items-center justify-end transform transition-transform duration-300 
-            group-hover:-translate-x-2 group-hover:w-[40px] p-[1px]">
+            className="group flex items-center bg-transparent border-2 rounded-4xl border-white hover:bg-white hover:text-[#5B4BE9]
+             font-bold active:scale-[1.1] transition-all duration-100 overflow-hidden"
+          >
+            <div className="text-3xl flex items-center justify-end transform transition-transform duration-300 group-hover:-translate-x-2 
+            group-hover:w-[40px] p-[1px]">
               <FaCircleUser />
             </div>
-            <p className="opacity-0 max-w-0 group-hover:opacity-100 group-hover:max-w-[200px] group-hover:w-[60px]
-             font-semibold transition-all duration-300 whitespace-nowrap">
+            <p className="opacity-0 max-w-0 group-hover:opacity-100 group-hover:max-w-[200px] group-hover:w-[60px] font-semibold transition-all
+             duration-300 whitespace-nowrap">
               Sign In
             </p>
           </div>
         )}
       </div>
+
+      {/* Move the modal outside of the dropdown */}
+      {isOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 bg-opacity-50 backdrop-blur-sm z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+            <h2 className=" font-semibold text-center text-black text-2xl">
+              Sign Out?
+            </h2>
+            <p className="text-gray-600 text-center text-lg mt-2">
+              Do you want to sign out?
+            </p>
+
+            <div className="flex justify-between mt-6 gap-4">
+
+              <button
+                onClick={handleLogout}
+                disabled={isLoading}
+                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-white hover:text-purple-600 
+                border-2 border-purple-600 transition w-1/2 disabled:opacity-50 disabled:cursor-not-allowed 
+                flex items-center justify-center font-semibold"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Sign out...
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-1">
+                      <MdOutlineLogout className="text-xl" /> Sign Out
+                    </div>
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={() => setIsOpen(false)}
+                disabled={isLoading}
+                className="px-4 py-2 border-2 border-red-600 text-red-600 bg-white rounded-md hover:bg-red-600 hover:text-white
+                 transition w-1/2  disabled:opacity-50 disabled:cursor-not-allowed font-semibold flex items-center justify-center gap-1"
+              >
+                <FaXmark className="text-xl"/> Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

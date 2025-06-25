@@ -169,9 +169,7 @@ const createEmployee = async (req, res) => {
         Email: employee.Email,
         CCCD: employee.CCCD,
         Address: employee.Address,
-        PhoneNumber: employee.PhoneNumber,
-        CreatedAt: employee.CreatedAt,
-        avatar_url: employee.avatar_url // thêm dòng này
+        PhoneNumber: employee.PhoneNumber
       }
     });
   } catch (error) {
