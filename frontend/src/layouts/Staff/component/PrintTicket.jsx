@@ -3,19 +3,35 @@ import React, { useRef } from 'react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { FaAlignLeft } from "react-icons/fa6";
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { FaTicket, FaCouch, FaLocationDot, FaMoneyBillWave } from "react-icons/fa6";
+import { IoTime } from "react-icons/io5";
 
 export default function PrintTicket() {
     const componentRef = useRef();
+    const location = useLocation();
+    const {
+        bookingId,
+        memberInfo,
+        paymentMethod,
+        amountPaid,
+        promotionTitle,
+        discount,
+        isConfirmed,
+        movie,
+        day,
+        version,
+        time,
+        room,
+        selectedSeats = [],
+        seatData = [],
+        totalPrice = 0
+    } = location.state || {};
 
-    const infoTicket = {
-        id: "123456789",
-        screen: "IMAX",
-        showtime: "10:30 AM - 12:00 PM",
-        room: "Cinema Hall 3",
-        seats: ['A1', 'A2', 'A3', 'A4', 'A5'],
-        price: 10.00,
-        total: 50.00
+
+    // Format price function
+    const formatPrice = (price) => {
+        return price?.toLocaleString('vi-VN');
     };
 
     const handleExportPdf = async () => {
@@ -38,13 +54,13 @@ export default function PrintTicket() {
             <div className='flex flex-col items-center justify-center h-full space-y-4'>
                 <div ref={componentRef}>
                     <div className='flex flex-col items-center justify-center'>
-                        <div className="w-[80%] flex flex-col justify-center items-center rounded-xl space-y-2 bg-[linear-gradient(to_right,_#6366F1,_#8B5CF6,_#4F46E5)] mt-6 mb-6">
-                            <div className="relative flex h-[180px] w-[100%] md:h-[200px] lg:h-[300px] p-5">
+                        <div className="w-full flex flex-col justify-center items-center rounded-xl space-y-2 bg-[linear-gradient(to_right,_#6366F1,_#8B5CF6,_#4F46E5)] mt-6 mb-6">
+                            <div className="relative flex h-[180px] w-[1000px] md:h-[200px] lg:h-[300px] p-5">
                                 <div className='w-[63%] h-full'>
                                     <div className="flex items-start gap-4 border-b border-white pb-2 w-[95%] text-white">
                                         <img
-                                            src="https://iguov8nhvyobj.vcdn.cloud/media/catalog/product/cache/1/image/1800x/71252117777b696995f01934522c402d/c/o/copy_of_250220_dr25_main_b1_localized_embbed_1_.jpg"
-                                            alt="Poster Doraemon"
+                                            src={movie?.PosterImage || "https://iguov8nhvyobj.vcdn.cloud/media/catalog/product/cache/1/image/1800x/71252117777b696995f01934522c402d/c/o/copy_of_250220_dr25_main_b1_localized_embbed_1_.jpg"}
+                                            alt={`Poster ${movie?.NameOfEnglish}`}
                                             className="w-25 h-auto rounded shadow"
                                         />
                                         <div className="flex-1">
@@ -64,15 +80,15 @@ export default function PrintTicket() {
                                                         }}>Now Showing</p>
                                                 </div>
                                                 <div className="bg-white text-xs px-2 py-1 rounded-sm "
-                                                    style={{ color: "#86198F", border: "1px solid #86198F" }}>IMAX</div>
+                                                    style={{ color: "#86198F", border: "1px solid #86198F" }}>{version || "Standard"}</div>
                                             </div>
-                                            <h2 className="text-sm font-bold mt-2 pt-2 pb-4">
-                                                PHIM ĐIỆN ẢNH DORAEMON: NOBITA VÀ CUỘC PHIÊU LƯU VÀO THẾ GIỚI TRONG TRANH
+                                            <h2 className="text-xl font-bold mt-2 pt-2 pb-4">
+                                                {movie?.NameOfEnglish || "Movie Title"}
                                             </h2>
                                             <p className="text-xs flex gap-3">
-                                                <span className="py-2"><i className="fa-solid fa-clock"></i> 10:30 AM - 12:00 PM</span>
-                                                <span className="py-2"><i className="fa-solid fa-location-dot"></i> Cinema Hall 3</span>
-                                                <span className="py-2"><i className="fa-solid fa-couch"></i> Rows: A-H</span>
+                                                <span className="py-2"><i className="fa-solid fa-clock"></i> {day} - {time || "N/A"}</span>
+                                                <span className="py-2"><i className="fa-solid fa-location-dot"></i> {room || "N/A"}</span>
+                                                <span className="py-2"><i className="fa-solid fa-couch"></i> Seats: {selectedSeats.join(', ') || "N/A"}</span>
                                             </p>
                                         </div>
                                     </div>
@@ -81,19 +97,20 @@ export default function PrintTicket() {
                                             <FaAlignLeft /> Synopsis:
                                         </h5>
                                         <p className='p-2 text-sm'>
-                                            One of the cartoons that I like the most is Doraemon - a smart robot cat. Doraemon is a futuristic robot cat who is shaped like a small ferret. Making friends with Doraemon also has Nobita - best friend, Shizuka, Jaian, and Honekawa Suneo.
+                                            {movie?.Description || "Movie description not available"}
                                         </p>
                                     </div>
                                 </div>
                                 <div className='w-[37%] h-full'>
                                     <div className='flex flex-col items-start justify-center h-full text-white p-4 space-y-2 w-[100%]'>
-                                        <p className='flex w-full'><strong className='w-[40%]'>ID Ticket:</strong><span>{infoTicket.id}</span></p>
-                                        <p className='flex w-full'><strong className='w-[40%]'>Screen:</strong><span>{infoTicket.screen}</span></p>
-                                        <p className='flex gap-16 w-full'><strong className='w-[20%]'>Showtime:</strong><span>{infoTicket.showtime}</span></p>
-                                        <p className='flex gap-16 w-full'><strong className='w-[20%]'>Room:</strong><span>{infoTicket.room}</span></p>
-                                        <p className='flex gap-16 w-full'><strong className='w-[20%]'>Seats:</strong><span>{infoTicket.seats.join(', ')}</span></p>
-                                        <p className='flex gap-16 w-full'><strong className='w-[20%]'>Price:</strong><span>${infoTicket.price}</span></p>
-                                        <p className='flex gap-16 w-full'><strong className='w-[20%]'>Total:</strong><span>${infoTicket.total}</span></p>
+                                        {/* <p className='flex w-full'><strong className='w-[40%]'>ID Ticket:</strong><span>{bookingId || "N/A"}</span></p> */}
+                                        <p className='flex w-full'><strong className='w-[40%]'>Screen:</strong><span>{version || "Standard"}</span></p>
+                                        <p className='flex gap-16 w-full'><strong className='w-[20%]'>Showtime:</strong><span>{day} - {time || "N/A"}</span></p>
+                                        <p className='flex gap-16 w-full'><strong className='w-[20%]'>Room:</strong><span>{room || "N/A"}</span></p>
+                                        <p className='flex gap-16 w-full'><strong className='w-[20%]'>Seats:</strong><span>{selectedSeats.join(', ') || "N/A"}</span></p>
+                                         <p className='flex gap-16 w-full'><strong className='w-[20%]'>Discount:</strong><span>{discount}%</span></p>
+                                        <p className='flex gap-16 w-full'><strong className='w-[20%]'>Price:</strong><span>{formatPrice(totalPrice)} VNĐ</span></p>
+                                        <p className='flex gap-16 w-full'><strong className='w-[20%]'>Total:</strong><span>{formatPrice(amountPaid)} VNĐ</span></p>
                                     </div>
                                 </div>
 
