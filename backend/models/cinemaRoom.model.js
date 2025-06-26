@@ -63,6 +63,13 @@ class CinemaRoom {
       ]);
     return rows;
   }
+
+  static async findByName(name) {
+    const [rows] = await db
+      .promise()
+      .query("SELECT * FROM CinemaRooms WHERE Name = ? AND IsDeleted = 0", [name]);
+    return rows[0];
+  }
 }
 
 module.exports = CinemaRoom;
