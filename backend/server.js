@@ -6,7 +6,10 @@ const session = require("express-session");
 const passport = require("./middlewares/passport");
 const cors = require("cors");
 const cleanupExpiredBookings = require("./jobs/bookingCleanup");
+<<<<<<< HEAD
+=======
 const cleanupOldSeats = require('./jobs/seatCleanup');
+>>>>>>> ab1798ef0e5708b8cf67b9dd067d86598c7d039c
 
 const app = express();
 
@@ -49,6 +52,15 @@ app.use("/api/employee", employeeRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/promotions", promotionRoutes);
 app.use("/api/movie", movieRoutes);
+<<<<<<< HEAD
+app.use("/api/seats", seatRoutes);
+app.use("/api/bookings", bookingRoutes);
+app.use("/api/tickets", ticketRoutes);
+app.use("/api/booking-seats", bookingSeatRoutes);
+app.use("/api/showtimes", showtimeRoutes);
+app.use("/api/seatshowtimes", seatShowtimeRoutes);
+
+=======
 app.use('/api/seats', seatRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/tickets', ticketRoutes);
@@ -56,6 +68,7 @@ app.use('/api/booking-seats', bookingSeatRoutes);
 app.use('/api/showtimes', showtimeRoutes);
 app.use('/api/seatshowtimes', seatShowtimeRoutes);
 app.use('/api/products', productRoutes);
+>>>>>>> ab1798ef0e5708b8cf67b9dd067d86598c7d039c
 
 //port
 const PORT = process.env.PORT || 4458;
