@@ -6,6 +6,7 @@ const session = require("express-session");
 const passport = require("./middlewares/passport");
 const cors = require("cors");
 const cleanupExpiredBookings = require("./jobs/bookingCleanup");
+const cleanupOldSeats = require('./jobs/seatCleanup');
 
 const app = express();
 
@@ -73,3 +74,4 @@ app.listen(PORT, '0.0.0.0',() => {
 });
 
 setInterval(cleanupExpiredBookings, 60 * 1000); // Chạy mỗi phút
+//cleanupOldSeats();

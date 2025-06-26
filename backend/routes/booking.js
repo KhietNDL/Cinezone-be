@@ -227,20 +227,17 @@ router.post('/hold', bookingController.holdBooking);
 
 /**
  * @swagger
- * /api/bookings/confirm:
+ * /api/bookings/confirm/{bookingId}:
  *   post:
  *     summary: Confirm a booking
  *     tags: [Bookings]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               bookingId:
- *                 type: string
- *                 description: The ID of the booking to confirm
+ *     parameters:
+ *       - in: path
+ *         name: bookingId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the booking to confirm
  *     responses:
  *       200:
  *         description: Booking confirmed
@@ -249,6 +246,54 @@ router.post('/hold', bookingController.holdBooking);
  *       500:
  *         description: Internal server error
  */
-router.post('/confirm', bookingController.confirmBooking);
+router.post('/confirm/:bookingId', bookingController.confirmBooking);
+
+/**
+ * @swagger
+ * /api/bookings/checkin/{bookingId}:
+ *   post:
+ *     summary: Check-in booking
+ *     tags: [Bookings]
+ *     parameters:
+ *       - in: path
+ *         name: bookingId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the booking to check-in
+ *     responses:
+ *       200:
+ *         description: Check-in successful
+ *       400:
+ *         description: Check-in failed (e.g., booking not found, already checked in)
+ *       500:
+ *         description: Internal server error
+ */
+router.post('/checkin/:bookingId', bookingController.checkinBooking);
+
+/**
+ * @swagger
+ * /api/bookings/detail/{bookingId}:
+ *   get:
+ *     summary: Get booking detail (movie, showtime, seats, buyer info)
+ *     tags: [Bookings]
+ *     parameters:
+ *       - in: path
+ *         name: bookingId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Booking ID
+ *     responses:
+ *       200:
+ *         description: Booking detail
+ *       404:
+ *         description: Booking not found
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/detail/:bookingId', bookingController.getBookingDetail);
 
 module.exports = router;
+
+
