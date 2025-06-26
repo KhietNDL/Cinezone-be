@@ -1,14 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const { getAllUsers, getUsersbyName, getUserById, getUserByEmail, createUser, deleteUser, updateUser, getUserByCCCD, getUserByPhoneNumber } = require('../controllers/user.management.controller');
-const { auth, isAdmin, isAdminOrEmployee  } = require('../middlewares/auth.middleware');
-const { validateUser } = require('../middlewares/user.management.validator');
+const multer = require('multer');
+const upload = multer();
 const {
-    updateProfile,
-    getUserById: getUserByIdController,
-    exchangeScore
-} = require('../controllers/user.controller');
-
+    getAllUsers,
+    getUsersbyName,
+    getUserById,
+    getUserByEmail,
+    getUserByCCCD,
+    getUserByPhoneNumber,
+    createUser,
+    deleteUser,
+    updateUser
+} = require("../controllers/user.management.controller");
+const { createUserValidator, updateUserValidator } = require('../middlewares/user.management.validator');
+const { auth, isAdmin, isAdminOrEmployee} = require("../middlewares/auth.middleware");
 // Route to get all users
 /**
  * @swagger
@@ -102,7 +108,6 @@ router.get('/:userId', auth, isAdmin, getUserById);
  */
 router.get('/email/:email', auth, isAdminOrEmployee, getUserByEmail);
 
-// Route to create a new user
 /**
  * @swagger
  * /api/user/create:
@@ -114,38 +119,45 @@ router.get('/email/:email', auth, isAdminOrEmployee, getUserByEmail);
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
- *               FullName:
+ *               fullName:
  *                 type: string
- *               DateOfBirth:
+ *               password:
+ *                 type: string
+ *               dateOfBirth:
  *                 type: string
  *                 format: date
- *               Password:
+ *               phoneNumber:
  *                 type: string
- *               Sex:
+ *               sex:
  *                 type: integer
- *               Email:
+ *               email:
  *                 type: string
- *               PhoneNumber:
+ *               cccd:
  *                 type: string
- *               avatar_url:
+ *               address:
  *                 type: string
- *               Address:
+ *               avatar:
  *                 type: string
- *               CCCD:
- *                 type: string
+ *                 format: binary
  *     responses:
  *       201:
  *         description: User created successfully
  *       500:
  *         description: Internal server error
  */
-router.post('/create', auth, isAdmin, validateUser, createUser);
+router.post(
+  '/create',
+  auth,
+  isAdmin,
+  upload.single('avatar'), // hoặc upload.none() nếu không upload file
+  createUserValidator,
+  createUser
+);
 
-// Route to delete a user
 /**
  * @swagger
  * /api/user/delete/{userId}:
@@ -171,7 +183,6 @@ router.post('/create', auth, isAdmin, validateUser, createUser);
  */
 router.delete('/delete/:userId', auth, isAdmin, deleteUser);
 
-// Route to update a user
 /**
  * @swagger
  * /api/user/update/{userId}:
@@ -190,38 +201,30 @@ router.delete('/delete/:userId', auth, isAdmin, deleteUser);
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
- *               FullName:
+ *               fullName:
  *                 type: string
- *                 default: ""
- *               DateOfBirth:
+ *               password:
+ *                 type: string
+ *               dateOfBirth:
  *                 type: string
  *                 format: date
- *                 default: ""
- *               Password:
+ *               phoneNumber:
  *                 type: string
- *                 default: ""
- *               Sex:
+ *               sex:
  *                 type: integer
- *                 default: null
- *               Email:
+ *               email:
  *                 type: string
- *                 default: ""
- *               PhoneNumber:
+ *               cccd:
  *                 type: string
- *                 default: ""
- *               avatar_url:
+ *               address:
  *                 type: string
- *                 default: ""
- *               Address:
+ *               avatar:
  *                 type: string
- *                 default: ""
- *               CCCD:
- *                 type: string
- *                 default: ""
+ *                 format: binary
  *     responses:
  *       200:
  *         description: User updated successfully
@@ -230,7 +233,13 @@ router.delete('/delete/:userId', auth, isAdmin, deleteUser);
  *       500:
  *         description: Internal server error
  */
-router.put('/update/:userId', auth, isAdmin, validateUser, updateUser);
+router.put(
+  '/update/:userId',
+  auth,
+  isAdmin,
+  upload.fields([{ name: 'avatar', maxCount: 1 }]),
+  updateUser
+);
 
 /**
  * @swagger

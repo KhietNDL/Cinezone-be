@@ -9,9 +9,18 @@ class Booking {
   }
 
   static async getBookingsByMemberId(memberId) {
-    const sql = `SELECT * FROM Bookings WHERE MemberId = ? AND IsDeleted = 0`;
+    // Lấy danh sách BookingId theo memberId
+    const sql = `SELECT BookingId FROM Bookings WHERE MemberId = ? AND IsDeleted = 0`;
     const [rows] = await db.promise().query(sql, [memberId]);
-    return rows;
+    if (!rows.length) return [];
+
+    // Lấy chi tiết từng booking
+    const bookingDetails = [];
+    for (const row of rows) {
+      const detail = await Booking.getBookingDetail(row.BookingId);
+      if (detail) bookingDetails.push(detail);
+    }
+    return bookingDetails;
   }
 
   static async getAllBookings() {
@@ -177,6 +186,7 @@ class Booking {
           now,
           totalAmount,
           promotionId,
+          promotionId,
           expiresAt,
           now,
         ]
@@ -185,12 +195,11 @@ class Booking {
       // 5. Tạm giữ ghế
       for (const seatId of seatIds) {
         await connection.query(
-          `INSERT INTO SeatShowtime (SeatShowtimeId, SeatId, ShowtimeId, Status, CreatedAt, IsDeleted)
-           VALUES (?, ?, ?, 'holding', NOW(), 0)`,
-          [uuidv4(), seatId, showtimeId]
+          `INSERT INTO SeatShowtime (SeatShowtimeId, SeatId, ShowtimeId, BookingId, Status, CreatedAt, IsDeleted)
+           VALUES (?, ?, ?, ?, 'holding', NOW(), 0)`,
+          [uuidv4(), seatId, showtimeId, bookingId]
         );
       }
-
 
       await connection.commit();
       return { bookingId, totalAmount, expiresAt };
@@ -214,10 +223,9 @@ class Booking {
 
       // 2. Đổi trạng thái các ghế từ "holding" sang "taken"
       await connection.query(
-        `UPDATE SeatShowtime
-SET Status = 'taken'
-WHERE ShowtimeId = (SELECT ShowtimeId FROM Bookings WHERE BookingId = ?) 
-  AND Status = 'holding'`,
+       `UPDATE SeatShowtime
+        SET Status = 'taken'
+        WHERE BookingId = ? AND Status = 'holding'`,
         [bookingId]
       );
 
@@ -230,19 +238,20 @@ WHERE ShowtimeId = (SELECT ShowtimeId FROM Bookings WHERE BookingId = ?)
     }
   }
 
-
   /**
- * @param {string} bookingId - ID của booking
- * @param {number} status - Trạng thái mới (ví dụ: PAID = 2)
- * @param {number} paidAmount - Số tiền đã thanh toán
- * @returns {object} - Kết quả cập nhật và thông báo
- */
+   * @param {string} bookingId - ID của booking
+   * @param {number} status - Trạng thái mới (ví dụ: PAID = 2)
+   * @param {number} paidAmount - Số tiền đã thanh toán
+   * @returns {object} - Kết quả cập nhật và thông báo
+   */
   static async updateStatus(bookingId, status, paidAmount) {
     try {
-      const [bookingRows] = await db.promise().query(
-        "SELECT BookingId, TotalAmount, Status FROM Bookings WHERE BookingId = ?",
-        [bookingId]
-      );
+      const [bookingRows] = await db
+        .promise()
+        .query(
+          "SELECT BookingId, TotalAmount, Status FROM Bookings WHERE BookingId = ?",
+          [bookingId]
+        );
 
       const booking = bookingRows[0];
 
@@ -250,7 +259,7 @@ WHERE ShowtimeId = (SELECT ShowtimeId FROM Bookings WHERE BookingId = ?)
         return {
           success: false,
           message: "Booking not found",
-          code: "BOOKING_NOT_FOUND"
+          code: "BOOKING_NOT_FOUND",
         };
       }
 
@@ -258,39 +267,260 @@ WHERE ShowtimeId = (SELECT ShowtimeId FROM Bookings WHERE BookingId = ?)
         return {
           success: true,
           message: "Booking already in requested status",
-          updated: false
+          updated: false,
         };
       }
 
-      const amountMatches = Math.abs(Number(paidAmount) - Number(booking.TotalAmount)) < 0.01;
+      const amountMatches =
+        Math.abs(Number(paidAmount) - Number(booking.TotalAmount)) < 0.01;
       if (!amountMatches) {
         return {
           success: false,
           message: "Payment amount doesn't match booking total amount",
           code: "AMOUNT_MISMATCH",
           expectedAmount: booking.TotalAmount,
-          actualAmount: paidAmount
+          actualAmount: paidAmount,
         };
       }
 
-      const [result] = await db.promise().query(
-        "UPDATE Bookings SET Status = ?, UpdatedAt = NOW() WHERE BookingId = ?",
-        [status, bookingId]
-      );
+      const [result] = await db
+        .promise()
+        .query(
+          "UPDATE Bookings SET Status = ?, UpdatedAt = NOW() WHERE BookingId = ?",
+          [status, bookingId]
+        );
 
       return {
         success: true,
         updated: result.affectedRows > 0,
-        message: "Booking status updated successfully"
+        message: "Booking status updated successfully",
       };
     } catch (error) {
-      console.error('Error updating booking status:', error);
+      console.error("Error updating booking status:", error);
       return {
         success: false,
         message: "Failed to update booking status",
         error: error.message,
-        code: "DATABASE_ERROR"
+        code: "DATABASE_ERROR",
       };
+    }
+  }
+
+  static async checkinBooking(bookingId) {
+    // Chỉ cho phép checkin nếu status hiện tại là 2 (PAID)
+    const [rows] = await db
+      .promise()
+      .query(
+        "SELECT Status FROM Bookings WHERE BookingId = ? AND IsDeleted = 0",
+        [bookingId]
+      );
+    if (!rows[0]) {
+      return { success: false, message: "Booking not found" };
+    }
+    if (rows[0].Status !== 2) {
+      return { success: false, message: "Booking is not in PAID status" };
+    }
+    const [result] = await db
+      .promise()
+      .query(
+        "UPDATE Bookings SET Status = 3, UpdatedAt = NOW() WHERE BookingId = ? AND Status = 2 AND IsDeleted = 0",
+        [bookingId]
+      );
+    return {
+      success: result.affectedRows > 0,
+      message:
+        result.affectedRows > 0 ? "Check-in successful" : "Check-in failed",
+    };
+  }
+  static async getBookingDetail(bookingId) {
+    // Lấy thông tin booking, showtime, movie, user
+    const [rows] = await db.promise().query(
+      `
+    SELECT 
+      b.BookingId,
+      b.TotalAmount,
+      b.BookingDate,
+      u.FullName AS buyerName,
+      u.PhoneNumber AS buyerPhone,
+      mv.NameOfVietnamese,
+      mv.NameOfEnglish,
+      s.Day,
+      s.Time,
+      cr.Name
+    FROM Bookings b
+    JOIN Users u ON b.MemberId = u.UserId
+    JOIN Showtimes s ON b.ShowtimeId = s.ShowtimeId
+    JOIN Version v ON s.VersionId = v.VersionId
+    JOIN Movies mv ON v.MovieId = mv.MovieId
+    JOIN CinemaRooms cr ON s.CinemaRoomId = cr.CinemaRoomId
+    WHERE b.BookingId = ? AND b.IsDeleted = 0
+    `,
+      [bookingId]
+    );
+    if (!rows[0]) return null;
+
+    // Lấy danh sách ghế chỉ của booking này
+    const [seats] = await db.promise().query(
+      `
+    SELECT s.SeatNumber
+    FROM SeatShowtime ss
+    JOIN Seats s ON ss.SeatId = s.SeatId
+    WHERE ss.BookingId = ?
+      AND ss.Status IN ('taken', 'holding')
+      AND ss.IsDeleted = 0
+    `,
+      [bookingId]
+    );
+
+    return {
+      bookingId: rows[0].BookingId,
+      movieNameVN: rows[0].NameOfVietnamese,
+      movieNameEnglish: rows[0].NameOfEnglish,
+      showDate: normalizeDate(rows[0].Day),
+      showTime: rows[0].Time,
+      startTime: rows[0].StartTime,
+      room: rows[0].Name,
+      seats: seats.map((s) => s.SeatNumber),
+      totalAmount: rows[0].TotalAmount,
+      buyerName: rows[0].buyerName,
+      buyerPhone: rows[0].buyerPhone,
+    };
+  }
+
+  static async cancelBooking(bookingId) {
+    const connection = await db.promise().getConnection();
+    try {
+      await connection.beginTransaction();
+
+      // 1. Đổi trạng thái booking sang CANCELLED (4)
+      await connection.query(
+        `UPDATE Bookings SET Status = 4 WHERE BookingId = ? AND Status IN (1,2)`,
+        [bookingId]
+      );
+
+      // 2. Đổi trạng thái các ghế từ "holding" hoặc "taken" sang "available"
+      await connection.query(
+        `DELETE FROM SeatShowtime
+         WHERE BookingId = ? AND Status IN ('holding', 'taken')`,
+        [bookingId]
+      );
+
+      await connection.commit();
+      return true;
+    } catch (err) {
+      await connection.rollback();
+      throw err;
+    } finally {
+      connection.release();
+    }
+  }
+
+  static async checkinBooking(bookingId) {
+    // Chỉ cho phép checkin nếu status hiện tại là 2 (PAID)
+    const [rows] = await db
+      .promise()
+      .query(
+        "SELECT Status FROM Bookings WHERE BookingId = ? AND IsDeleted = 0",
+        [bookingId]
+      );
+    if (!rows[0]) {
+      return { success: false, message: "Booking not found" };
+    }
+    if (rows[0].Status !== 2) {
+      return { success: false, message: "Booking is not in PAID status" };
+    }
+    const [result] = await db
+      .promise()
+      .query(
+        "UPDATE Bookings SET Status = 3, UpdatedAt = NOW() WHERE BookingId = ? AND Status = 2 AND IsDeleted = 0",
+        [bookingId]
+      );
+    return {
+      success: result.affectedRows > 0,
+      message:
+        result.affectedRows > 0 ? "Check-in successful" : "Check-in failed",
+    };
+  }
+  static async getBookingDetail(bookingId) {
+    // Lấy thông tin booking, showtime, movie, user
+    const [rows] = await db.promise().query(
+      `
+    SELECT 
+      b.BookingId,
+      b.TotalAmount,
+      b.BookingDate,
+      u.FullName AS buyerName,
+      u.PhoneNumber AS buyerPhone,
+      mv.NameOfVietnamese,
+      mv.NameOfEnglish,
+      s.Day,
+      s.Time,
+      cr.Name
+    FROM Bookings b
+    JOIN Users u ON b.MemberId = u.UserId
+    JOIN Showtimes s ON b.ShowtimeId = s.ShowtimeId
+    JOIN Version v ON s.VersionId = v.VersionId
+    JOIN Movies mv ON v.MovieId = mv.MovieId
+    JOIN CinemaRooms cr ON s.CinemaRoomId = cr.CinemaRoomId
+    WHERE b.BookingId = ? AND b.IsDeleted = 0
+    `,
+      [bookingId]
+    );
+    if (!rows[0]) return null;
+
+    // Lấy danh sách ghế chỉ của booking này
+    const [seats] = await db.promise().query(
+      `
+    SELECT s.SeatNumber
+    FROM SeatShowtime ss
+    JOIN Seats s ON ss.SeatId = s.SeatId
+    WHERE ss.BookingId = ?
+      AND ss.Status IN ('taken', 'holding')
+      AND ss.IsDeleted = 0
+    `,
+      [bookingId]
+    );
+
+    return {
+      bookingId: rows[0].BookingId,
+      movieNameVN: rows[0].NameOfVietnamese,
+      movieNameEnglish: rows[0].NameOfEnglish,
+      showDate: normalizeDate(rows[0].Day),
+      showTime: rows[0].Time,
+      startTime: rows[0].StartTime,
+      room: rows[0].Name,
+      seats: seats.map((s) => s.SeatNumber),
+      totalAmount: rows[0].TotalAmount,
+      buyerName: rows[0].buyerName,
+      buyerPhone: rows[0].buyerPhone,
+    };
+  }
+
+  static async cancelBooking(bookingId) {
+    const connection = await db.promise().getConnection();
+    try {
+      await connection.beginTransaction();
+
+      // 1. Đổi trạng thái booking sang CANCELLED (4)
+      await connection.query(
+        `UPDATE Bookings SET Status = 4 WHERE BookingId = ? AND Status IN (1,2)`,
+        [bookingId]
+      );
+
+      // 2. Đổi trạng thái các ghế từ "holding" hoặc "taken" sang "available"
+      await connection.query(
+        `DELETE FROM SeatShowtime
+         WHERE BookingId = ? AND Status IN ('holding', 'taken')`,
+        [bookingId]
+      );
+
+      await connection.commit();
+      return true;
+    } catch (err) {
+      await connection.rollback();
+      throw err;
+    } finally {
+      connection.release();
     }
   }
 
