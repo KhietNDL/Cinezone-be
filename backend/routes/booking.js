@@ -320,3 +320,5 @@ router.post('/cancel/:bookingId', bookingController.cancelBooking);
 module.exports = router;
 
 
+
+

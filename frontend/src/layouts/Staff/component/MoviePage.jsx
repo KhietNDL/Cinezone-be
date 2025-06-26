@@ -93,7 +93,7 @@ export default function MoviePage() {
           />
         </div>
         <h5 className="mt-5">
-          <i className="fa-solid fa-film"></i> Select Movie to view details and showtimes
+          <i className="fa-solid fa-film"></i> Select Movie to view details
         </h5>
 
         <div className="staff-swiper">

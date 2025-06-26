@@ -108,7 +108,6 @@ export const verification = async (credentials) => {
   }
 };
 
-
 export const resetPassword = async (credentials) => {
   try {
     const response = await api.post("/auth/reset-password", credentials, {
@@ -190,9 +189,41 @@ export const updateAccount = async (id, formData) => {
   }
 };
 // API Promotion
-export const getPromotion = async () => {
+export const getPromotion = async (params) => {
   try {
-    const response = await api.get("/promotions/getAll");
+    const response = await api.get("/promotions/getAll", { params });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+export const createPromotion = async (formData) => {
+  try {
+    const response = await api.post("/promotions/create", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+export const deletePromotion = async (id) => {
+  try {
+    const response = await api.delete(`/promotions/delete/${id}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+export const updatePromotion = async (id, formData) => {
+  try {
+    const response = await api.put(`/promotions/update/${id}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
     return response.data;
   } catch (error) {
     handleError(error);
@@ -201,15 +232,14 @@ export const getPromotion = async () => {
 
 // API cho Movie
 
-export const getMovies = async () => {
+export const getMovies = async (params) => {
   try {
-    const response = await api.get("/movie");
+    const response = await api.get("/movie", { params });
     return response.data;
   } catch (error) {
     handleError(error);
   }
 };
-
 export const getCurrentMovies = async (params) => {
   try {
     const response = await api.get("/movie/current", { params });
@@ -219,7 +249,6 @@ export const getCurrentMovies = async (params) => {
     handleError(error);
   }
 };
-
 export const getUpcomingMovies = async (params) => {
   try {
     const response = await api.get("/movie/upcoming", { params });
@@ -229,7 +258,6 @@ export const getUpcomingMovies = async (params) => {
     handleError(error);
   }
 };
-
 export const createMovie = async (movieData) => {
   try {
     const response = await api.post("/movie/create", movieData, {
@@ -241,7 +269,6 @@ export const createMovie = async (movieData) => {
     handleError(error);
   }
 };
-
 export const editMovie = async (movieData) => {
   try {
     const movieId = movieData.get("MovieId");
@@ -256,7 +283,6 @@ export const editMovie = async (movieData) => {
     handleError(error);
   }
 };
-
 export const deleteMovie = async (movieId) => {
   try {
     if (!movieId) {
@@ -268,10 +294,11 @@ export const deleteMovie = async (movieId) => {
     handleError(error);
   }
 };
-
 export const searchMovies = async (params) => {
   return api.get("/movie/search", { params });
 };
+
+// API cho Employee
 
 export const getEmployee = async () => {
   try {
@@ -285,7 +312,7 @@ export const createEmployee = async (employeeData) => {
   try {
     const response = await api.post("/employee/create", employeeData, {
       headers: {
-        "Content-Type": "application/json", // Explicitly set to JSON
+        "Content-Type": "multipart/form-data",
       },
     });
     return response.data;
@@ -301,27 +328,16 @@ export const deleteEmployee = async (userId) => {
     handleError(error);
   }
 };
-
-export const updateEmployee = async (employeeId, employeeData) => {
+export const updateEmployee = async (userId, employeeData) => {
   try {
-    if (!employeeId) {
-      throw new Error("EmployeeId is required");
-    }
-
-    const response = await api.put(
-      `/employee/update/${employeeId}`,
-      employeeData,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const response = await api.put(`/employee/update/${userId}`, employeeData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
     return response.data;
   } catch (error) {
-    // console.error("API Error:", error.response?.data || error.message); // Log detailed error
     handleError(error);
-    throw error; // Propagate error to caller for better handling
   }
 };
 export const searchEmployees = async (name) => {

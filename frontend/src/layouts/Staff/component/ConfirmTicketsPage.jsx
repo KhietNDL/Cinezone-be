@@ -227,8 +227,9 @@ export default function ConfirmTicketsPage() {
             memberInfo: memberChecked ? member : null,
             paymentMethod: values.paymentMethod,
             amountPaid: finalAmount,
-            promotionTitle: promotionTitle, // thêm promotionTitle vào state nếu cần
-            isConfirmed: values.paymentMethod === "Cash"
+            promotionTitle: promotionTitle,
+            isConfirmed: values.paymentMethod === "Cash",
+            discount: discount
           }
         });
       }, 1000);
@@ -341,9 +342,13 @@ export default function ConfirmTicketsPage() {
       </h1>
       <div className="flex items-start gap-4 border-b border-gray-300 pb-4">
         <img
-          src={movieInfo.PosterImage}
-          alt={movieInfo.NameOfEnglish || ""}
+          src={movie?.PosterImage || "https://via.placeholder.com/150x225?text=Không+có+ảnh"}
+          alt={`Poster ${movie?.NameOfEnglish}`}
           className="w-40 h-auto rounded-xl shadow"
+          onError={(e) => {
+            e.currentTarget.src = "https://via.placeholder.com/150x225?text=Ảnh+lỗi";
+            e.currentTarget.alt = "Không tải được ảnh";
+          }}
         />
         <div className="flex-1">
           <div className="flex items-center gap-2">
@@ -651,12 +656,12 @@ export default function ConfirmTicketsPage() {
                   {memberChecked && member && (
                     <div>
                       <div className="p-4 flex flex-col gap-3">
-                        <div className="flex justify-between">
+                        {/* <div className="flex justify-between">
                           <span className="text-gray-600 flex gap-1 items-start w-[50%]">
                             <FaIdBadge /> Member ID:
                           </span>
                           <span className="font-medium w-[50%]">{member.id}</span>
-                        </div>
+                        </div> */}
                         <div className="flex justify-between ">
                           <span className="text-gray-600 flex gap-1 items-center">
                             <FaIdCard /> Identity card:
