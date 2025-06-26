@@ -39,6 +39,7 @@ import ResetPassword from "./auth/resetPassword/resetPassword";
 import { UserManagement } from "./layouts/Admin/component/UserManagement";
 import MoviePage from "./layouts/Staff/component/MoviePage";
 import MovieDetail from "./layouts/Staff/component/MovieDetail";
+import TicketDetails from "./layouts/User/component/TicketDetails";
 function App() {
   return (
     <AuthProvider>
@@ -53,7 +54,7 @@ function App() {
           <Route path="/verification" element={<EmailVerification />} />
           <Route path="/resetPassword" element={<ResetPassword />} />
           <Route path="/:idMovie" element={<BookingPage />} />
-
+          <Route path="/ticket" element={<TicketDetails />} />
           <Route path="/confirmPayment" element={<ConfirmPayment />} />
           <Route path="/promotions" element={<MoviePromotions />} />
           <Route path="/waiting" element={<WaitingPayment />} />
@@ -79,7 +80,7 @@ function App() {
           <Route index element={<SellTicketPage />} />
           <Route path="/staff/ticket-selling" element={<SellTicketPage />} />
           <Route path="/staff/movie" element={<MoviePage />} />
-          <Route path="/staff/movie/:id" element={<MovieDetail />} />
+          <Route path="/staff/movie/:slug" element={<MovieDetail />} />
           <Route
             path="/staff/ticket-selling/select-seats"
             element={<SelectSeatsPage />}

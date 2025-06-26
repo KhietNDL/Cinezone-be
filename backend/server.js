@@ -39,8 +39,10 @@ const ticketRoutes = require('./routes/ticket');
 const bookingSeatRoutes = require('./routes/bookingseat');
 const showtimeRoutes = require('./routes/showtime');
 const seatShowtimeRoutes = require('./routes/seatshowtime');
+const paymentRoutes = require('./routes/payment');
 
 // Use routes
+app.use('/api/payment', paymentRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/cinema-rooms", cinemaRoomRoutes);
 app.use("/api/employee", employeeRoutes);
@@ -54,6 +56,7 @@ app.use('/api/booking-seats', bookingSeatRoutes);
 app.use('/api/showtimes', showtimeRoutes);
 app.use('/api/seatshowtimes', seatShowtimeRoutes);
 
+
 //port
 const PORT = process.env.PORT || 4458;
 
@@ -65,7 +68,7 @@ app.use(
   })
 );
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0',() => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Swagger documentation available at http://localhost:${PORT}/`);
 });
