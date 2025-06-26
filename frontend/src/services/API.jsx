@@ -229,7 +229,16 @@ export const updatePromotion = async (id, formData) => {
     handleError(error);
   }
 };
-
+export const searchPromotion = async (title) => {
+  try {
+    const response = await api.get("/promotions/search", {
+      params: { title },
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
 // API cho Movie
 
 export const getMovies = async (params) => {
@@ -355,6 +364,24 @@ export const searchEmployees = async (name) => {
   }
 };
 export default api;
+
+//API cho RoomManagement
+export const createCinemaRoom = async (roomData) => {
+  try {
+    const response = await api.post("/cinema-rooms/create", roomData);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+export const getCinemaRooms = async (params) => {
+  try {
+    const response = await api.get("/cinema-rooms", { params });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
 
 //API cho Booking FLow
 

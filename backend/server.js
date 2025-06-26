@@ -6,10 +6,6 @@ const session = require("express-session");
 const passport = require("./middlewares/passport");
 const cors = require("cors");
 const cleanupExpiredBookings = require("./jobs/bookingCleanup");
-<<<<<<< HEAD
-=======
-const cleanupOldSeats = require('./jobs/seatCleanup');
->>>>>>> ab1798ef0e5708b8cf67b9dd067d86598c7d039c
 
 const app = express();
 
@@ -21,13 +17,25 @@ app.use(
 );
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(cors(
-  {
-    origin: "http://localhost:5173",
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://cinezone.info:4458",
+  "http://cinezone.info",
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
-  }
-));
-app.use(express.static('public')); // Serve static files from the public directory
+  })
+);
+app.use(express.static("public")); // Serve static files from the public directory
 
 // Import routes
 const authRoutes = require("./routes/auth");
@@ -36,39 +44,29 @@ const userRoutes = require("./routes/users");
 const cinemaRoomRoutes = require("./routes/cinemaRoom");
 const promotionRoutes = require("./routes/promotions");
 const movieRoutes = require("./routes/movies");
-const seatRoutes = require('./routes/seat');
-const bookingRoutes = require('./routes/booking');
-const ticketRoutes = require('./routes/ticket');
-const bookingSeatRoutes = require('./routes/bookingseat');
-const showtimeRoutes = require('./routes/showtime');
-const seatShowtimeRoutes = require('./routes/seatshowtime');
-const paymentRoutes = require('./routes/payment');
-const productRoutes = require('./routes/products');
+const seatRoutes = require("./routes/seat");
+const bookingRoutes = require("./routes/booking");
+const ticketRoutes = require("./routes/ticket");
+const bookingSeatRoutes = require("./routes/bookingseat");
+const showtimeRoutes = require("./routes/showtime");
+const seatShowtimeRoutes = require("./routes/seatshowtime");
+const paymentRoutes = require("./routes/payment");
+const productRoutes = require("./routes/products");
 // Use routes
-app.use('/api/payment', paymentRoutes);
+app.use("/api/payment", paymentRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/cinema-rooms", cinemaRoomRoutes);
 app.use("/api/employee", employeeRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/promotions", promotionRoutes);
 app.use("/api/movie", movieRoutes);
-<<<<<<< HEAD
 app.use("/api/seats", seatRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/tickets", ticketRoutes);
 app.use("/api/booking-seats", bookingSeatRoutes);
 app.use("/api/showtimes", showtimeRoutes);
 app.use("/api/seatshowtimes", seatShowtimeRoutes);
-
-=======
-app.use('/api/seats', seatRoutes);
-app.use('/api/bookings', bookingRoutes);
-app.use('/api/tickets', ticketRoutes);
-app.use('/api/booking-seats', bookingSeatRoutes);
-app.use('/api/showtimes', showtimeRoutes);
-app.use('/api/seatshowtimes', seatShowtimeRoutes);
-app.use('/api/products', productRoutes);
->>>>>>> ab1798ef0e5708b8cf67b9dd067d86598c7d039c
+app.use("/api/products", productRoutes);
 
 //port
 const PORT = process.env.PORT || 4458;
@@ -81,7 +79,7 @@ app.use(
   })
 );
 
-app.listen(PORT, '0.0.0.0',() => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Swagger documentation available at http://localhost:${PORT}/`);
 });
