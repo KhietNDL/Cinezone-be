@@ -97,7 +97,7 @@ function App() {
           />
           <Route path="/staff/combo-selling" element={<ComboPage />} />
           <Route
-            path="/staff/ticket-selling/view-ticket"
+            path="/staff/ticket-selling/view-ticket/:id"
             element={<PrintTicket />}
           />
         </Route>
