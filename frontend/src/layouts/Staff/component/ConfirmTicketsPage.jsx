@@ -227,8 +227,9 @@ export default function ConfirmTicketsPage() {
             memberInfo: memberChecked ? member : null,
             paymentMethod: values.paymentMethod,
             amountPaid: finalAmount,
-            promotionTitle: promotionTitle, // thêm promotionTitle vào state nếu cần
-            isConfirmed: values.paymentMethod === "Cash"
+            promotionTitle: promotionTitle,
+            isConfirmed: values.paymentMethod === "Cash",
+            discount: discount
           }
         });
       }, 1000);
