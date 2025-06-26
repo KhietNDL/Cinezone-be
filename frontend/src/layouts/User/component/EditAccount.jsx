@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
-import { Image } from "antd";
 import { updateAccount } from "../../../services/API";
 import { useAuth } from "../../../context/AuthContext";
 

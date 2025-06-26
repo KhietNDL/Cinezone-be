@@ -1,5 +1,6 @@
 // src/services/API.jsx
 import axios from "axios";
+import { toast } from "react-toastify";
 
 // Lấy baseURL từ biến môi trường .env
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -62,5 +63,31 @@ export const getUserAdmin = async () => {
     return response.data;
   } catch (error) {
     handleError(error);
+  }
+};
+export const createUserAdmin = async (user) => {
+  try {
+    const response = await api.post("user/create", user);
+    return response.data;
+  } catch (error) {
+    toast.error(error.response.data);
+  }
+};
+
+export const updateUserAdmin = async ({ userId, user }) => {
+  try {
+    const response = await api.put(`user/update/${userId}`, user);
+    return response.data;
+  } catch (error) {
+    toast.error(error.response.data);
+  }
+};
+export const deleteUserAdmin = async (userId) => {
+  try {
+    const response = await api.delete(`user/delete/${userId}`);
+    return response.data;
+  } catch (error) {
+    toast.error(error.response.data);
+    return null;
   }
 };
