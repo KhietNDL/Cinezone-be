@@ -578,10 +578,8 @@ class Booking {
     SELECT s.SeatNumber
     FROM SeatShowtime ss
     JOIN Seats s ON ss.SeatId = s.SeatId
-    WHERE ss.ShowtimeId = (
-      SELECT ShowtimeId FROM Bookings WHERE BookingId = ?
-    ) AND ss.Status IN ('taken', 'holding')
-      AND ss.IsDeleted = 0
+    WHERE ss.BookingId = ?
+      AND ss.IsDeleted = 0;
     `,
       [bookingId]
     );
@@ -595,7 +593,7 @@ class Booking {
       showTime: rows[0].Time,
       startTime: rows[0].StartTime,
       room: rows[0].Name,
-      seats: seats.map(s => s.SeatNumber),
+      seats: seats[0].SeatNumber,
       totalAmount: rows[0].TotalAmount,
       buyerName: rows[0].buyerName,
       buyerPhone: rows[0].buyerPhone,
