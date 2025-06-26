@@ -98,10 +98,10 @@ export default function TicketInfomation() {
         
           <div className="flex flex-col gap-2 text-base">
             <div className="border-b border-gray-300 mb-4">
-              <div className="flex  py-2">
+              {/* <div className="flex  py-2">
                 <p className="w-[50%] font-semibold flex items-center gap-1"><IoTicketSharp /> Ticket ID</p> 
                 <span className="text-gray-600">{bookingId || "N/A"}</span>
-              </div>
+              </div> */}
               <div className="flex flex-col  py-2">
                 <p className="w-[50%] font-semibold flex items-center gap-1"><RiFilmAiFill /> Movie</p> 
                 <span className="text-gray-600">{movie?.NameOfEnglish || "N/A"}</span>
@@ -190,10 +190,10 @@ export default function TicketInfomation() {
             </div>
           
             <div className="flex flex-col gap-2 text-base">
-              <div className="flex items-center py-2 justify-between">
+              {/* <div className="flex items-center py-2 justify-between">
                 <p className="w-[50%] text-gray-600 flex items-center gap-1"><FaIdBadge /> Member ID</p> 
                 <span className="font-semibold">{memberInfo.id || "N/A"}</span>
-              </div>
+              </div> */}
               <div className="flex items-center py-2 justify-between">
                 <p className="w-[50%] text-gray-600 flex items-center gap-1"><FaIdCard /> Identity card</p> 
                 <span className="font-semibold">{memberInfo.identityCard || "N/A"}</span>
@@ -224,7 +224,7 @@ export default function TicketInfomation() {
           </Button>
         </Link>
         {bookingId && (
-          <Link to={`/staff/ticket-selling/view-ticket/${bookingId}`}>
+          <Link to={`/staff/ticket-selling/view-ticket/${bookingId}`} state={location.state}>
             <Button
               style={{ backgroundColor: "white", color: "#4F46E5", border: "1px solid #4F46E5" }}
               size="large"
