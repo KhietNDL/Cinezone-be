@@ -142,11 +142,11 @@ const MoviePromotions = () => {
 
     fetchPromotions();
   }, []);
-  const filteredPromotions = promotions
-    .filter((promo) =>
-      promo.Title.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => new Date(a.StartTime) - new Date(b.StartTime));
+  // const filteredPromotions = promotions
+  //   .filter((promo) =>
+  //     promo.Title.toLowerCase().includes(searchTerm.toLowerCase())
+  //   )
+  //   .sort((a, b) => new Date(a.StartTime) - new Date(b.StartTime));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] relative overflow-hidden">
@@ -266,7 +266,7 @@ const MoviePromotions = () => {
             <div className="text-white text-center text-2xl font-bold py-12">
               Loading promotions...
             </div>
-          ) : filteredPromotions.length === 0 ? (
+          ) : promotions?.length === 0 ? (
             <div className="text-center py-24 bg-gradient-to-br from-black/40 to-purple-900/20 backdrop-blur-xl rounded-3xl border border-purple-500/20 shadow-2xl">
               <div className="text-3xl font-bold text-white mb-4">
                 No promotions found
@@ -277,7 +277,7 @@ const MoviePromotions = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-              {filteredPromotions.map((promo, index) => (
+              {promotions?.map((promo, index) => (
                 <div
                   key={promo.id}
                   className={`group relative bg-gradient-to-br from-black/60 via-purple-900/20 to-black/60 backdrop-blur-xl rounded-3xl overflow-hidden border border-purple-500/30 hover:border-purple-400/60 transition-all duration-700 transform hover:scale-105 hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-500/30 ${

@@ -12,6 +12,7 @@ import {
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { MdOutlineClose } from "react-icons/md";
+import Pagination from "../movieComponent/Pagination";
 const PromotionManagement = () => {
   // State cho form
   const [promotionId, setPromotionId] = useState("");
@@ -22,7 +23,8 @@ const PromotionManagement = () => {
   const [detail, setDetail] = useState("");
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null); // Thêm vào đầu component PromotionManagement
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 2; // Số lượng khuyến mãi hiển thị trên mỗi trang
   const [searchTerm, setSearchTerm] = useState("");
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [selectedPromotion, setSelectedPromotion] = useState(null);
@@ -30,16 +32,22 @@ const PromotionManagement = () => {
   const [loading, setLoading] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [showFormPopup, setShowFormPopup] = useState(false);
-  // Fetch promotions
-  useEffect(() => {
-    fetchPromotions();
-  }, []);
-
-  const fetchPromotions = async () => {
+  const [pagination, setPagination] = useState({
+    total: 0,
+    currentPage: 1,
+    totalPages: 1,
+    limit: itemsPerPage,
+  });
+  const fetchPromotions = async (page = currentPage) => {
     setLoading(true);
     try {
-      const response = await getPromotion();
-      if (response.promotions) setPromotions(response.promotions);
+      const response = await getPromotion({
+        currentPage: page,
+        limit: itemsPerPage,
+      });
+      if (response.data) setPromotions(response.data);
+      if (response.pagination) setPagination(response.pagination);
+      setCurrentPage(page);
     } catch (error) {
       console.error("Error fetching promotions:", error);
     } finally {
@@ -47,6 +55,17 @@ const PromotionManagement = () => {
     }
   };
 
+  // Fetch promotions
+  useEffect(() => {
+    fetchPromotions(currentPage);
+    // eslint-disable-next-line
+  }, [currentPage]);
+
+  const handlePageChange = (page) => {
+    if (page !== currentPage && page >= 1 && page <= pagination.totalPages) {
+      fetchPromotions(page);
+    }
+  };
   // Reset form
   const resetForm = () => {
     setPromotionId("");
@@ -90,6 +109,7 @@ const PromotionManagement = () => {
         setPromotionId("");
       }
       resetForm();
+      setShowFormPopup(false); // Thêm dòng này để tắt popup sau khi submit thành công
       fetchPromotions();
     } catch (error) {
       console.error("Error saving promotion:", error);
@@ -102,7 +122,7 @@ const PromotionManagement = () => {
   // Handle edit button
   const handleEdit = (promotion) => {
     console.log("Promotion object:", promotion); // Thêm dòng này để kiểm tra
-    setPromotionId(promotion.id || promotion.Id || promotion._id || "");
+    setPromotionId(promotion.PromotionId);
     setTitle(promotion.Title || "");
     setStartTime(promotion.StartTime ? promotion.StartTime.split("T")[0] : "");
     setEndTime(promotion.EndTime ? promotion.EndTime.split("T")[0] : "");
@@ -119,7 +139,7 @@ const PromotionManagement = () => {
   const handleDelete = async () => {
     setLoading(true);
     try {
-      await deletePromotion(selectedPromotion.Id || selectedPromotion.id);
+      await deletePromotion(selectedPromotion.PromotionId);
       setShowDeletePopup(false);
       setSelectedPromotion(null);
       fetchPromotions();
@@ -264,8 +284,7 @@ const PromotionManagement = () => {
                 <th className="py-2 text-center w-[100px] shrink-0">
                   End Date
                 </th>
-                <th className="py-2 text-center w-[100px] shrink-0">Status</th>{" "}
-                {/* Thêm cột Status */}
+                <th className="py-2 text-center w-[100px] shrink-0">Status</th>
                 <th className="py-2 text-center">Actions</th>
               </tr>
             </thead>
@@ -290,7 +309,7 @@ const PromotionManagement = () => {
                 }
                 return (
                   <tr
-                    key={promotion.Id || promotion.id || index}
+                    key={promotion.PromotionId}
                     className="border-b border-slate-200 hover:bg-slate-100 hover:rounded-lg cursor-pointer text-sm"
                   >
                     <td className="py-2 text-center w-[50px] shrink-0">
@@ -366,6 +385,11 @@ const PromotionManagement = () => {
               })}
             </tbody>
           </table>
+          <Pagination
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            handlePageChange={handlePageChange}
+          />
         </div>
       </div>
 
@@ -574,7 +598,7 @@ const PromotionManagement = () => {
         </div>
       )}
       {/* Loading Overlay */}
-      {loading && (
+      {!showFormPopup && loading && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999]">
           <div className="bg-white rounded-lg p-6 flex flex-col items-center shadow-xl">
             <svg
