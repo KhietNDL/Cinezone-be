@@ -189,9 +189,9 @@ export const updateAccount = async (id, formData) => {
   }
 };
 // API Promotion
-export const getPromotion = async () => {
+export const getPromotion = async (params) => {
   try {
-    const response = await api.get("/promotions/getAll");
+    const response = await api.get("/promotions/getAll", { params });
     return response.data;
   } catch (error) {
     handleError(error);
