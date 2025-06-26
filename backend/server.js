@@ -18,13 +18,25 @@ app.use(
 );
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(cors(
-  {
-    origin: "http://localhost:5173",
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://cinezone.info:4458",
+  "http://cinezone.info",
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
-  }
-));
-app.use(express.static('public')); // Serve static files from the public directory
+  })
+);
+app.use(express.static("public")); // Serve static files from the public directory
 
 // Import routes
 const authRoutes = require("./routes/auth");
@@ -33,16 +45,16 @@ const userRoutes = require("./routes/users");
 const cinemaRoomRoutes = require("./routes/cinemaRoom");
 const promotionRoutes = require("./routes/promotions");
 const movieRoutes = require("./routes/movies");
-const seatRoutes = require('./routes/seat');
-const bookingRoutes = require('./routes/booking');
-const ticketRoutes = require('./routes/ticket');
-const bookingSeatRoutes = require('./routes/bookingseat');
-const showtimeRoutes = require('./routes/showtime');
-const seatShowtimeRoutes = require('./routes/seatshowtime');
-const paymentRoutes = require('./routes/payment');
-const productRoutes = require('./routes/products');
+const seatRoutes = require("./routes/seat");
+const bookingRoutes = require("./routes/booking");
+const ticketRoutes = require("./routes/ticket");
+const bookingSeatRoutes = require("./routes/bookingseat");
+const showtimeRoutes = require("./routes/showtime");
+const seatShowtimeRoutes = require("./routes/seatshowtime");
+const paymentRoutes = require("./routes/payment");
+const productRoutes = require("./routes/products");
 // Use routes
-app.use('/api/payment', paymentRoutes);
+app.use("/api/payment", paymentRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/cinema-rooms", cinemaRoomRoutes);
 app.use("/api/employee", employeeRoutes);
@@ -68,7 +80,7 @@ app.use(
   })
 );
 
-app.listen(PORT, '0.0.0.0',() => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Swagger documentation available at http://localhost:${PORT}/`);
 });

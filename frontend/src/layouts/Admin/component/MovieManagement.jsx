@@ -67,7 +67,6 @@ const MovieManagement = () => {
         sortOrder,
       });
       if (response.data) {
-        console.log(" response.data", response.data);
         setMovies(response.data);
         if (response.pagination) {
           setTotalPages(response.pagination.totalPages);

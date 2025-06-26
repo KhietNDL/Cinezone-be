@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FaRegEdit } from "react-icons/fa";
 import { RiDeleteBin5Line } from "react-icons/ri";
 import { IoSearchOutline } from "react-icons/io5";
@@ -8,6 +8,7 @@ import {
   createPromotion,
   deletePromotion,
   updatePromotion,
+  searchPromotion,
 } from "../../../services/API";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -23,8 +24,7 @@ const PromotionManagement = () => {
   const [detail, setDetail] = useState("");
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null); // Thêm vào đầu component PromotionManagement
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 2; // Số lượng khuyến mãi hiển thị trên mỗi trang
+
   const [searchTerm, setSearchTerm] = useState("");
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [selectedPromotion, setSelectedPromotion] = useState(null);
@@ -32,38 +32,66 @@ const PromotionManagement = () => {
   const [loading, setLoading] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [showFormPopup, setShowFormPopup] = useState(false);
-  const [pagination, setPagination] = useState({
-    total: 0,
-    currentPage: 1,
-    totalPages: 1,
-    limit: itemsPerPage,
-  });
-  const fetchPromotions = async (page = currentPage) => {
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalPromotions, setTotalPromotions] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5; // Số lượng khuyến mãi hiển thị trên mỗi trang
+  const searchTimeout = useRef();
+  // Sửa fetchPromotions nhận page:
+  const fetchPromotions = async (page) => {
     setLoading(true);
     try {
       const response = await getPromotion({
-        currentPage: page,
+        page: page,
         limit: itemsPerPage,
       });
       if (response.data) setPromotions(response.data);
-      if (response.pagination) setPagination(response.pagination);
-      setCurrentPage(page);
+      if (response.pagination) {
+        setTotalPages(response.pagination.totalPages);
+        setTotalPromotions(response.pagination.total);
+      }
     } catch (error) {
       console.error("Error fetching promotions:", error);
     } finally {
       setLoading(false);
     }
   };
+  useEffect(() => {
+    if (!searchTerm) {
+      fetchPromotions(currentPage);
+      return;
+    }
+    // Debounce search
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const data = await searchPromotion(searchTerm);
 
+        setPromotions(data.promotions);
+        setTotalPages(1);
+        setTotalPromotions(data?.length || 0);
+        setCurrentPage(1);
+      } catch (error) {
+        console.error("Error searching promotions:", error);
+        setPromotions([]);
+        setTotalPages(1);
+        setTotalPromotions(0);
+      } finally {
+        setLoading(false);
+      }
+    }, 500);
+    // eslint-disable-next-line
+  }, [searchTerm]);
   // Fetch promotions
   useEffect(() => {
     fetchPromotions(currentPage);
-    // eslint-disable-next-line
   }, [currentPage]);
 
   const handlePageChange = (page) => {
-    if (page !== currentPage && page >= 1 && page <= pagination.totalPages) {
-      fetchPromotions(page);
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      console.log("Page changed to:", page);
     }
   };
   // Reset form
@@ -151,14 +179,14 @@ const PromotionManagement = () => {
   };
 
   // Format date
-  const formatDate = (dateString) =>
-    dateString ? dateString.split("T")[0] : "";
-
-  // Filter promotions by search term
-  const filteredPromotions = promotions.filter((p) =>
-    p.Title?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    // Nếu có ký tự T thì lấy trước T, nếu không thì lấy 10 ký tự đầu
+    if (dateString.includes("T")) {
+      return dateString.split("T")[0];
+    }
+    return dateString.slice(0, 10);
+  };
   // Khi chọn ảnh mới:
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -185,7 +213,7 @@ const PromotionManagement = () => {
                 <div className="w-[20px] h-[20px] bg-blue-500 rounded"></div>
               </div>
             </div>
-            <p className="font-bold text-[19px]">{filteredPromotions.length}</p>
+            <p className="font-bold text-[19px]">{totalPromotions}</p>
           </div>
 
           <div className="bg-white rounded-md p-3 w-[23%] shadow-sm">
@@ -270,11 +298,10 @@ const PromotionManagement = () => {
         </div>
 
         {/* Table */}
-        <div className=" bg-white p-4 rounded-md mb-2 shadow-sm">
-          <table className="w-full table-auto border-collapse">
+        <div className=" bg-white p-4 rounded-md mb-2 shadow-sm min-h-[620px] max-h-[620px]">
+          <table className="w-full table-auto border-collapse min-h-[600px] max-h-[600px]">
             <thead>
               <tr className="text-left text-slate-500 text-sm border-b border-slate-200">
-                <th className="py-2 text-center w-[50px] shrink-0">#</th>
                 <th className="py-2 text-center w-[200px] shrink-0">Image</th>
                 <th className="py-2 px-2 w-[200px] shrink-0">Promotion Name</th>
                 <th className="py-2 text-center w-[150px] shrink-0">Value</th>
@@ -289,7 +316,7 @@ const PromotionManagement = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredPromotions.map((promotion, index) => {
+              {promotions.map((promotion) => {
                 const now = new Date();
                 const start = new Date(
                   promotion.StartTime || promotion.startTime
@@ -312,9 +339,6 @@ const PromotionManagement = () => {
                     key={promotion.PromotionId}
                     className="border-b border-slate-200 hover:bg-slate-100 hover:rounded-lg cursor-pointer text-sm"
                   >
-                    <td className="py-2 text-center w-[50px] shrink-0">
-                      {index + 1}
-                    </td>
                     <td className="py-2 text-center w-[200px] shrink-0">
                       {promotion.Image ? (
                         <img
@@ -337,7 +361,11 @@ const PromotionManagement = () => {
                       </div>
                     </td>
                     <td className="py-2 text-center w-[150px] shrink-0">
-                      {promotion.DiscountValue}
+                      {promotion.DiscountValue
+                        ? (
+                            Number(promotion.DiscountValue) * 1000
+                          ).toLocaleString("vi-VN") + " VND"
+                        : ""}
                     </td>
                     <td className="py-2 text-center">
                       <div className="text-sm text-gray-900 w-[150px] shrink-0">
@@ -386,8 +414,8 @@ const PromotionManagement = () => {
             </tbody>
           </table>
           <Pagination
-            currentPage={pagination.currentPage}
-            totalPages={pagination.totalPages}
+            currentPage={currentPage}
+            totalPages={totalPages}
             handlePageChange={handlePageChange}
           />
         </div>
