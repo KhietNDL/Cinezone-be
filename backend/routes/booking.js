@@ -294,6 +294,29 @@ router.post('/checkin/:bookingId', bookingController.checkinBooking);
  */
 router.get('/detail/:bookingId', bookingController.getBookingDetail);
 
+/**
+ * @swagger
+ * /api/bookings/cancel/{bookingId}:
+ *   post:
+ *     summary: Cancel a booking
+ *     tags: [Bookings]
+ *     parameters:
+ *       - in: path
+ *         name: bookingId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the booking to cancel
+ *     responses:
+ *       200:
+ *         description: Booking canceled
+ *       404:
+ *         description: Booking not found
+ *       500:
+ *         description: Internal server error
+ */
+router.post('/cancel/:bookingId', bookingController.cancelBooking);
+
 module.exports = router;
 
 
