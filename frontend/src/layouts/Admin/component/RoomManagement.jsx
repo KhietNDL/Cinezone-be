@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Search,
   Plus,
@@ -17,6 +17,7 @@ import { RiDeleteBin5Line } from "react-icons/ri";
 import { IoSearchOutline } from "react-icons/io5";
 import { GoPlus } from "react-icons/go";
 import { LayoutSelectSeat } from "../../../component/LayoutSelectSeat";
+import { getCinemaRooms, createCinemaRoom } from "../../../services/API";
 
 const RoomManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,72 +29,12 @@ const RoomManagement = () => {
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
-  const [formData, setFormData] = useState({
-    roomId: "",
-    roomName: "",
-    seatQuantity: "",
-  });
+  const [rooms, setRooms] = useState([]);
+  const [roomId, setRoomId] = useState("");
+  const [roomName, setRoomName] = useState("");
+  const [seatQuantity, setSeatQuantity] = useState("");
 
   // Sample data matching your image
-  const rooms = [
-    {
-      id: 1,
-      roomId: "CR-101",
-      name: "Room 1",
-      seatQuantity: 120,
-      rank: 1,
-      usage: 95,
-    },
-    {
-      id: 2,
-      roomId: "CR-102",
-      name: "Room 2",
-      seatQuantity: 80,
-      rank: 2,
-      usage: 92,
-    },
-    {
-      id: 3,
-      roomId: "CR-103",
-      name: "Room 3",
-      seatQuantity: 150,
-      rank: 3,
-      usage: 89,
-    },
-    {
-      id: 4,
-      roomId: "CR-102",
-      name: "Room 4",
-      seatQuantity: 80,
-      rank: 4,
-      usage: 85,
-    },
-    {
-      id: 5,
-      roomId: "CR-103",
-      name: "Room 5",
-      seatQuantity: 150,
-      rank: 5,
-      usage: 78,
-    },
-    {
-      id: 6,
-      roomId: "CR-102",
-      name: "Room 6",
-      seatQuantity: 80,
-      rank: 6,
-      usage: 72,
-    },
-    {
-      id: 7,
-      roomId: "CR-101",
-      name: "Room 7",
-      seatQuantity: 120,
-      rank: 7,
-      usage: 68,
-    },
-  ];
-
   const statsData = [
     {
       icon: Building,
@@ -125,7 +66,13 @@ const RoomManagement = () => {
     },
   ];
 
-  const topRooms = rooms.slice(0, 5);
+  useEffect(() => {
+    const fetchRooms = async () => {
+      const response = await getCinemaRooms();
+      setRooms(response.rooms);
+    };
+    fetchRooms();
+  }, []);
 
   const handleView = (room) => {
     setSelectedRoom(room);
@@ -134,11 +81,9 @@ const RoomManagement = () => {
 
   const handleEdit = (room) => {
     setSelectedRoom(room);
-    setFormData({
-      roomId: room.roomId,
-      roomName: room.name,
-      seatQuantity: room.seatQuantity.toString(),
-    });
+    setRoomId(room.CinemaRoomId || "");
+    setRoomName(room.Name || "");
+    setSeatQuantity(room.SeatQuantity?.toString() || "");
     setShowEditModal(true);
   };
 
@@ -148,23 +93,36 @@ const RoomManagement = () => {
   };
 
   const handleAddRoom = () => {
-    setFormData({
-      roomId: "",
-      roomName: "",
-      seatQuantity: "",
-    });
+    setRoomId("");
+    setRoomName("");
+    setSeatQuantity("");
     setShowAddModal(true);
   };
 
-  const handleSaveRoom = () => {
-    console.log("Save room:", formData);
-    setShowAddModal(false);
-    setShowEditModal(false);
-    setFormData({
-      roomId: "",
-      roomName: "",
-      seatQuantity: 120,
-    });
+  const handleSaveRoom = async () => {
+    if (!roomName.trim() || !seatQuantity || Number(seatQuantity) <= 0) {
+      alert("Vui lòng nhập đầy đủ và hợp lệ tên phòng, số ghế!");
+      return;
+    }
+    try {
+      const payload = {
+        Name: roomName.trim(),
+        SeatQuantity: Number(seatQuantity),
+      };
+      await createCinemaRoom(payload);
+      setShowAddModal(false);
+      setShowEditModal(false);
+      setRoomId("");
+      setRoomName("");
+      setSeatQuantity("");
+      // Fetch lại danh sách phòng
+      const data = await getCinemaRooms();
+      setRooms(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error creating room:", error);
+      setShowAddModal(false);
+      alert("Create room failed!");
+    }
   };
 
   const handleConfirmDelete = () => {
@@ -179,17 +137,15 @@ const RoomManagement = () => {
     setShowDeleteModal(false);
     setShowDetailsModal(false);
     setSelectedRoom(null);
-    setFormData({
-      roomId: "",
-      roomName: "",
-      seatQuantity: "",
-    });
+    setRoomId("");
+    setRoomName("");
+    setSeatQuantity("");
   };
 
   const filteredRooms = rooms.filter(
     (room) =>
-      room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      room.roomId.toLowerCase().includes(searchTerm.toLowerCase())
+      room.Name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      room.CinemaRoomId.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -246,57 +202,40 @@ const RoomManagement = () => {
             <table className="w-full table-auto border-collapse">
               <thead>
                 <tr className="text-left text-slate-500 text-sm border-b border-slate-200">
-                  <th className="py-2 text-center">#</th>
-                  <th className="py-2 text-center">Room ID</th>
                   <th className="py-2 text-center">Room Name</th>
                   <th className="py-2 text-center">Seat Quantity</th>
-                  <th className="py-2 text-center">Seat Details</th>
-                  <th className="py-2 text-center">Actions</th>
+                  <th className="py-2 text-center">Set Detail</th>
+                  <th className="py-2 text-center">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredRooms.map((room, index) => (
-                  <tr
-                    key={room.id}
-                    className="border-b border-slate-200 hover:bg-slate-100 text-sm"
-                  >
-                    <td className="py-2 text-center">{index + 1}</td>
-                    <td className="py-2 text-center">{room.roomId}</td>
-                    <td className="py-2 text-center">{room.name}</td>
-                    <td className="py-2 text-center">{room.seatQuantity}</td>
-                    <td className="py-2 ">
-                      <div
-                        role="button"
+                {filteredRooms.map((room) => (
+                  <tr key={room.CinemaRoomId}>
+                    <td className="py-2 text-center">{room.Name}</td>
+                    <td className="py-2 text-center">{room.SeatQuantity}</td>
+                    <td className="py-2 text-center">
+                      <button
+                        className="text-blue-500 hover:text-blue-700"
                         onClick={() => handleView(room)}
-                        className="text-blue-500 hover:text-blue-700 justify-center flex items-center"
                       >
-                        <Eye size={20} className="mr-1" />
-                        View
-                      </div>
+                        Detail
+                      </button>
                     </td>
-                    <td className="flex items-center justify-evenly p-2">
-                      <div
-                        role="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(room);
-                        }}
+                    <td className="py-2 flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => handleEdit(room)}
                         className="text-blue-500 hover:text-blue-700"
                         title="Edit"
                       >
                         <FaRegEdit size={20} />
-                      </div>
-                      <div
-                        role="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(room);
-                        }}
+                      </button>
+                      <button
+                        onClick={() => handleDelete(room)}
                         className="text-red-400 hover:text-red-600"
                         title="Delete"
                       >
                         <RiDeleteBin5Line size={20} />
-                      </div>
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -338,67 +277,6 @@ const RoomManagement = () => {
         </div>
       </div>
 
-      <div className="flex items-center right-[-40px] top-[25%] justify-end w-[30%]">
-        <div className="w-80">
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-              <h3 className="font-semibold text-gray-800">
-                Top 5 Most Used Rooms
-              </h3>
-            </div>
-            <p className="text-xs text-gray-500 mb-4">
-              Showing most popular rooms
-            </p>
-
-            <div className="space-y-3">
-              <div className="grid grid-cols-4 gap-2 text-xs font-medium text-gray-500 border-b pb-2">
-                <span>Rank</span>
-                <span>Room Name</span>
-                <span>Usage Count</span>
-                <span>Used</span>
-              </div>
-
-              {topRooms.map((room) => (
-                <div
-                  key={room.id}
-                  className="grid grid-cols-4 gap-2 text-sm items-center py-2"
-                >
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                        room.rank === 1
-                          ? "bg-yellow-100 text-yellow-600"
-                          : room.rank === 2
-                          ? "bg-gray-100 text-gray-600"
-                          : room.rank === 3
-                          ? "bg-orange-100 text-orange-600"
-                          : "bg-blue-100 text-blue-600"
-                      }`}
-                    >
-                      {room.rank}
-                    </span>
-                  </div>
-                  <span className="text-gray-800">{room.name}</span>
-                  <span className="text-gray-600">{room.seatQuantity}</span>
-                  <span
-                    className={`font-medium ${
-                      room.usage >= 90
-                        ? "text-green-600"
-                        : room.usage >= 80
-                        ? "text-orange-600"
-                        : "text-red-600"
-                    }`}
-                  >
-                    {room.usage}%
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96">
@@ -414,30 +292,26 @@ const RoomManagement = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Room ID
+                  Room Name
                 </label>
                 <input
                   type="text"
-                  placeholder="Enter room ID"
-                  value={formData.roomId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, roomId: e.target.value })
-                  }
+                  placeholder="Enter room name"
+                  value={roomName}
+                  onChange={(e) => setRoomName(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Room Name
+                  Seat Quantity
                 </label>
                 <input
-                  type="text"
-                  placeholder="Enter room name"
-                  value={formData.roomName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, roomName: e.target.value })
-                  }
+                  type="number"
+                  placeholder="Enter seat quantity"
+                  value={seatQuantity}
+                  onChange={(e) => setSeatQuantity(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -480,10 +354,8 @@ const RoomManagement = () => {
                 <input
                   type="text"
                   placeholder="Enter room ID"
-                  value={formData.roomId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, roomId: e.target.value })
-                  }
+                  value={roomId}
+                  onChange={(e) => setRoomId(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -495,10 +367,21 @@ const RoomManagement = () => {
                 <input
                   type="text"
                   placeholder="Enter room name"
-                  value={formData.roomName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, roomName: e.target.value })
-                  }
+                  value={roomName}
+                  onChange={(e) => setRoomName(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Seat Quantity
+                </label>
+                <input
+                  type="number"
+                  placeholder="Enter seat quantity"
+                  value={seatQuantity}
+                  onChange={(e) => setSeatQuantity(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
