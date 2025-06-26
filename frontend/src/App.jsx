@@ -34,7 +34,7 @@ import HistoryActivity from "./layouts/User/component/HistoryActivity";
 
 import TicketBookingManagement from "./layouts/Admin/component/TicketBookingMangement";
 import PromotionManagement from "./layouts/Admin/component/PromotionManagement";
-import ResetPassword from "./auth/resetPassword/resetPassword";
+import ResetPassword from "./auth/resetPassword/ResetPassword";
 
 import { UserManagement } from "./layouts/Admin/component/UserManagement";
 import MoviePage from "./layouts/Staff/component/MoviePage";
