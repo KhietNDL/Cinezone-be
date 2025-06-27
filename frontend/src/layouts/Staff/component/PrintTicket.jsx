@@ -108,7 +108,7 @@ export default function PrintTicket() {
                                         <p className='flex gap-16 w-full'><strong className='w-[20%]'>Showtime:</strong><span>{day} - {time || "N/A"}</span></p>
                                         <p className='flex gap-16 w-full'><strong className='w-[20%]'>Room:</strong><span>{room || "N/A"}</span></p>
                                         <p className='flex gap-16 w-full'><strong className='w-[20%]'>Seats:</strong><span>{selectedSeats.join(', ') || "N/A"}</span></p>
-                                         <p className='flex gap-16 w-full'><strong className='w-[20%]'>Discount:</strong><span>{discount}%</span></p>
+                                         <p className='flex gap-16 w-full'><strong className='w-[20%]'>Discount:</strong><span>{discount ? discount : 0}%</span></p>
                                         <p className='flex gap-16 w-full'><strong className='w-[20%]'>Price:</strong><span>{formatPrice(totalPrice)} VNĐ</span></p>
                                         <p className='flex gap-16 w-full'><strong className='w-[20%]'>Total:</strong><span>{formatPrice(amountPaid)} VNĐ</span></p>
                                     </div>
