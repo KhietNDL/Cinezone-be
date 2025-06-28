@@ -53,6 +53,12 @@ export default function PrintTicket() {
         dataResult();
     }, []);
 
+     const handleCancel = () => {
+        localStorage.removeItem('currentBooking');
+        localStorage.removeItem('current_member');
+        localStorage.removeItem('selectedSeats');
+        navigate("/staff/ticket-selling");
+    };
 
 
     const handleExportPdf = async () => {
@@ -100,8 +106,8 @@ export default function PrintTicket() {
                                                 <img
                                                     src={logo}
                                                     alt="CineZone"
-                                                    className="w-[20%] h-[35px] object-cover" 
-                                                    style={{ filter: "brightness(0) invert(1)" }} 
+                                                    className="w-[20%] h-[35px] object-cover"
+                                                    style={{ filter: "brightness(0) invert(1)" }}
                                                 />
                                                 <div
                                                     className=" p-1 rounded-full shadow-md w-[110px] h-[25px] flex items-center justify-center"
@@ -170,7 +176,12 @@ export default function PrintTicket() {
                         <i className="fa-solid fa-print "></i> Print Ticket
                     </Button>
                     <Link to="/staff/ticket-selling">
-                        <Button style={{ backgroundColor: 'white', color: 'red', border: '1px solid red', padding: '10px 20px', borderRadius: '5px' }}>
+                        <Button
+                            style={{
+                                backgroundColor: 'white', color: 'red', border: '1px solid red',
+                                padding: '10px 20px', borderRadius: '5px'
+                            }}
+                            onClick={handleCancel}>
                             <i className="fa-solid fa-xmark"></i> Cancel
                         </Button>
                     </Link>

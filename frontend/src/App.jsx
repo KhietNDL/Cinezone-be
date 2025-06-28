@@ -34,11 +34,12 @@ import HistoryActivity from "./layouts/User/component/HistoryActivity";
 
 import TicketBookingManagement from "./layouts/Admin/component/TicketBookingMangement";
 import PromotionManagement from "./layouts/Admin/component/PromotionManagement";
-import ResetPassword from "./auth/resetPassword/resetPassword";
+import ResetPassword from "./auth/resetPassword/ResetPassword";
 
 import { UserManagement } from "./layouts/Admin/component/UserManagement";
 import MoviePage from "./layouts/Staff/component/MoviePage";
 import MovieDetail from "./layouts/Staff/component/MovieDetail";
+import TicketDetails from "./layouts/User/component/TicketDetails";
 import GoogleCallback from "./auth/login/GoogleCallback";
 
 function App() {
@@ -56,7 +57,7 @@ function App() {
           <Route path="/verification" element={<EmailVerification />} />
           <Route path="/resetPassword" element={<ResetPassword />} />
           <Route path="/:idMovie" element={<BookingPage />} />
-
+          <Route path="/ticket" element={<TicketDetails />} />
           <Route path="/confirmPayment" element={<ConfirmPayment />} />
           <Route path="/promotions" element={<MoviePromotions />} />
           <Route path="/waiting" element={<WaitingPayment />} />

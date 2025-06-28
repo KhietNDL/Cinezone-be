@@ -93,7 +93,7 @@ export const getSeatsByShowtimeId = async (showtimeId) => {
   } catch (error) {
     handleError(error);
   }
-}
+};
 
 // Lấy user theo cccd
 export const getUserByCCCD = async (cccd) => {
@@ -103,7 +103,7 @@ export const getUserByCCCD = async (cccd) => {
   } catch (error) {
     handleError(error);
   }
-}
+};
 
 // Lấy user theo phone
 export const getUserByPhone = async (phone) => {
@@ -113,7 +113,7 @@ export const getUserByPhone = async (phone) => {
   } catch (error) {
     handleError(error);
   }
-}
+};
 
 // Lấy user theo email
 export const getUserByEmail = async (email) => {
@@ -123,7 +123,7 @@ export const getUserByEmail = async (email) => {
   } catch (error) {
     handleError(error);
   }
-}
+};
 
 // Tạo booking hold (giữ chỗ)
 export const createBookingHold = async (userId, showtimeId, seatIds, productIds = [], promotionTitle = "") => {
