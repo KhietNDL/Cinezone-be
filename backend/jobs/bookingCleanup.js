@@ -15,13 +15,6 @@ async function cleanupExpiredBookings() {
     }
     const expiredIds = expired.map(b => b.BookingId);
 
-    // Lấy danh sách ShowtimeId liên quan đến các BookingId hết hạn
-    const [showtimes] = await connection.query(
-      `SELECT DISTINCT ShowtimeId FROM Bookings WHERE BookingId IN (?)`,
-      [expiredIds]
-    );
-    const showtimeIds = showtimes.map(st => st.ShowtimeId);
-
     // 2. Đổi trạng thái booking sang "cancelled"
     await connection.query(
       `UPDATE Bookings SET Status = 4 WHERE BookingId IN (?)`,
@@ -29,12 +22,10 @@ async function cleanupExpiredBookings() {
     );
 
     // 3. Đổi trạng thái các ghế từ "holding" sang "available" (xóa hoặc cập nhật SeatShowtime)
-    if (showtimeIds.length > 0) {
-      await connection.query(
-        `DELETE FROM SeatShowtime WHERE ShowtimeId IN (?) AND Status = 'holding'`,
-        [showtimeIds]
-      );
-    }
+    await connection.query(
+      `DELETE FROM SeatShowtime WHERE BookingId IN (?) AND Status = 'holding'`,
+      [expiredIds]
+    );
 
     await connection.commit();
     console.log(`Cleaned up ${expiredIds.length} expired bookings`);

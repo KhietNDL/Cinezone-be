@@ -117,6 +117,20 @@ const getBookingDetail = async (req, res) => {
   }
 };
 
+const cancelBooking = async (req, res) => {
+  const { bookingId } = req.params;
+  try {
+    const result = await Booking.cancelBooking(bookingId);
+    if (result) {
+      res.status(200).json({ message: "Booking cancelled successfully" });
+    } else {
+      res.status(400).json({ message: "Cancel booking failed" });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getAllBookings,
   getBookingById,
@@ -128,5 +142,6 @@ module.exports = {
   holdBooking,
   confirmBooking,
   checkinBooking,
-  getBookingDetail
+  getBookingDetail,
+  cancelBooking
 };

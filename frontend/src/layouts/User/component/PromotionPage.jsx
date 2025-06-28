@@ -113,6 +113,7 @@ const MoviePromotions = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [promotions, setPromotions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [copiedCode, setCopiedCode] = useState("");
   // const handleCopy = (code) => {
   //   navigator.clipboard.writeText(code);
   //   setCopiedCode(code);
@@ -132,7 +133,7 @@ const MoviePromotions = () => {
       try {
         const data = await getPromotion();
         console.log("Dữ liệu promotion: ", data);
-        setPromotions(data.promotions);
+        setPromotions(data.data);
       } catch (error) {
         console.error("Failed to fetch promotions:", error);
       } finally {
@@ -142,6 +143,11 @@ const MoviePromotions = () => {
 
     fetchPromotions();
   }, []);
+  const handleCopy = (code) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(""), 2000);
+  };
   const filteredPromotions = promotions
     .filter((promo) =>
       promo.Title.toLowerCase().includes(searchTerm.toLowerCase())
@@ -266,7 +272,7 @@ const MoviePromotions = () => {
             <div className="text-white text-center text-2xl font-bold py-12">
               Loading promotions...
             </div>
-          ) : filteredPromotions.length === 0 ? (
+          ) : promotions?.length === 0 ? (
             <div className="text-center py-24 bg-gradient-to-br from-black/40 to-purple-900/20 backdrop-blur-xl rounded-3xl border border-purple-500/20 shadow-2xl">
               <div className="text-3xl font-bold text-white mb-4">
                 No promotions found
@@ -277,9 +283,9 @@ const MoviePromotions = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-              {filteredPromotions.map((promo, index) => (
+              {promotions?.map((promo, index) => (
                 <div
-                  key={promo.id}
+                  key={promo.PromotionId}
                   className={`group relative bg-gradient-to-br from-black/60 via-purple-900/20 to-black/60 backdrop-blur-xl rounded-3xl overflow-hidden border border-purple-500/30 hover:border-purple-400/60 transition-all duration-700 transform hover:scale-105 hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-500/30 ${
                     promo.featured
                       ? "ring-2 ring-purple-400/50 shadow-2xl shadow-purple-500/20"
@@ -291,7 +297,7 @@ const MoviePromotions = () => {
                 >
                   {/* Enhanced Discount Badge */}
                   <div className="absolute top-6 left-6 z-20 ...">
-                    {promo.DiscountValue}% OFF
+                    {promo.DiscountValue}%
                   </div>
 
                   {/* Enhanced Image with Overlay */}
@@ -322,6 +328,40 @@ const MoviePromotions = () => {
                         <p className="text-gray-300 text-sm leading-relaxed">
                           {promo.Detail}
                         </p>
+
+                        <p className="text-gray-400 text-xs mt-2">
+                          Created by: {promo.CreatedByName || "N/A"}
+                        </p>
+                      </div>
+                      <div className="mb-6">
+                        <div className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-400/30 rounded-xl p-4 backdrop-blur-sm">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <Tag className="w-5 h-5 text-purple-300" />
+                              <div>
+                                <p className="text-purple-200 text-xs font-medium uppercase tracking-wide">
+                                  Promo Code
+                                </p>
+                                <p className="text-white font-mono text-lg font-bold">
+                                  {promo.Code}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleCopy(promo.Code)}
+                              className="flex items-center justify-center w-10 h-10 bg-purple-500/20 hover:bg-purple-500/40 rounded-lg transition-all duration-300 group/copy"
+                              title="Copy code"
+                            >
+                              {copiedCode === promo.Code ? (
+                                <span className="text-green-400 text-xs font-bold">
+                                  ✓
+                                </span>
+                              ) : (
+                                <Copy className="w-4 h-4 text-purple-300 group-hover/copy:text-white transition-colors duration-300" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
                       </div>
 
                       {/* Date Range */}

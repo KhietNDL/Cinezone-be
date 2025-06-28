@@ -32,7 +32,6 @@ const handleError = (error) => {
   throw new Error(errorMessage);
 };
 
-
 // show Current Movies
 export const getCurrentMovies = async () => {
   try {
@@ -78,7 +77,9 @@ export const getShowtimesByMovieId = async (movieId) => {
 // Lấy showtimes theo movieId và day (version and time)
 export const getShowtimesByMovieIdAndDay = async (movieId, day) => {
   try {
-    const response = await api.get(`/showtimes/movie/${movieId}/day/showtimes?day=${day}`);
+    const response = await api.get(
+      `/showtimes/movie/${movieId}/day/showtimes?day=${day}`
+    );
     return response.data;
   } catch (error) {
     handleError(error);
@@ -88,52 +89,58 @@ export const getShowtimesByMovieIdAndDay = async (movieId, day) => {
 // Lấy seats theo showtimeId
 export const getSeatsByShowtimeId = async (showtimeId) => {
   try {
-    const response = await api.get(`/showtimes/${showtimeId}/seats`)
+    const response = await api.get(`/showtimes/${showtimeId}/seats`);
     return response.data;
   } catch (error) {
     handleError(error);
   }
-}
+};
 
 // Lấy user theo cccd
 export const getUserByCCCD = async (cccd) => {
   try {
-    const response = await api.get(`/user/cccd/${cccd}`)
+    const response = await api.get(`/user/cccd/${cccd}`);
     return response.data;
   } catch (error) {
     handleError(error);
   }
-}
+};
 
 // Lấy user theo phone
 export const getUserByPhone = async (phone) => {
   try {
-    const response = await api.get(`/user/phone/${phone}`)
+    const response = await api.get(`/user/phone/${phone}`);
     return response.data;
   } catch (error) {
     handleError(error);
   }
-}
+};
 
 // Lấy user theo email
 export const getUserByEmail = async (email) => {
   try {
-    const response = await api.get(`/user/email/${email}`)
+    const response = await api.get(`/user/email/${email}`);
     return response.data;
   } catch (error) {
     handleError(error);
   }
-}
+};
 
 // Tạo booking hold (giữ chỗ)
-export const createBookingHold = async (userId, showtimeId, seatIds, productIds = [], promotionTitle = "") => {
+export const createBookingHold = async (
+  userId,
+  showtimeId,
+  seatIds,
+  productIds = [],
+  promotionTitle = ""
+) => {
   try {
     const response = await api.post("/bookings/hold", {
       userId,
       showtimeId,
       seatIds,
       productIds,
-      promotionTitle
+      promotionTitle,
     });
     return response.data;
   } catch (error) {
@@ -144,9 +151,9 @@ export const createBookingHold = async (userId, showtimeId, seatIds, productIds 
 // Xác nhận booking
 export const confirmBooking = async (bookingId) => {
   try {
-    const response = await api.post("/bookings/confirm", {
-      bookingId: bookingId
-    });
+    const response = await api.get(
+      `/showtimes/filter?movieId=${movieId}&day=${day}`
+    );
     return response.data;
   } catch (error) {
     handleError(error);
@@ -156,11 +163,9 @@ export const confirmBooking = async (bookingId) => {
 // Thanh toán bằng tiền mặt
 export const createCashPayment = async (bookingId, amount, reference) => {
   try {
-    const response = await api.post("/payment/offline", {
-      bookingId,
-      amount,
-      reference
-    });
+    const response = await api.get(
+      `/showtimes/movie-name/${encodeURIComponent(movieName)}/showtimes`
+    );
     return response.data;
   } catch (error) {
     handleError(error);
@@ -170,7 +175,9 @@ export const createCashPayment = async (bookingId, amount, reference) => {
 // Kiểm tra promotion
 export const checkPromotion = async (promotionTitle) => {
   try {
-    const response = await api.get(`/promotions/search?title=${encodeURIComponent(promotionTitle)}`);
+    const response = await api.get(
+      `/showtimes/time/${encodeURIComponent(movieName)}/day?day=${day}`
+    );
     return response.data;
   } catch (error) {
     handleError(error);

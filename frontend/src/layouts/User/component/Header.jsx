@@ -124,12 +124,15 @@ const Header = () => {
         {user ? (
           <div className="flex items-center space-x-2">
             {user.avatar_url ? (
-              <img
-                src={user.avatar_url}
-                alt="User Avatar"
-                className="w-10 h-10 rounded-full object-cover cursor-pointer"
-                onClick={() => navigate("/account")}
-              />
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full border-2 border-white shadow-lg"></div>
+                <img
+                  src={user.avatar_url}
+                  alt="User Avatar"
+                  className="w-10 h-10 rounded-full object-cover cursor-pointer border-solid border-[1px] border-[#6a57f5] shadow-[#6a57f5] shadow-md hover:shadow-lg transition-all duration-300 relative z-10"
+                  onClick={() => navigate("/account")}
+                />
+              </div>
             ) : (
               <FaUser
                 size={25}
@@ -137,12 +140,6 @@ const Header = () => {
                 onClick={() => navigate("/account")}
               />
             )}
-            <span
-              className="font-bold text-[16px] cursor-pointer hover:underline"
-              onClick={() => navigate("/account")}
-            >
-              {user.fullName || "User"}
-            </span>
           </div>
         ) : (
           <div
