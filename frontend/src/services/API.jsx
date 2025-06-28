@@ -385,12 +385,10 @@ export const getCinemaRooms = async (params) => {
 
 //API cho Booking FLow
 
-export const getShowtimeByMovieName = async (movieName) => {
+export const getShowtimeByMovieId = async (movieId) => {
   try {
-    const response = await api.get(
-      `/showtimes/movie-name/${movieName}/showtimes`
-    );
-    console.log(response.data);
+    const response = await api.get(`/showtimes/movie/${movieId}/day`);
+    console.log(response.data)
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy showtime theo movieId:", error);
@@ -398,11 +396,11 @@ export const getShowtimeByMovieName = async (movieName) => {
   }
 };
 
-export const getTimeByDay = async (movieName, day) => {
+export const getTimeByDay = async (movieId, day) => {
   try {
-    const response = await api.get(`/showtimes/time/${movieName}/day`, {
+    const response = await api.get(`/showtimes/movie/${movieId}/day/showtimes`, {
       params: {
-        movieName: movieName,
+        movieId: movieId,
         day: day,
       },
     });
@@ -414,3 +412,108 @@ export const getTimeByDay = async (movieName, day) => {
     throw error;
   }
 };
+
+export const getSeatsByShowtimeId = async (showtimeId) => {
+  try {
+    const response = await api.get(`/showtimes/${showtimeId}/seats`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy seats theo showtimeID:", error);
+    throw error;
+  }
+};
+
+
+export const HoldingSeats = async (userId, showtimeId, seatIds,productIds, promoCode) => {
+  try {
+    const response = await api.post("/bookings/hold", {
+      
+      userId: userId,
+      showtimeId: showtimeId,
+      seatIds: seatIds,
+      productIds: productIds || [],
+      promotionTitle: promoCode,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi HodingSeats :", error);
+    handleError(error);
+    throw error;
+  }
+}
+
+
+export const getAllMethodsPayment = async () => {
+  try {
+    const response = await api.get("/payment/methods");
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy phương thức thanh toán:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const createMomoPayment = async (data) => {
+  const res = await api.post("/payment/momo", data);
+  return res.data;
+};
+
+export const createVnpayPayment = async (data) => {
+  const res = await api.post("/payment/vnpay", data);
+  return res.data;
+};
+
+export const createZalopayPayment = async (data) => {
+  const res = await api.post("/payment/zalopay", data);
+  return res.data;
+};
+
+export const getPromotionByTitle = async (title) => {
+  try {
+    const response = await api.get("/promotions/search", {
+      params: { title },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi tìm kiếm khuyến mãi:", error);
+    handleError(error);
+    throw error;
+  }
+}
+
+export const ConfirmBooking = async (bookingId) => {
+    try {
+    const response = await api.post("/bookings/confirm/${bookingId}", {
+      params:{bookingId: bookingId,}
+      
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi Confirm Booking :", error);
+    handleError(error);
+    throw error;
+  }
+}
+
+export const getBookingById = async (bookingId) => {
+  try {
+    const response = await api.get(`/bookings/detail/${bookingId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy thông tin đặt vé:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const cancelBooking = async (bookingId) => {
+  try {
+    const response = await api.post(`/bookings/cancel/${bookingId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi huỷ đặt vé:", error);
+    handleError(error);
+    throw error;
+  }
+}

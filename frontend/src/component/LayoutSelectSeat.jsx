@@ -100,13 +100,16 @@ export const LayoutSelectSeat = ({
     }
 
     setSelectedSeats(newSelectedSeats);
+    
 
     // Trả về thông tin ghế đã chọn với tổng giá
     const selectedSeatDetails = Array.from(newSelectedSeats).map(seatNum => seatMap[seatNum]);
     const totalPrice = selectedSeatDetails.reduce((sum, seat) => sum + seat.price, 0);
+    const selectedSeatIds = selectedSeatDetails.map(seat => seat.seatId);
 
     onSeatSelect({
       seats: selectedSeatDetails,
+      seatIds: selectedSeatIds,
       totalPrice: totalPrice,
       count: selectedSeatDetails.length
     });
@@ -353,11 +356,11 @@ export const LayoutSelectSeat = ({
         </div>
         <div className="flex items-center space-x-2">
           <PiArmchairFill className={seatColors.selected} size={20} />
-          <span className="text-gray-400">Selected</span>
+          <span className="text-gray-400">Selecting</span>
         </div>
         <div className="flex items-center space-x-2">
           <PiArmchairFill className={seatColors.taken} size={20} />
-          <span className="text-gray-400">Sold</span>
+          <span className="text-gray-400">Taken</span>
         </div>
       </div>
 

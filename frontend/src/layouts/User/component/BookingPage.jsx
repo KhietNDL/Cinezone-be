@@ -15,11 +15,20 @@ import Swal from "sweetalert2";
 import { slugify } from "./Slug";
 import {
   getMovies,
-  getShowtimeByMovieName,
+  getSeatsByShowtimeId,
+  getShowtimeByMovieId,
+
   getTimeByDay,
 } from "../../../services/API";
 import { LayoutSelectSeat } from "../../../component/LayoutSelectSeat";
 import { RiMovie2AiLine } from "react-icons/ri";
+
+import DoubleSeatNoneLight from "../../../assets/DoubleSeatNoneLight.svg";
+import DoubleSeatSelectingLight from "../../../assets/DoubleSeatSelectingLight.svg"
+import DoubleSeatSelected from "../../../assets/DoubleSeatSelected.svg";
+
+
+
 
 const BookingPage = () => {
   const [selectedSeats, setSelectedSeats] = useState([]);
@@ -28,6 +37,9 @@ const BookingPage = () => {
   const [selectedTime, setSelectedTime] = useState("");
   const [timeOptions, setTimeOptions] = useState([]);
   const [dateIndex, setDateIndex] = useState(0);
+  const [seatsData, setSeatsData] = useState([]);
+  const [seatQuantity, setSeatQuantity] = useState(0);
+
 
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const popupVideoRef = useRef(null);
@@ -37,10 +49,15 @@ const BookingPage = () => {
   const [movie, setMovie] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedRoom, setSelectedRoom] = useState("");
+  const [selectedShowtimeId, setSelectedShowtimeId] = useState("");
 
 
   const ticketPrice = 100000;
   const totalPrice = selectedSeats.length * ticketPrice;
+  const [calculatedTotalPrice, setCalculatedTotalPrice] = useState(0);
+  const [seatIds, setSeatIds] = useState([]);
+
+
 
   useEffect(() => {
     const fetchMovie = async () => {
@@ -62,11 +79,12 @@ const BookingPage = () => {
     fetchMovie();
   }, [slug]);
 
+
   useEffect(() => {
     const fetchShowtimes = async () => {
       if (!movie?.MovieId) return;
       try {
-        const response = await getShowtimeByMovieName(movie.NameOfEnglish);
+        const response = await getShowtimeByMovieId(movie.MovieId);
         setShowtimes(response.showtimes || []);
       } catch (error) {
         console.error("Lỗi khi lấy showtimes:", error);
@@ -77,16 +95,37 @@ const BookingPage = () => {
 
   useEffect(() => {
     const fetchTimeByDay = async () => {
-      if (!movie?.NameOfEnglish || !selectedDate) return;
+      if (!movie?.MovieId || !selectedDate) return;
+
       try {
-        const response = await getTimeByDay(movie.NameOfEnglish, selectedDate);
+
+        const response = await getTimeByDay(movie.MovieId, selectedDate);
         setTimeOptions(response.versions);
+        console.log("== Time options được set:", response.versions);
       } catch (error) {
         console.error("Lỗi khi lấy giờ chiếu:", error);
       }
     };
     fetchTimeByDay();
   }, [selectedDate, movie]);
+
+  useEffect(() => {
+    const fetchSeatsByShowtimeId = async () => {
+      if (!selectedShowtimeId) return;
+
+      try {
+
+        const response = await getSeatsByShowtimeId(selectedShowtimeId);
+        setSeatsData(response.seats);
+        setSeatQuantity(response.seatQuantity);
+        console.log("== Seat Data duoc set:", response.seats);
+        console.log("== Seat Quantity duoc set:", response.seatQuantity);
+      } catch (error) {
+        console.error("Lỗi khi lấy giờ chiếu:", error);
+      }
+    };
+    fetchSeatsByShowtimeId();
+  }, [selectedShowtimeId]);
 
   const visibleDates = showtimes.slice(dateIndex, dateIndex + 6);
 
@@ -109,13 +148,45 @@ const BookingPage = () => {
     setIsPopupOpen(false);
   };
 
+  const comboList = [
+    {
+      id: 1,
+      name: "Combo 1",
+      description: "1 Bắp + 1 Nước",
+      price: 69000,
+      image: "https://library.the1.co.th/content/dam/the1/offers/20220720_Redeem_790PComboMAWO_SFC.jpg",
+    },
+    {
+      id: 2,
+      name: "Combo 2",
+      description: "2 Bắp + 2 Nước",
+      price: 129000,
+      image: "https://cdn.eventcinemas.com.au/cdn/resources/contentupload/images/promo/2023/theflash/combo_1458x1115.jpg",
+    },
+    {
+      id: 3,
+      name: "Combo Siêu Vip",
+      description: "2 Bắp lớn + 2 Pepsi lớn + snack",
+      price: 159000,
+      image: "https://www.everydayonsales.com/wp-content/uploads/2020/02/TGV-Cinemas-FREE-Popcorn-Combo-with-MasterCard-2020-Malaysia-FREEBIES-2021-Promotion-Movie-Times-937x1024.jpg",
+    },
+    {
+      id: 4,
+      name: "Combo Siêu Vip",
+      description: "2 Bắp lớn + 2 Pepsi lớn + snack",
+      price: 159000,
+      image: "https://library.the1.co.th/content/dam/the1/offers/20220720_Redeem_790PComboMAWO_SFC.jpg",
+    },
+  ];
+
+
   if (loading)
     return <div className="text-white text-center mt-20">Đang tải...</div>;
   if (!movie)
     return (
       <div className="text-white text-center mt-20">Không tìm thấy phim.</div>
     );
-
+  console.log("selectedId:", selectedShowtimeId);
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] text-white p-4 pt-[100px] ">
       <div className="max-w-6xl mx-auto flex gap-6 bg-white/5 py-10 rounded-t-2xl">
@@ -131,7 +202,7 @@ const BookingPage = () => {
           </h1>
           <div className="flex flex-col gap-2 text-sm text-gray-300 mt-1">
             <span className="flex items-center gap-1">
-              <FaRegClock className="text-green-400" /> {movie.RunningTime} phút
+              <FaRegClock className="text-green-400" /> {movie.RunningTime} min
             </span>
             <span className="flex items-center gap-1">
               <FaCalendarAlt className="text-blue-400" /> {new Date(movie.FromDate).toLocaleDateString("vi-VN")}
@@ -216,41 +287,54 @@ const BookingPage = () => {
               <FaChevronRight />
             </button>
 
+
           </div>
           <div className="h-15 border-l border-white/30 mt-3" />
           <div className="flex-1 px-4">
             <label className="block mb-1 ml-3 text-white/80 font-semibold text-lg">Time</label>
             <div className="relative w-full group">
               <select
-                value={selectedTime}
+                value={selectedShowtimeId || ""}
                 onChange={(e) => {
-                  const time = e.target.value;
-                  setSelectedTime(time);
+                  const selectedId = e.target.value;
                   const matched = timeOptions
                     .flatMap((ver) =>
                       ver.showtimes.map((s) => ({ ...s, version: ver.version }))
                     )
-                    .find((s) => s.time === time);
+                    .find((s) => s.showtimeId === selectedId);
 
                   if (matched) {
+                    setSelectedTime(matched.time);
                     setSelectedRoom(`Room ${matched.roomName} — ${matched.version}`);
+                    setSelectedShowtimeId(matched.showtimeId);
                   } else {
+                    setSelectedTime("");
                     setSelectedRoom("");
+                    setSelectedShowtimeId(null);
                   }
                 }}
-                className="appearance-none w-full py-3 pl-4 pr-10 text-base font-semibold text-purple-100 bg-gradient-to-r from-[#36355a] to-[#4e408e] 
-                 border-b-2 border-purple-500 hover:border-purple-400 focus:outline-none focus:ring-0 
-                 transition duration-300 ease-in-out tracking-wide rounded-4xl"
+                className="appearance-none w-full py-3 pl-4 pr-10 text-base font-semibold text-purple-100 
+    bg-gradient-to-r from-[#36355a] to-[#4e408e] border-b-2 border-purple-500 
+    hover:border-purple-400 focus:outline-none focus:ring-0 
+    transition duration-300 ease-in-out tracking-wide rounded-3xl"
               >
-                <option value="">Choose Time</option>
+                <option value="" disabled>
+                  Choose Showtime
+                </option>
+
                 {timeOptions.flatMap((ver) =>
                   ver.showtimes.map((s) => (
-                    <option key={s.time} value={s.time}>
-                      {s.time} ({ver.version})
+                    <option
+                      key={s.showtimeId}
+                      value={s.showtimeId}
+                      className="text-gray-900 bg-white"
+                    >
+                      {s.time} — Room {s.roomName} ({ver.version})
                     </option>
                   ))
                 )}
               </select>
+
               <FaChevronDown className="absolute top-1/2 right-3 -translate-y-1/2 text-purple-300 pointer-events-none group-hover:rotate-180 transition duration-300" />
             </div>
           </div>
@@ -275,44 +359,72 @@ const BookingPage = () => {
         </div>
       </div>
 
-      <div className=" max-w-6xl mx-auto bg-white/5 h-[820px] rounded-b-2xl" >
-        <LayoutSelectSeat
+      <div className=" max-w-6xl mx-auto bg-white/5 h-[1300px] rounded-b-2xl" >
 
-          initialSelectedSeats={selectedSeats}
-          onSeatSelect={(seats) => {
-            if (!user) {
-              Swal.fire({
-                icon: "info",
-                title: "Sign In !",
-                text: "Please sign in for service",
-                confirmButtonText: "Sign In",
-              }).then((result) => {
-                if (result.isConfirmed) {
-                  navigate("/login");
+        {seatsData.length > 0 ? (
+          <div className="w-full flex justify-center">
+            <LayoutSelectSeat
+
+              initialSelectedSeats={selectedSeats}
+              seatDataFromAPI={seatsData}
+              totalSeats={seatQuantity}
+              onSeatSelect={({ seats, totalPrice, seatIds }) => {
+                if (!user) {
+                  Swal.fire({
+                    icon: "info",
+                    title: "Sign In !",
+                    text: "Please sign in for service",
+                    confirmButtonText: "Sign In",
+                  }).then((result) => {
+                    if (result.isConfirmed) {
+                      navigate("/login");
+                    }
+                  });
+                  return;
                 }
-              });
-              return;
-            }
-            setSelectedSeats(seats);
-          }}
-          width={10}
-          height={10}
-          gapX={7}
-          widthDouble={16}
-          heightDouble={8}
-          textColor="text-blue-300/70"
-        />
+
+                setSelectedSeats(seats.map((s) => s.seatNumber));
+                setCalculatedTotalPrice(totalPrice);
+                setSeatIds(seatIds);
+              }}
 
 
-        <div className="max-w-6xl mx-auto mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="ml-4">
-            <p className="text-sm mb-1 ">
-              <span className="font-semibold">Seat: </span> {selectedSeats.length > 0 ? selectedSeats.join(", ") : "Not yet"}
-            </p>
-            <p className="text-lg  ">
-              <span className="font-semibold"> Total:</span> {totalPrice.toLocaleString("vi-VN")}đ
-            </p>
-          </div>
+              width={30}
+              height={30}
+              widthDouble={60}
+              heightDouble={40}
+              gapX={4}
+
+              textColor="text-blue-300/70"
+              seatColors={{
+                available: "text-gray-500",
+                selected: "text-[#5341DB]",
+                taken: "text-[#6A7282]",
+                coupleSeat: {
+                  available: DoubleSeatNoneLight,
+                  selected: DoubleSeatSelectingLight,
+                  taken: DoubleSeatSelected,
+                }
+              }}
+
+            />
+          </div >
+        ) : (
+          <p className="text-center text-white font-semibold">Loading...</p>
+        )}
+        {/* COMBO POPCORN SECTION */}
+
+
+
+        <div className="max-w-6xl mx-auto mt-6 flex flex-col sm:flex-row justify-end items-center gap-4">
+          {/* <div className="ml-4">
+                <p className="text-sm mb-1 ">
+                  <span className="font-semibold">Seat: </span> {selectedSeats.length > 0 ? selectedSeats.join(", ") : "Not yet"}
+                </p>
+                <p className="text-lg  ">
+                  <span className="font-semibold"> Total:</span> {totalPrice.toLocaleString("vi-VN")}đ
+                </p>
+              </div> */}
           <button
             className="px-6 py-3 bg-white/10 rounded-full hover:bg-white/20 disabled:opacity-40 mr-4 font-semibold"
             disabled={selectedSeats.length === 0}
@@ -320,11 +432,15 @@ const BookingPage = () => {
               navigate("/confirmPayment", {
                 state: {
                   selectedSeats,
-                  totalPrice,
+                  calculatedTotalPrice,
                   selectedRoom,
                   selectedDate,
                   selectedTime,
                   movie,
+                  selectedShowtimeId,
+                  userId: user?.userId || null,
+                  seatIds,
+
                 },
               })
             }
@@ -332,7 +448,12 @@ const BookingPage = () => {
             <FaTicketAlt className="inline-block mr-2 " /> Continue Payment
           </button>
         </div>
+
+
+
       </div>
+
+
 
       {isPopupOpen && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
