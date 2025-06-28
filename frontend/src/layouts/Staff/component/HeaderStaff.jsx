@@ -1,8 +1,8 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import logo from "../../../assets/logoWhite.png";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
-import { FaCircleUser, FaXmark  } from "react-icons/fa6";
+import { FaCircleUser, FaXmark } from "react-icons/fa6";
 import { MdAccountCircle, MdOutlineLogout } from "react-icons/md";
 import { FaRegIdCard } from "react-icons/fa";
 
@@ -39,7 +39,7 @@ const HeaderStaff = () => {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
@@ -65,24 +65,25 @@ const HeaderStaff = () => {
         {user ? (
           <div className="relative" ref={dropdownRef}>
             <div
-              className="flex items-center bg-white rounded-4xl cursor-pointer group hover:bg-gray-100 transition-colors duration-200"
+              className="flex items-center bg-transparent rounded-4xl cursor-pointer group"
               onClick={toggleDropdown}
             >
-              {user.avatar_url ? (
-                <img
-                  src={user.avatar_url}
-                  alt="Staff Avatar"
-                  className="w-10 h-10 rounded-full object-cover p-0.5 "
-                />
-              ) : (
-                <MdAccountCircle
-                  size={42}
-                  className="text-[#604CE9] group-hover:text-[#5038E9]"
-                />
-              )}
-              <span className="font-bold text-[16px] bg-white text-[#604CE9] py-1 px-2 rounded-2xl group-hover:bg-gray-100 transition-colors duration-200">
-                {user.fullName || user.FullName || "Staff"}
-              </span>
+              <div className="flex items-center bg-white rounded-4xl group-hover:bg-gray-100 transition-colors duration-500 overflow-hidden">
+                <div className="text-3xl flex items-center justify-end transform transition-transform duration-500 group-hover:-translate-x-0 p-[1px]">
+                  {user.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt="Staff Avatar"
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <MdAccountCircle className="text-[#604CE9] group-hover:text-[#5038E9]" />
+                  )}
+                </div>
+                <p className="opacity-0 max-w-0 group-hover:opacity-100 group-hover:max-w-full hover:px-2 font-semibold transition-all duration-700 whitespace-nowrap bg-white text-[#604CE9] py-2 rounded-2xl">
+                  {user.fullName || user.FullName || "Staff"}
+                </p>
+              </div>
             </div>
 
             {isDropdownOpen && (
@@ -100,7 +101,7 @@ const HeaderStaff = () => {
                   </button>
                   <button
                     onClick={(e) => {
-                      e.stopPropagation(); // Add this line
+                      e.stopPropagation();
                       setIsOpen(true);
                       setIsDropdownOpen(false);
                     }}
@@ -123,19 +124,18 @@ const HeaderStaff = () => {
             className="group flex items-center bg-transparent border-2 rounded-4xl border-white hover:bg-white hover:text-[#5B4BE9]
              font-bold active:scale-[1.1] transition-all duration-100 overflow-hidden"
           >
-            <div className="text-3xl flex items-center justify-end transform transition-transform duration-300 group-hover:-translate-x-2 
+            <div className="text-3xl flex items-center justify-end transform transition-transform duration-500 group-hover:-translate-x-2 
             group-hover:w-[40px] p-[1px]">
               <FaCircleUser />
             </div>
             <p className="opacity-0 max-w-0 group-hover:opacity-100 group-hover:max-w-[200px] group-hover:w-[60px] font-semibold transition-all
-             duration-300 whitespace-nowrap">
+             duration-500 whitespace-nowrap">
               Sign In
             </p>
           </div>
         )}
       </div>
 
-      {/* Move the modal outside of the dropdown */}
       {isOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 bg-opacity-50 backdrop-blur-sm z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-96">
@@ -147,7 +147,6 @@ const HeaderStaff = () => {
             </p>
 
             <div className="flex justify-between mt-6 gap-4">
-
               <button
                 onClick={handleLogout}
                 disabled={isLoading}
