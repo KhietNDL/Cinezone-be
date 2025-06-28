@@ -1,6 +1,6 @@
 const db = require("../config/database");
 const { v4: uuidv4 } = require("uuid");
-
+const { normalizeDate } = require("../middlewares/showtime.validator");
 class Booking {
   static async getBookingById(bookingId) {
     const sql = `SELECT * FROM Bookings WHERE BookingId = ? AND IsDeleted = 0`;
@@ -104,8 +104,8 @@ class Booking {
     userId,
     showtimeId,
     seatIds,
-    productOrders,
-    promotionId,
+    productIds,
+    promotionTitle,
   }) {
     const connection = await db.promise().getConnection();
     try {
@@ -132,9 +132,18 @@ class Booking {
 
       // 2. Kiểm tra khuyến mãi (giả sử luôn hợp lệ hoặc bạn tự bổ sung)
       let discount = 0;
-      if (promotionId) {
-        // TODO: kiểm tra hợp lệ, hạn dùng, điều kiện...
-        // discount = ...
+      let promotionId = null;
+
+      if (promotionTitle) {
+        const [promotion] = await connection.query(
+          `SELECT DiscountValue, PromotionId FROM Promotions WHERE Title = ? AND IsDeleted = 0`,
+          [promotionTitle]
+        );
+        if (promotion.length === 0) {
+          throw new Error("Promotion not found");
+        }
+        discount = promotion[0].DiscountValue || 0;
+        promotionId = promotion[0].PromotionId;
       }
 
       // 3. Tính tổng tiền
@@ -142,21 +151,17 @@ class Booking {
         `SELECT SUM(Price) as total FROM Seats WHERE SeatId IN (?)`,
         [seatIds]
       );
-      let totalAmount = seatInfo[0].total || 0;
-      // Nếu có sản phẩm
-      if (productOrders && productOrders.length > 0) {
-        const productIds = productOrders.map((p) => p.productId);
+      let totalAmount = Number(seatInfo[0].total) || 0;
+
+      if (Array.isArray(productIds) && productIds.length > 0) {
         const [products] = await connection.query(
-          `SELECT ProductId, Price FROM Products WHERE ProductId IN (?)`,
+          `SELECT SUM(Price) as total FROM Products WHERE ProductId IN (?)`,
           [productIds]
         );
-        const priceMap = {};
-        products.forEach((p) => (priceMap[p.ProductId] = p.Price));
-        productOrders.forEach((p) => {
-          totalAmount += (priceMap[p.productId] || 0) * p.quantity;
-        });
+        totalAmount += Number(products[0].total) || 0;
       }
-      totalAmount -= discount;
+
+      totalAmount -= (totalAmount * discount) / 100;
 
       // 4. Tạo booking
       const bookingId = uuidv4();
@@ -186,16 +191,6 @@ class Booking {
         );
       }
 
-      // 6. Lưu sản phẩm (nếu có)
-      // if (productOrders && productOrders.length > 0) {
-      //   for (const p of productOrders) {
-      //     await connection.query(
-      //       `INSERT INTO BookingProducts (BookingProductId, BookingId, ProductId, Quantity)
-      //        VALUES (?, ?, ?, ?)`,
-      //       [uuidv4(), bookingId, p.productId, p.quantity]
-      //     );
-      //   }
-      // }
 
       await connection.commit();
       return { bookingId, totalAmount, expiresAt };
@@ -212,7 +207,6 @@ class Booking {
     try {
       await connection.beginTransaction();
 
-      // 1. Đổi trạng thái booking sang "success" (ví dụ Status = 2)
       await connection.query(
         `UPDATE Bookings SET Status = 2 WHERE BookingId = ? AND Status = 1`,
         [bookingId]
@@ -298,6 +292,84 @@ WHERE ShowtimeId = (SELECT ShowtimeId FROM Bookings WHERE BookingId = ?)
         code: "DATABASE_ERROR"
       };
     }
+  }
+
+  static async checkinBooking(bookingId) {
+    // Chỉ cho phép checkin nếu status hiện tại là 2 (PAID)
+    const [rows] = await db.promise().query(
+      "SELECT Status FROM Bookings WHERE BookingId = ? AND IsDeleted = 0",
+      [bookingId]
+    );
+    if (!rows[0]) {
+      return { success: false, message: "Booking not found" };
+    }
+    if (rows[0].Status !== 2) {
+      return { success: false, message: "Booking is not in PAID status" };
+    }
+    const [result] = await db.promise().query(
+      "UPDATE Bookings SET Status = 3, UpdatedAt = NOW() WHERE BookingId = ? AND Status = 2 AND IsDeleted = 0",
+      [bookingId]
+    );
+    return {
+      success: result.affectedRows > 0,
+      message: result.affectedRows > 0 ? "Check-in successful" : "Check-in failed"
+    };
+  }
+  static async getBookingDetail(bookingId) {
+    // Lấy thông tin booking, showtime, movie, user
+    const [rows] = await db.promise().query(
+      `
+    SELECT 
+      b.BookingId,
+      b.TotalAmount,
+      b.BookingDate,
+      u.FullName AS buyerName,
+      u.PhoneNumber AS buyerPhone,
+      mv.NameOfVietnamese,
+	    mv.NameOfEnglish,
+      s.Day,
+      s.Time,
+      cr.Name
+    FROM Bookings b
+    JOIN Users u ON b.MemberId = u.UserId
+    JOIN Showtimes s ON b.ShowtimeId = s.ShowtimeId
+    JOIN Version v ON s.VersionId = v.VersionId
+    JOIN Movies mv ON v.MovieId = mv.MovieId
+    JOIN CinemaRooms cr ON s.CinemaRoomId = cr.CinemaRoomId
+    WHERE b.BookingId = ? AND b.IsDeleted = 0
+    `,
+      [bookingId]
+    );
+    if (!rows[0]) return null;
+
+    // Lấy danh sách ghế
+    const [seats] = await db.promise().query(
+      `
+    SELECT s.SeatNumber
+    FROM SeatShowtime ss
+    JOIN Seats s ON ss.SeatId = s.SeatId
+    WHERE ss.ShowtimeId = (
+      SELECT ShowtimeId FROM Bookings WHERE BookingId = ?
+    ) AND ss.Status IN ('taken', 'holding')
+      AND ss.IsDeleted = 0
+    `,
+      [bookingId]
+    );
+
+
+    return {
+      bookingId: rows[0].BookingId,
+      movieNameVN: rows[0].NameOfVietnamese,
+      movieNameEnglish: rows[0].NameOfEnglish,
+      showDate: normalizeDate(rows[0].Day),
+      showTime: rows[0].Time,
+      startTime: rows[0].StartTime,
+      room: rows[0].Name,
+      seats: seats.map(s => s.SeatNumber),
+      totalAmount: rows[0].TotalAmount,
+      buyerName: rows[0].buyerName,
+      buyerPhone: rows[0].buyerPhone,
+    };
   }
 }
 

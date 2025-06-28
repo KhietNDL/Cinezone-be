@@ -75,8 +75,8 @@ const getLatestBookingByMemberId = async (req, res) => {
 const holdBooking = async (req, res) => {
   try {
     //const userId = req.user.userId; // Lấy từ middleware xác thực
-    const { userId, showtimeId, seatIds, productOrders, promotionId } = req.body;
-    const result = await Booking.holdBooking({ userId, showtimeId, seatIds, productOrders, promotionId });
+    const { userId, showtimeId, seatIds, productIds, promotionTitle } = req.body;
+    const result = await Booking.holdBooking({ userId, showtimeId, seatIds, productIds, promotionTitle });
     res.json(result);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -85,11 +85,35 @@ const holdBooking = async (req, res) => {
 
 const confirmBooking = async (req, res) => {
   try {
-    const { bookingId } = req.body;
+    const { bookingId } = req.params;
     await Booking.confirmBooking(bookingId);
     res.json({ message: 'Booking confirmed successfully' });
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+};
+
+const checkinBooking = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const result = await Booking.checkinBooking(bookingId);
+    if (result.success) {
+      return res.status(200).json({ message: result.message });
+    }
+    return res.status(400).json({ error: result.message });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getBookingDetail = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const detail = await Booking.getBookingDetail(bookingId);
+    if (!detail) return res.status(404).json({ error: "Booking not found" });
+    res.json(detail);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -102,5 +126,7 @@ module.exports = {
   deleteBooking,
   getLatestBookingByMemberId,
   holdBooking,
-  confirmBooking
+  confirmBooking,
+  checkinBooking,
+  getBookingDetail
 };

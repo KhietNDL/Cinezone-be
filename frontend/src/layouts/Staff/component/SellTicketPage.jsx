@@ -12,8 +12,8 @@ import { IoTime } from "react-icons/io5";
 import {
   getCurrentMovies,
   searchMovies,
-  getDaysByMovieName,
-  getVersionsAndTimesByMovieAndDay
+  getShowtimesByMovieId,
+  getShowtimesByMovieIdAndDay
 } from "../../../services/APIForStaff/API";
 
 import ItemCard from "./ItemCard";
@@ -29,6 +29,7 @@ const SellTicketPage = () => {
   const [selectedVersion, setSelectedVersion] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
   const [room, setRoom] = useState("");
+  const [showtimeId, setShowtimeId] = useState("");
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -39,7 +40,7 @@ const SellTicketPage = () => {
     setVersionsAndTimes([]);
     setRoom("");
     if (selectedMovie) {
-      getDaysByMovieName(selectedMovie.NameOfEnglish).then(res => {
+      getShowtimesByMovieId(selectedMovie.MovieId).then(res => {
         if (res?.showtimes) {
           const uniqueDays = Array.from(
             new Set(
@@ -66,7 +67,7 @@ const SellTicketPage = () => {
     if (selectedMovie && selectedDay) {
       const [day, month, year] = selectedDay.split('/');
       const formattedDay = `${year}-${month}-${day}`;
-      getVersionsAndTimesByMovieAndDay(selectedMovie.NameOfEnglish, formattedDay).then(res => {
+      getShowtimesByMovieIdAndDay(selectedMovie.MovieId, formattedDay).then(res => {
         if (res?.versions) {
           setVersionsAndTimes(res.versions);
         }
@@ -74,15 +75,33 @@ const SellTicketPage = () => {
     }
   }, [selectedDay, selectedMovie]);
 
+  // useEffect(() => {
+  //   if (selectedVersion && selectedTime && versionsAndTimes.length > 0) {
+  //     const verObj = versionsAndTimes.find(v => v.version === selectedVersion);
+  //     if (verObj) {
+  //       const t = verObj.showtimes.find(t => t.time === selectedTime);
+  //       setRoom(t ? t.roomName : "");
+  //     }
+  //   } else {
+  //     setRoom("");
+  //   }
+  // }, [selectedVersion, selectedTime, versionsAndTimes]);
   useEffect(() => {
     if (selectedVersion && selectedTime && versionsAndTimes.length > 0) {
       const verObj = versionsAndTimes.find(v => v.version === selectedVersion);
       if (verObj) {
-        const t = verObj.showtimes.find(t => t.time === selectedTime);
-        setRoom(t ? t.roomName : "");
+        const showtime = verObj.showtimes.find(t => t.time === selectedTime);
+        if (showtime) {
+          setRoom(showtime.roomName);
+          setShowtimeId(showtime.showtimeId); // Cập nhật showtimeId khi có lựa chọn
+        } else {
+          setRoom("");
+          setShowtimeId("");
+        }
       }
     } else {
       setRoom("");
+      setShowtimeId("");
     }
   }, [selectedVersion, selectedTime, versionsAndTimes]);
 
@@ -238,22 +257,25 @@ const SellTicketPage = () => {
         </div>
       )}
 
-      <div className=" text-center">
+      <div className="flex items-center justify-center gap-4">
         <Link to="/staff/ticket-selling/select-seats"
           state={{
             movie: selectedMovie,
             day: selectedDay,
             version: selectedVersion,
             time: selectedTime,
-            room: room
+            room: room,
+            showtimeId: showtimeId
           }}>
-          <Button style={{ backgroundColor: "#8A2BE2", color: "white", padding: "1rem" }}>
+          <button className="font-semibold px-4 py-2 bg-[#8A2BE2] rounded-md text-white cursor-pointer hover:bg-white 
+          hover:text-[#8A2BE2] border-2 border-[#8A2BE2]">
             <i className="fa-solid fa-couch"></i> Select seats
-          </Button>
+          </button>
         </Link>
-        <Button style={{ marginLeft: 10 }} danger>
+        <button className="font-semibold px-4 py-2 border-2 border-red-500 text-red-500 rounded-md cursor-pointer 
+        hover:text-white hover:bg-red-500" >
           <i className="fa-solid fa-xmark"></i> Cancel
-        </Button>
+        </button>
       </div>
     </div>
   );

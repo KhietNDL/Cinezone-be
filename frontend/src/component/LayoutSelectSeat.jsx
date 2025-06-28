@@ -356,11 +356,11 @@ export const LayoutSelectSeat = ({
         </div>
         <div className="flex items-center space-x-2">
           <PiArmchairFill className={seatColors.selected} size={20} />
-          <span className="text-gray-400">Đã chọn</span>
+          <span className="text-gray-400">Selecting</span>
         </div>
         <div className="flex items-center space-x-2">
           <PiArmchairFill className={seatColors.taken} size={20} />
-          <span className="text-gray-400">Đã đặt</span>
+          <span className="text-gray-400">Taken</span>
         </div>
       </div>
 
@@ -369,10 +369,10 @@ export const LayoutSelectSeat = ({
         <div className="mt-6 p-4 bg-white/5 rounded-lg backdrop-blur-sm">
           <div className="text-center">
             <p className="text-sm text-gray-300 mb-2">
-              Đã chọn: <span className="font-semibold">{selectedSeats.size}</span> ghế
+              Selected: <span className="font-semibold">{selectedSeats.size}</span> seats
             </p>
             <p className="text-sm text-gray-300 mb-3">
-              Ghế: <span className="font-semibold">{Array.from(selectedSeats).join(', ')}</span>
+              Seats: <span className="font-semibold">{Array.from(selectedSeats).join(', ')}</span>
             </p>
             <p className="text-xl font-bold text-white">
               Total price: <span className="text-[#ffffff] font-normal">{getTotalPrice().toLocaleString()}đ</span>

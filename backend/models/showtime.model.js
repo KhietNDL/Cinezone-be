@@ -265,7 +265,6 @@ class Showtime {
         const cinemaRoomId = showtimeRows[0].CinemaRoomId;
         const roomName = showtimeRows[0].Name;
         const seatQuantity = showtimeRows[0].SeatQuantity;
-
         // 2. Lấy tất cả ghế của phòng chiếu này
         const [seatRows] = await db.promise().query(
             'SELECT SeatId, SeatNumber, Type, Price FROM Seats WHERE CinemaRoomId = ? AND IsDeleted = 0',

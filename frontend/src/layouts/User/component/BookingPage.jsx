@@ -294,37 +294,47 @@ const BookingPage = () => {
             <label className="block mb-1 ml-3 text-white/80 font-semibold text-lg">Time</label>
             <div className="relative w-full group">
               <select
-                value={selectedTime}
+                value={selectedShowtimeId || ""}
                 onChange={(e) => {
-                  const time = e.target.value;
-                  setSelectedTime(time);
+                  const selectedId = e.target.value;
                   const matched = timeOptions
                     .flatMap((ver) =>
                       ver.showtimes.map((s) => ({ ...s, version: ver.version }))
                     )
-                    .find((s) => s.time === time);
+                    .find((s) => s.showtimeId === selectedId);
 
                   if (matched) {
+                    setSelectedTime(matched.time);
                     setSelectedRoom(`Room ${matched.roomName} — ${matched.version}`);
-                    setSelectedShowtimeId(matched.showtimeId); // Store the showtimeId
+                    setSelectedShowtimeId(matched.showtimeId);
                   } else {
+                    setSelectedTime("");
                     setSelectedRoom("");
-                    setSelectedShowtimeId(null); // Reset if no match
+                    setSelectedShowtimeId(null);
                   }
                 }}
-                className="appearance-none w-full py-3 pl-4 pr-10 text-base font-semibold text-purple-100 bg-gradient-to-r from-[#36355a] to-[#4e408e] 
-   border-b-2 border-purple-500 hover:border-purple-400 focus:outline-none focus:ring-0 
-   transition duration-300 ease-in-out tracking-wide rounded-4xl"
+                className="appearance-none w-full py-3 pl-4 pr-10 text-base font-semibold text-purple-100 
+    bg-gradient-to-r from-[#36355a] to-[#4e408e] border-b-2 border-purple-500 
+    hover:border-purple-400 focus:outline-none focus:ring-0 
+    transition duration-300 ease-in-out tracking-wide rounded-3xl"
               >
-                <option value="">Choose Time</option>
+                <option value="" disabled>
+                  Choose Showtime
+                </option>
+
                 {timeOptions.flatMap((ver) =>
                   ver.showtimes.map((s) => (
-                    <option key={s.time} value={s.time}>
-                      {s.time} ({ver.version})
+                    <option
+                      key={s.showtimeId}
+                      value={s.showtimeId}
+                      className="text-gray-900 bg-white"
+                    >
+                      {s.time} — Room {s.roomName} ({ver.version})
                     </option>
                   ))
                 )}
               </select>
+
               <FaChevronDown className="absolute top-1/2 right-3 -translate-y-1/2 text-purple-300 pointer-events-none group-hover:rotate-180 transition duration-300" />
             </div>
           </div>
@@ -358,7 +368,7 @@ const BookingPage = () => {
               initialSelectedSeats={selectedSeats}
               seatDataFromAPI={seatsData}
               totalSeats={seatQuantity}
-              onSeatSelect={({ seats, totalPrice,seatIds }) => {
+              onSeatSelect={({ seats, totalPrice, seatIds }) => {
                 if (!user) {
                   Swal.fire({
                     icon: "info",
@@ -384,7 +394,7 @@ const BookingPage = () => {
               widthDouble={60}
               heightDouble={40}
               gapX={4}
-              
+
               textColor="text-blue-300/70"
               seatColors={{
                 available: "text-gray-500",
@@ -429,8 +439,8 @@ const BookingPage = () => {
                   movie,
                   selectedShowtimeId,
                   userId: user?.userId || null,
-                  seatIds, 
-                  
+                  seatIds,
+
                 },
               })
             }

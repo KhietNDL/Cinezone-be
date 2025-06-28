@@ -87,7 +87,10 @@ export const logout = async () => {
 };
 export const forgot = async (credentials) => {
   try {
-    const response = await api.post("/auth/forgot-password", credentials);
+    // Defensive check: Ensure the body is an object with an email key.
+    const body =
+      typeof credentials === "string" ? { email: credentials } : credentials;
+    const response = await api.post("/auth/forgot-password", body);
     return response.data;
   } catch (error) {
     handleError(error);
@@ -95,35 +98,29 @@ export const forgot = async (credentials) => {
 };
 export const verification = async (credentials) => {
   try {
-    const response = await api.post("/auth/verify-otp", credentials);
+    const response = await api.post("/auth/verify-otp", credentials, {
+      withCredentials: true,
+      headers: { "Content-Type": "application/json" },
+    });
     return response.data;
   } catch (error) {
     handleError(error);
   }
 };
+
 export const resetPassword = async (credentials) => {
   try {
-    const response = await api.post("/auth/reset-password", credentials);
+    const response = await api.post("/auth/reset-password", credentials, {
+      withCredentials: true, // Quan trọng: gửi cookies/session
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
     return response.data;
   } catch (error) {
     handleError(error);
   }
 };
-// Trong file API service
-// API cho reset password - đã fix
-// export const resetPassword = async (credentials) => {
-//   try {
-//     const response = await api.post("/auth/reset-password", credentials, {
-//       withCredentials: true, // Quan trọng: gửi cookies/session
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//     });
-//     return response.data;
-//   } catch (error) {
-//     handleError(error);
-//   }
-// };
 
 // API cho User
 export const getUser = async (id) => {
@@ -200,18 +197,49 @@ export const getPromotion = async () => {
     handleError(error);
   }
 };
-
-// API cho Movie
-
-export const getMovies = async () => {
+export const createPromotion = async (formData) => {
   try {
-    const response = await api.get("/movie");
+    const response = await api.post("/promotions/create", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+export const deletePromotion = async (id) => {
+  try {
+    const response = await api.delete(`/promotions/delete/${id}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+export const updatePromotion = async (id, formData) => {
+  try {
+    const response = await api.put(`/promotions/update/${id}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
     return response.data;
   } catch (error) {
     handleError(error);
   }
 };
 
+// API cho Movie
+
+export const getMovies = async (params) => {
+  try {
+    const response = await api.get("/movie", { params });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
 export const getCurrentMovies = async (params) => {
   try {
     const response = await api.get("/movie/current", { params });
@@ -221,7 +249,6 @@ export const getCurrentMovies = async (params) => {
     handleError(error);
   }
 };
-
 export const getUpcomingMovies = async (params) => {
   try {
     const response = await api.get("/movie/upcoming", { params });
@@ -231,7 +258,6 @@ export const getUpcomingMovies = async (params) => {
     handleError(error);
   }
 };
-
 export const createMovie = async (movieData) => {
   try {
     const response = await api.post("/movie/create", movieData, {
@@ -243,7 +269,6 @@ export const createMovie = async (movieData) => {
     handleError(error);
   }
 };
-
 export const editMovie = async (movieData) => {
   try {
     const movieId = movieData.get("MovieId");
@@ -258,7 +283,6 @@ export const editMovie = async (movieData) => {
     handleError(error);
   }
 };
-
 export const deleteMovie = async (movieId) => {
   try {
     if (!movieId) {
@@ -270,10 +294,11 @@ export const deleteMovie = async (movieId) => {
     handleError(error);
   }
 };
-
 export const searchMovies = async (params) => {
   return api.get("/movie/search", { params });
 };
+
+// API cho Employee
 
 export const getEmployee = async () => {
   try {
@@ -287,7 +312,7 @@ export const createEmployee = async (employeeData) => {
   try {
     const response = await api.post("/employee/create", employeeData, {
       headers: {
-        "Content-Type": "application/json", // Explicitly set to JSON
+        "Content-Type": "multipart/form-data",
       },
     });
     return response.data;
@@ -303,27 +328,16 @@ export const deleteEmployee = async (userId) => {
     handleError(error);
   }
 };
-
-export const updateEmployee = async (employeeId, employeeData) => {
+export const updateEmployee = async (userId, employeeData) => {
   try {
-    if (!employeeId) {
-      throw new Error("EmployeeId is required");
-    }
-
-    const response = await api.put(
-      `/employee/update/${employeeId}`,
-      employeeData,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const response = await api.put(`/employee/update/${userId}`, employeeData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
     return response.data;
   } catch (error) {
-    // console.error("API Error:", error.response?.data || error.message); // Log detailed error
     handleError(error);
-    throw error; // Propagate error to caller for better handling
   }
 };
 export const searchEmployees = async (name) => {
@@ -364,7 +378,7 @@ export const getTimeByDay = async (movieId, day) => {
       },
     });
 
-    console.log(response.data)
+    console.log(response.data);
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy showtime theo movieId va Day:", error);
@@ -386,6 +400,7 @@ export const getSeatsByShowtimeId = async (showtimeId) => {
 export const HoldingSeats = async (userId, showtimeId, seatIds,productIds, promoCode) => {
   try {
     const response = await api.post("/bookings/hold", {
+      
       userId: userId,
       showtimeId: showtimeId,
       seatIds: seatIds,
@@ -435,6 +450,42 @@ export const getPromotionByTitle = async (title) => {
     return response.data;
   } catch (error) {
     console.error("Lỗi khi tìm kiếm khuyến mãi:", error);
+    handleError(error);
+    throw error;
+  }
+}
+
+export const ConfirmBooking = async (bookingId) => {
+    try {
+    const response = await api.post("/bookings/confirm/${bookingId}", {
+      params:{bookingId: bookingId,}
+      
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi Confirm Booking :", error);
+    handleError(error);
+    throw error;
+  }
+}
+
+export const getBookingById = async (bookingId) => {
+  try {
+    const response = await api.get(`/bookings/detail/${bookingId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy thông tin đặt vé:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const cancelBooking = async (bookingId) => {
+  try {
+    const response = await api.post(`/bookings/cancel/${bookingId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi huỷ đặt vé:", error);
     handleError(error);
     throw error;
   }

@@ -27,6 +27,11 @@ class Seat {
     const IsDeleted = 0;
     const sql = `INSERT INTO Seats (SeatId, CinemaRoomId, SeatNumber, Type, Price, IsDeleted, CreatedAt, CreatedBy) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
     await db.promise().query(sql, [SeatId, CinemaRoomId, SeatNumber, Type, Price, IsDeleted, CreatedAt, CreatedBy]);
+    // Tăng số lượng ghế trong CinemaRooms
+    await db.promise().query(
+      `UPDATE CinemaRooms SET SeatQuantity = SeatQuantity + 1 WHERE CinemaRoomId = ?`,
+      [CinemaRoomId]
+    );
     return SeatId;
   }
 
@@ -40,8 +45,21 @@ class Seat {
 
   static async deleteSeat(seatId, deletedBy) {
     const DeletedAt = new Date();
+    // Lấy CinemaRoomId trước khi xóa
+    const [rows] = await db.promise().query(
+      `SELECT CinemaRoomId FROM Seats WHERE SeatId = ? AND IsDeleted = 0`,
+      [seatId]
+    );
+    if (!rows[0]) return false;
+    const CinemaRoomId = rows[0].CinemaRoomId;
+
     const sql = `UPDATE Seats SET IsDeleted = 1, DeletedAt = ?, DeletedBy = ? WHERE SeatId = ? AND IsDeleted = 0`;
     const [result] = await db.promise().query(sql, [DeletedAt, deletedBy, seatId]);
+    // Giảm số lượng ghế trong CinemaRooms
+    await db.promise().query(
+      `UPDATE CinemaRooms SET SeatQuantity = SeatQuantity - 1 WHERE CinemaRoomId = ?`,
+      [CinemaRoomId]
+    );
     return result.affectedRows > 0;
   }
 

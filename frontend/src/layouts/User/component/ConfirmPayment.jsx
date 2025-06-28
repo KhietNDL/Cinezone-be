@@ -1,26 +1,27 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { FaStar, FaRegClock, FaCalendarAlt, FaHeart } from "react-icons/fa";
 import { RiMovie2AiLine } from "react-icons/ri";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "../../../context/AuthContext";
-import { getPromotionByTitle, HoldingSeats } from "../../../services/API";
+import { getPromotionByTitle, HoldingSeats, cancelBooking } from "../../../services/API";
 
 const ConfirmPayment = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
-  const [paymentMethod, setPaymentMethod] = useState("");
   const { user } = useAuth();
+
+  const [paymentMethod, setPaymentMethod] = useState("");
   const [holdingSeats, setHoldingSeats] = useState({});
   const [promotion, setPromotion] = useState("");
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-
-
   const [promoCode, setPromoCode] = useState('');
   const [isLoadingPromotion, setIsLoadingPromotion] = useState(false);
   const [appliedPromotion, setAppliedPromotion] = useState(null);
   const [promotionError, setPromotionError] = useState('');
   const [bookingId, setBookingId] = useState(null);
   const [finalPrice, setFinalPrice] = useState(0);
+  const [originalPrice, setOriginalPrice] = useState(0);
+
+  const preventCancel = useRef(false);
 
   const {
     selectedSeats = [],
@@ -34,78 +35,70 @@ const ConfirmPayment = () => {
     seatIds = [],
   } = state || {};
 
-  if (!movie) return <div>Không có dữ liệu phim.</div>;
+  useEffect(() => {
+    const initialHoldSeats = async () => {
+      if (userId && selectedShowtimeId && seatIds?.length > 0) {
+        try {
+          const result = await HoldingSeats(userId, selectedShowtimeId, seatIds, [], '');
+          setHoldingSeats(result);
+          setBookingId(result.bookingId || null);
+          const priceFromAPI = result.totalAmount || calculatedTotalPrice;
+          setOriginalPrice(priceFromAPI);
+          setFinalPrice(priceFromAPI);
+          console.log("Hold seats initial:", result);
+        } catch (error) {
+          console.error("Lỗi khi hold seats initial:", error);
+          setOriginalPrice(calculatedTotalPrice);
+          setFinalPrice(calculatedTotalPrice);
+        }
+      } else {
+        setOriginalPrice(calculatedTotalPrice);
+        setFinalPrice(calculatedTotalPrice);
+      }
+    };
 
-  const handlePaymentMethod = (method) => {
-    setPaymentMethod(method);
-  };
+    initialHoldSeats();
 
-  // Hàm xử lý khi người dùng nhập mã promotion
+    return () => {
+      if (!preventCancel.current && bookingId) {
+        cancelBooking(bookingId)
+          .then(() => console.log("Booking canceled"))
+          .catch((err) => console.error("Cancel failed:", err));
+      }
+    };
+  }, [ bookingId]);
+
+  const handlePaymentMethod = (method) => setPaymentMethod(method);
+
   const handleInputPromoCode = (event) => {
     setPromoCode(event.target.value);
-    // Reset error khi user nhập lại
-    if (promotionError) {
-      setPromotionError('');
-    }
+    if (promotionError) setPromotionError('');
   };
 
-  // Hàm xử lý khi nhấn Add promotion
   const handleAddPromotion = async () => {
     if (promoCode.trim() === '') {
       alert('Vui lòng nhập mã khuyến mãi!');
       return;
     }
-
     setIsLoadingPromotion(true);
     setPromotionError('');
-
     try {
-      console.log('Đang kiểm tra mã khuyến mãi:', promoCode);
-
       const response = await getPromotionByTitle(promoCode);
-      console.log('Response từ API:', response);
-      console.log('Type of promotions:', typeof response.promotions);
-      console.log('Is Array:', Array.isArray(response.promotions));
-
-      if (response && response.promotions) {
-        let promotionData;
-
-        // Xử lý cả trường hợp array và object
-        if (Array.isArray(response.promotions) && response.promotions.length > 0) {
-          promotionData = response.promotions[0];
-        } else if (response.promotions.length > 0) {
-          // Trường hợp array-like object
-          promotionData = response.promotions[0];
-        } else if (response.promotions.Title) {
-          // Trường hợp object thông thường
-          promotionData = response.promotions;
-        }
-
-        if (promotionData && promotionData.Title) {
-          setAppliedPromotion(promotionData);
-          setPromotion(promotionData);
-
-          // Force re-render để gọi lại useEffect
-          setRefreshTrigger(prev => prev + 1);
-
-          console.log("Áp dụng promotion thành công:", promotionData);
-
-          // Clear promo code input sau khi áp dụng thành công
-          setPromoCode('');
-          alert('Áp dụng mã khuyến mãi thành công!');
-        } else {
-          console.error("Promotion data không hợp lệ:", promotionData);
-          setPromotionError('Dữ liệu promotion không hợp lệ');
-          alert('Dữ liệu promotion không hợp lệ!');
-        }
+      let promotionData = Array.isArray(response.promotions) ? response.promotions[0] : response.promotions;
+      if (promotionData?.Title) {
+        const discountAmount = originalPrice * (promotionData.DiscountValue / 100);
+        const newPrice = originalPrice - discountAmount;
+        setAppliedPromotion(promotionData);
+        setPromotion(promotionData);
+        setFinalPrice(newPrice);
+        setPromoCode('');
+        alert('Áp dụng mã khuyến mãi thành công!');
       } else {
-        console.log("Không tìm thấy promotion:", response);
         setPromotionError('Mã khuyến mãi không hợp lệ');
         alert('Mã khuyến mãi không hợp lệ!');
       }
     } catch (error) {
       console.error("Lỗi khi kiểm tra promotion:", error);
-      console.error("Chi tiết lỗi:", error.response?.data || error.message);
       setPromotionError('Có lỗi xảy ra khi kiểm tra mã khuyến mãi');
       alert('Có lỗi xảy ra khi kiểm tra mã khuyến mãi!');
     } finally {
@@ -113,14 +106,12 @@ const ConfirmPayment = () => {
     }
   };
 
-  // Hàm để remove promotion
   const handleRemovePromotion = () => {
     setAppliedPromotion(null);
     setPromotion('');
     setPromotionError('');
     setPromoCode('');
-    // Force re-render để gọi lại useEffect
-    setRefreshTrigger(prev => prev + 1);
+    setFinalPrice(originalPrice);
   };
 
   const handleConfirm = (e) => {
@@ -129,23 +120,7 @@ const ConfirmPayment = () => {
       alert("Vui lòng chọn phương thức thanh toán!");
       return;
     }
-
-    const promotionTitle = appliedPromotion ? appliedPromotion.Title : null;
-
-    console.log("Navigating to /waiting with state:", {
-      selectedSeats,
-      calculatedTotalPrice,
-      paymentMethod,
-      selectedRoom,
-      selectedDate,
-      selectedTime,
-      selectedShowtimeId,
-      userId,
-      seatIds,
-      promotionTitle,
-      finalPrice,
-    });
-
+    preventCancel.current = true;
     navigate("/waiting", {
       state: {
         selectedSeats,
@@ -157,61 +132,15 @@ const ConfirmPayment = () => {
         selectedShowtimeId,
         userId,
         seatIds,
-        promotionTitle,
+        promotionTitle: appliedPromotion?.Title || null,
         finalPrice,
-        bookingId
+        bookingId,
       },
     });
   };
 
-  const productIds = [];
-
-  // useEffect để gọi HoldingSeats với promotion đã áp dụng
-  useEffect(() => {
-    console.log('=== USEEFFECT CHẠY ===');
-    console.log('appliedPromotion thay đổi:', appliedPromotion);
-    console.log('refreshTrigger:', refreshTrigger);
-
-    const fetchHoldingSeats = async () => {
-      try {
-        const promotionCode = appliedPromotion ? appliedPromotion.Title : '';
-
-        console.log('=== GỌI API HOLDING SEATS ===');
-        console.log('Gọi HoldingSeats với params:');
-        console.log('- userId:', userId);
-        console.log('- selectedShowtimeId:', selectedShowtimeId);
-        console.log('- seatIds:', seatIds);
-        console.log('- productIds:', productIds);
-        console.log('- promotionCode:', promotionCode);
-
-        const result = await HoldingSeats(userId, selectedShowtimeId, seatIds, productIds, promotionCode);
-        console.log('Kết quả từ HoldingSeats API:', result);
-        setHoldingSeats(result);
-        setBookingId(result.bookingId || null);
-        setFinalPrice(result.totalAmount || calculatedTotalPrice);
-        console.log("HoldingSeats thành công với promotion:", promotionCode);
-      } catch (err) {
-        console.error("Lỗi khi fetch HoldingSeats:", err);
-        console.error("Chi tiết lỗi:", err.response?.data || err.message);
-      }
-    };
-
-    // Gọi khi đủ dữ liệu
-    if (userId && selectedShowtimeId && seatIds?.length > 0) {
-      console.log('Điều kiện OK, gọi API...');
-      fetchHoldingSeats();
-    } else {
-      console.log('Điều kiện chưa đủ để gọi API:');
-      console.log('- userId:', userId);
-      console.log('- selectedShowtimeId:', selectedShowtimeId);
-      console.log('- seatIds:', seatIds);
-    }
-  }, [userId, selectedShowtimeId, seatIds, appliedPromotion, refreshTrigger]);
-
-  console.log("==PRICE:", holdingSeats.totalAmount);
-  
-
-
+  console.log("==CURRENT PRICE:", finalPrice);
+  console.log("==ORIGINAL PRICE:", originalPrice);
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] text-white p-3 sm:p-6 pt-[80px] sm:pt-[100px]">
@@ -340,15 +269,30 @@ const ConfirmPayment = () => {
 
           {/* total price*/}
           <div className="bg-[#2E3A4E]/40 mb-4 rounded-lg p-3 sm:p-4">
-            <p className="text-xs sm:text-sm text-gray-400">Total price</p>
-            <p className="text-xl sm:text-xl font-semibold">
-              {
-                finalPrice ? `${finalPrice} ` : '0 '
-
-
-
-              }đ
-            </p>
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-xs sm:text-sm text-gray-400">Total price</p>
+                <p className="text-xl sm:text-xl font-semibold">
+                  {finalPrice ? `${finalPrice.toLocaleString()} ` : '0 '}đ
+                </p>
+              </div>
+              {appliedPromotion && (
+                <div className="text-right">
+                  <p className="text-xs text-gray-400 line-through">
+                    {originalPrice.toLocaleString()}đ
+                  </p>
+                  <p className="text-xs text-green-400">
+                    Tiết kiệm: {(originalPrice - finalPrice).toLocaleString()}đ
+                  </p>
+                </div>
+              )}
+            </div>
+            {appliedPromotion && (
+              <p className="text-xs text-green-400 mt-1">
+                ✓ Đã áp dụng mã: {appliedPromotion.Title}
+                {appliedPromotion.DiscountValue && ` (-${appliedPromotion.DiscountValue}%)`}
+              </p>
+            )}
           </div>
 
           {/* promotion */}
@@ -381,16 +325,15 @@ const ConfirmPayment = () => {
             {appliedPromotion && (
               <div className="mt-2 p-2 bg-green-500/20 rounded-lg">
                 <div className="flex justify-between items-center">
-                  <div className="text-green-400 text-xs">
-                    ✓ Đã áp dụng: {appliedPromotion.Title}
-                    {appliedPromotion.DiscountPercent && ` (-${appliedPromotion.DiscountPercent}%)`}
-                    {appliedPromotion.DiscountValue && ` (-${appliedPromotion.DiscountValue})`}
-                  </div>
+                  {/* <div className="text-green-400 text-xs">
+                    ✓ Applied: {appliedPromotion.Title}
+                    {appliedPromotion.DiscountValue && ` (-${appliedPromotion.DiscountValue}%)`}
+                  </div> */}
                   <button
                     onClick={handleRemovePromotion}
                     className="text-red-400 hover:text-red-300 text-xs ml-2"
                   >
-                    ✕ Xóa
+                    ✕ Delete promotion
                   </button>
                 </div>
               </div>
@@ -416,32 +359,32 @@ const ConfirmPayment = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
             <button
               onClick={() => handlePaymentMethod("3")}
-              className={`flex flex-col items-center justify-center rounded-lg p-3 sm:p-4 h-20 sm:h-24 font-semibold transition-colors ${paymentMethod === "3" ? "bg-[#5B4CBD]" : "bg-[#474787]/26 hover:bg-[#2E3A4E]"
-                } text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#5B4CBD]`}
+              className={`flex flex-col items-center justify-center rounded-lg p-3 sm:p-4 h-20 sm:h-24 font-semibold transition-colors ${paymentMethod === "3" ? "bg-gray-500" : "bg-white hover:bg-geay-200"
+                } text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#553bff]`}
             >
               <img
                 src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-VNPAY-QR-350x65.png"
                 alt="VnPay logo"
-                className="w-20 h-6 mb-1 "
+                className="w-20 h-4 mb-1 "
               />
             </button>
             <button
               onClick={() => handlePaymentMethod("4")}
               className={`flex flex-col items-center justify-center rounded-lg p-3 sm:p-4 h-20 sm:h-24 font-semibold transition-colors ${paymentMethod === "4"
                 ? "bg-[#5B4CBD]"
-                : "bg-[#474787]/26 hover:bg-[#2E3A4E]"
+                : "bg-white hover:bg-gray-200"
                 } text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#5B4CBD]`}
             >
               <img
                 src="https://vectorseek.com/wp-content/uploads/2023/09/Zalopay-Logo-Vector.svg-.png"
                 alt="ZaloPay logo"
-                className="w-20 h-8 mb-1 "
+                className="w-20 h-6 mb-1 "
               />
             </button>
 
             <button
               onClick={() => handlePaymentMethod("2")}
-              className={`flex flex-col items-center justify-center rounded-lg p-3 sm:p-4 h-20 sm:h-24 font-semibold transition-colors ${paymentMethod === "2" ? "bg-[#5B4CBD]" : "bg-[#474787]/26 hover:bg-[#2E3A4E]"
+              className={`flex flex-col items-center justify-center rounded-lg p-3 sm:p-4 h-20 sm:h-24 font-semibold transition-colors ${paymentMethod === "2" ? "bg-[#5B4CBD]" : "bg-white hover:bg-gray-200"
                 } text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#5B4CBD]`}
             >
               <img

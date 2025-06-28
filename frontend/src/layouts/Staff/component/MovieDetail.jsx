@@ -50,7 +50,7 @@ export default function MovieDetail() {
     }
   }
 
-    useEffect(() => {
+  useEffect(() => {
     fetchMovie();
   }, [slug]);
 
@@ -204,8 +204,10 @@ export default function MovieDetail() {
             </div>
 
             <div className='w-[70%] p-4'>
-              <h1 className='text-3xl font-semibold w-full py-4 border-b border-gray-500'>{movie.NameOfEnglish} <span
-                className='text-[20px]'>{"("}{movie.NameOfVietnamese}{")"}</span> </h1>
+              <div className='flex flex-col border-b border-gray-500  pb-4 w-full font-semibold '>
+                <p className='text-3xl '>{movie.NameOfEnglish} </p>
+                <p className='text-[20px]'>{"("}{movie.NameOfVietnamese}{")"}</p>
+              </div>
 
               <div className='mt-4 space-y-2'>
                 <p className='flex gap-6 w-full font-semibold'>Director: <span className='font-normal'>{movie.Director}</span></p>
@@ -289,7 +291,7 @@ export default function MovieDetail() {
               {recommended.map((rec) => (
                 <SwiperSlide key={rec.MovieId}
                   style={{ height: 270, display: 'flex', alignItems: 'center' }}>
-                    
+
                   <Link to={`/staff/movie/${toSlug(rec.NameOfEnglish)}`}>
                     <ItemCard item={rec} type="movie" small />
                   </Link>

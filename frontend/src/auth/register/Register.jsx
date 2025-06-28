@@ -18,6 +18,7 @@ const RegistrationForm = () => {
   const [errors, setErrors] = useState({});
   const [currentBgIndex, setCurrentBgIndex] = useState(0);
   const navigate = useNavigate();
+  // eslint-disable-next-line no-unused-vars
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
