@@ -41,7 +41,6 @@ export const UserManagement = () => {
   const [avatarFile, setAvatarFile] = useState(null);
   // eslint-disable-next-line no-unused-vars
   const [createdAt, setCreatedAt] = useState("");
-
   // eslint-disable-next-line no-unused-vars
   const [searchLoading, setSearchLoading] = useState(false);
 
@@ -55,11 +54,10 @@ export const UserManagement = () => {
     setAddress("");
     setCCCD("");
     setAvatarUrl("");
-    setAvatarFile(null); // reset file
+    setAvatarFile(null);
     setCreatedAt("");
   };
 
-  // Load all users on mount
   useEffect(() => {
     loadUsers();
   }, []);
@@ -70,7 +68,7 @@ export const UserManagement = () => {
       const res = await getAllUsers();
       if (res.users) {
         setUsers(res.users);
-        setAllUsers(res.users); // Lưu lại danh sách gốc
+        setAllUsers(res.users);
       }
     } catch (error) {
       console.error("Load users error:", error);
@@ -83,24 +81,21 @@ export const UserManagement = () => {
   };
 
   const searchTimeout = useRef();
-
   useEffect(() => {
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
-
     searchTimeout.current = setTimeout(() => {
       if (searchTerm.trim() === "") {
-        setUsers(allUsers); // Không fetch lại, chỉ trả về danh sách gốc
+        setUsers(allUsers);
       } else {
         handleSearchUser(searchTerm.trim());
       }
     }, 400);
-
     return () => clearTimeout(searchTimeout.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, allUsers]);
 
   const handleSearchUser = async (keyword) => {
-    setSearchLoading(true); // chỉ loading nhỏ
+    setSearchLoading(true);
     try {
       const res = await searchUserByName(keyword);
       if (res.users) {
@@ -118,17 +113,16 @@ export const UserManagement = () => {
   };
   const formatDateToYYYYMMDD = (dateStr) => {
     if (!dateStr) return "";
-    if (dateStr.includes("-")) return dateStr.replace(/-/g, "/"); // yyyy-mm-dd -> yyyy/mm/dd
+    if (dateStr.includes("-")) return dateStr.replace(/-/g, "/");
     if (dateStr.includes("/")) {
       const parts = dateStr.split("/");
       if (parts[2]?.length === 4) {
-        // dd/mm/yyyy -> yyyy/mm/dd
         return `${parts[2]}/${parts[1]}/${parts[0]}`;
       }
     }
     return dateStr;
   };
-  // Add user
+
   const handleAddUser = async () => {
     try {
       setAddLoading(true);
@@ -146,7 +140,6 @@ export const UserManagement = () => {
         toast.error("Please fill in all required fields");
         return;
       }
-      // Chuyển đổi ngày sinh về dd/mm/yyyy
       const dob = formatDateToYYYYMMDD(dateOfBirth);
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
@@ -157,7 +150,6 @@ export const UserManagement = () => {
         toast.error("Please enter a valid phone number");
         return;
       }
-
       const formData = new FormData();
       formData.append("fullName", fullName.trim());
       formData.append("dateOfBirth", dob);
@@ -170,9 +162,7 @@ export const UserManagement = () => {
       if (avatarFile) {
         formData.append("avatar", avatarFile); // Truyền file gốc
       }
-
       const response = await createUser(formData);
-
       if (response) {
         await loadUsers();
         setShowAddModal(false);
@@ -188,15 +178,11 @@ export const UserManagement = () => {
     }
   };
 
-  // Edit user
   const handleUpdateUser = async () => {
     if (!selectedUser) return;
     try {
       setAddLoading(true);
-
-      // Validate dateOfBirth format dd/mm/yyyy
       const dob = formatDateToYYYYMMDD(dateOfBirth);
-
       const formData = new FormData();
       formData.append("fullName", fullName.trim());
       formData.append("dateOfBirth", dob);
@@ -209,9 +195,7 @@ export const UserManagement = () => {
       if (avatarUrl instanceof File) {
         formData.append("avatar", avatarUrl);
       }
-
       await editUser(selectedUser.UserId, formData);
-
       await loadUsers();
       setShowEditModal(false);
       resetForm();
@@ -225,7 +209,6 @@ export const UserManagement = () => {
     }
   };
 
-  // Delete user
   const confirmDeleteUser = async () => {
     if (!selectedUser) return;
     try {
@@ -253,20 +236,7 @@ export const UserManagement = () => {
   for (let i = 1; i <= totalPages; i++) {
     pageNumbers.push(i);
   }
-
-  if (loading) {
-    return (
-      <div className="p-[20px] flex items-center justify-center h-full">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
-          <p className="mt-4 text-gray-600">Loading users...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Thêm loading overlay giống EmployeeManagement
-  if (addLoading || deleteLoading) {
+  if (addLoading || deleteLoading || loading || searchLoading) {
     return (
       <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999]">
         <div className="bg-white rounded-lg p-6 flex flex-col items-center shadow-xl">
@@ -292,24 +262,23 @@ export const UserManagement = () => {
           <div className="font-semibold text-lg text-indigo-700">
             {addLoading
               ? showEditModal
-                ? "Đang cập nhật người dùng, vui lòng chờ..."
-                : "Đang thêm người dùng, vui lòng chờ..."
-              : "Đang xóa người dùng, vui lòng chờ..."}
+                ? "Updating user, please wait..."
+                : "Adding user, please wait..."
+              : deleteLoading
+              ? "Deleting user, please wait..."
+              : "Loading users, please wait..."}
           </div>
         </div>
       </div>
     );
   }
 
-  // Hàm này sẽ được gọi khi bấm vào nút Edit
   const handleEditUser = (user) => {
     setSelectedUser(user);
     setFullName(user.FullName || "");
-    // Nếu user.DateOfBirth là ISO hoặc dd/mm/yyyy, convert sang yyyy-mm-dd cho input type="date"
     let dob = "";
     if (user.DateOfBirth) {
       if (user.DateOfBirth.includes("/")) {
-        // dd/mm/yyyy -> yyyy-mm-dd
         const [day, month, year] = user.DateOfBirth.split("/");
         dob = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
       } else {
@@ -318,8 +287,6 @@ export const UserManagement = () => {
       }
     }
     setDateOfBirth(dob);
-
-    // Gender: "1" là Male, "2" là Female
     let gender = "";
     if (user.originalData?.Sex !== undefined) {
       gender = String(user.originalData.Sex);
@@ -344,7 +311,6 @@ export const UserManagement = () => {
     setShowEditModal(true);
   };
 
-  // Hàm này sẽ được gọi khi bấm vào nút Delete
   const handleDeleteUser = (user) => {
     setSelectedUser(user);
     setShowDeleteModal(true);
@@ -751,38 +717,38 @@ export const UserManagement = () => {
                       <div className="w-full flex flex-col items-center">
                         <div className="relative w-24 h-24 rounded-full border border-gray-300 bg-white flex items-center justify-center overflow-hidden mb-2">
                           {avatarUrl ? (
-                            <>
-                              <img
-                                src={avatarUrl}
-                                alt="Avatar"
-                                className="object-cover w-full h-full"
-                                onError={(e) =>
-                                  (e.target.src = "/api/placeholder/40/40")
-                                }
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setAvatarUrl("")}
-                                className="absolute top-1 right-1 bg-white rounded-full p-1 shadow hover:bg-red-100 transition"
-                                title="Remove image"
-                              >
-                                <svg
-                                  className="w-4 h-4 text-red-500"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M6 18L18 6M6 6l12 12"
-                                  />
-                                </svg>
-                              </button>
-                            </>
+                            <img
+                              src={avatarUrl}
+                              alt="Avatar"
+                              className="object-cover w-full h-full"
+                              onError={(e) =>
+                                (e.target.src = "/api/placeholder/40/40")
+                              }
+                            />
                           ) : (
                             <span className="text-gray-400">No Image</span>
+                          )}
+                          {avatarUrl && (
+                            <button
+                              type="button"
+                              onClick={() => setAvatarUrl("")}
+                              className="absolute top-1 right-1 bg-white rounded-full p-1 shadow hover:bg-red-100 transition"
+                              title="Remove image"
+                            >
+                              <svg
+                                className="w-4 h-4 text-red-500"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M6 18L18 6M6 6l12 12"
+                                />
+                              </svg>
+                            </button>
                           )}
                         </div>
                         <input
@@ -793,7 +759,7 @@ export const UserManagement = () => {
                           onChange={(e) => {
                             const file = e.target.files[0];
                             if (file) {
-                              setAvatarFile(file); // Lưu file gốc
+                              setAvatarFile(file);
                               const reader = new FileReader();
                               reader.onload = (ev) =>
                                 setAvatarUrl(ev.target.result);
