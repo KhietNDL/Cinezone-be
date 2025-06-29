@@ -517,3 +517,26 @@ export const cancelBooking = async (bookingId) => {
     throw error;
   }
 }
+
+export const getBookingHistory = async (memberId) => {
+  try {
+    const response = await api.get(`/bookings/member/${memberId}`);
+    console.log("Booking History:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy lịch sử đặt vé:", error);
+    handleError(error);
+    throw error;
+  }
+}
+
+export const getAllProducts = async () => {
+  try {
+    const response = await api.get("/products");
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách sản phẩm owr API:", error);
+    handleError(error);
+    throw error;
+  }
+}
