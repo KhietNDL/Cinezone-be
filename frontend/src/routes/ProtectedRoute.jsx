@@ -10,21 +10,46 @@ const ProtectedRoute = ({ allowedRoles }) => {
   // eslint-disable-next-line no-unused-vars
   const [showNoAccess, setShowNoAccess] = useState(false);
 
+  // Kiểm tra nếu là route "/"
+  const isLandingRoute = location.pathname === "/";
+
   useEffect(() => {
     if (!isLoading && user) {
-      const decoded = jwtDecode(localStorage.getItem("token"));
-      if (!allowedRoles.includes(decoded.role)) {
-        setShowNoAccess(true);
-        const timer = setTimeout(() => {
-          if (decoded.role === 3)
-            navigate("/admin/dashboard", { replace: true });
-          else if (decoded.role === 2) navigate("/staff", { replace: true });
-          else navigate("/", { replace: true });
-        }, 2000);
-        return () => clearTimeout(timer);
+      const token = localStorage.getItem("token");
+      if (token) {
+        try {
+          const decoded = jwtDecode(token);
+          // Nếu là "/" và role không phải 1 (user), chuyển hướng
+          if (isLandingRoute && decoded.role !== 1) {
+            setShowNoAccess(true);
+            const timer = setTimeout(() => {
+              if (decoded.role === 3)
+                navigate("/admin/dashboard", { replace: true });
+              else if (decoded.role === 2)
+                navigate("/staff", { replace: true });
+            }, 2000);
+            return () => clearTimeout(timer);
+          }
+          // Kiểm tra role cho các route khác
+          if (!isLandingRoute && !allowedRoles.includes(decoded.role)) {
+            setShowNoAccess(true);
+            const timer = setTimeout(() => {
+              if (decoded.role === 3)
+                navigate("/admin/dashboard", { replace: true });
+              else if (decoded.role === 2)
+                navigate("/staff", { replace: true });
+              else navigate("/", { replace: true });
+            }, 2000);
+            return () => clearTimeout(timer);
+          }
+        } catch (error) {
+          console.error("Invalid token:", error);
+          localStorage.removeItem("token");
+          localStorage.removeItem("userId");
+        }
       }
     }
-  }, [isLoading, user, allowedRoles, navigate]);
+  }, [isLoading, user, allowedRoles, navigate, isLandingRoute]);
 
   if (isLoading) {
     return (
@@ -57,32 +82,66 @@ const ProtectedRoute = ({ allowedRoles }) => {
     );
   }
 
-  if (!user) {
+  if (!user && !isLandingRoute) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  const decoded = jwtDecode(localStorage.getItem("token"));
-  if (!allowedRoles.includes(decoded.role)) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-sm w-full text-center">
-          <div className="text-2xl font-bold text-red-500 mb-2">
-            Access Denied
+  const token = localStorage.getItem("token");
+  if (token) {
+    try {
+      const decoded = jwtDecode(token);
+      // Kiểm tra nếu là "/" và role không phải 1
+      if (isLandingRoute && decoded.role !== 1) {
+        return (
+          <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
+            <div className="bg-white rounded-lg shadow-lg p-8 max-w-sm w-full text-center">
+              <div className="text-2xl font-bold text-red-500 mb-2">
+                Access Denied
+              </div>
+              <div className="text-gray-700 mb-4">
+                Only users can access the landing page.
+                <br />
+                Redirecting you to your dashboard...
+              </div>
+            </div>
           </div>
-          <div className="text-gray-700 mb-4">
-            You do not have permission to access this page.
-            <br />
-            Redirecting you to your dashboard...
+        );
+      }
+      // Kiểm tra role cho các route khác
+      if (!isLandingRoute && !allowedRoles.includes(decoded.role)) {
+        return (
+          <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
+            <div className="bg-white rounded-lg shadow-lg p-8 max-w-sm w-full text-center">
+              <div className="text-2xl font-bold text-red-500 mb-2">
+                Access Denied
+              </div>
+              <div className="text-gray-700 mb-4">
+                You do not have permission to access this page.
+                <br />
+                Redirecting you to your dashboard...
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-    );
+        );
+      }
+    } catch (error) {
+      console.error("Invalid token:", error);
+      localStorage.removeItem("token");
+      localStorage.removeItem("userId");
+      return <Navigate to="/login" replace />;
+    }
   }
 
   let LayoutComponent;
-  if (decoded.role === 3) LayoutComponent = "AdminLayout";
-  else if (decoded.role === 2) LayoutComponent = "StaffLayout";
-  else if (decoded.role === 1) LayoutComponent = "UserLayout";
+  if (user) {
+    const decoded = jwtDecode(token);
+    if (decoded.role === 3) LayoutComponent = "AdminLayout";
+    else if (decoded.role === 2) LayoutComponent = "StaffLayout";
+    else if (decoded.role === 1 || isLandingRoute)
+      LayoutComponent = "UserLayout";
+  } else {
+    LayoutComponent = "UserLayout"; // Sử dụng UserLayout cho khách vãn lai trên "/"
+  }
 
   return <Outlet context={{ LayoutComponent }} />;
 };

@@ -53,10 +53,10 @@ function App() {
         <Route path="/login/google/callback" element={<GoogleCallback />} />
         <Route path="/verification" element={<EmailVerification />} />
         <Route path="/resetPassword" element={<ResetPassword />} />
-        <Route path="/" element={<LandingPage />} />
 
         <Route element={<ProtectedRoute allowedRoles={[1]} />}>
           <Route element={<UserLayout />}>
+            <Route path="/" element={<LandingPage />} />
             <Route path="/:slug" element={<BookingPage />} />
             <Route path="/:idMovie" element={<BookingPage />} />
             <Route path="/ticket" element={<TicketDetails />} />

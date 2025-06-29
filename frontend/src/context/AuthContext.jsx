@@ -17,7 +17,6 @@ export const AuthProvider = ({ children }) => {
         try {
           const decoded = jwtDecode(token);
           setUser(decoded); // Set user tạm thời từ JWT
-
           const userData = await getUser(userId);
           setUser(userData.user);
         } catch (error) {
@@ -58,19 +57,17 @@ export const AuthProvider = ({ children }) => {
       await logout();
       localStorage.removeItem("token");
       localStorage.removeItem("userId");
-      localStorage.removeItem("refreshToken");
       setUser(null);
     } catch (error) {
       console.error("Logout failed:", error);
       localStorage.removeItem("token");
       localStorage.removeItem("userId");
-      localStorage.removeItem("refreshToken");
       setUser(null);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, isLoading, signIn, signOut, setUser }}>
       {children}
     </AuthContext.Provider>
   );
