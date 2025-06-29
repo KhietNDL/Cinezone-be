@@ -1,73 +1,124 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate, Link } from "react-router-dom";
-import { Button, Tag, Spin } from "antd";
+import { useNavigate, Link } from "react-router-dom";
+import { Button, Tag, Spin, message } from "antd";
 import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
 import { LayoutSelectSeat } from "../../../component/LayoutSelectSeat";
-import { PiArmchairLight, PiArmchairFill } from "react-icons/pi";
 import { getMovieById, getSeatsByShowtimeId } from "../../../services/APIForStaff/API";
-
 
 const formatPrice = (price) => {
     return price.toLocaleString('vi-VN');
 };
 
 const SelectSeatsPage = () => {
-    const location = useLocation();
     const navigate = useNavigate();
-    const { movie, day, version, time, room, showtimeId } = location.state || {};
-
     const [movieInfo, setMovieInfo] = useState(null);
+    const [bookingData, setBookingData] = useState(null);
     const [selectedSeats, setSelectedSeats] = useState([]);
     const [seatData, setSeatData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const seatPrices = seatData.reduce((prices, seat) => {
-        prices[seat.seatNumber] = seat.price;
-        return prices;
-    }, {});
+    useEffect(() => {
+        const loadBookingData = () => {
+            const savedData = localStorage.getItem('currentBooking');
+            if (!savedData) {
+                message.error("No booking data found");
+                navigate("/staff/ticket-selling");
+                return;
+            }
+
+            try {
+                const parsedData = JSON.parse(savedData);
+                setBookingData(parsedData);
+            } catch (err) {
+                message.error("Invalid booking data");
+                navigate("/staff/ticket-selling");
+            }
+        };
+
+        loadBookingData();
+    }, [navigate]);
 
     useEffect(() => {
-        if (!movie || !showtimeId) {
-            navigate("/staff/ticket-selling");
-            return;
-        }
+        if (!bookingData) return;
 
         const fetchData = async () => {
             try {
-                // Lấy thông tin phim
-                const movieRes = await getMovieById(movie.MovieId);
-                setMovieInfo(movieRes.data || movie);
+                // Get movie info
+                const movieRes = await getMovieById(bookingData.movie.MovieId);
+                setMovieInfo(movieRes.data || bookingData.movie);
 
-                // Lấy danh sách ghế từ API
-                const seatsRes = await getSeatsByShowtimeId(showtimeId);
+                // Get seats data
+                const seatsRes = await getSeatsByShowtimeId(bookingData.showtimeId);
                 setSeatData(seatsRes.seats || []);
+
+                // Load any previously selected seats from localStorage
+                const savedSeats = localStorage.getItem('selectedSeats');
+                if (savedSeats) {
+                    const parsedSeats = JSON.parse(savedSeats);
+                    // Filter out seats that are no longer available
+                    const availableSeats = new Set(
+                        seatsRes.seats
+                            .filter(seat => seat.status !== "taken")
+                            .map(seat => seat.seatNumber)
+                    );
+                    setSelectedSeats(parsedSeats.filter(seat => availableSeats.has(seat)));
+                }
             } catch (err) {
-                console.error("Error fetching data:", err);
                 setError("Failed to load seat data");
+                console.error(err);
             } finally {
                 setLoading(false);
             }
         };
 
         fetchData();
-    }, [movie, showtimeId, navigate]);
+    }, [bookingData]);
 
-    if (!movieInfo) {
-        return <div className="text-center my-8"><Spin size="large" /></div>;
-    }
+    const handleSeatSelect = (selection) => {
+        const newSelectedSeats = Array.from(selection.seats.map(s => s.seatNumber));
+        setSelectedSeats(newSelectedSeats);
+        localStorage.setItem('selectedSeats', JSON.stringify(newSelectedSeats));
+    };
 
-    if (error) {
-        return <div className="text-center my-8 text-red-500">{error}</div>;
-    }
+    const handleCancel = () => {
+        localStorage.removeItem('currentBooking');
+        localStorage.removeItem('current_member');
+        localStorage.removeItem('selectedSeats');
+        navigate("/staff/ticket-selling");
+    };
 
-    // Tính toán các thông số về ghế từ dữ liệu API
+    const handleContinue = () => {
+        if (selectedSeats.length === 0) {
+            message.warning("Please select at least one seat");
+            return;
+        }
+
+        // Calculate total price
+        const totalPrice = selectedSeats.reduce((total, seatNumber) => {
+            const seat = seatData.find(s => s.seatNumber === seatNumber);
+            return total + (seat ? seat.price : 0);
+        }, 0);
+
+        // Update booking data in localStorage
+        const updatedBooking = {
+            ...bookingData,
+            selectedSeats,
+            seatData: seatData.filter(seat => selectedSeats.includes(seat.seatNumber)),
+            totalPrice
+        };
+
+        localStorage.setItem('currentBooking', JSON.stringify(updatedBooking));
+        navigate("/staff/ticket-selling/confirm-ticket");
+    };
+
+    // Calculate seat information
     const totalSeats = seatData.length;
     const lockedSeats = seatData.filter(seat => seat.status === "taken").length;
     const selectableSeats = totalSeats - lockedSeats;
     const selectedCount = selectedSeats.length;
 
-    // Hàm tính tổng tiền từ ghế đã chọn
+    // Function to calculate total price from selected seats
     const getTotalPrice = () => {
         return selectedSeats.reduce((total, seatNumber) => {
             const seat = seatData.find(s => s.seatNumber === seatNumber);
@@ -75,18 +126,19 @@ const SelectSeatsPage = () => {
         }, 0);
     };
 
-    // Tạo danh sách ghế đã đặt (taken) từ API
-    const takenSeats = new Set(
-        seatData
-            .filter(seat => seat.status === "taken")
-            .map(seat => seat.seatNumber)
-    );
+    if (!movieInfo || !bookingData) {
+        return <div className="text-center my-8"><Spin size="large" /></div>;
+    }
+
+    if (error) {
+        return <div className="text-center my-8 text-red-500">{error}</div>;
+    }
 
     return (
         <div className="p-4 mx-auto w-full bg-white">
             <h1 className="text-3xl font-bold mb-4 text-[#9810FA]">Select Seats</h1>
 
-            {/* Phần thông tin phim (giữ nguyên) */}
+            {/* Movie information section */}
             <div className="flex items-start gap-4 border-b border-gray-300 pb-4">
                 <img
                     src={movieInfo.PosterImage}
@@ -101,15 +153,18 @@ const SelectSeatsPage = () => {
                             }}>
                             <p className="font-bold p-2 text-sm">Now Showing</p>
                         </div>
-                        <div className="py-0.5 px-4 border-2 border-purple-700 bg-purple-300 rounded-lg text-purple-700 font-semibold" title={version}>{version}</div>
+                        <div className="py-0.5 px-4 border-2 border-purple-700 bg-purple-300 rounded-lg text-purple-700 font-semibold"
+                            title={bookingData.version}>
+                            {bookingData.version}
+                        </div>
                     </div>
                     <h2 className="text-3xl font-bold mt-2 py-4">
                         {movieInfo.NameOfEnglish} <span className="text-xl">{"("}{movieInfo.NameOfVietnamese}{")"}</span>
                     </h2>
                     <p className="text-sm mt-1 flex gap-4">
-                        <span className="py-2"><i className="fa-solid fa-clock"></i> {time}</span>
-                        <span className="py-2"><i className="fa-solid fa-location-dot"></i> {room}</span>
-                        <span className="py-2"><i className="fa-solid fa-couch"></i> Rows: A-J</span>
+                        <span className="py-2"><i className="fa-solid fa-clock"></i> {bookingData.time}</span>
+                        <span className="py-2"><i className="fa-solid fa-location-dot"></i> {bookingData.room}</span>
+                        <span className="py-2"><i className="fa-solid fa-couch"></i> Row: A-J</span>
                     </p>
                 </div>
             </div>
@@ -118,11 +173,11 @@ const SelectSeatsPage = () => {
                 <div className="text-center my-8"><Spin size="large" /></div>
             ) : (
                 <div className="flex gap-10 justify-center bg-white mt-4">
-                    <div className="w-[70%]">
+                    <div className="w-[70%] flex justify-center">
                         <LayoutSelectSeat
                             seatDataFromAPI={seatData}
                             initialSelectedSeats={selectedSeats}
-                            onSeatSelect={(selection) => setSelectedSeats(Array.from(selection.seats.map(s => s.seatNumber)))}
+                            onSeatSelect={handleSeatSelect}
                             textColor="text-[#6A57F5]"
                             width={30}
                             height={30}
@@ -135,16 +190,16 @@ const SelectSeatsPage = () => {
                                 vip: "text-yellow-500",
                                 normal: "text-gray-700",
                                 couple: "text-pink-500",
-
                             }}
+                            className="w-full"
                         />
                     </div>
 
-                    {/* Thông tin ghế */}
-                    <div className="w-[30%] h-[500px] rounded-2xl border border-gray-300 bg-white shadow-md p-4">
+                    {/* Seat information */}
+                    <div className="w-[30%] h-[50%] rounded-2xl border border-gray-300 bg-white shadow-md p-4">
                         <div className="flex flex-col gap-2">
                             <h5 className="font-bold">
-                                <i className="fa-solid fa-couch"></i> Seats
+                                <i className="fa-solid fa-couch"></i> Seat Information
                             </h5>
                             <div>
                                 <div className="border-b">
@@ -152,54 +207,58 @@ const SelectSeatsPage = () => {
                                         Total seats: <span className="text-[#8A2BE2] font-bold">{totalSeats}</span>
                                     </p>
                                     <p className="flex items-center justify-between my-2">
-                                        Seat available: <span className="text-blue-500 font-bold">{selectableSeats}</span>
+                                        Available seats: <span className="text-blue-500 font-bold">{selectableSeats}</span>
                                     </p>
                                     <p className="flex items-center justify-between my-2">
-                                        Seat sold: <span className="text-red-600 font-bold">{lockedSeats}</span>
+                                        Sold seats: <span className="text-red-600 font-bold">{lockedSeats}</span>
                                     </p>
                                     <p className="flex items-center justify-between my-2">
-                                        Seat is selecting: <span className="text-green-600 font-bold">{selectedCount}</span>
+                                        Selected seats: <span className="text-green-600 font-bold">{selectedCount}</span>
                                     </p>
                                 </div>
                                 <p className="flex items-center justify-between my-2">
-                                    Total Price Seats:{" "}
+                                    Total price:{" "}
                                     <span className="text-green-600 font-bold">
-                                        {formatPrice(getTotalPrice())} VNĐ
+                                        {formatPrice(getTotalPrice())} VND
                                     </span>
                                 </p>
                             </div>
 
-                            <div className="mt-4 flex justify-center gap-2 pt-30">
-                                <Link
-                                    to="/staff/ticket-selling/confirm-ticket"
-                                    state={{
-                                        movie: movieInfo,
-                                        day,
-                                        version,
-                                        time,
-                                        room,
-                                        showtimeId,
-                                        selectedSeats,
-                                        totalPrice: getTotalPrice(),
-                                        seatData: seatData.filter(seat => selectedSeats.includes(seat.seatNumber)),
-                                        seatPrices: seatPrices 
-                                    }}
-                                >
-                                    <Button
-                                        style={{ backgroundColor: "#8A2BE2" }}
-                                        type="primary"
-                                        icon={<CheckOutlined />}
-                                        disabled={selectedCount === 0}
-                                    >
-                                        Continue
-                                    </Button>
-                                </Link>
+                            {/* Selected seats list */}
+                            {selectedCount > 0 && (
+                                <div className="mt-4">
+                                    <h6 className="font-semibold mb-2">Selected seats:</h6>
+                                    <div className="flex flex-wrap gap-2">
+                                        {selectedSeats.map(seatNumber => {
+                                            const seat = seatData.find(s => s.seatNumber === seatNumber);
+                                            return (
+                                                <Tag key={seatNumber} color="purple">
+                                                    {seatNumber} - {formatPrice(seat?.price || 0)} VND
+                                                </Tag>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
 
-                                <Link to="/staff/ticket-selling">
-                                    <Button danger icon={<CloseOutlined />}>
-                                        Cancel
-                                    </Button>
-                                </Link>
+                            <div className="mt-4 flex justify-center gap-2 py-5">
+                                <Button
+                                    style={{ backgroundColor: "#8A2BE2" }}
+                                    type="primary"
+                                    icon={<CheckOutlined />}
+                                    onClick={handleContinue}
+                                    disabled={selectedCount === 0}
+                                >
+                                    Continue
+                                </Button>
+
+                                <Button
+                                    danger
+                                    icon={<CloseOutlined />}
+                                    onClick={handleCancel}
+                                >
+                                    Cancel
+                                </Button>
                             </div>
                         </div>
                     </div>

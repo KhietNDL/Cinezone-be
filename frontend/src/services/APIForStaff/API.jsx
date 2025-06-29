@@ -93,7 +93,7 @@ export const getSeatsByShowtimeId = async (showtimeId) => {
   } catch (error) {
     handleError(error);
   }
-}
+};
 
 // Lấy user theo cccd
 export const getUserByCCCD = async (cccd) => {
@@ -103,7 +103,7 @@ export const getUserByCCCD = async (cccd) => {
   } catch (error) {
     handleError(error);
   }
-}
+};
 
 // Lấy user theo phone
 export const getUserByPhone = async (phone) => {
@@ -113,7 +113,7 @@ export const getUserByPhone = async (phone) => {
   } catch (error) {
     handleError(error);
   }
-}
+};
 
 // Lấy user theo email
 export const getUserByEmail = async (email) => {
@@ -123,7 +123,7 @@ export const getUserByEmail = async (email) => {
   } catch (error) {
     handleError(error);
   }
-}
+};
 
 // Tạo booking hold (giữ chỗ)
 export const createBookingHold = async (userId, showtimeId, seatIds, productIds = [], promotionTitle = "") => {
@@ -144,9 +144,7 @@ export const createBookingHold = async (userId, showtimeId, seatIds, productIds 
 // Xác nhận booking
 export const confirmBooking = async (bookingId) => {
   try {
-    const response = await api.post("/bookings/confirm", {
-      bookingId: bookingId
-    });
+    const response = await api.post(`/bookings/confirm/${bookingId}`);
     return response.data;
   } catch (error) {
     handleError(error);
@@ -167,10 +165,35 @@ export const createCashPayment = async (bookingId, amount, reference) => {
   }
 };
 
+// Thanh toán bằng momo
+export const createMomoPayment = async (bookingId, amount, returnUrl, userId) => {
+  try {
+    const response = await api.post("/payment/momo", {
+      bookingId,
+      amount,
+      returnUrl,
+      userId
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
 // Kiểm tra promotion
 export const checkPromotion = async (promotionTitle) => {
   try {
     const response = await api.get(`/promotions/search?title=${encodeURIComponent(promotionTitle)}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+// Kiểm tra booking
+export const checkInfoBookingById = async (bookingId) => {
+  try {
+    const response = await api.get(`/bookings/detail/${encodeURIComponent(bookingId)}`);
     return response.data;
   } catch (error) {
     handleError(error);

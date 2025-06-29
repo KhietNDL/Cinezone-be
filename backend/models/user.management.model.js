@@ -43,33 +43,32 @@ class UserManagement {
   static async createUser(userData) {
     const UserId = uuidv4();
     const {
-      FullName,
-      DateOfBirth,
-      Password,
-      Sex,
-      Email,
-      PhoneNumber,
-      Address,
-      CCCD,
+      fullName,
+      dateOfBirth,
+      password,
+      sex,
+      email,
+      phoneNumber,
+      address,
+      cccd,
       avatar_url
     } = userData;
 
-    // Hash password trước khi lưu
-    const hashedPassword = await bcrypt.hash(Password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
     const [result] = await db
       .promise()
       .query(
         "INSERT INTO Users (UserId, FullName, DateOfBirth, Password, Sex, Email, PhoneNumber, Address, CCCD, avatar_url, Role, IsDeleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0)",
         [
           UserId,
-          FullName,
-          DateOfBirth,
+          fullName,
+          dateOfBirth,
           hashedPassword,
-          Sex,
-          Email,
-          PhoneNumber,
-          Address,
-          CCCD,
+          sex,
+          email,
+          phoneNumber,
+          address,
+          cccd,
           avatar_url
         ]
       );
@@ -86,51 +85,33 @@ class UserManagement {
   }
 
   static async updateUser(userId, userData) {
-    // Lấy thông tin user hiện tại
-    const [rows] = await db.promise().query(
-      "SELECT * FROM Users WHERE UserId = ? AND Role = 1",
-      [userId]
-    );
-    const current = rows[0];
-    if (!current) return false;
+    if (!userId || !userData || Object.keys(userData).length === 0) return false;
 
-    // Chỉ cập nhật trường được truyền vào, còn lại giữ nguyên
-    function keepOld(newVal, oldVal) {
-      return newVal === undefined || newVal === null || newVal === ""
-        ? oldVal
-        : newVal;
+    // Nếu có password mới thì hash lại
+    if (userData.password) {
+      userData.Password = await bcrypt.hash(userData.password, 10);
+      delete userData.password;
     }
+    // Chuyển các trường camelCase sang đúng tên cột DB nếu cần
+    if (userData.fullName) { userData.FullName = userData.fullName; delete userData.fullName; }
+    if (userData.dateOfBirth) { userData.DateOfBirth = userData.dateOfBirth; delete userData.dateOfBirth; }
+    if (userData.sex) { userData.Sex = userData.sex; delete userData.sex; }
+    if (userData.email) { userData.Email = userData.email; delete userData.email; }
+    if (userData.phoneNumber) { userData.PhoneNumber = userData.phoneNumber; delete userData.phoneNumber; }
+    if (userData.address) { userData.Address = userData.address; delete userData.address; }
+    if (userData.cccd) { userData.CCCD = userData.cccd; delete userData.cccd; }
+    if (userData.avatar_url) { userData.avatar_url = userData.avatar_url; }
 
-    const FullName = keepOld(userData.FullName, current.FullName);
-    const DateOfBirth = keepOld(userData.DateOfBirth, current.DateOfBirth);
-    const Sex = keepOld(userData.Sex, current.Sex);
-    const Email = keepOld(userData.Email, current.Email);
-    const PhoneNumber = keepOld(userData.PhoneNumber, current.PhoneNumber);
-    const Address = keepOld(userData.Address, current.Address);
-    const CCCD = keepOld(userData.CCCD, current.CCCD);
-    const avatar_url = keepOld(userData.avatar_url, current.avatar_url);
+    const updateKeys = Object.keys(userData);
+    const updateValues = Object.values(userData);
 
-    // Password: chỉ hash lại nếu có truyền mới và khác rỗng, không thì giữ nguyên
-    let hashedPassword = current.Password;
-    if (userData.Password && userData.Password !== "") {
-      hashedPassword = await bcrypt.hash(userData.Password, 10);
-    }
+    if (updateKeys.length === 0) return false;
 
-    const [result] = await db.promise().query(
-      "UPDATE Users SET FullName = ?, DateOfBirth = ?, Password = ?, Sex = ?, Email = ?, PhoneNumber = ?, Address = ?, CCCD = ?, avatar_url = ? WHERE UserId = ? AND Role = 1",
-      [
-        FullName,
-        DateOfBirth,
-        hashedPassword,
-        Sex,
-        Email,
-        PhoneNumber,
-        Address,
-        CCCD,
-        avatar_url,
-        userId,
-      ]
-    );
+    const setClauses = updateKeys.map((key) => `\`${key}\` = ?`).join(", ");
+    const query = `UPDATE Users SET ${setClauses}, UpdatedAt = NOW() WHERE UserId = ? AND Role = 1 AND IsDeleted = 0`;
+    const values = [...updateValues, userId];
+
+    const [result] = await db.promise().query(query, values);
     return result.affectedRows > 0;
   }
 

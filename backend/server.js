@@ -6,6 +6,7 @@ const session = require("express-session");
 const passport = require("./middlewares/passport");
 const cors = require("cors");
 const cleanupExpiredBookings = require("./jobs/bookingCleanup");
+const cleanupOldSeats = require('./jobs/seatCleanup');
 
 const app = express();
 
@@ -21,6 +22,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://cinezone.info:4458",
   "http://cinezone.info",
+  "http://localhost:4458",
 ];
 
 app.use(
@@ -60,13 +62,13 @@ app.use("/api/employee", employeeRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/promotions", promotionRoutes);
 app.use("/api/movie", movieRoutes);
-app.use("/api/seats", seatRoutes);
-app.use("/api/bookings", bookingRoutes);
-app.use("/api/tickets", ticketRoutes);
-app.use("/api/booking-seats", bookingSeatRoutes);
-app.use("/api/showtimes", showtimeRoutes);
-app.use("/api/seatshowtimes", seatShowtimeRoutes);
-app.use("/api/products", productRoutes);
+app.use('/api/seats', seatRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/tickets', ticketRoutes);
+app.use('/api/booking-seats', bookingSeatRoutes);
+app.use('/api/showtimes', showtimeRoutes);
+app.use('/api/seatshowtimes', seatShowtimeRoutes);
+app.use('/api/products', productRoutes);
 
 //port
 const PORT = process.env.PORT || 4458;
