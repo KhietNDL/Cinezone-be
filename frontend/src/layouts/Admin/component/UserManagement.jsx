@@ -41,8 +41,6 @@ export const UserManagement = () => {
   const [avatarFile, setAvatarFile] = useState(null);
   // eslint-disable-next-line no-unused-vars
   const [createdAt, setCreatedAt] = useState("");
-  // eslint-disable-next-line no-unused-vars
-  const [searchLoading, setSearchLoading] = useState(false);
 
   const resetForm = () => {
     setFullName("");
@@ -95,20 +93,15 @@ export const UserManagement = () => {
   }, [searchTerm, allUsers]);
 
   const handleSearchUser = async (keyword) => {
-    setSearchLoading(true);
     try {
       const res = await searchUserByName(keyword);
       if (res.users) {
         setUsers(res.users);
-      } else {
-        setUsers([]);
       }
     } catch (error) {
       console.error("Search error:", error);
       toast.error("Failed to search users");
       setUsers([]);
-    } finally {
-      setSearchLoading(false);
     }
   };
   const formatDateToYYYYMMDD = (dateStr) => {
@@ -236,7 +229,7 @@ export const UserManagement = () => {
   for (let i = 1; i <= totalPages; i++) {
     pageNumbers.push(i);
   }
-  if (addLoading || deleteLoading || loading || searchLoading) {
+  if (addLoading || deleteLoading || loading) {
     return (
       <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999]">
         <div className="bg-white rounded-lg p-6 flex flex-col items-center shadow-xl">
@@ -779,7 +772,7 @@ export const UserManagement = () => {
                             onClick={() => setAvatarUrl("")}
                             className="mt-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
                           >
-                            Xóa ảnh
+                            Remove Image
                           </button>
                         )}
                       </div>
