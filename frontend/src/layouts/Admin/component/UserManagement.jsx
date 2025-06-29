@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FaRegEdit } from "react-icons/fa";
 import { GoPlus } from "react-icons/go";
 import { IoMdPersonAdd } from "react-icons/io";
 import { IoCloseSharp, IoSearchOutline, IoTime } from "react-icons/io5";
 import { MdPeopleAlt } from "react-icons/md";
 import { RiDeleteBin5Line } from "react-icons/ri";
+// Import các API mới
 import {
-  getUserAdmin,
-  deleteUserAdmin,
-  createUserAdmin,
-  updateUserAdmin,
+  getAllUsers,
+  createUser,
+  editUser,
+  deleteUser,
+  searchUserByName,
 } from "../../../services/APIForAdmin/API";
 import { toast } from "react-toastify";
 
@@ -24,115 +26,160 @@ export const UserManagement = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
   const [users, setUsers] = useState([]);
-  const [formData, setFormData] = useState({
-    FullName: "",
-    DateOfBirth: "",
-    Sex: "",
-    Email: "",
-    Password: "",
-    PhoneNumber: "",
-    Address: "",
-    CCCD: "",
-    avatar_url: "",
-    CreatedAt: "",
-  });
+  const [allUsers, setAllUsers] = useState([]); // Thêm state này
+
+  // Separate states for each field
+  const [fullName, setFullName] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [sex, setSex] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [address, setAddress] = useState("");
+  const [cccd, setCCCD] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarFile, setAvatarFile] = useState(null);
+  // eslint-disable-next-line no-unused-vars
+  const [createdAt, setCreatedAt] = useState("");
+
+  // eslint-disable-next-line no-unused-vars
+  const [searchLoading, setSearchLoading] = useState(false);
+
+  const resetForm = () => {
+    setFullName("");
+    setDateOfBirth("");
+    setSex("");
+    setEmail("");
+    setPassword("");
+    setPhoneNumber("");
+    setAddress("");
+    setCCCD("");
+    setAvatarUrl("");
+    setAvatarFile(null); // reset file
+    setCreatedAt("");
+  };
+
+  // Load all users on mount
   useEffect(() => {
     loadUsers();
   }, []);
 
   const loadUsers = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const response = await getUserAdmin();
-
-      if (response && response.users) {
-        const transformedUsers = response.users.map((user, index) => ({
-          id: user.UserId || index + 1,
-          avatar: user.avatar_url || "/api/placeholder/40/40",
-          fullName: user.FullName || "",
-          identityNumber: user.CCCD || "",
-          dateOfBirth: user.DateOfBirth
-            ? new Date(user.DateOfBirth).toLocaleDateString("vi-VN")
-            : "",
-          sex: user.sex === 1 ? "Male" : user.Sex === 0 ? "Female" : "",
-          email: user.Email || "",
-          phone: user.PhoneNumber || "",
-          address: user.Address || "",
-          registerDate: user.CreatedAt
-            ? new Date(user.CreatedAt).toLocaleDateString("vi-VN")
-            : "",
-          originalData: user,
-        }));
-        setUsers(transformedUsers);
+      const res = await getAllUsers();
+      if (res.users) {
+        setUsers(res.users);
+        setAllUsers(res.users); // Lưu lại danh sách gốc
       }
     } catch (error) {
-      console.error("Error loading users:", error);
+      console.error("Load users error:", error);
       toast.error("Failed to load users");
+      setUsers([]);
+      setAllUsers([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
+  const searchTimeout = useRef();
 
+  useEffect(() => {
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+
+    searchTimeout.current = setTimeout(() => {
+      if (searchTerm.trim() === "") {
+        setUsers(allUsers); // Không fetch lại, chỉ trả về danh sách gốc
+      } else {
+        handleSearchUser(searchTerm.trim());
+      }
+    }, 400);
+
+    return () => clearTimeout(searchTimeout.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, allUsers]);
+
+  const handleSearchUser = async (keyword) => {
+    setSearchLoading(true); // chỉ loading nhỏ
+    try {
+      const res = await searchUserByName(keyword);
+      if (res.users) {
+        setUsers(res.users);
+      } else {
+        setUsers([]);
+      }
+    } catch (error) {
+      console.error("Search error:", error);
+      toast.error("Failed to search users");
+      setUsers([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+  const formatDateToYYYYMMDD = (dateStr) => {
+    if (!dateStr) return "";
+    if (dateStr.includes("-")) return dateStr.replace(/-/g, "/"); // yyyy-mm-dd -> yyyy/mm/dd
+    if (dateStr.includes("/")) {
+      const parts = dateStr.split("/");
+      if (parts[2]?.length === 4) {
+        // dd/mm/yyyy -> yyyy/mm/dd
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+    }
+    return dateStr;
+  };
+  // Add user
   const handleAddUser = async () => {
     try {
       setAddLoading(true);
       if (
-        !formData.FullName ||
-        !formData.DateOfBirth ||
-        !formData.Password ||
-        !formData.Sex ||
-        !formData.Email ||
-        !formData.PhoneNumber ||
-        !formData.Address ||
-        !formData.CCCD ||
-        !formData.avatar_url
+        !fullName ||
+        !dateOfBirth ||
+        !password ||
+        !sex ||
+        !email ||
+        !phoneNumber ||
+        !address ||
+        !cccd ||
+        !avatarUrl
       ) {
         toast.error("Please fill in all required fields");
         return;
       }
+      // Chuyển đổi ngày sinh về dd/mm/yyyy
+      const dob = formatDateToYYYYMMDD(dateOfBirth);
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.Email)) {
+      if (!emailRegex.test(email)) {
         toast.error("Please enter a valid email address");
         return;
       }
-      if (formData.PhoneNumber.length < 10) {
+      if (phoneNumber.length < 10) {
         toast.error("Please enter a valid phone number");
         return;
       }
 
-      const userData = {
-        FullName: formData.FullName.trim(),
-        DateOfBirth: formData.DateOfBirth,
-        Password: formData.Password,
-        Sex: parseInt(formData.Sex), // Đảm bảo Sex là number
-        Email: formData.Email.trim(),
-        PhoneNumber: formData.PhoneNumber.trim(),
-        avatar_url: formData.avatar_url.trim() || "",
-        Address: formData.Address.trim(),
-        CCCD: formData.CCCD.trim(),
-      };
+      const formData = new FormData();
+      formData.append("fullName", fullName.trim());
+      formData.append("dateOfBirth", dob);
+      formData.append("password", password);
+      formData.append("sex", parseInt(sex));
+      formData.append("email", email.trim());
+      formData.append("phoneNumber", phoneNumber.trim());
+      formData.append("address", address.trim());
+      formData.append("cccd", cccd.trim());
+      if (avatarFile) {
+        formData.append("avatar", avatarFile); // Truyền file gốc
+      }
 
-      console.log("Sending user data:", userData);
-      const response = await createUserAdmin(userData);
+      const response = await createUser(formData);
 
       if (response) {
         await loadUsers();
         setShowAddModal(false);
         resetForm();
-
         toast.success("User created successfully");
-        console.log("User created successfully:", response);
       }
     } catch (error) {
-      console.error("Error adding user:", error);
       toast.error(
         "Failed to create user: " + (error.message || "Unknown error")
       );
@@ -141,77 +188,35 @@ export const UserManagement = () => {
     }
   };
 
-  const handleEditUser = (user) => {
-    setSelectedUser(user);
-    setFormData({
-      FullName: user.fullName,
-      Password: "",
-      DateOfBirth: user.originalData?.DateOfBirth
-        ? user.originalData.DateOfBirth.split("T")[0]
-        : user.dateOfBirth,
-      Sex: user.sex === "Male" ? "1" : user.sex === "Female" ? "0" : "",
-      CCCD: user.identityNumber,
-      Email: user.email,
-      Address: user.address,
-      PhoneNumber: user.phone,
-      avatar_url:
-        user.avatar && user.avatar !== "/api/placeholder/40/40"
-          ? user.avatar
-          : "",
-    });
-    setShowEditModal(true);
-  };
-
+  // Edit user
   const handleUpdateUser = async () => {
+    if (!selectedUser) return;
     try {
       setAddLoading(true);
-      if (
-        !formData.FullName ||
-        !formData.DateOfBirth ||
-        !formData.Sex ||
-        !formData.Email ||
-        !formData.PhoneNumber ||
-        !formData.Address ||
-        !formData.CCCD ||
-        !formData.avatar_url
-      ) {
-        toast.error("Please fill in all required fields");
-        return;
-      }
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.Email)) {
-        toast.error("Please enter a valid email address");
-        return;
+
+      // Validate dateOfBirth format dd/mm/yyyy
+      const dob = formatDateToYYYYMMDD(dateOfBirth);
+
+      const formData = new FormData();
+      formData.append("fullName", fullName.trim());
+      formData.append("dateOfBirth", dob);
+      if (password) formData.append("password", password);
+      formData.append("sex", parseInt(sex));
+      formData.append("email", email.trim());
+      formData.append("phoneNumber", phoneNumber.trim());
+      formData.append("address", address.trim());
+      formData.append("cccd", cccd.trim());
+      if (avatarUrl instanceof File) {
+        formData.append("avatar", avatarUrl);
       }
 
-      if (formData.PhoneNumber.length < 10) {
-        toast.error("Please enter a valid phone number");
-        return;
-      }
-      const userData = {
-        FullName: formData.FullName.trim(),
-        DateOfBirth: formData.DateOfBirth,
-        Sex: parseInt(formData.Sex),
-        Email: formData.Email.trim(),
-        PhoneNumber: formData.PhoneNumber.trim(),
-        avatar_url: formData.avatar_url.trim() || "",
-        Address: formData.Address.trim(),
-        CCCD: formData.CCCD.trim(),
-      };
-      if (formData.Password && formData.Password.trim() !== "") {
-        userData.Password = formData.Password;
-      }
-      const userId = selectedUser.originalData?.UserId || selectedUser.id;
+      await editUser(selectedUser.UserId, formData);
 
-      const response = await updateUserAdmin({ userId, user: userData });
-      if (response) {
-        await loadUsers();
-        setShowEditModal(false);
-        resetForm();
-        toast.success("User updated successfully");
-      }
+      await loadUsers();
+      setShowEditModal(false);
+      resetForm();
+      toast.success("User updated successfully");
     } catch (error) {
-      console.error("Error updating user:", error);
       toast.error(
         "Failed to update user: " + (error.message || "Unknown error")
       );
@@ -220,59 +225,30 @@ export const UserManagement = () => {
     }
   };
 
-  const handleDeleteUser = (user) => {
-    setSelectedUser(user);
-    setShowDeleteModal(true);
-  };
-
+  // Delete user
   const confirmDeleteUser = async () => {
     if (!selectedUser) return;
-
     try {
       setDeleteLoading(true);
-      const userId = selectedUser.originalData?.UserId || selectedUser.id;
-      const response = await deleteUserAdmin(userId);
-
-      if (response !== null) {
-        setUsers(users.filter((user) => user.id !== selectedUser.id));
-        setShowDeleteModal(false);
-        setSelectedUser(null);
-        toast.success("User deleted successfully");
-      }
+      await deleteUser(selectedUser.UserId);
+      setUsers(users.filter((user) => user.UserId !== selectedUser.UserId));
+      setShowDeleteModal(false);
+      setSelectedUser(null);
+      toast.success("User deleted successfully");
     } catch (error) {
-      console.error("Error deleting user:", error);
+      console.error("Delete error:", error);
       toast.error("Failed to delete user");
     } finally {
       setDeleteLoading(false);
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      FullName: "",
-      Password: "",
-      DateOfBirth: "",
-      Sex: "",
-      CCCD: "",
-      Email: "",
-      Address: "",
-      PhoneNumber: "",
-      avatar_url: "",
-    });
-  };
-
-  const filteredUsers = users.filter(
-    (user) =>
-      user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const itemsPerPage = 5;
-  const totalItems = filteredUsers.length;
+  const totalItems = users.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentUser = filteredUsers.slice(startIndex, endIndex);
+  const currentUser = users.slice(startIndex, endIndex);
   const pageNumbers = [];
   for (let i = 1; i <= totalPages; i++) {
     pageNumbers.push(i);
@@ -289,9 +265,96 @@ export const UserManagement = () => {
     );
   }
 
+  // Thêm loading overlay giống EmployeeManagement
+  if (addLoading || deleteLoading) {
+    return (
+      <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999]">
+        <div className="bg-white rounded-lg p-6 flex flex-col items-center shadow-xl">
+          <svg
+            className="animate-spin h-8 w-8 text-indigo-600 mb-4"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+              fill="none"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v8z"
+            />
+          </svg>
+          <div className="font-semibold text-lg text-indigo-700">
+            {addLoading
+              ? showEditModal
+                ? "Đang cập nhật người dùng, vui lòng chờ..."
+                : "Đang thêm người dùng, vui lòng chờ..."
+              : "Đang xóa người dùng, vui lòng chờ..."}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Hàm này sẽ được gọi khi bấm vào nút Edit
+  const handleEditUser = (user) => {
+    setSelectedUser(user);
+    setFullName(user.FullName || "");
+    // Nếu user.DateOfBirth là ISO hoặc dd/mm/yyyy, convert sang yyyy-mm-dd cho input type="date"
+    let dob = "";
+    if (user.DateOfBirth) {
+      if (user.DateOfBirth.includes("/")) {
+        // dd/mm/yyyy -> yyyy-mm-dd
+        const [day, month, year] = user.DateOfBirth.split("/");
+        dob = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+      } else {
+        // ISO string
+        dob = user.DateOfBirth.slice(0, 10);
+      }
+    }
+    setDateOfBirth(dob);
+
+    // Gender: "1" là Male, "2" là Female
+    let gender = "";
+    if (user.originalData?.Sex !== undefined) {
+      gender = String(user.originalData.Sex);
+    } else if (user.Sex === 1 || user.Sex === "1" || user.Sex === "Male") {
+      gender = "1";
+    } else if (user.Sex === 2 || user.Sex === "2" || user.Sex === "Female") {
+      gender = "2";
+    }
+    setSex(gender);
+
+    setEmail(user.Email || "");
+    setPassword("");
+    setPhoneNumber(user.PhoneNumber || "");
+    setAddress(user.Address || "");
+    setCCCD(user.CCCD || "");
+    setAvatarUrl(user.avatar_url || "");
+    setCreatedAt(
+      user.originalData?.CreatedAt
+        ? new Date(user.originalData.CreatedAt).toLocaleDateString("en-GB")
+        : ""
+    );
+    setShowEditModal(true);
+  };
+
+  // Hàm này sẽ được gọi khi bấm vào nút Delete
+  const handleDeleteUser = (user) => {
+    setSelectedUser(user);
+    setShowDeleteModal(true);
+  };
+  const formatDate = (dateString) =>
+    dateString ? dateString.split("T")[0] : "";
+
   return (
     <div className="flex items-center h-full justify-between">
-      <div className="w-[90%] space-y-4">
+      <div className="w-[90%] space-y-4 h-[calc(100vh_-_7rem)] movie-management-page">
         {/* Stats Cards */}
         <div className="flex items-center justify-between w-full">
           <div className="bg-white rounded-md p-3 w-[23%] shadow-sm">
@@ -301,7 +364,7 @@ export const UserManagement = () => {
                 <MdPeopleAlt size={20} className="text-blue-500" />
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900">1200</div>
+            <div className="font-bold text-[19px]">1200</div>
           </div>
           <div className="bg-white rounded-md p-3 w-[23%] shadow-sm">
             <div className="flex items-center justify-between">
@@ -333,7 +396,7 @@ export const UserManagement = () => {
         </div>
 
         {/* User Table */}
-        <div className="w-full py-3 space-y-4">
+        <div className="w-full  py-3 space-y-4">
           <div className="flex items-center justify-between">
             <div className="w-full">
               <div className="flex items-center p-1 px-2 w-2/4 rounded-xl bg-white shadow-sm">
@@ -352,336 +415,472 @@ export const UserManagement = () => {
                 />
               </div>
             </div>
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex shrink-0 items-center justify-between gap-2">
               <div
                 role="button"
                 onClick={() => setShowAddModal(true)}
                 className="flex items-center text-[#6051F3] hover:bg-slate-50 p-2 rounded-md active:bg-slate-100 bg-white shadow-sm"
               >
                 <GoPlus size={20} className="mr-2" />
-                Add
+                Add User
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-md shadow-sm w-full max-w-4xl mx-auto">
-            {currentUser.length === 0 ? (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-gray-500">No users found</p>
-              </div>
-            ) : (
-              <table className="w-full table-auto border-collapse">
-                <thead>
-                  <tr className="text-left text-slate-500 text-sm border-b border-slate-200">
-                    <th className="py-2 text-center">Avatar</th>
-                    <th className="py-2 text-center">Full Name</th>
-                    <th className="py-2 text-center">Identity number</th>
-                    <th className="py-2 text-center">Date of Birth</th>
-                    <th className="py-2 text-center">Gender</th>
-                    <th className="py-2 text-center">Email</th>
-                    <th className="py-2 text-center">Address</th>
-                    <th className="py-2 text-center">Phone</th>
-                    <th className="py-2 text-center">Register Date</th>
-                    <th className="py-2 text-center">Actions</th>
+          <div className="bg-white min-h-[340px] max-h-[340px] p-4 rounded-md shadow-sm overflow-x-auto">
+            <table className="w-full table-auto border-collapse">
+              <thead>
+                <tr className="text-left text-slate-500 text-sm border-b border-slate-200">
+                  <th className="py-2 pl-4 text-center pr-4 w-[100px] shrink-0">
+                    Avatar
+                  </th>
+                  <th className="py-2 cursor-pointer w-[200px] shrink-0 items-center gap-1">
+                    Full Name
+                  </th>
+
+                  <th className="py-2 text-center cursor-pointer w-[100px] shrink-0">
+                    Date of Birth
+                  </th>
+                  <th className="py-2 text-center cursor-pointer w-[100px] shrink-0">
+                    Gender
+                  </th>
+                  <th className="py-2 text-center cursor-pointer w-[200px] shrink-0">
+                    Email
+                  </th>
+
+                  <th className="py-2 text-center cursor-pointer w-[100px] shrink-0">
+                    Phone
+                  </th>
+
+                  <th className="py-2 text-center cursor-pointer w-[100px] shrink-0">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentUser.map((user) => (
+                  <tr
+                    key={user.UserId}
+                    role="button"
+                    className="border-b cursor-pointer border-slate-200 hover:bg-slate-100 text-sm"
+                  >
+                    <td className="py-2 text-center w-[100px] shrink-0">
+                      <div className="flex justify-center">
+                        <img
+                          src={user.avatar_url}
+                          alt={user.FullName}
+                          loading="lazy"
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      </div>
+                    </td>
+                    <td className="py-2 w-[200px] shrink-0">{user.FullName}</td>
+                    <td className="py-2 text-center pr-4 w-[100px] shrink-0">
+                      {formatDate(user.DateOfBirth)}
+                    </td>
+                    <td className="py-2 text-center pr-4 w-[100px] shrink-0">
+                      {user.Sex === 1 || user.Sex === "1" || user.Sex === "Male"
+                        ? "Male"
+                        : user.Sex === 2 ||
+                          user.Sex === "2" ||
+                          user.Sex === "Female"
+                        ? "Female"
+                        : ""}
+                    </td>
+                    <td className="py-2 text-center pr-4 w-[200px] shrink-0">
+                      {user.Email && user.Email.length > 30
+                        ? user.Email.slice(0, 30) + "..."
+                        : user.Email}
+                    </td>
+                    <td className="py-2 text-center w-[100px] shrink-0">
+                      {user.PhoneNumber}
+                    </td>
+
+                    <td className="py-2 text-center w-[100px] shrink-0">
+                      <div className="flex items-center justify-center gap-3">
+                        <div
+                          role="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditUser(user);
+                          }}
+                          className="text-blue-500 hover:text-blue-700"
+                          title="Edit"
+                        >
+                          <FaRegEdit size={20} />
+                        </div>
+                        <div
+                          role="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteUser(user);
+                          }}
+                          className="text-red-400 hover:text-red-600"
+                          title="Delete"
+                        >
+                          <RiDeleteBin5Line size={20} />
+                        </div>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {currentUser.map((user) => (
-                    <tr
-                      key={user.id}
-                      role="button"
-                      className="border-b border-slate-200 hover:bg-slate-100 text-sm"
-                    >
-                      <td className="py-2 text-center">
-                        <div className="flex justify-center">
-                          {user.avatar &&
-                          user.avatar !== "/api/placeholder/40/40" ? (
-                            <img
-                              src={user.avatar}
-                              alt={user.fullName}
-                              className="w-10 h-10 rounded-full object-cover"
-                              onError={(e) => {
-                                e.target.src = "/api/placeholder/40/40";
-                              }}
-                            />
-                          ) : (
-                            <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
-                              <span className="text-white text-xs">
-                                {user.fullName?.charAt(0)?.toUpperCase() || "U"}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-2 text-center">{user.fullName}</td>
-                      <td className="py-2 text-center">
-                        {user.identityNumber}
-                      </td>
-                      <td className="py-2 text-center">{user.dateOfBirth}</td>
-                      <td className="py-2 text-center">{user.sex}</td>
-                      <td className="py-2 text-center max-w-[150px] break-words whitespace-pre-line">
-                        {user.email}
-                      </td>
-                      <td className="py-2 text-center">{user.address}</td>
-                      <td className="py-2 text-center">{user.phone}</td>
-                      <td className="py-2 text-center">{user.registerDate}</td>
-                      <td className="py-2 text-center">
-                        <div className="flex items-center justify-center gap-3">
-                          <div
-                            role="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditUser(user);
-                            }}
-                            className="text-blue-500 hover:text-blue-700"
-                            title="Edit"
-                          >
-                            <FaRegEdit size={20} />
-                          </div>
-                          <div
-                            role="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteUser(user);
-                            }}
-                            className="text-red-400 hover:text-red-600"
-                            title="Delete"
-                          >
-                            <RiDeleteBin5Line size={20} />
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                ))}
+              </tbody>
+            </table>
           </div>
 
           {/* Pagination */}
           {totalItems > 0 && (
-            <div className="px-6 py-4 flex items-center justify-between border-t border-gray-200">
+            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
               <div className="text-sm text-gray-700">
                 Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of{" "}
                 {totalItems} users
               </div>
-              <div className="flex items-center justify-end space-x-2 pt-4">
-                <div
-                  role="button"
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(1, prev - 1))
+                  }
                   disabled={currentPage === 1}
-                  className={`px-3 py-1 text-sm cursor-pointer ${
+                  className={`px-3 py-1 rounded border text-sm font-medium ${
                     currentPage === 1
-                      ? "text-gray-300 cursor-not-allowed"
-                      : "text-gray-500 hover:text-gray-700"
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-white text-gray-700 hover:bg-blue-50 border-gray-300"
                   }`}
                 >
                   Previous
-                </div>
+                </button>
                 {pageNumbers.map((page) => (
-                  <div
-                    role="button"
+                  <button
                     key={page}
                     onClick={() => setCurrentPage(page)}
-                    className={`px-3 py-1 text-sm rounded cursor-pointer ${
+                    className={`px-3 py-1 rounded border text-sm font-medium ${
                       currentPage === page
-                        ? "bg-blue-500 text-white"
-                        : "text-gray-700 hover:bg-gray-100"
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white text-gray-700 hover:bg-blue-50 border-gray-300"
                     }`}
                   >
                     {page}
-                  </div>
+                  </button>
                 ))}
-                <div
-                  role="button"
+                <button
                   onClick={() =>
-                    setCurrentPage(Math.min(totalPages, currentPage + 1))
+                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
                   }
                   disabled={currentPage === totalPages}
-                  className={`px-3 py-1 text-sm cursor-pointer ${
+                  className={`px-3 py-1 rounded border text-sm font-medium ${
                     currentPage === totalPages
-                      ? "text-gray-300 cursor-not-allowed"
-                      : "text-gray-500 hover:text-gray-700"
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-white text-gray-700 hover:bg-blue-50 border-gray-300"
                   }`}
                 >
                   Next
-                </div>
+                </button>
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Add User Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white text-black rounded-lg p-6 w-96 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">Add New User</h2>
-
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+      {/* Add/Edit User Modal */}
+      {(showAddModal || showEditModal) && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-xl max-h-[95vh] overflow-hidden">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 text-white">
+              <div className="flex items-center justify-between">
                 <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Full Name*
-                  </label>
-                  <input
-                    type="text"
-                    name="FullName"
-                    value={formData.FullName}
-                    onChange={handleInputChange}
-                    placeholder="Enter full name"
-                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                  />
+                  <h2 className="text-2xl font-bold">
+                    {showEditModal ? "Edit User" : "Add New User"}
+                  </h2>
+                  <p className="text-blue-100 text-sm mt-1">
+                    {showEditModal
+                      ? "Update the details below to edit the user"
+                      : "Fill in the details below to add a user"}
+                  </p>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Date of Birth*
-                  </label>
-                  <input
-                    type="date"
-                    name="DateOfBirth"
-                    value={formData.DateOfBirth}
-                    onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Password*
-                </label>
-                <input
-                  type="password"
-                  name="Password"
-                  value={formData.Password}
-                  onChange={handleInputChange}
-                  placeholder="Enter password"
-                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Gender*
-                </label>
-                <div className="flex gap-4">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="Sex"
-                      value="1"
-                      checked={formData.Sex === "1"}
-                      onChange={handleInputChange}
-                      className="mr-2"
+                <button
+                  onClick={() => {
+                    if (showAddModal) setShowAddModal(false);
+                    if (showEditModal) setShowEditModal(false);
+                    resetForm();
+                  }}
+                  className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
                     />
-                    Male
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="Sex"
-                      value="0"
-                      checked={formData.Sex === "0"}
-                      onChange={handleInputChange}
-                      className="mr-2"
-                    />
-                    Female
-                  </label>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Identity Card*
-                  </label>
-                  <input
-                    type="text"
-                    name="CCCD"
-                    value={formData.CCCD}
-                    onChange={handleInputChange}
-                    placeholder="Enter identity card number"
-                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Email*
-                  </label>
-                  <input
-                    type="email"
-                    name="Email"
-                    value={formData.Email}
-                    onChange={handleInputChange}
-                    placeholder="Enter email address"
-                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Address*
-                </label>
-                <input
-                  type="text"
-                  name="Address"
-                  value={formData.Address}
-                  onChange={handleInputChange}
-                  placeholder="Enter address"
-                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Phone Number*
-                </label>
-                <input
-                  type="tel"
-                  name="PhoneNumber"
-                  value={formData.PhoneNumber}
-                  onChange={handleInputChange}
-                  placeholder="Enter phone number"
-                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Avatar URL
-                </label>
-                <input
-                  type="url"
-                  name="avatar_url"
-                  value={formData.avatar_url}
-                  onChange={handleInputChange}
-                  placeholder="Enter avatar image URL"
-                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                />
+                  </svg>
+                </button>
               </div>
             </div>
-
-            <div className="flex justify-end gap-2 mt-6">
+            {/* Form */}
+            <div className="p-6 overflow-y-auto max-h-[calc(95vh-170px)]">
+              <div className="space-y-6">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <svg
+                      className="w-5 h-5 mr-2 text-blue-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2h4a1 1 0 110 2h-1v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6H3a1 1 0 110-2h4z"
+                      />
+                    </svg>
+                    User Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Full Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder="Enter full name"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Date of Birth <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        value={dateOfBirth}
+                        onChange={(e) => setDateOfBirth(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Gender <span className="text-red-500">*</span>
+                      </label>
+                      <div className="flex gap-4 mt-2">
+                        <label className="flex items-center">
+                          <input
+                            type="radio"
+                            name="Sex"
+                            value="1"
+                            checked={sex === "1"}
+                            onChange={(e) => setSex(e.target.value)}
+                            className="mr-2"
+                          />
+                          Male
+                        </label>
+                        <label className="flex items-center">
+                          <input
+                            type="radio"
+                            name="Sex"
+                            value="2"
+                            checked={sex === "2"}
+                            onChange={(e) => setSex(e.target.value)}
+                            className="mr-2"
+                          />
+                          Female
+                        </label>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Identity Card <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={cccd}
+                        onChange={(e) => setCCCD(e.target.value)}
+                        placeholder="Enter identity card number"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Email <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Enter email address"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Phone Number <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        placeholder="Enter phone number"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Address <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        placeholder="Enter address"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+                    {/* Avatar Upload & Preview */}
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2 w-full">
+                        Avatar
+                      </label>
+                      <div className="w-full flex flex-col items-center">
+                        <div className="relative w-24 h-24 rounded-full border border-gray-300 bg-white flex items-center justify-center overflow-hidden mb-2">
+                          {avatarUrl ? (
+                            <>
+                              <img
+                                src={avatarUrl}
+                                alt="Avatar"
+                                className="object-cover w-full h-full"
+                                onError={(e) =>
+                                  (e.target.src = "/api/placeholder/40/40")
+                                }
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setAvatarUrl("")}
+                                className="absolute top-1 right-1 bg-white rounded-full p-1 shadow hover:bg-red-100 transition"
+                                title="Remove image"
+                              >
+                                <svg
+                                  className="w-4 h-4 text-red-500"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M6 18L18 6M6 6l12 12"
+                                  />
+                                </svg>
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-gray-400">No Image</span>
+                          )}
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          id="avatar-upload"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              setAvatarFile(file); // Lưu file gốc
+                              const reader = new FileReader();
+                              reader.onload = (ev) =>
+                                setAvatarUrl(ev.target.result);
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                        <label
+                          htmlFor="avatar-upload"
+                          className="mt-2 px-4 py-2 bg-blue-500 text-white rounded cursor-pointer hover:bg-blue-600 transition"
+                        >
+                          Upload Image
+                        </label>
+                        {avatarUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setAvatarUrl("")}
+                            className="mt-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
+                          >
+                            Xóa ảnh
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Password
+                        {showEditModal ? "" : " "}
+                      </label>
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder={
+                          showEditModal
+                            ? "Enter new password (leave blank to keep current)"
+                            : "Enter password"
+                        }
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* Footer */}
+            <div className="bg-gray-50 px-6 py-4 border-slate-300 border-t flex justify-end space-x-3">
               <button
                 onClick={() => {
-                  setShowAddModal(false);
+                  if (showAddModal) setShowAddModal(false);
+                  if (showEditModal) setShowEditModal(false);
                   resetForm();
                 }}
-                disabled={addLoading}
-                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
+                className="px-6 py-3 text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg font-medium transition-colors"
               >
                 Cancel
               </button>
               <button
-                onClick={handleAddUser}
-                disabled={addLoading}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                disabled={loading}
+                onClick={showEditModal ? handleUpdateUser : handleAddUser}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg flex items-center"
               >
-                {addLoading ? (
+                {loading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Creating...
+                    <svg
+                      className="animate-spin h-5 w-5 mr-2 text-white"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8z"
+                      />
+                    </svg>
+                    {showEditModal ? "Updating..." : "Creating..."}
                   </>
+                ) : showEditModal ? (
+                  "Update"
                 ) : (
                   "Add User"
                 )}
@@ -691,180 +890,9 @@ export const UserManagement = () => {
         </div>
       )}
 
-      {/* Edit User Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white text-black rounded-lg p-6 w-96 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">Edit User</h2>
-
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Full Name*
-                  </label>
-                  <input
-                    type="text"
-                    name="FullName"
-                    value={formData.FullName}
-                    onChange={handleInputChange}
-                    placeholder="Enter full name"
-                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Date of Birth*
-                  </label>
-                  <input
-                    type="date"
-                    name="DateOfBirth"
-                    value={formData.DateOfBirth}
-                    onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  name="Password"
-                  value={formData.Password}
-                  onChange={handleInputChange}
-                  placeholder="Enter new password (leave blank to keep current)"
-                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Gender*
-                </label>
-                <div className="flex gap-4">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="Sex"
-                      value="1"
-                      checked={formData.Sex === "1"}
-                      onChange={handleInputChange}
-                      className="mr-2"
-                    />
-                    Male
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="Sex"
-                      value="0"
-                      checked={formData.Sex === "0"}
-                      onChange={handleInputChange}
-                      className="mr-2"
-                    />
-                    Female
-                  </label>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Identity Card*
-                  </label>
-                  <input
-                    type="text"
-                    name="CCCD"
-                    value={formData.CCCD}
-                    onChange={handleInputChange}
-                    placeholder="Enter identity card number"
-                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Email*
-                  </label>
-                  <input
-                    type="email"
-                    name="Email"
-                    value={formData.Email}
-                    onChange={handleInputChange}
-                    placeholder="Enter email address"
-                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Address*
-                </label>
-                <input
-                  type="text"
-                  name="Address"
-                  value={formData.Address}
-                  onChange={handleInputChange}
-                  placeholder="Enter address"
-                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Phone Number*
-                </label>
-                <input
-                  type="tel"
-                  name="PhoneNumber"
-                  value={formData.PhoneNumber}
-                  onChange={handleInputChange}
-                  placeholder="Enter phone number"
-                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Avatar URL
-                </label>
-                <input
-                  type="url"
-                  name="avatar_url"
-                  value={formData.avatar_url}
-                  onChange={handleInputChange}
-                  placeholder="Enter avatar image URL"
-                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 mt-6">
-              <button
-                onClick={() => {
-                  setShowEditModal(false);
-                  resetForm();
-                }}
-                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUpdateUser}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Update
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Delete User Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white text-black rounded-lg p-6 w-96">
             <h2 className="text-xl font-bold mb-4 text-red-600">Delete User</h2>
             <p className="mb-6">

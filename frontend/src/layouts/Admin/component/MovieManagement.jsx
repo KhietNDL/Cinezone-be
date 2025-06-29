@@ -608,7 +608,7 @@ const MovieManagement = () => {
         newestOnTop={false}
         closeOnClick
         rtl={false}
-        pauseOnFocusLoss
+        // pauseOnFocusLoss
         draggable
       />
     </div>

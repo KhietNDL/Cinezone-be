@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import logo from "../../../assets/logoWeb.png";
 import { useNavigate } from "react-router-dom";
-import { BsBell } from "react-icons/bs";
-import { IoIosArrowDown } from "react-icons/io";
 import { useAuth } from "../../../context/AuthContext";
 import { logout } from "../../../services/API";
 
@@ -51,11 +49,6 @@ const HeaderAdmin = () => {
       </div>
 
       <div className="flex items-center justify-end w-[20%] space-x-8">
-        {/* Notification Bell */}
-        <div className="relative">
-          <BsBell className="w-6 h-6 text-gray-600 cursor-pointer hover:text-gray-800" />
-        </div>
-
         {/* User Profile Dropdown */}
         <div className="relative">
           <div
@@ -77,11 +70,6 @@ const HeaderAdmin = () => {
               <p className="font-bold text-[15px] truncate">{user?.fullName}</p>
               <p className="text-[15px] text-slate-400">Admin</p>
             </div>
-            <IoIosArrowDown
-              className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${
-                showDropdown ? "rotate-180" : ""
-              }`}
-            />
           </div>
 
           {/* Dropdown Menu */}
