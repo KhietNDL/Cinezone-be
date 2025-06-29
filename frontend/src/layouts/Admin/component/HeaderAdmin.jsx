@@ -1,13 +1,11 @@
 import React from "react";
 import logo from "../../../assets/logoWeb.png";
 import { useNavigate } from "react-router-dom";
-import { BsBell } from "react-icons/bs";
-import { IoIosArrowDown } from "react-icons/io";
-
 import { useAuth } from "../../../context/AuthContext";
 const HeaderAdmin = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+
   return (
     <div className="flex select-none p-2 w-full px-[20px] justify-between items-center bg-white">
       <div role="button" className="flex w-[20%] items-center">

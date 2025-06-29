@@ -382,7 +382,32 @@ export const getCinemaRooms = async (params) => {
     handleError(error);
   }
 };
-
+export const searchCinemaRooms = async (name) => {
+  try {
+    const response = await api.get("/cinema-rooms/search", {
+      params: { name },
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+export const updateCinemaRoom = async (id, roomData) => {
+  try {
+    const response = await api.put(`/cinema-rooms/update/${id}`, roomData);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+export const deleteCinemaRoom = async (id) => {
+  try {
+    const response = await api.delete(`/cinema-rooms/delete/${id}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
 //API cho Booking FLow
 
 export const getShowtimeByMovieName = async (movieName) => {

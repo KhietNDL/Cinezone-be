@@ -1,6 +1,5 @@
 // src/services/API.jsx
 import axios from "axios";
-import { toast } from "react-toastify";
 
 // Lấy baseURL từ biến môi trường .env
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -57,7 +56,7 @@ const handleError = (error) => {
   throw new Error(errorMessage);
 };
 
-export const getUserAdmin = async () => {
+export const getAllUsers = async () => {
   try {
     const response = await api.get("/user");
     return response.data;
@@ -65,29 +64,46 @@ export const getUserAdmin = async () => {
     handleError(error);
   }
 };
-export const createUserAdmin = async (user) => {
+export const createUser = async (formData) => {
   try {
-    const response = await api.post("user/create", user);
+    const response = await api.post("/user/create", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
     return response.data;
   } catch (error) {
-    toast.error(error.response.data);
+    handleError(error);
   }
 };
 
-export const updateUserAdmin = async ({ userId, user }) => {
+export const editUser = async (userId, formData) => {
   try {
-    const response = await api.put(`user/update/${userId}`, user);
+    const response = await api.put(`/user/update/${userId}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
     return response.data;
   } catch (error) {
-    toast.error(error.response.data);
+    handleError(error);
   }
 };
-export const deleteUserAdmin = async (userId) => {
+export const deleteUser = async (userId) => {
   try {
-    const response = await api.delete(`user/delete/${userId}`);
+    const response = await api.delete(`/user/delete/${userId}`);
     return response.data;
   } catch (error) {
-    toast.error(error.response.data);
-    return null;
+    handleError(error);
+  }
+};
+export const searchUserByName = async (name) => {
+  try {
+    const response = await api.get("/user/searchByName", {
+      params: { name },
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
   }
 };
