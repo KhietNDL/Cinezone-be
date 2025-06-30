@@ -14,7 +14,6 @@ const Header = () => {
   const [searchResults, setSearchResults] = useState([]);
   const { user } = useAuth();
 
-  // Function to call the API
   const handleSearch = async (query) => {
     if (!query.trim()) {
       setSearchResults([]);
@@ -22,15 +21,8 @@ const Header = () => {
     }
     try {
       const response = await searchMovies({ name: query });
-      console.log("API Response:", response.data.data); // Log toàn bộ response
-      if (response.data.data && Array.isArray(response.data.data)) {
-        setSearchResults(response.data.data); // Trích xuất mảng từ response.data.data
-      } else {
-        setSearchResults([]);
-        console.log(
-          "No valid array data found in response:",
-          response.data.data
-        );
+      if (response.data.data) {
+        setSearchResults(response.data.data);
       }
     } catch (error) {
       console.error("Error fetching movies:", error);
@@ -38,15 +30,13 @@ const Header = () => {
     }
   };
 
-  // Handle input change and search with debounce effect
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       handleSearch(searchQuery);
-    }, 300); // Delay 300ms to avoid excessive API calls
+    }, 300);
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
 
-  // Navigate to movie page
   const handleMovieSelect = (MovieName) => {
     const slug = slugify(MovieName);
     navigate(`/${slug}`);
@@ -90,7 +80,7 @@ const Header = () => {
             onFocus={() => setIsSearchOpen(true)}
             className={`absolute right-0 top-1/2 -translate-y-1/2 transition-all duration-300 bg-black text-white border border-[#6a57f5] rounded-4xl pl-4 pr-13 py-2.5 outline-none z-10 ${
               isSearchOpen
-                ? "w-70 opacity-100 visible"
+                ? "w-50 md:w-70 opacity-100 visible"
                 : "w-0 opacity-0 invisible px-0 py-0 border-0"
             }`}
             style={{ minWidth: 0 }}
@@ -105,9 +95,9 @@ const Header = () => {
           >
             <FaSearch size={20} className="text-white" />
           </div>
-          {/* Dropdown kết quả */}
+
           {isSearchOpen && searchQuery && searchResults.length > 0 && (
-            <div className="absolute p-2 right-0 pt-7 pb-3 top-3 w-70 bg-black border border-[#6a57f5] rounded-b-xl shadow-[#6a57f5] shadow-md max-h-40 overflow-y-auto mt-2 transition-all duration-300 z-0">
+            <div className="absolute p-2 right-0 pt-7 pb-3 top-3 w-50 md:w-70 bg-black border border-[#6a57f5] rounded-b-xl shadow-[#6a57f5] shadow-md max-h-40 overflow-y-auto mt-2 transition-all duration-300 z-0">
               {searchResults.map((movie) => (
                 <div
                   key={movie.MovieId}
