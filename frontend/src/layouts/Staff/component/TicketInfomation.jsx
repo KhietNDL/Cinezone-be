@@ -94,32 +94,7 @@ const TicketInfomation = () => {
     processPaymentResult();
   }, []);
 
-  const formatBookingData = (apiData) => ({
-    bookingId: apiData.bookingId,
-    movie: {
-      NameOfEnglish: apiData.movieNameEnglish,
-      NameOfVietnamese: apiData.movieNameVN,
-      PosterImage: apiData.moviePoster
-    },
-    day: apiData.showDate,
-    time: apiData.showTime,
-    room: apiData.room,
-    version: apiData.version,
-    selectedSeats: apiData.seats?.map(s => s.seatNumber) || [],
-    seatData: apiData.seats || [],
-    totalPrice: apiData.totalAmount || 0,
-    memberInfo: {
-      email: apiData.email,
-      fullName: apiData.fullName,
-      identityCard: apiData.identityCard,
-      phone: apiData.phone,
-      score: apiData.score,
-      memberLevel: apiData.memberLevel,
-      memberId: apiData.memberId
-    },
-    paymentMethod: apiData.paymentMethod || 'cash',
-    discount: apiData.discountValue || 0
-  });
+zz
 
   const handleNewTicket = () => {
     localStorage.removeItem('currentBooking');

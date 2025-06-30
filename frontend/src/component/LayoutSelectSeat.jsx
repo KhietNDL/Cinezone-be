@@ -93,7 +93,7 @@ export const LayoutSelectSeat = ({
 
   const handleSeatClick = (seatNumber) => {
     const seat = seatMap[seatNumber];
-    if (!seat || seat.status === "taken") return;
+    if (!seat || seat.status === "taken" ) return;
 
     const newSelectedSeats = new Set(selectedSeats);
     if (newSelectedSeats.has(seatNumber)) {

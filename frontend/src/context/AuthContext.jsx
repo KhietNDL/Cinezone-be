@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { getUser, logout } from "../services/API";
+import { jwtDecode } from "jwt-decode";
 
 const AuthContext = createContext();
 
@@ -8,41 +9,46 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const initializeAuth = async () => {
       const token = localStorage.getItem("token");
       const userId = localStorage.getItem("userId");
 
       if (token && userId) {
         try {
+          const decoded = jwtDecode(token);
+          setUser(decoded); // Set user tạm thời từ JWT
           const userData = await getUser(userId);
           setUser(userData.user);
         } catch (error) {
-          console.error("Failed to fetch user:", error);
-          localStorage.removeItem("token");
-          localStorage.removeItem("userId");
-          setUser(null); // <- thêm dòng này
-          setUser(null);
+          console.error("Auth error:", error);
+          if (error.response?.status === 401) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("userId");
+            setUser(null);
+          }
         }
       } else {
-        setUser(null); // <- thêm dòng này nếu không có token
+        setUser(null);
       }
-
       setIsLoading(false);
     };
 
-    fetchUser();
+    initializeAuth();
   }, []);
 
   const signIn = async (token, userId) => {
     localStorage.setItem("token", token);
     localStorage.setItem("userId", userId);
     try {
+      const decoded = jwtDecode(token);
+      setUser(decoded);
       const userData = await getUser(userId);
       setUser(userData.user);
     } catch (error) {
       console.error("Failed to fetch user in signIn:", error);
       localStorage.removeItem("token");
       localStorage.removeItem("userId");
+      throw error;
     }
   };
 
@@ -61,7 +67,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, isLoading, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, isLoading, signIn, signOut, setUser }}>
       {children}
     </AuthContext.Provider>
   );

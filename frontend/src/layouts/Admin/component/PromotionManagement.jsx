@@ -296,10 +296,9 @@ const PromotionManagement = () => {
             </button>
           )}
         </div>
-
         {/* Table */}
-        <div className=" bg-white p-4 rounded-md mb-2 shadow-sm min-h-[620px] max-h-[620px]">
-          <table className="w-full table-auto border-collapse min-h-[600px] max-h-[600px]">
+        <div className="bg-white p-4 rounded-md shadow-sm">
+          <table className="w-full table-auto border-collapse">
             <thead>
               <tr className="text-left text-slate-500 text-sm border-b border-slate-200">
                 <th className="py-2 text-center w-[200px] shrink-0">Image</th>
@@ -413,12 +412,12 @@ const PromotionManagement = () => {
               })}
             </tbody>
           </table>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            handlePageChange={handlePageChange}
-          />
-        </div>
+        </div>{" "}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          handlePageChange={handlePageChange}
+        />
       </div>
 
       {/* Delete Popup */}

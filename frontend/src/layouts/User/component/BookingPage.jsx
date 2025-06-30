@@ -117,7 +117,7 @@ const BookingPage = () => {
     fetchTimeByDay();
   }, [selectedDate, movie]);
 
-  // FIXED: Fetch seats khi selectedShowtimeId thay đổi
+  
   useEffect(() => {
     const fetchSeatsByShowtimeId = async () => {
       if (!selectedShowtimeId) return;
@@ -130,13 +130,13 @@ const BookingPage = () => {
         setSeatsData(response.seats);
         setSeatQuantity(response.seatQuantity);
         
-        // Reset selected seats khi load lại data
+        
         setSelectedSeats([]);
         setCalculatedTotalPrice(0);
         setSeatIds([]);
         
-        console.log("== Seat Data được set:", response.seats);
-        console.log("== Seat Quantity được set:", response.seatQuantity);
+        console.log("== Seat Data được set bên trang BookingPage:", response.seats);
+        console.log("== Seat Quantity được set bene BookingPage:", response.seatQuantity);
       } catch (error) {
         console.error("Lỗi khi lấy seats:", error);
       } finally {
@@ -144,9 +144,9 @@ const BookingPage = () => {
       }
     };
     fetchSeatsByShowtimeId();
-  }, [selectedShowtimeId]); // Chỉ depend vào selectedShowtimeId
+  }, [selectedShowtimeId]); 
 
-  // FIXED: Separate function để refresh seats
+ 
   const refreshSeats = async () => {
     if (!selectedShowtimeId) return;
     
@@ -158,13 +158,13 @@ const BookingPage = () => {
       setSeatsData(response.seats);
       setSeatQuantity(response.seatQuantity);
       
-      // Reset selected seats khi refresh
+      
       setSelectedSeats([]);
       setCalculatedTotalPrice(0);
       setSeatIds([]);
       
       console.log("== Seat Data được refresh:", response.seats);
-      setLastRefreshTime(Date.now()); // Update để force re-render component
+      setLastRefreshTime(Date.now()); 
     } catch (error) {
       console.error("Lỗi khi refresh seats:", error);
     } finally {
@@ -172,24 +172,24 @@ const BookingPage = () => {
     }
   };
 
-  // FIXED: Auto refresh seats mỗi 30 giây để sync với backend
+  
   useEffect(() => {
     if (!selectedShowtimeId) return;
 
     const interval = setInterval(() => {
       console.log("== Auto refreshing seats...");
-      refreshSeats(); // Gọi function refresh thay vì set lastRefreshTime
-    }, 30000); // Refresh mỗi 30 giây
+      refreshSeats(); 
+    }, 30000); 
 
     return () => clearInterval(interval);
   }, [selectedShowtimeId]);
 
-  // FIXED: Refresh khi window focus (khi user quay lại tab)
+
   useEffect(() => {
     const handleFocus = () => {
       if (selectedShowtimeId) {
         console.log("== Window focused, refreshing seats...");
-        refreshSeats(); // Gọi function refresh thay vì set lastRefreshTime
+        refreshSeats(); 
       }
     };
 
@@ -197,9 +197,9 @@ const BookingPage = () => {
     return () => window.removeEventListener('focus', handleFocus);
   }, [selectedShowtimeId]);
 
-  // FIXED: Manual refresh function
+  
   const handleManualRefresh = () => {
-    refreshSeats(); // Gọi function refresh
+    refreshSeats(); 
   };
 
   const visibleDates = showtimes.slice(dateIndex, dateIndex + 6);
@@ -505,7 +505,7 @@ const BookingPage = () => {
                 {seatsData.length > 0 ? (
                   <div className="flex justify-center bg-white/2 rounded-2xl p-6 border border-white/10">
                     <LayoutSelectSeat
-                      key={`${selectedShowtimeId}-${lastRefreshTime}`} // FIXED: Force re-render khi data thay đổi
+                      key={`${selectedShowtimeId}-${lastRefreshTime}`} 
                       initialSelectedSeats={selectedSeats}
                       seatDataFromAPI={seatsData}
                       totalSeats={seatQuantity}
