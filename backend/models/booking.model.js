@@ -312,7 +312,7 @@ class Booking {
 
       // 1. Đổi trạng thái booking sang CANCELLED (4)
       await connection.query(
-        `UPDATE Bookings SET Status = 4 WHERE BookingId = ? AND Status IN (1,2)`,
+        `UPDATE Bookings SET Status = 4 WHERE BookingId = ? AND IsDeleted = 0 AND (Status = 1 OR Status = 2)`,
         [bookingId]
       );
 
