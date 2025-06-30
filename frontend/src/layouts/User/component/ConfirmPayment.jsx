@@ -38,6 +38,8 @@ const ConfirmPayment = () => {
   useEffect(() => {
     const initialHoldSeats = async () => {
       if (userId && selectedShowtimeId && seatIds?.length > 0) {
+        console.log("data truoc khi gui di:", { userId, selectedShowtimeId, seatIds });
+        preventCancel.current = false;
         try {
           const result = await HoldingSeats(userId, selectedShowtimeId, seatIds, [], '');
           setHoldingSeats(result);
