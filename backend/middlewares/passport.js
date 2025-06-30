@@ -9,8 +9,10 @@ passport.use(new GoogleStrategy(googleConfig,
       const email = profile.emails[0].value;
 
       // 1. Tìm người dùng theo GoogleId. Nếu tìm thấy, đăng nhập.
+      console.log('Google profile:', profile);
       let user = await User.findByGoogleId(profile.id);
       if (user) {
+        console.log('User found by GoogleId:', user);
         return done(null, user);
       }
 
@@ -27,13 +29,17 @@ passport.use(new GoogleStrategy(googleConfig,
         googleId: profile.id,
         fullName: profile.displayName,
         email: email,
+        refreshToken: refreshToken,
+        accessToken: accessToken,
         // có thể thêm các trường khác nếu cần
       };
       const userId = await User.createGoogleUser(userData);
       user = await User.findById(userId);
+      console.log('Created new Google user:', user);
       return done(null, user);
 
     } catch (err) {
+      console.error('Error in GoogleStrategy:', err);
       return done(err, null);
     }
   }
