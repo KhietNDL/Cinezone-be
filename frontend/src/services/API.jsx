@@ -449,21 +449,17 @@ export const getSeatsByShowtimeId = async (showtimeId) => {
   }
 };
 
-export const HoldingSeats = async (
-  userId,
-  showtimeId,
-  seatIds,
-  productIds,
-  promoCode
-) => {
+
+export const HoldingSeats = async (userId, showtimeId, seatIds ,productIds, promotionTitle) => {
   try {
     const response = await api.post("/bookings/hold", {
       userId: userId,
       showtimeId: showtimeId,
       seatIds: seatIds,
       productIds: productIds || [],
-      promotionTitle: promoCode,
+      promotionTitle: promotionTitle,
     });
+     console.log("HoldingSeats Response:", response.data);
     return response.data;
   } catch (error) {
     console.error("Lỗi khi HodingSeats :", error);
@@ -511,17 +507,16 @@ export const getPromotionByTitle = async (title) => {
   }
 };
 
-export const ConfirmBooking = async (bookingId) => {
-  try {
-    const response = await api.post("/bookings/confirm/${bookingId}", {
-      params: { bookingId: bookingId },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Lỗi khi Confirm Booking :", error);
-    handleError(error);
-    throw error;
-  }
+export const ConfirmBooking = async (bookingId) => {   
+  try {     
+    const response = await api.post(`/bookings/confirm/${bookingId}`);     
+    cosnole.log("Confirm Booking Response:", response.data);
+    return response.data;   
+  } catch (error) {     
+    console.error("Lỗi khi Confirm Booking :", error);     
+    handleError(error);     
+    throw error;   
+  } 
 };
 
 export const getBookingById = async (bookingId) => {
@@ -544,4 +539,27 @@ export const cancelBooking = async (bookingId) => {
     handleError(error);
     throw error;
   }
-};
+}
+
+export const getBookingHistory = async (memberId) => {
+  try {
+    const response = await api.get(`/bookings/member/${memberId}`);
+    console.log("Booking History:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy lịch sử đặt vé:", error);
+    handleError(error);
+    throw error;
+  }
+}
+
+export const getAllProducts = async () => {
+  try {
+    const response = await api.get("/products");
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách sản phẩm owr API:", error);
+    handleError(error);
+    throw error;
+  }
+}

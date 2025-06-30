@@ -40,6 +40,7 @@ const WaitingPayment = () => {
         
         
         };
+        console.log("Payment payload:", payload);
 
         let response;
 

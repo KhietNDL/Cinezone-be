@@ -8,27 +8,25 @@ import {
   FaChevronRight,
   FaChevronDown,
 } from "react-icons/fa";
-import { MdOutlineOndemandVideo, MdOutlineMeetingRoom } from "react-icons/md";
+import { MdOutlineOndemandVideo, MdOutlineMeetingRoom, MdOutlineStarOutline } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import Swal from "sweetalert2";
 import { slugify } from "./Slug";
 import {
+  getAllProducts,
   getMovies,
   getSeatsByShowtimeId,
   getShowtimeByMovieId,
-
   getTimeByDay,
 } from "../../../services/API";
 import { LayoutSelectSeat } from "../../../component/LayoutSelectSeat";
 import { RiMovie2AiLine } from "react-icons/ri";
+import { GiRegeneration } from "react-icons/gi";
 
 import DoubleSeatNoneLight from "../../../assets/DoubleSeatNoneLight.svg";
 import DoubleSeatSelectingLight from "../../../assets/DoubleSeatSelectingLight.svg"
 import DoubleSeatSelected from "../../../assets/DoubleSeatSelected.svg";
-
-
-
 
 const BookingPage = () => {
   const [selectedSeats, setSelectedSeats] = useState([]);
@@ -40,7 +38,6 @@ const BookingPage = () => {
   const [seatsData, setSeatsData] = useState([]);
   const [seatQuantity, setSeatQuantity] = useState(0);
 
-
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const popupVideoRef = useRef(null);
   const { user } = useAuth();
@@ -51,13 +48,27 @@ const BookingPage = () => {
   const [selectedRoom, setSelectedRoom] = useState("");
   const [selectedShowtimeId, setSelectedShowtimeId] = useState("");
 
-
   const ticketPrice = 100000;
   const totalPrice = selectedSeats.length * ticketPrice;
   const [calculatedTotalPrice, setCalculatedTotalPrice] = useState(0);
   const [seatIds, setSeatIds] = useState([]);
 
+  // Thêm state để track refresh
+  const [lastRefreshTime, setLastRefreshTime] = useState(Date.now());
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
+  const DNALoader = () => (
+    <div className="relative w-12 h-12 mx-auto">
+      <div className="absolute inset-0 animate-spin" style={{ animation: 'spin 2s linear infinite' }}>
+        <div className="w-1 h-6 bg-gradient-to-b from-cyan-400 to-blue-600 rounded-full absolute left-1 top-0 animate-pulse"></div>
+        <div className="w-1 h-6 bg-gradient-to-b from-pink-400 to-purple-600 rounded-full absolute right-1 bottom-0 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+      </div>
+      <div className="absolute inset-0 animate-spin" style={{ animation: 'spin 2s linear infinite reverse' }}>
+        <div className="w-1 h-4 bg-gradient-to-b from-green-400 to-emerald-600 rounded-full absolute left-2 top-1 animate-pulse" style={{ animationDelay: '0.25s' }}></div>
+        <div className="w-1 h-4 bg-gradient-to-b from-yellow-400 to-orange-600 rounded-full absolute right-2 bottom-1 animate-pulse" style={{ animationDelay: '0.75s' }}></div>
+      </div>
+    </div>
+  );
 
   useEffect(() => {
     const fetchMovie = async () => {
@@ -79,7 +90,6 @@ const BookingPage = () => {
     fetchMovie();
   }, [slug]);
 
-
   useEffect(() => {
     const fetchShowtimes = async () => {
       if (!movie?.MovieId) return;
@@ -96,9 +106,7 @@ const BookingPage = () => {
   useEffect(() => {
     const fetchTimeByDay = async () => {
       if (!movie?.MovieId || !selectedDate) return;
-
       try {
-
         const response = await getTimeByDay(movie.MovieId, selectedDate);
         setTimeOptions(response.versions);
         console.log("== Time options được set:", response.versions);
@@ -109,23 +117,90 @@ const BookingPage = () => {
     fetchTimeByDay();
   }, [selectedDate, movie]);
 
+  
   useEffect(() => {
     const fetchSeatsByShowtimeId = async () => {
       if (!selectedShowtimeId) return;
-
+      
+      setIsRefreshing(true);
+      console.log("== Fetching seats for showtime ID:", selectedShowtimeId);
+      
       try {
-
         const response = await getSeatsByShowtimeId(selectedShowtimeId);
         setSeatsData(response.seats);
         setSeatQuantity(response.seatQuantity);
-        console.log("== Seat Data duoc set:", response.seats);
-        console.log("== Seat Quantity duoc set:", response.seatQuantity);
+        
+        
+        setSelectedSeats([]);
+        setCalculatedTotalPrice(0);
+        setSeatIds([]);
+        
+        console.log("== Seat Data được set bên trang BookingPage:", response.seats);
+        console.log("== Seat Quantity được set bene BookingPage:", response.seatQuantity);
       } catch (error) {
-        console.error("Lỗi khi lấy giờ chiếu:", error);
+        console.error("Lỗi khi lấy seats:", error);
+      } finally {
+        setIsRefreshing(false);
       }
     };
     fetchSeatsByShowtimeId();
+  }, [selectedShowtimeId]); 
+
+ 
+  const refreshSeats = async () => {
+    if (!selectedShowtimeId) return;
+    
+    setIsRefreshing(true);
+    console.log("== Refreshing seats for showtime ID:", selectedShowtimeId);
+    
+    try {
+      const response = await getSeatsByShowtimeId(selectedShowtimeId);
+      setSeatsData(response.seats);
+      setSeatQuantity(response.seatQuantity);
+      
+      
+      setSelectedSeats([]);
+      setCalculatedTotalPrice(0);
+      setSeatIds([]);
+      
+      console.log("== Seat Data được refresh:", response.seats);
+      setLastRefreshTime(Date.now()); 
+    } catch (error) {
+      console.error("Lỗi khi refresh seats:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  
+  useEffect(() => {
+    if (!selectedShowtimeId) return;
+
+    const interval = setInterval(() => {
+      console.log("== Auto refreshing seats...");
+      refreshSeats(); 
+    }, 30000); 
+
+    return () => clearInterval(interval);
   }, [selectedShowtimeId]);
+
+
+  useEffect(() => {
+    const handleFocus = () => {
+      if (selectedShowtimeId) {
+        console.log("== Window focused, refreshing seats...");
+        refreshSeats(); 
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [selectedShowtimeId]);
+
+  
+  const handleManualRefresh = () => {
+    refreshSeats(); 
+  };
 
   const visibleDates = showtimes.slice(dateIndex, dateIndex + 6);
 
@@ -148,320 +223,380 @@ const BookingPage = () => {
     setIsPopupOpen(false);
   };
 
-  const comboList = [
-    {
-      id: 1,
-      name: "Combo 1",
-      description: "1 Bắp + 1 Nước",
-      price: 69000,
-      image: "https://library.the1.co.th/content/dam/the1/offers/20220720_Redeem_790PComboMAWO_SFC.jpg",
-    },
-    {
-      id: 2,
-      name: "Combo 2",
-      description: "2 Bắp + 2 Nước",
-      price: 129000,
-      image: "https://cdn.eventcinemas.com.au/cdn/resources/contentupload/images/promo/2023/theflash/combo_1458x1115.jpg",
-    },
-    {
-      id: 3,
-      name: "Combo Siêu Vip",
-      description: "2 Bắp lớn + 2 Pepsi lớn + snack",
-      price: 159000,
-      image: "https://www.everydayonsales.com/wp-content/uploads/2020/02/TGV-Cinemas-FREE-Popcorn-Combo-with-MasterCard-2020-Malaysia-FREEBIES-2021-Promotion-Movie-Times-937x1024.jpg",
-    },
-    {
-      id: 4,
-      name: "Combo Siêu Vip",
-      description: "2 Bắp lớn + 2 Pepsi lớn + snack",
-      price: 159000,
-      image: "https://library.the1.co.th/content/dam/the1/offers/20220720_Redeem_790PComboMAWO_SFC.jpg",
-    },
-  ];
-
-
   if (loading)
-    return <div className="text-white text-center mt-20">Đang tải...</div>;
+    return <div className="text-white text-center mt-20">LOADING...</div>;
   if (!movie)
     return (
-      <div className="text-white text-center mt-20">Không tìm thấy phim.</div>
+      <div className="text-white text-center mt-20">NOT FOUND</div>
     );
-  console.log("selectedId:", selectedShowtimeId);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] text-white p-4 pt-[100px] ">
-      <div className="max-w-6xl mx-auto flex gap-6 bg-white/5 py-10 rounded-t-2xl">
+    <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] text-white">
+      <div className="max-w-7xl mx-auto py-26 px-6">
+        <div className="grid grid-cols-12 gap-8">
+          {/* DIV BEN TRAIL */}
+          <div className="col-span-4 space-y-6">
 
-        <img
-          src={movie.PosterImage || "https://via.placeholder.com/150x200"}
-          alt="poster"
-          className="w-32 sm:w-40 h-48 sm:h-60 rounded-lg object-cover ml-26"
-        />
-        <div className="flex-1 space-y-2">
-          <h1 className="text-4xl font-bold  ">
-            {movie.NameOfEnglish} <span className="text-xl ">({movie.NameOfVietnamese})</span>
-          </h1>
-          <div className="flex flex-col gap-2 text-sm text-gray-300 mt-1">
-            <span className="flex items-center gap-1">
-              <FaRegClock className="text-green-400" /> {movie.RunningTime} min
-            </span>
-            <span className="flex items-center gap-1">
-              <FaCalendarAlt className="text-blue-400" /> {new Date(movie.FromDate).toLocaleDateString("vi-VN")}
-            </span>
-            <span className="flex items-center gap-1">
-              <RiMovie2AiLine className="text-red-400" /> {movie.Genres}
-            </span>
-          </div>
+            <div className="relative bg-white/5 backdrop-blur-md rounded-3xl p-6 border border-white/10 shadow-2xl">
 
-          <p className="text-xs sm:text-sm text-gray-400 line-clamp-3">
-            {movie.ContentSynopsis}
-          </p>
-          <button
-            onClick={handleOpenPopup}
-            className="mt-10 inline-flex items-center  gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 font-semibold  "
-          >
-            View trailer <MdOutlineOndemandVideo />
-          </button>
-        </div>
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 rounded-3xl"></div>
 
-
-      </div>
-
-      <div className=" pb-11 max-w-6xl mx-auto bg-white/5  p-4  ">
-
-
-
-
-        <div className=" flex items-center gap-6 text-sm text-white/80">
-          <div className="flex items-center overflow-x-auto gap-2 py-2">
-            <div className="font-semibold text-white/80 text-lg pl-26 ">Date</div>
-
-            <button
-              className="p-2 text-purple-400 hover:text-purple-500"
-              onClick={() => {
-                const currentIdx = showtimes.findIndex((d) => d.Day === selectedDate);
-                if (currentIdx > 0) {
-                  setSelectedDate(showtimes[currentIdx - 1].Day);
-                  if (currentIdx - 1 < dateIndex) setDateIndex(dateIndex - 1);
-                }
-              }}
-            >
-              <FaChevronLeft />
-            </button>
-
-            {visibleDates.map((d, idx) => {
-              const isSelected = d.Day === selectedDate;
-              const dayObj = new Date(d.Day);
-              return (
-                <div
-                  key={idx}
-                  className={`flex flex-col items-center justify-center w-14 h-20 rounded-3xl text-sm cursor-pointer transition-all duration-200 
-          ${isSelected
-                      ? "scale-110 bg-purple-500/70 text-white shadow-lg"
-                      : "bg-white/10 hover:bg-white/20 text-white/80"
-                    }`}
-                  onClick={() => setSelectedDate(d.Day)}
-                >
-                  <span className="text-xs font-semibold">
-                    {dayObj.toLocaleDateString("en-US", { month: "short" }).toUpperCase()}
-                  </span>
-                  <span className="text-lg font-bold">
-                    {dayObj.getDate().toString().padStart(2, "0")}
-                  </span>
-                  <span className="text-xs">
-                    {dayObj.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase()}
-                  </span>
+              <div className="relative z-10">
+                {/* Poster */}
+                <div className="relative group mb-6">
+                  <img
+                    src={movie.PosterImage || "https://via.placeholder.com/300x400"}
+                    alt="poster"
+                    className="w-full h-130  object-cover shadow-xl border rounded-2xl border-white/10"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent rounded-2xl"></div>
                 </div>
-              );
-            })}
 
-            <button
-              className="p-2 text-purple-400 hover:text-purple-500"
-              onClick={() => {
-                const currentIdx = showtimes.findIndex((d) => d.Day === selectedDate);
-                if (currentIdx < showtimes.length - 1) {
-                  setSelectedDate(showtimes[currentIdx + 1].Day);
-                  if (currentIdx + 1 >= dateIndex + 6) setDateIndex(dateIndex + 1);
-                }
-              }}
-            >
-              <FaChevronRight />
-            </button>
+                <div className="space-y-6 mb-8">
+                  {/* Simple Info Cards */}
+                  <div className="space-y-3">
+                    {/* Runtime */}
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
+                      <div className="flex items-center gap-3">
+                        <FaRegClock className="text-purple-400 text-lg" />
+                        <span className="text-gray-300 font-medium">Runtime</span>
+                      </div>
+                      <span className="text-white font-semibold">{movie.RunningTime} min</span>
+                    </div>
+
+                    {/* Release Period */}
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
+                      <div className="flex items-center gap-3">
+                        <FaCalendarAlt className="text-purple-400 text-lg" />
+                        <span className="text-gray-300 font-medium">Release</span>
+                      </div>
+                      <span className="text-white font-semibold text-sm">
+                        {new Date(movie.FromDate).toLocaleDateString("vi-VN")} - {new Date(movie.ToDate).toLocaleDateString("vi-VN")}
+                      </span>
+                    </div>
+
+                    {/* Director */}
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
+                      <div className="flex items-center gap-3">
+
+                        <RiMovie2AiLine className="text-purple-400 text-xl" />
+
+                        <span className="text-gray-300 font-medium">Director</span>
+                      </div>
+                      <span className="text-white font-semibold text-right max-w-xs truncate">{movie.Director}</span>
+                    </div>
+
+                    {/* Cast */}
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
+                      <div className="flex items-center gap-3">
+
+                        <MdOutlineStarOutline className="text-purple-400 text-xl" />
+
+                        <span className="text-gray-300 font-medium mr-10">Cast</span>
+                      </div>
+                      <span className="text-white font-semibold text-right max-w-xs truncate">{movie.Actors}</span>
+                    </div>
 
 
-          </div>
-          <div className="h-15 border-l border-white/30 mt-3" />
-          <div className="flex-1 px-4">
-            <label className="block mb-1 ml-3 text-white/80 font-semibold text-lg">Time</label>
-            <div className="relative w-full group">
-              <select
-                value={selectedShowtimeId || ""}
-                onChange={(e) => {
-                  const selectedId = e.target.value;
-                  const matched = timeOptions
-                    .flatMap((ver) =>
-                      ver.showtimes.map((s) => ({ ...s, version: ver.version }))
-                    )
-                    .find((s) => s.showtimeId === selectedId);
+                    {/* Genre */}
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
+                      <div className="flex items-center gap-3">
+                        <GiRegeneration className="text-purple-400 text-xl" />
+                        <span className="text-gray-300 font-medium">Genre</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2 justify-end">
+                        {movie.Genres?.split(',').map((genre, index) => (
+                          <span
+                            key={index}
+                            className="px-3 py-1 bg-purple-500/20 border border-purple-400/30 rounded-full text-xs font-medium text-purple-200"
+                          >
+                            {genre.trim()}
+                          </span>
+                        )) || (
+                            <span className="px-3 py-1 bg-purple-500/20 border border-purple-400/30 rounded-full text-xs font-medium text-purple-200">
+                              {movie.Genres}
+                            </span>
+                          )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-                  if (matched) {
-                    setSelectedTime(matched.time);
-                    setSelectedRoom(`Room ${matched.roomName} — ${matched.version}`);
-                    setSelectedShowtimeId(matched.showtimeId);
-                  } else {
-                    setSelectedTime("");
-                    setSelectedRoom("");
-                    setSelectedShowtimeId(null);
-                  }
-                }}
-                className="appearance-none w-full py-3 pl-4 pr-10 text-base font-semibold text-purple-100 
-    bg-gradient-to-r from-[#36355a] to-[#4e408e] border-b-2 border-purple-500 
-    hover:border-purple-400 focus:outline-none focus:ring-0 
-    transition duration-300 ease-in-out tracking-wide rounded-3xl"
-              >
-                <option value="" disabled>
-                  Choose Showtime
-                </option>
-
-                {timeOptions.flatMap((ver) =>
-                  ver.showtimes.map((s) => (
-                    <option
-                      key={s.showtimeId}
-                      value={s.showtimeId}
-                      className="text-gray-900 bg-white"
-                    >
-                      {s.time} — Room {s.roomName} ({ver.version})
-                    </option>
-                  ))
-                )}
-              </select>
-
-              <FaChevronDown className="absolute top-1/2 right-3 -translate-y-1/2 text-purple-300 pointer-events-none group-hover:rotate-180 transition duration-300" />
+                {/* TRAILER */}
+                <button
+                  onClick={handleOpenPopup}
+                  className="w-1/2 group relative overflow-hidden bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 
+                           hover:from-purple-700 hover:via-purple-600 hover:to-pink-600 
+                           rounded-4xl p-2 text-white font-bold text-base
+                           shadow-xl hover:shadow-2xl hover:shadow-purple-500/20 
+                           transform hover:scale-[1.02] transition-all duration-300 ease-out
+                           border border-purple-400/20"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                  <div className="relative flex items-center justify-center gap-3">
+                    <MdOutlineOndemandVideo className="text-xl" />
+                    <span className="tracking-wide">Watch Trailer</span>
+                  </div>
+                </button>
+              </div>
             </div>
           </div>
 
+          {/* DIV BEN PHAI*/}
+          <div className="col-span-8">
+            <div className="bg-white/5 backdrop-blur-md rounded-3xl p-8 border border-white/10 shadow-2xl">
 
-          <div className="h-15 border-l border-white/30 mt-3" />
-          <div className="flex-1 pl-4">
-            <label className="block mb-1 text-white/80 font-semibold text-lg">Room</label>
-            <div className="relative group w-fit">
-              <div className="flex items-center gap-2 text-white text-base font-medium tracking-wide">
-                <MdOutlineMeetingRoom className="text-purple-500 group-hover:scale-110 transition-transform duration-200" />
-                <span className="group-hover:text-purple-300">{selectedRoom || "—"}</span>
+              <div className="mb-8 ">
+                <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-white via-purple-100 to-pink-100 bg-clip-text text-transparent">
+                  {movie.NameOfEnglish}
+                </h1>
+                <p className="text-gray-300 text-lg font-medium mb-4">({movie.NameOfVietnamese})</p>
 
               </div>
-              <div className="h-0.5 bg-purple-500 mt-1 w-full group-hover:w-full transition-all duration-300"></div>
+
+              {/*showtimes div*/}
+              <div className="mb-8">
+                <div className="flex items-center gap-8 text-sm text-white/80">
+
+                  {/* chon ngay*/}
+                  <div className="flex-1">
+                    <label className="block mb-4 text-white font-bold text-xl ml-11">Date</label>
+                    <div className="flex items-center gap-3">
+                      <button
+                        className="p-2 text-purple-400 hover:text-purple-300 hover:bg-white/10 rounded-xl transition-all flex-shrink-0"
+                        onClick={() => {
+                          const currentIdx = showtimes.findIndex((d) => d.Day === selectedDate);
+                          if (currentIdx > 0) {
+                            setSelectedDate(showtimes[currentIdx - 1].Day);
+                            if (currentIdx - 1 < dateIndex) setDateIndex(dateIndex - 1);
+                          }
+                        }}
+                      >
+                        <FaChevronLeft />
+                      </button>
+
+                      <div className="flex gap-2 overflow-x-auto flex-1">
+                        {visibleDates.map((d, idx) => {
+                          const isSelected = d.Day === selectedDate;
+                          const dayObj = new Date(d.Day);
+                          return (
+                            <div
+                              key={idx}
+                              className={`flex flex-col items-center justify-center min-w-[64px] h-16 rounded-4xl text-sm cursor-pointer transition-all duration-200
+                               ${isSelected
+                                  ? "bg-purple-500 text-white shadow-lg"
+                                  : "bg-white/10 hover:bg-white/20 text-white/80"
+                                }`}
+                              onClick={() => setSelectedDate(d.Day)}
+                            >
+                              <span className="text-[10px] font-medium opacity-90">
+                                {dayObj.toLocaleDateString("en-US", { month: "short" }).toUpperCase()}
+                              </span>
+                              <span className="text-base font-bold">
+                                {dayObj.getDate().toString().padStart(2, "0")}
+                              </span>
+                              <span className="text-[10px] opacity-90">
+                                {dayObj.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase()}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <button
+                        className="p-2 text-purple-400 hover:text-purple-300 hover:bg-white/10 rounded-xl transition-all flex-shrink-0"
+                        onClick={() => {
+                          const currentIdx = showtimes.findIndex((d) => d.Day === selectedDate);
+                          if (currentIdx < showtimes.length - 1) {
+                            setSelectedDate(showtimes[currentIdx + 1].Day);
+                            if (currentIdx + 1 >= dateIndex + 6) setDateIndex(dateIndex + 1);
+                          }
+                        }}
+                      >
+                        <FaChevronRight />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Chon thoi gian*/}
+                  <div className="w-80">
+                    <label className="block mb-4 text-white font-bold text-xl ">Time</label>
+                    <div className="relative">
+                      <select
+                        value={selectedShowtimeId || ""}
+                        onChange={(e) => {
+                          const selectedId = e.target.value;
+                          const matched = timeOptions
+                            .flatMap((ver) =>
+                              ver.showtimes.map((s) => ({ ...s, version: ver.version }))
+                            )
+                            .find((s) => s.showtimeId === selectedId);
+
+                          if (matched) {
+                            setSelectedTime(matched.time);
+                            setSelectedRoom(`Room ${matched.roomName} — ${matched.version}`);
+                            setSelectedShowtimeId(matched.showtimeId);
+                          } else {
+                            setSelectedTime("");
+                            setSelectedRoom("");
+                            setSelectedShowtimeId(null);
+                          }
+                        }}
+                        className="appearance-none w-full py-3 pl-4 pr-10 text-sm font-semibold text-white 
+                       bg-gradient-to-r from-[#36355a] to-[#4e408e] border border-purple-500/30 
+                      hover:border-purple-400/50 focus:outline-none focus:ring-1 focus:ring-purple-500/50
+                       transition duration-200 rounded-4xl shadow-md"
+                      >
+                        <option value="" disabled>
+                          Choose Time
+                        </option>
+                        {timeOptions.flatMap((ver) =>
+                          ver.showtimes.map((s) => (
+                            <option
+                              key={s.showtimeId}
+                              value={s.showtimeId}
+                              className="text-gray-900 bg-white"
+                            >
+                              {s.time} - ({ver.version})
+                            </option>
+                          ))
+                        )}
+                      </select>
+                      <FaChevronDown className="absolute top-1/2 right-3 -translate-y-1/2 text-purple-300 pointer-events-none text-sm" />
+                    </div>
+                  </div>
+
+                  {/* room theo showtime */}
+                  <div className="w-64">
+                    <label className="block mb-4 text-white font-bold text-xl">Room</label>
+                    <div className="bg-white/10 rounded-4xl p-3 border border-white/20 h-12 flex items-center">
+                      <div className="flex items-center gap-2 text-white text-sm font-medium">
+                        <MdOutlineMeetingRoom className="text-purple-400 text-lg flex-shrink-0" />
+                        <span className="truncate">
+                          {selectedRoom || "—"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* seatmap */}
+              <div className="mb-8">
+                {/* FIXED: Thêm refresh button */}
+                {selectedShowtimeId && (
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-bold text-white">Select Your Seats</h3>
+                    <button
+                      onClick={handleManualRefresh}
+                      disabled={isRefreshing}
+                      className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 
+                               border border-purple-400/30 rounded-xl text-purple-300 hover:text-purple-200 
+                               transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <GiRegeneration className={`text-lg ${isRefreshing ? 'animate-spin' : ''}`} />
+                      <span className="text-sm font-medium">
+                        {isRefreshing ? 'Refreshing...' : 'Refresh Seats'}
+                      </span>
+                    </button>
+                  </div>
+                )}
+
+                {seatsData.length > 0 ? (
+                  <div className="flex justify-center bg-white/2 rounded-2xl p-6 border border-white/10">
+                    <LayoutSelectSeat
+                      key={`${selectedShowtimeId}-${lastRefreshTime}`} 
+                      initialSelectedSeats={selectedSeats}
+                      seatDataFromAPI={seatsData}
+                      totalSeats={seatQuantity}
+                      onSeatSelect={({ seats, totalPrice, seatIds }) => {
+                        if (!user) {
+                          Swal.fire({
+                            icon: "info",
+                            title: "Sign In !",
+                            text: "Please sign in for service",
+                            confirmButtonText: "Sign In",
+                          }).then((result) => {
+                            if (result.isConfirmed) {
+                              navigate("/login");
+                            }
+                          });
+                          return;
+                        }
+                        setSelectedSeats(seats.map((s) => s.seatNumber));
+                        setCalculatedTotalPrice(totalPrice);
+                        setSeatIds(seatIds);
+                      }}
+                      width={30}
+                      height={30}
+                      widthDouble={60}
+                      heightDouble={40}
+                      gapX={4}
+                      textColor="text-blue-300/70"
+                      seatColors={{
+                        available: "text-gray-500",
+                        selected: "text-[#5341DB]",
+                        taken: "text-[#6A7282]",
+                        coupleSeat: {
+                          available: DoubleSeatNoneLight,
+                          selected: DoubleSeatSelectingLight,
+                          taken: DoubleSeatSelected,
+                        }
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="text-center py-12 bg-white/5 rounded-2xl text-gray-400">
+                    <DNALoader />
+                    <p className="font-semibold mt-2">
+                      {isRefreshing ? 'Refreshing seats...' : 'Loading seats...'}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Continue Button */}
+              <div className="flex justify-end">
+                <button
+                  className="px-5 py-2 bg-gradient-to-r from-white/10 to-white/20 rounded-4xl 
+                           hover:from-white/20 hover:to-white/30 disabled:opacity-40 
+                           font-bold text-lg disabled:cursor-not-allowed transition-all duration-300
+                           border border-white/20 hover:border-white/30 shadow-xl
+                           hover:scale-105 hover:shadow-2xl"
+                  disabled={selectedSeats.length === 0}
+                  onClick={() =>
+                    navigate("/confirmPayment", {
+                      state: {
+                        selectedSeats,
+                        calculatedTotalPrice,
+                        selectedRoom,
+                        selectedDate,
+                        selectedTime,
+                        movie,
+                        selectedShowtimeId,
+                        userId: user?.userId || null,
+                        seatIds,
+                      },
+                    })
+                  }
+                >
+                  <FaTicketAlt className="inline-block mr-3" />
+                  Continue Payment
+                </button>
+              </div>
             </div>
           </div>
-
-
-
-
         </div>
       </div>
 
-      <div className=" max-w-6xl mx-auto bg-white/5 h-[1300px] rounded-b-2xl" >
-
-        {seatsData.length > 0 ? (
-          <div className="w-full flex justify-center">
-            <LayoutSelectSeat
-
-              initialSelectedSeats={selectedSeats}
-              seatDataFromAPI={seatsData}
-              totalSeats={seatQuantity}
-              onSeatSelect={({ seats, totalPrice, seatIds }) => {
-                if (!user) {
-                  Swal.fire({
-                    icon: "info",
-                    title: "Sign In !",
-                    text: "Please sign in for service",
-                    confirmButtonText: "Sign In",
-                  }).then((result) => {
-                    if (result.isConfirmed) {
-                      navigate("/login");
-                    }
-                  });
-                  return;
-                }
-
-                setSelectedSeats(seats.map((s) => s.seatNumber));
-                setCalculatedTotalPrice(totalPrice);
-                setSeatIds(seatIds);
-              }}
-
-
-              width={30}
-              height={30}
-              widthDouble={60}
-              heightDouble={40}
-              gapX={4}
-
-              textColor="text-blue-300/70"
-              seatColors={{
-                available: "text-gray-500",
-                selected: "text-[#5341DB]",
-                taken: "text-[#6A7282]",
-                coupleSeat: {
-                  available: DoubleSeatNoneLight,
-                  selected: DoubleSeatSelectingLight,
-                  taken: DoubleSeatSelected,
-                }
-              }}
-
-            />
-          </div >
-        ) : (
-          <p className="text-center text-white font-semibold">Loading...</p>
-        )}
-        {/* COMBO POPCORN SECTION */}
-
-
-
-        <div className="max-w-6xl mx-auto mt-6 flex flex-col sm:flex-row justify-end items-center gap-4">
-          {/* <div className="ml-4">
-                <p className="text-sm mb-1 ">
-                  <span className="font-semibold">Seat: </span> {selectedSeats.length > 0 ? selectedSeats.join(", ") : "Not yet"}
-                </p>
-                <p className="text-lg  ">
-                  <span className="font-semibold"> Total:</span> {totalPrice.toLocaleString("vi-VN")}đ
-                </p>
-              </div> */}
-          <button
-            className="px-6 py-3 bg-white/10 rounded-full hover:bg-white/20 disabled:opacity-40 mr-4 font-semibold"
-            disabled={selectedSeats.length === 0}
-            onClick={() =>
-              navigate("/confirmPayment", {
-                state: {
-                  selectedSeats,
-                  calculatedTotalPrice,
-                  selectedRoom,
-                  selectedDate,
-                  selectedTime,
-                  movie,
-                  selectedShowtimeId,
-                  userId: user?.userId || null,
-                  seatIds,
-
-                },
-              })
-            }
-          >
-            <FaTicketAlt className="inline-block mr-2 " /> Continue Payment
-          </button>
-        </div>
-
-
-
-      </div>
-
-
-
+      {/* Video Popup */}
       {isPopupOpen && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="relative w-full max-w-4xl">
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="relative w-full max-w-5xl mx-4">
             <video
               ref={popupVideoRef}
               controls
-              className="w-full rounded-xl"
+              className="w-full rounded-2xl shadow-2xl"
             >
               <source
                 src={
@@ -474,7 +609,7 @@ const BookingPage = () => {
             </video>
             <button
               onClick={handleClosePopup}
-              className="absolute top-2 right-2 text-white bg-black/50 p-2 rounded-full hover:bg-black"
+              className="absolute -top-4 -right-4 text-white bg-red-500 hover:bg-red-600 w-12 h-12 rounded-full hover:scale-110 transition-all duration-200 shadow-xl"
             >
               ✕
             </button>
