@@ -103,6 +103,7 @@ export const LayoutSelectSeat = ({
     }
 
     setSelectedSeats(newSelectedSeats);
+    console.log("Selected Seats: ", newSelectedSeats);
     
 
     // Trả về thông tin ghế đã chọn với tổng giá
@@ -117,6 +118,8 @@ export const LayoutSelectSeat = ({
       count: selectedSeatDetails.length
     });
   };
+
+  
 
   const getSeatColor = (seat) => {
     const { seatNumber, status, type } = seat;

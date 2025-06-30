@@ -53,6 +53,10 @@ const BookingPage = () => {
   const [calculatedTotalPrice, setCalculatedTotalPrice] = useState(0);
   const [seatIds, setSeatIds] = useState([]);
 
+  // Thêm state để track refresh
+  const [lastRefreshTime, setLastRefreshTime] = useState(Date.now());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   const DNALoader = () => (
     <div className="relative w-12 h-12 mx-auto">
       <div className="absolute inset-0 animate-spin" style={{ animation: 'spin 2s linear infinite' }}>
@@ -113,21 +117,90 @@ const BookingPage = () => {
     fetchTimeByDay();
   }, [selectedDate, movie]);
 
+  // FIXED: Fetch seats khi selectedShowtimeId thay đổi
   useEffect(() => {
     const fetchSeatsByShowtimeId = async () => {
       if (!selectedShowtimeId) return;
+      
+      setIsRefreshing(true);
+      console.log("== Fetching seats for showtime ID:", selectedShowtimeId);
+      
       try {
         const response = await getSeatsByShowtimeId(selectedShowtimeId);
         setSeatsData(response.seats);
         setSeatQuantity(response.seatQuantity);
-        console.log("== Seat Data duoc set:", response.seats);
-        console.log("== Seat Quantity duoc set:", response.seatQuantity);
+        
+        // Reset selected seats khi load lại data
+        setSelectedSeats([]);
+        setCalculatedTotalPrice(0);
+        setSeatIds([]);
+        
+        console.log("== Seat Data được set:", response.seats);
+        console.log("== Seat Quantity được set:", response.seatQuantity);
       } catch (error) {
-        console.error("Lỗi khi lấy giờ chiếu:", error);
+        console.error("Lỗi khi lấy seats:", error);
+      } finally {
+        setIsRefreshing(false);
       }
     };
     fetchSeatsByShowtimeId();
+  }, [selectedShowtimeId]); // Chỉ depend vào selectedShowtimeId
+
+  // FIXED: Separate function để refresh seats
+  const refreshSeats = async () => {
+    if (!selectedShowtimeId) return;
+    
+    setIsRefreshing(true);
+    console.log("== Refreshing seats for showtime ID:", selectedShowtimeId);
+    
+    try {
+      const response = await getSeatsByShowtimeId(selectedShowtimeId);
+      setSeatsData(response.seats);
+      setSeatQuantity(response.seatQuantity);
+      
+      // Reset selected seats khi refresh
+      setSelectedSeats([]);
+      setCalculatedTotalPrice(0);
+      setSeatIds([]);
+      
+      console.log("== Seat Data được refresh:", response.seats);
+      setLastRefreshTime(Date.now()); // Update để force re-render component
+    } catch (error) {
+      console.error("Lỗi khi refresh seats:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // FIXED: Auto refresh seats mỗi 30 giây để sync với backend
+  useEffect(() => {
+    if (!selectedShowtimeId) return;
+
+    const interval = setInterval(() => {
+      console.log("== Auto refreshing seats...");
+      refreshSeats(); // Gọi function refresh thay vì set lastRefreshTime
+    }, 30000); // Refresh mỗi 30 giây
+
+    return () => clearInterval(interval);
   }, [selectedShowtimeId]);
+
+  // FIXED: Refresh khi window focus (khi user quay lại tab)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (selectedShowtimeId) {
+        console.log("== Window focused, refreshing seats...");
+        refreshSeats(); // Gọi function refresh thay vì set lastRefreshTime
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [selectedShowtimeId]);
+
+  // FIXED: Manual refresh function
+  const handleManualRefresh = () => {
+    refreshSeats(); // Gọi function refresh
+  };
 
   const visibleDates = showtimes.slice(dateIndex, dateIndex + 6);
 
@@ -410,11 +483,29 @@ const BookingPage = () => {
 
               {/* seatmap */}
               <div className="mb-8">
-
+                {/* FIXED: Thêm refresh button */}
+                {selectedShowtimeId && (
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-bold text-white">Select Your Seats</h3>
+                    <button
+                      onClick={handleManualRefresh}
+                      disabled={isRefreshing}
+                      className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 
+                               border border-purple-400/30 rounded-xl text-purple-300 hover:text-purple-200 
+                               transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <GiRegeneration className={`text-lg ${isRefreshing ? 'animate-spin' : ''}`} />
+                      <span className="text-sm font-medium">
+                        {isRefreshing ? 'Refreshing...' : 'Refresh Seats'}
+                      </span>
+                    </button>
+                  </div>
+                )}
 
                 {seatsData.length > 0 ? (
                   <div className="flex justify-center bg-white/2 rounded-2xl p-6 border border-white/10">
                     <LayoutSelectSeat
+                      key={`${selectedShowtimeId}-${lastRefreshTime}`} // FIXED: Force re-render khi data thay đổi
                       initialSelectedSeats={selectedSeats}
                       seatDataFromAPI={seatsData}
                       totalSeats={seatQuantity}
@@ -457,11 +548,9 @@ const BookingPage = () => {
                 ) : (
                   <div className="text-center py-12 bg-white/5 rounded-2xl text-gray-400">
                     <DNALoader />
-
-
-                    <p className="font-semibold mt-2">Loading seats...</p>
-
-
+                    <p className="font-semibold mt-2">
+                      {isRefreshing ? 'Refreshing seats...' : 'Loading seats...'}
+                    </p>
                   </div>
                 )}
               </div>

@@ -57,6 +57,7 @@ const TicketDetails = () => {
         await ConfirmBooking(bookingId);
         const ticketResponse = await getBookingById(bookingId);
         setTicket(ticketResponse);
+        console.log("✅ Ticket details fetched successfully:", ticketResponse);
       } catch (err) {
         setError("Không thể tải thông tin vé.");
       } finally {

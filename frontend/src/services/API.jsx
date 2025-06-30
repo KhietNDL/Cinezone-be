@@ -424,7 +424,7 @@ export const getSeatsByShowtimeId = async (showtimeId) => {
 };
 
 
-export const HoldingSeats = async (userId, showtimeId, seatIds,productIds, promoCode) => {
+export const HoldingSeats = async (userId, showtimeId, seatIds ,productIds, promotionTitle) => {
   try {
     const response = await api.post("/bookings/hold", {
       
@@ -432,7 +432,7 @@ export const HoldingSeats = async (userId, showtimeId, seatIds,productIds, promo
       showtimeId: showtimeId,
       seatIds: seatIds,
       productIds: productIds || [],
-      promotionTitle: promoCode,
+      promotionTitle: promotionTitle,
     });
     return response.data;
   } catch (error) {
@@ -485,7 +485,7 @@ export const getPromotionByTitle = async (title) => {
 export const ConfirmBooking = async (bookingId) => {
     try {
     const response = await api.post("/bookings/confirm/${bookingId}", {
-      params:{bookingId: bookingId,}
+      params:{bookingId: bookingId}
       
     });
     return response.data;
