@@ -187,6 +187,7 @@ const SelectSeatsPage = () => {
                                 available: "text-gray-500",
                                 selected: "text-[#5341DB]",
                                 taken: "text-[#6A7282]",
+                                holding: "text-gray-800",
                                 vip: "text-yellow-500",
                                 normal: "text-gray-700",
                                 couple: "text-pink-500",

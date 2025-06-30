@@ -15,7 +15,7 @@ export const LayoutSelectSeat = ({
   textColor = "text-gray-500",
   widthDouble = 60,
   heightDouble = 30,
-  
+
   aisleWidth = 60,
   seatSpacing = 12,
   seatSpacingCouple = 0,
@@ -23,6 +23,7 @@ export const LayoutSelectSeat = ({
     available: "text-green-600",
     selected: "text-[#5341DB]",
     taken: "text-red-600",
+    holding: "text-black",
     vip: "text-yellow-600",
     normal: "text-gray-700",
     couple: "text-pink-600",
@@ -61,12 +62,12 @@ export const LayoutSelectSeat = ({
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([row, seats]) => {
         const sortedSeats = seats.sort((a, b) => a.number - b.number);
-        
+
         // Chia ghế thành 2 bên một cách thông minh
         // Ưu tiên chia đều, nếu lẻ thì bên trái nhiều hơn 1 ghế
         const totalSeats = sortedSeats.length;
         const leftSideCount = Math.ceil(totalSeats / 2);
-        
+
         return {
           row,
           seats: sortedSeats,
@@ -80,7 +81,7 @@ export const LayoutSelectSeat = ({
   };
 
   console.log("SEAT DATA: ", seatDataFromAPI);
-  
+
   useEffect(() => {
     if (seatDataFromAPI.length > 0) {
       const layout = groupSeatsByRow();
@@ -90,7 +91,7 @@ export const LayoutSelectSeat = ({
 
   const handleSeatClick = (seatNumber) => {
     const seat = seatMap[seatNumber];
-    if (!seat || seat.status === "taken") return;
+    if (!seat || seat.status === "taken" || seat.status === "holding") return;
 
     const newSelectedSeats = new Set(selectedSeats);
     if (newSelectedSeats.has(seatNumber)) {
@@ -100,7 +101,7 @@ export const LayoutSelectSeat = ({
     }
 
     setSelectedSeats(newSelectedSeats);
-    
+
 
     // Trả về thông tin ghế đã chọn với tổng giá
     const selectedSeatDetails = Array.from(newSelectedSeats).map(seatNum => seatMap[seatNum]);
@@ -119,7 +120,8 @@ export const LayoutSelectSeat = ({
     const { seatNumber, status, type } = seat;
 
     if (status === "taken") return seatColors.taken;
-    if (selectedSeats.has(seatNumber)) return seatColors.selected;
+    else if (status === "holding") return seatColors.holding;
+    else if (selectedSeats.has(seatNumber)) return seatColors.selected;
 
     // Màu theo loại ghế
     switch (type) {
@@ -138,30 +140,32 @@ export const LayoutSelectSeat = ({
     const { seatId, seatNumber, status, type, price } = seat;
     const isSelected = selectedSeats.has(seatNumber);
     const isTaken = status === "taken";
+    const isHolding = status === "holding";
     const isCouple = type === 'Couple';
 
     // Render ghế đôi (Couple)
     if (isCouple) {
       return (
-        <div 
+        <div
           key={seatId}
           className="relative inline-block"
           style={{ marginRight: `${seatSpacingCouple}px` }}
         >
           <button
             onClick={() => handleSeatClick(seatNumber)}
-            className={`transition-all duration-200 hover:scale-105 ${
-              isTaken ? "cursor-not-allowed opacity-50" : "cursor-pointer"
-            } ${getSeatColor(seat)} relative group`}
-            disabled={isTaken}
+            className={`transition-all duration-200 hover:scale-105 
+              ${isTaken ? "cursor-not-allowed opacity-50" : "cursor-pointer"}
+              ${isHolding ? "cursor-not-allowed opacity-50" : "cursor-pointer"}
+             ${getSeatColor(seat)} relative group`}
+            disabled={isTaken || isHolding}
             title={`${type} Seat ${seatNumber} - ${price.toLocaleString()}đ - ${status}`}
           >
-            <MdOutlineChair 
-              style={{ 
-                width: `${widthDouble}px`, 
+            <MdOutlineChair
+              style={{
+                width: `${widthDouble}px`,
                 height: `${heightDouble}px`,
                 display: 'block'
-              }} 
+              }}
             />
 
             {/* Tooltip */}
@@ -175,34 +179,35 @@ export const LayoutSelectSeat = ({
 
     // Render ghế đơn (Normal/VIP)
     return (
-      <div 
+      <div
         key={seatId}
         className="relative inline-block"
         style={{ marginRight: `${seatSpacing}px` }}
       >
         <button
           onClick={() => handleSeatClick(seatNumber)}
-          className={`transition-all duration-200 hover:scale-110 ${
-            isTaken ? "cursor-not-allowed opacity-50" : "cursor-pointer"
-          } ${getSeatColor(seat)} relative group`}
-          disabled={isTaken}
+          className={`transition-all duration-200 hover:scale-110 
+            ${isTaken ? "cursor-not-allowed opacity-50" : "cursor-pointer"} 
+            ${isHolding ? "cursor-not-allowed opacity-50" : "cursor-pointer"}
+            ${getSeatColor(seat)} relative group`}
+          disabled={isTaken || isHolding}
           title={`${type} Seat ${seatNumber} - ${price.toLocaleString()}đ - ${status}`}
         >
-          {isTaken || isSelected ? (
-            <PiArmchairFill 
-              style={{ 
-                width: `${width}px`, 
+          {isTaken || isHolding || isSelected ? (
+            <PiArmchairFill
+              style={{
+                width: `${width}px`,
                 height: `${height}px`,
                 display: 'block'
-              }} 
+              }}
             />
           ) : (
-            <PiArmchairLight 
-              style={{ 
-                width: `${width}px`, 
+            <PiArmchairLight
+              style={{
+                width: `${width}px`,
                 height: `${height}px`,
                 display: 'block'
-              }} 
+              }}
             />
           )}
 
@@ -253,8 +258,8 @@ export const LayoutSelectSeat = ({
         </div>
 
         {/* Left side seats */}
-        <div 
-          className="flex items-center justify-end" 
+        <div
+          className="flex items-center justify-end"
           style={{ width: `${maxLeftWidth}px` }}
         >
           {rowData.leftSeats.map((seat, index) => (
@@ -273,8 +278,8 @@ export const LayoutSelectSeat = ({
         </div>
 
         {/* Right side seats */}
-        <div 
-          className="flex items-center justify-start" 
+        <div
+          className="flex items-center justify-start"
           style={{ width: `${maxRightWidth}px` }}
         >
           {rowData.rightSeats.map((seat, index) => (
@@ -361,6 +366,10 @@ export const LayoutSelectSeat = ({
         <div className="flex items-center space-x-2">
           <PiArmchairFill className={seatColors.taken} size={20} />
           <span className="text-gray-400">Taken</span>
+        </div>
+         <div className="flex items-center space-x-2">
+          <PiArmchairFill className={seatColors.holding} size={20} />
+          <span className="text-gray-400">Holding</span>
         </div>
       </div>
 

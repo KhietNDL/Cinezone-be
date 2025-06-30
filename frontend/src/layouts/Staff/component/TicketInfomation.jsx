@@ -39,8 +39,7 @@ const TicketInfomation = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [bookingData, setBookingData] = useState(null);
 
-  useEffect(() => {
-    const processPaymentResult = async () => {
+   const processPaymentResult = async () => {
       try {
         const params = new URLSearchParams(window.location.search);
         const resultCode = params.get('resultCode');
@@ -62,6 +61,7 @@ const TicketInfomation = () => {
               setBookingData(parsedData); // Use local data instead of API response
               setPaymentStatus('success');
               toast.success("Payment successful!");
+              console.log("Payment successful!", parsedData);
             } catch (apiError) {
               console.error("Confirmation error:", apiError);
               // Still show local data even if confirmation fails
@@ -91,35 +91,36 @@ const TicketInfomation = () => {
       }
     };
 
+  useEffect(() => {
     processPaymentResult();
   }, []);
 
-  const formatBookingData = (apiData) => ({
-    bookingId: apiData.bookingId,
-    movie: {
-      NameOfEnglish: apiData.movieNameEnglish,
-      NameOfVietnamese: apiData.movieNameVN,
-      PosterImage: apiData.moviePoster
-    },
-    day: apiData.showDate,
-    time: apiData.showTime,
-    room: apiData.room,
-    version: apiData.version,
-    selectedSeats: apiData.seats?.map(s => s.seatNumber) || [],
-    seatData: apiData.seats || [],
-    totalPrice: apiData.totalAmount || 0,
-    memberInfo: {
-      email: apiData.email,
-      fullName: apiData.fullName,
-      identityCard: apiData.identityCard,
-      phone: apiData.phone,
-      score: apiData.score,
-      memberLevel: apiData.memberLevel,
-      memberId: apiData.memberId
-    },
-    paymentMethod: apiData.paymentMethod || 'cash',
-    discount: apiData.discountValue || 0
-  });
+  // const formatBookingData = (apiData) => ({
+  //   bookingId: apiData.bookingId,
+  //   movie: {
+  //     NameOfEnglish: apiData.movieNameEnglish,
+  //     NameOfVietnamese: apiData.movieNameVN,
+  //     PosterImage: apiData.moviePoster
+  //   },
+  //   day: apiData.showDate,
+  //   time: apiData.showTime,
+  //   room: apiData.room,
+  //   version: apiData.version,
+  //   selectedSeats: apiData.seats?.map(s => s.seatNumber) || [],
+  //   seatData: apiData.seats || [],
+  //   totalPrice: apiData.totalAmount || 0,
+  //   memberInfo: {
+  //     email: apiData.email,
+  //     fullName: apiData.fullName,
+  //     identityCard: apiData.identityCard,
+  //     phone: apiData.phone,
+  //     score: apiData.score,
+  //     memberLevel: apiData.memberLevel,
+  //     memberId: apiData.memberId
+  //   },
+  //   paymentMethod: apiData.paymentMethod || 'cash',
+  //   discount: apiData.discountValue || 0
+  // });
 
   const handleNewTicket = () => {
     localStorage.removeItem('currentBooking');

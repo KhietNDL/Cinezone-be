@@ -125,9 +125,9 @@ const ConfirmTicketsPage = () => {
 
     try {
       // 1. Validate form before processing
-      console.log("Validating form...");
+      // console.log("Validating form...");
       await validationSchema.validate(values, { abortEarly: false });
-      console.log("Form validation passed");
+      // console.log("Form validation passed");
 
       // 2. Check booking data
       if (!bookingData?.selectedSeats?.length || !bookingData.showtimeId) {
@@ -137,7 +137,7 @@ const ConfirmTicketsPage = () => {
         });
         throw new Error("Invalid ticket data, please select again");
       }
-      console.log("Booking data validation passed");
+      // console.log("Booking data validation passed");
 
       // 3. Prepare data
       const userId = memberChecked ? member?.id : user?.userId || user?.id;
@@ -150,7 +150,7 @@ const ConfirmTicketsPage = () => {
       const promotionTitle = values.promotionCode && values.convertToTicket === "Disagree"
         ? values.promotionCode
         : "";
-      console.log("Promotion title:", promotionTitle);
+      // console.log("Promotion title:", promotionTitle);
 
       // 4. Calculate final amount
       let finalAmount = bookingData.totalPrice;
@@ -160,7 +160,7 @@ const ConfirmTicketsPage = () => {
         
         if (values.convertToTicket === "Agree") {
           usedPoints = bookingData.selectedSeats.length * 10000;
-          console.log("Used points:", usedPoints, "Member score:", member.score);
+          // console.log("Used points:", usedPoints, "Member score:", member.score);
 
           if (member.score < usedPoints) {
             throw new Error(`Not enough points. Need ${usedPoints} points, you have ${member.score} points`);
@@ -270,11 +270,11 @@ const ConfirmTicketsPage = () => {
         }
 
       } else if (values.paymentMethod === "VNPay") {
-        console.log("VNPay not implemented yet");
+        // console.log("VNPay not implemented yet");
         throw new Error("VNPay payment method not yet supported");
 
       } else if (values.paymentMethod === "ZaloPay") {
-        console.log("ZaloPay not implemented yet");
+        // console.log("ZaloPay not implemented yet");
         throw new Error("ZaloPay payment method not yet supported");
 
       } else {
@@ -299,7 +299,7 @@ const ConfirmTicketsPage = () => {
       }
 
     } finally {
-      console.log("=== SUBMIT FINISHED ===");
+      // console.log("=== SUBMIT FINISHED ===");
       setSubmitting(false);
     }
   };
@@ -399,7 +399,7 @@ const ConfirmTicketsPage = () => {
 
     try {
       await validationSchema.validate(values, { abortEarly: false });
-      console.log("✅ Validation passed");
+      // console.log("✅ Validation passed");
       return true;
     } catch (error) {
       console.log("❌ Validation failed");
