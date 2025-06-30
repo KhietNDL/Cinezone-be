@@ -32,7 +32,6 @@ const AccountInformation = () => {
 
   useEffect(() => {
     if (user) {
-      console.log("Thông tin", user);
       const profileInfo = {
         fullName: user.FullName || "",
         dateOfBirth: user.DateOfBirth || "",

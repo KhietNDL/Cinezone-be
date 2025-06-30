@@ -239,7 +239,7 @@ const RoomManagement = () => {
                   </div>
                 </div>
               </div>
-              <div className="bg-white min-h-[340px] max-h-[340px] p-4 rounded-md shadow-sm">
+              <div className="bg-white min-h-[340px] max-h-[340px] p-4 rounded-md shadow-sm overflow-x-auto">
                 <table className="w-full table-auto border-collapse">
                   <thead>
                     <tr className="text-left text-slate-500 text-sm border-b border-slate-200">

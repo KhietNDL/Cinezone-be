@@ -50,9 +50,6 @@ const EditAccount = () => {
         address: user.address,
         avatar: user.avatar_url,
       };
-
-      console.log("Profile Info:", profileInfo);
-
       setProfileData(profileInfo);
       setEditData(profileInfo);
       setCurrentAvatarUrl(profileInfo.avatar || "");
