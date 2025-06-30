@@ -10,11 +10,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const path = operationBlock.querySelector('.opblock-summary-path').textContent.trim();
         const method = operationBlock.querySelector('.opblock-summary-method').textContent.trim();
 
-        if (path.includes('/api/auth/google') && method.toUpperCase() === 'GET') {
+        if (path.includes('/api/auth/login-google') && method.toUpperCase() === 'GET') {
             event.preventDefault(); // Prevent default Swagger UI AJAX request
             event.stopPropagation(); // Stop propagation to avoid other handlers
 
-            const googleAuthUrl = 'http://cinezone.info:4458/api/auth/google/';
+            const googleAuthUrl = 'http://localhost:4458/api/auth/login-google';
+            // const googleAuthUrl = 'http://cinezone:4458/api/auth/login-google';
+
             window.location.href = googleAuthUrl; // Redirect the browser
         }
     }

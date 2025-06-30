@@ -576,8 +576,9 @@ const getUserById = async (req, res) => {
   try {
     const { id } = req.params;
 
+
     // Check view permissions
-    if (req.user.Role !== "admin" && req.user.UserId !== id) {
+    if (req.user.Role !== "admin" && req.user.Role !== 1 && req.user.UserId !== id) {
       return res.status(403).json({
         error: "Forbidden: You can only view your own information",
         code: ERROR_CODES.FORBIDDEN,
@@ -672,4 +673,5 @@ module.exports = {
   logout,
   updateProfile,
   getUserById,
+  exchangeScore,
 };

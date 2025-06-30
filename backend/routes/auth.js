@@ -196,12 +196,8 @@ router.post("/login", loginValidation, login);
  *       500:
  *         description: Server error
  */
-const debugMiddleware = (req, res, next) => {
-  console.log(`[DEBUG] Request for: ${req.method} ${req.originalUrl}`);
-  console.log('[DEBUG] Request Body:', JSON.stringify(req.body, null, 2));
-  next();
-};
-router.post("/forgot-password", debugMiddleware, forgotPasswordValidation, forgotPassword);
+
+router.post("/forgot-password", forgotPasswordValidation, forgotPassword);
 
 /**
  * @swagger
@@ -239,7 +235,7 @@ router.post("/forgot-password", debugMiddleware, forgotPasswordValidation, forgo
  *       500:
  *         description: Server error
  */
-router.post("/verify-otp", debugMiddleware, verifyOtpValidation, verifyOtp);
+router.post("/verify-otp", verifyOtpValidation, verifyOtp);
 
 /**
  * @swagger
@@ -451,7 +447,7 @@ router.put(
 
 /**
  * @swagger
- * /api/auth/google:
+ * /api/auth/login-google:
  *   get:
  *     summary: Login with Google OAuth2
  *     description: Redirect to Google for authentication, then return token.
@@ -461,7 +457,7 @@ router.put(
  *         description: Redirect to Google OAuth2
  */
 router.get(
-  "/google",
+  "/login-google",
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
@@ -500,22 +496,28 @@ router.get(
   "/google/callback",
   passport.authenticate("google", {
     session: false,
-    failureRedirect: "/login",
-    failureMessage: true,
+    failureRedirect: `${process.env.FRONTEND_URL}/login?error=google_login_failed`,
   }),
   (req, res) => {
     if (!req.user) {
-      return res.status(401).json({
-        error: req.authInfo?.message || "Đăng nhập Google thất bại",
-      });
+      return res.redirect(`${process.env.FRONTEND_URL}/login?error=authentication_failed`);
     }
 
     const token = jwt.sign(
-      { id: req.user.UserId, email: req.user.Email },
+      { id: req.user.UserId, email: req.user.Email, role: req.user.Role },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
-    res.json({ token, user: req.user });
+
+    // Redirect về frontend với token và user data
+    const userString = encodeURIComponent(JSON.stringify({
+      UserId: req.user.UserId,
+      Email: req.user.Email,
+      FullName: req.user.FullName,
+      Role: req.user.Role
+    }));
+
+    res.redirect(`${process.env.FRONTEND_URL}/auth/google/callback?token=${token}&user=${userString}`);
   }
 );
 
