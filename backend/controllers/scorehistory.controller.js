@@ -3,30 +3,25 @@ const Booking = require("../models/booking.model");
 
 const getAllScoreHistory = async (req, res) => {
   try {
+    console.log('--- [LOG] GET /api/scorehistory ---');
+    console.log('Query params:', req.query);
     const page = parseInt(req.query.page) || 1;
-    const limit = req.query.limit !== undefined ? parseInt(req.query.limit) : 0;
+    const limit = parseInt(req.query.limit) || 0;
     const result = await ScoreHistory.getAllScoreHistory(page, limit);
     if (limit > 0 && page > 1 && result.scoreHistory.length === 0) {
-      return res.status(400).json({
-        error: "Page number exceeds available pages"
-      });
+      return res.status(404).json({ message: "No score history found for this page" });
     }
     if (result.scoreHistory.length === 0) {
-      return res.status(200).json({
-        status: "success",
-        message: "No score history found",
-        data: [],
-        pagination: result.pagination
-      });
+      return res.status(200).json({ message: "No score history found", scoreHistory: [] });
     }
+    console.log('Score history result:', result);
     res.status(200).json({
-      status: "success",
-      data: result.scoreHistory,
-      pagination: result.pagination
+      scoreHistory: result.scoreHistory,
+      pagination: result.pagination,
     });
   } catch (error) {
     console.error("Get all score history error:", error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
