@@ -17,16 +17,16 @@ const { auth, isAdmin } = require('../middlewares/auth.middleware');
  *     Showtime:
  *       type: object
  *       required:
- *         - MovieId
+ *         - VersionId
  *         - CinemaRoomId
  *         - Duration
  *         - Day
- *         - Time
+ *         - Times
  *       properties:
- *         MovieId:
+ *         VersionId:
  *           type: string
  *           format: uuid
- *           description: The movie's UUID
+ *           description: The version's UUID
  *         CinemaRoomId:
  *           type: string
  *           format: uuid
@@ -38,10 +38,11 @@ const { auth, isAdmin } = require('../middlewares/auth.middleware');
  *           type: string
  *           format: date
  *           description: The day of the showtime (YYYY-MM-DD)
- *         Time:
- *           type: string
- *           format: time
- *           description: The time of the showtime (HH:mm:ss)
+ *         Times:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: Array of showtime start times (HH:mm:ss)
  */
 
 
@@ -164,16 +165,16 @@ router.get('/:id', showtimeController.getShowtimeById);
  *           schema:
  *             type: object
  *             required:
- *               - MovieId
+ *               - VersionId
  *               - CinemaRoomId
  *               - Duration
  *               - Day
- *               - Time
+ *               - Times
  *             properties:
- *               MovieId:
+ *               VersionId:
  *                 type: string
  *                 format: uuid
- *                 description: The movie's UUID
+ *                 description: The version's UUID
  *               CinemaRoomId:
  *                 type: string
  *                 format: uuid
@@ -185,10 +186,11 @@ router.get('/:id', showtimeController.getShowtimeById);
  *                 type: string
  *                 format: date
  *                 description: The day of the showtime (YYYY-MM-DD)
- *               Time:
- *                 type: string
- *                 format: time
- *                 description: The time of the showtime (HH:mm:ss)
+ *               Times:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of showtime start times (HH:mm:ss)
  *     responses:
  *       201:
  *         description: Showtime created successfully
@@ -440,5 +442,46 @@ router.get('/movie/:movieId/day/showtimes', showtimeController.getShowtimesByMov
  */
 router.get('/:showtimeId/seats', showtimeController.getSeatsByShowtime);
 
+/**
+ * @swagger
+ * /api/showtimes/version/{versionId}/day:
+ *   get:
+ *     summary: Get day by versionId
+ *     tags: [Showtime Management]
+ *     parameters:
+ *       - in: path
+ *         name: versionId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: The version's UUID
+ *     responses:
+ *       200:
+ *         description: List of showtimes for the version
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 versionId:
+ *                   type: string
+ *                 showtimes:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       day:
+ *                         type: string
+ *                       roomName:
+ *                         type: string
+ *       400:
+ *         description: Invalid UUID
+ *       404:
+ *         description: Version not found
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/version/:versionId/day', showtimeController.getShowtimesByVersionId);
 
 module.exports = router;
