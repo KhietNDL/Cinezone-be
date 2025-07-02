@@ -32,12 +32,12 @@ const TicketDetails = () => {
       const fetchCancelBooking = async () => {
         try {
           if (bookingId) {
-            console.log("⛔ Gọi CancelBooking vì huỷ hoặc thất bại...");
+            console.log( " CancelBooking vì huỷ hoặc thất bại...");
             await cancelBooking(bookingId);
-            console.log("✅ Booking đã bị huỷ.");
+            console.log("Booking đã bị huỷ.");
           }
         } catch (err) {
-          console.error("❌ Lỗi khi huỷ booking:", err);
+          console.error("Lỗi khi huỷ booking:", err);
         }
         finally {
           setLoading(false);
@@ -57,7 +57,7 @@ const TicketDetails = () => {
         await ConfirmBooking(bookingId);
         const ticketResponse = await getBookingById(bookingId);
         setTicket(ticketResponse);
-        console.log("✅ Ticket details fetched successfully:", ticketResponse);
+        console.log("Ticket details fetched successfully:", ticketResponse);
       } catch (err) {
         setError("Không thể tải thông tin vé.");
       } finally {
@@ -74,16 +74,18 @@ const TicketDetails = () => {
   //cancelled booking
   if (isCancelled) {
     return (
-      <div className="min-h-screen bg-[#000c2d] flex flex-col items-center justify-center text-center text-white p-10">
-        <h1 className="text-4xl font-bold text-red-500 mb-4">❌ Ticket Cancelled</h1>
+      <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] flex flex-col items-center justify-center text-center text-white p-10">
+        <h1 className="text-4xl font-bold text-red-500 mb-4">Ticket Cancelled</h1>
         <p className="text-white/70 text-lg mb-6">
-          Giao dịch đã bị huỷ hoặc thanh toán không thành công.
+          The transaction was cancelled or failed. Your booking has been cancelled.
         </p>
         <a
           href="/"
-          className="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-full text-white font-semibold"
+          className=" bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500  hover:from-purple-700 hover:via-purple-600 hover:to-pink-600 shadow-xl hover:shadow-2xl hover:shadow-purple-500/20 
+                           transform hover:scale-[1.02] transition-all duration-300 ease-out
+                           border border-purple-400/20 px-6 py-3 rounded-full text-white font-semibold"
         >
-          Quay về Trang Chủ
+          Back Home
         </a>
       </div>
     );
@@ -93,55 +95,55 @@ const TicketDetails = () => {
   if (!ticket) return <div className="text-gray-400 p-6">Không tìm thấy vé.</div>;
 
   return (
-    <div className="min-h-screen bg-[#000c2d] flex items-center justify-center py-10 px-4">
-      <div className="flex w-full max-w-4xl rounded-2xl overflow-hidden border border-purple-500 shadow-xl">
+    <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] flex items-center justify-center py-10 px-4">
+      <div className="flex w-full max-w-4xl rounded-2xl overflow-hidden border-2 border-white/60  shadow-2xl">
         {/* Left */}
         <div className="w-1/2 bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] p-8 flex flex-col justify-between">
           <div>
-            <h2 className="text-white text-2xl font-bold mb-2">🎟️ Your Ticket</h2>
+            <h2 className="text-white text-2xl font-bold mb-2">🎟️Your Ticket</h2>
             <p className="text-sm text-white/70 mb-6">Enjoy your movie experience!</p>
 
             <div className="text-white space-y-3">
-              <div><span className="text-white/60">Movie: </span><span className="font-semibold">{ticket.movieNameEnglish}</span></div>
-              <div><span className="text-white/60">Time: </span><span className="font-semibold">{ticket.showTime}</span></div>
-              <div><span className="text-white/60">Date: </span><span className="font-semibold">{new Date(ticket.showDate).toLocaleDateString("en-GB")}</span></div>
-              <div><span className="text-white/60">Room: </span><span className="font-semibold">{ticket.room}</span></div>
+              <div><span className="text-white/60">Movie: </span><span className="font-bold">{ticket.movieNameEnglish}</span></div>
+              <div><span className="text-white/60">Time: </span><span className="font-bold">{ticket.showTime}</span></div>
+              <div><span className="text-white/60">Date: </span><span className="font-bold">{new Date(ticket.showDate).toLocaleDateString("en-GB")}</span></div>
+              <div><span className="text-white/60">Room: </span><span className="font-bold">{ticket.room}</span></div>
               <div><span className="text-white/60">Seats: </span>
-                <span className="font-semibold">
+                <span className="font-bold">
                   {Array.isArray(ticket.seats) ? ticket.seats.join(", ") : ticket.seats}
                 </span>
               </div>
-              <div><span className="text-white/60">Price: </span><span className="font-semibold">{ticket.totalAmount?.toLocaleString()} đ</span></div>
+              <div><span className="text-white/60">Price: </span><span className="font-bold">{ticket.totalAmount?.toLocaleString()} đ</span></div>
             </div>
           </div>
 
           <button
             onClick={() => window.print()}
-            className="mt-8 bg-pink-500 hover:bg-pink-400 text-white text-sm font-semibold py-2 rounded-lg w-full"
+            className="mt-8 bg-blue-500/5 hover:bg-gray-100/5 border border-white/50 font-bold text-white text-sm py-2 rounded-lg w-full"
           >
-            In vé
+            Print Ticket
           </button>
         </div>
 
         {/* Right */}
         <div className="w-1/2 bg-[#0e012a] p-8 text-white">
-          <h3 className="text-xl font-semibold mb-4">Thông tin khách hàng</h3>
+          <h3 className="text-xl font-semibold mb-4">Customer Information</h3>
           <ul className="space-y-4 text-sm">
             <li className="flex items-center justify-between">
-              <span className="text-white/60">Tên:</span>
-              <span className="font-semibold">{ticket.buyerName}</span>
+              <span className="text-white/60">Name:</span>
+              <span className="font-bold">{ticket.buyerName}</span>
             </li>
             <li className="flex items-center justify-between">
-              <span className="text-white/60">SĐT:</span>
-              <span className="font-semibold">{ticket.buyerPhone}</span>
+              <span className="text-white/60">Phone number:</span>
+              <span className="font-bold">{ticket.buyerPhone}</span>
             </li>
             <li className="flex items-center justify-between">
-              <span className="text-white/60">Mã đặt vé:</span>
-              <span className="font-semibold truncate w-1/2 text-right">{bookingId}</span>
+              <span className="text-white/60">Booking ID:</span>
+              <span className="font-bold truncate w-1/2 text-right">{bookingId}</span>
             </li>
           </ul>
           <div className="mt-10 border-t border-dashed border-white/30 pt-6 text-sm text-white/60">
-            *Vui lòng đến trước 15 phút để nhận chỗ.
+            * Please arrive 15 minutes before showtime.
           </div>
         </div>
       </div>

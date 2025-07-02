@@ -23,7 +23,7 @@ function isValidTime(timeString) {
 
 // Helper format
 const formatShowtime = (showtime) => ({
-    MovieId: showtime.MovieId,
+    VersionId: showtime.VersionId,
     CinemaRoomId: showtime.CinemaRoomId,
     Duration: showtime.Duration,
     Day: normalizeDate(showtime.Day),
@@ -74,31 +74,35 @@ exports.getShowtimeById = async (req, res) => {
     }
 };
 
-// Tạo showtime mới
+// Tạo showtime mới (batch)
 exports.createShowtime = async (req, res) => {
     try {
-        const { MovieId, CinemaRoomId, Duration, Day, Time } = req.body;
-        const CreatedBy = req.user.UserId; // Lấy ID của user đang đăng nhập
+        const { VersionId, CinemaRoomId, Duration, Day, Times } = req.body;
+        const CreatedBy = req.user.UserId;
 
-        console.log('Creating showtime with data:', { MovieId, CinemaRoomId, Duration, Day, Time, CreatedBy });
-
-        if (!MovieId || !uuidValidate(MovieId)) return res.status(400).json({ error: 'MovieId must be UUID', code: ERROR_CODES.INVALID_UUID });
+        if (!VersionId || !uuidValidate(VersionId)) return res.status(400).json({ error: 'VersionId must be UUID', code: ERROR_CODES.INVALID_UUID });
         if (!CinemaRoomId || !uuidValidate(CinemaRoomId)) return res.status(400).json({ error: 'CinemaRoomId must be UUID', code: ERROR_CODES.INVALID_UUID });
         if (!Duration || isNaN(Duration) || Duration <= 0) return res.status(400).json({ error: 'Duration must be a positive number', code: ERROR_CODES.INVALID_INPUT });
         if (!Day || !isValidDate(Day)) return res.status(400).json({ error: 'Day must be YYYY-MM-DD', code: ERROR_CODES.INVALID_INPUT });
-        if (!Time || !isValidTime(Time)) return res.status(400).json({ error: 'Time must be HH:mm:ss', code: ERROR_CODES.INVALID_INPUT });
+        if (!Array.isArray(Times) || Times.length === 0) return res.status(400).json({ error: 'Times must be a non-empty array', code: ERROR_CODES.INVALID_INPUT });
 
-        const showtimeId = await Showtime.create({ MovieId, CinemaRoomId, Duration, Day, Time, CreatedBy });
-        console.log('Showtime created with ID:', showtimeId);
-
-        const newShowtime = await Showtime.findById(showtimeId);
-        if (!newShowtime) {
-            throw new Error('Failed to retrieve created showtime');
+        const results = [];
+        for (const Time of Times) {
+            if (!isValidTime(Time)) {
+                results.push({ Time, success: false, error: 'Time must be HH:mm:ss' });
+                continue;
+            }
+            try {
+                const showtimeId = await Showtime.create({ VersionId, CinemaRoomId, Duration, Day, Time, CreatedBy });
+                const newShowtime = await Showtime.findById(showtimeId);
+                results.push({ Time, success: true, data: formatShowtime(newShowtime) });
+            } catch (err) {
+                results.push({ Time, success: false, error: err.message });
+            }
         }
-
         res.status(201).json({
-            message: 'Showtime created successfully',
-            data: formatShowtime(newShowtime)
+            message: 'Batch showtime creation result',
+            results
         });
     } catch (error) {
         console.error('Error in createShowtime:', error);
@@ -227,8 +231,6 @@ exports.getSeatsByShowtime = async (req, res) => {
   }
 };
 
-
-
 exports.getShowtimesByMovieId = async (req, res) => {
     const { movieId } = req.params;
     try {
@@ -256,8 +258,6 @@ exports.getShowtimesByMovieId = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
-
-
 
 exports.getShowtimesByMovieIdAndDay = async (req, res) => {
     const { movieId } = req.params;
@@ -296,6 +296,33 @@ exports.getShowtimesByMovieIdAndDay = async (req, res) => {
             movieId,
             day,
             versions: result
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Lấy showtime theo VersionId
+exports.getShowtimesByVersionId = async (req, res) => {
+    const { versionId } = req.params;
+    try {
+        const rows = await Showtime.getShowtimesByVersion(versionId);
+        // Loại trùng theo Day + roomName
+        const unique = new Set();
+        const result = [];
+        rows.forEach(row => {
+            const key = `${row.Day}_${row.Name}`;
+            if (!unique.has(key)) {
+                unique.add(key);
+                result.push({
+                    Day: normalizeDate(row.Day),
+                });
+            }
+        });
+        result.sort((a, b) => a.Day.localeCompare(b.Day));
+        res.json({
+            versionId,
+            showtimes: result
         });
     } catch (error) {
         res.status(500).json({ error: error.message });

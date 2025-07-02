@@ -1,5 +1,6 @@
 const db = require('../config/database');
 const { v4: uuidv4 } = require('uuid');
+const Movie = require('./movie.model');
 
 // Hàm helper để format datetime cho MySQL
 const formatDateTime = (date) => {
@@ -51,18 +52,28 @@ class Showtime {
     }
 
     static async create(showtimeData) {
-        const { MovieId, CinemaRoomId, Duration, Day, Time, CreatedBy } = showtimeData;
+        const { VersionId, CinemaRoomId, Duration, Day, Time, CreatedBy } = showtimeData;
         const ShowtimeId = uuidv4();
         const now = new Date();
         const formattedCreatedAt = formatDateTime(now);
 
-        // Kiểm tra xem MovieId và CinemaRoomId có tồn tại không
-        const [movie] = await db.promise().query(
-            'SELECT MovieId FROM Movies WHERE MovieId = ? AND IsDeleted = 0',
-            [MovieId]
+        // Kiểm tra xem VersionId và CinemaRoomId có tồn tại không
+        const [version] = await db.promise().query(
+            'SELECT VersionId FROM Version WHERE VersionId = ? AND IsDeleted = 0',
+            [VersionId]
         );
-        if (!movie.length) {
-            throw new Error('Movie not found');
+        if (!version.length) {
+            throw new Error('Version not found');
+        }
+
+        // Lấy RunningTime từ Movie
+        const movieInfo = await Movie.getMovieIdAndRunningTimeByVersionId(VersionId);
+        if (!movieInfo) {
+            throw new Error('Movie not found for this version');
+        }
+        const expectedDuration = Number(movieInfo.RunningTime) + 20;
+        if (Number(Duration) !== expectedDuration) {
+            throw new Error(`Duration must be equal to RunningTime (${movieInfo.RunningTime}) + 20 minutes`);
         }
 
         const [room] = await db.promise().query(
@@ -74,21 +85,28 @@ class Showtime {
         }
 
         // Kiểm tra trùng lịch
-        const hasConflict = await this.checkTimeConflict(CinemaRoomId, Day, Time, Duration);
-        if (hasConflict) {
-            throw new Error('Time slot conflicts with existing showtime');
+        const [conflictShowtimes] = await db.promise().query(
+            `SELECT Time, Duration FROM Showtimes 
+             WHERE CinemaRoomId = ? AND Day = ? AND IsDeleted = 0
+             AND ((Time <= ? AND ADDTIME(Time, SEC_TO_TIME(Duration * 60)) > ?) OR
+                  (Time < ADDTIME(?, SEC_TO_TIME(Duration * 60)) AND ADDTIME(Time, SEC_TO_TIME(Duration * 60)) >= ?))`,
+            [CinemaRoomId, Day, Time, Time, Time, Time]
+        );
+        if (conflictShowtimes.length > 0) {
+            const conflicts = conflictShowtimes.map(c => `${c.Time} (duration ${c.Duration} minutes)`).join(', ');
+            throw new Error(`Time slot conflicts with existing showtimes: ${conflicts}`);
         }
 
         const query = `
             INSERT INTO Showtimes (
-                ShowtimeId, MovieId, CinemaRoomId, Duration, Day, Time, 
+                ShowtimeId, VersionId, CinemaRoomId, Duration, Day, Time, 
                 IsDeleted, CreatedAt, CreatedBy
             )
             VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
         `;
         try {
             await db.promise().query(query, [
-                ShowtimeId, MovieId, CinemaRoomId, Duration, Day, Time,
+                ShowtimeId, VersionId, CinemaRoomId, Duration, Day, Time,
                 formattedCreatedAt, CreatedBy
             ]);
             return ShowtimeId;
@@ -371,7 +389,22 @@ class Showtime {
             throw new Error("Error searching showtimes by movieId and day: " + error.message);
         }
     }
+
+    static async getShowtimesByVersion(versionId) {
+        const sql = `
+          SELECT st.Day, cr.Name
+          FROM Showtimes st
+          JOIN CinemaRooms cr ON st.CinemaRoomId = cr.CinemaRoomId
+          WHERE st.VersionId = ? AND (st.IsDeleted = 0 OR st.IsDeleted IS NULL)
+          ORDER BY st.Day;
+        `;
+        try {
+          const [rows] = await db.promise().query(sql, [versionId]);
+          return rows;
+        } catch (error) {
+          throw new Error("Error getting showtimes by version: " + error.message);
+        }
+    }
 }
 
-module.exports = Showtime;
 module.exports = Showtime;

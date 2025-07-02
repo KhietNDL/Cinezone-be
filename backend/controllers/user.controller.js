@@ -4,6 +4,7 @@ const nodemailer = require("nodemailer");
 const bcrypt = require("bcryptjs");
 const { v4: uuidv4, validate: uuidValidate } = require("uuid");
 const bucket = require("../config/firebase");
+const ScoreHistory = require("../models/scorehistory.model");
 
 // Define error codes
 const ERROR_CODES = {
@@ -650,6 +651,16 @@ const exchangeScore = async (req, res) => {
     const newScoreBalance = user.ScoreBalance - points;
 
     await User.updateScoreBalance(userId, newScoreBalance);
+
+    // Tạo bản ghi score history cho việc exchange
+    await ScoreHistory.createScoreHistory({
+      MemberId: userId,
+      RelatedBookingId: null,
+      ScoreValue: -points,
+      ChangeType: '1',
+      ChangeDate: new Date(),
+      CreatedBy: userId
+    });
 
     res.json({
       message: "Score exchanged successfully",
