@@ -184,7 +184,7 @@ const PromotionManagement = () => {
 
   return (
     <div className="flex flex-col items-center lg:items-start h-auto min-h-screen justify-between w-full max-w-full overflow-x-hidden">
-      <div className="w-[95%] sm:w-[90%] max-w-7xl space-y-4">
+      <div className="w-[90%] md:w-[95%] lg:w-[95%] max-w-7xl space-y-4">
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4 w-full">
           <div className="bg-white rounded-md p-2 sm:p-3 flex-1 shadow-sm">
@@ -274,7 +274,7 @@ const PromotionManagement = () => {
                 resetForm();
                 setShowFormPopup(true);
               }}
-              className="flex items-center text-[#6051F3] hover:bg-slate-50 p-1 p-2 rounded-md active:bg-slate-100 bg-white shadow-sm w-full sm:w-auto text-sm sm:text-base"
+              className="flex items-center text-[#6051F3] hover:bg-slate-50  p-2 rounded-md active:bg-slate-100 bg-white shadow-sm w-full sm:w-auto text-sm sm:text-base"
             >
               <GoPlus size={18} className="mr-1 sm:mr-2" />
               Add Promotion
