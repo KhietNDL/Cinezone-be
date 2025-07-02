@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import logo from "../../../assets/logoWeb.png";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
+import { Menu, X } from "lucide-react";
 
-const HeaderAdmin = () => {
+const HeaderAdmin = ({ onToggleSidebar, isSidebarOpen }) => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
@@ -27,27 +28,40 @@ const HeaderAdmin = () => {
   };
 
   return (
-    <div className="flex select-none p-2 w-full px-[20px] justify-between items-center bg-white">
-      <div role="button" className="flex w-[20%] items-center">
-        <img
-          src={logo}
-          alt=""
-          loading="lazy"
-          role="button"
-          onClick={() => {
-            navigate("/admin/dashboard");
-          }}
-          className=" w-[140px] h-[70px] object-cover"
-        />
+    <div className="flex select-none p-2 w-full px-4 md:px-[20px] justify-between items-center bg-white shadow-sm">
+      {/* Left Section - Logo and Mobile Menu */}
+      <div className="flex items-center">
+        {/* Mobile Menu Button */}
+        <button
+          onClick={onToggleSidebar}
+          className="lg:hidden p-2 rounded-lg hover:bg-gray-100 mr-2 z-50"
+        >
+          {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+
+        {/* Logo */}
+        <div role="button" className="flex items-center">
+          <img
+            src={logo}
+            alt="Logo"
+            loading="lazy"
+            role="button"
+            onClick={() => {
+              navigate("/admin/dashboard");
+            }}
+            className="w-[100px] h-[50px] md:w-[140px] md:h-[70px] object-cover"
+          />
+        </div>
       </div>
 
-      <div className="flex items-center justify-end w-[20%] space-x-8">
+      {/* Right Section - User Profile */}
+      <div className="flex items-center justify-end space-x-2 md:space-x-8">
         <div className="relative">
           <div
-            className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 rounded-lg p-2 transition-all duration-200 ease-in-out transform hover:scale-[1.02]"
+            className="flex items-center space-x-1 md:space-x-2 cursor-pointer hover:bg-gray-50 rounded-lg p-1 md:p-2 transition-all duration-200 ease-in-out transform hover:scale-[1.02]"
             onClick={toggleDropdown}
           >
-            <div className="border-[1px] border-solid border-amber-500 rounded-full w-[40px] h-[40px] ring-2 ring-transparent hover:ring-amber-200 transition-all duration-300">
+            <div className="border-[1px] border-solid border-amber-500 rounded-full w-[32px] h-[32px] md:w-[40px] md:h-[40px] ring-2 ring-transparent hover:ring-amber-200 transition-all duration-300">
               <img
                 src={user?.avatar_url}
                 alt="avatar"
@@ -55,17 +69,19 @@ const HeaderAdmin = () => {
                 className="w-full h-full object-cover rounded-full"
               />
             </div>
-            <div className="min-w-0">
-              <p className="font-bold text-[15px] truncate text-gray-800">
+            <div className="min-w-0 hidden sm:block">
+              <p className="font-bold text-[13px] md:text-[15px] truncate text-gray-800 max-w-[100px] md:max-w-none">
                 {user?.fullName}
               </p>
-              <p className="text-[13px] text-slate-500 font-medium">Admin</p>
+              <p className="text-[11px] md:text-[13px] text-slate-500 font-medium">
+                Admin
+              </p>
             </div>
             {/* Dropdown Arrow */}
             <svg
-              className={`w-4 h-4 text-gray-400 transition-transform duration-300 ease-in-out ${
+              className={`w-3 h-3 md:w-4 md:h-4 text-gray-400 transition-transform duration-300 ease-in-out ${
                 showDropdown ? "rotate-180" : "rotate-0"
-              }`}
+              } hidden sm:block`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -81,13 +97,21 @@ const HeaderAdmin = () => {
 
           {/* Dropdown Menu */}
           <div
-            className={`absolute right-0 mt-2 w-58 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden transition-all duration-300 ease-out transform origin-top ${
+            className={`absolute right-0 mt-2 w-48 md:w-58 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden transition-all duration-300 ease-out transform origin-top ${
               showDropdown
                 ? "opacity-100 scale-100 translate-y-0"
                 : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
             }`}
           >
             <div className="py-2 w-full">
+              {/* Mobile - Show user info in dropdown */}
+              <div className="sm:hidden px-4 py-2 border-b border-gray-100">
+                <p className="font-bold text-[14px] text-gray-800 truncate">
+                  {user?.fullName}
+                </p>
+                <p className="text-[12px] text-slate-500 font-medium">Admin</p>
+              </div>
+
               <button
                 onClick={handleLogout}
                 disabled={isLoggingOut}
@@ -127,7 +151,7 @@ const HeaderAdmin = () => {
       {/* Backdrop - Click outside to close dropdown */}
       {showDropdown && (
         <div
-          className="fixed inset-0 z-40  transition-all duration-300"
+          className="fixed inset-0 z-40 transition-all duration-300"
           onClick={() => setShowDropdown(false)}
         />
       )}

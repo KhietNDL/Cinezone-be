@@ -2,15 +2,18 @@ import React from "react";
 
 const Pagination = ({ currentPage, totalPages, handlePageChange }) => {
   const renderPaginationButtons = () => {
-    const maxVisibleButtons = 5;
+    // Adjust max visible buttons based on screen size
+    const maxVisibleButtons = window.innerWidth < 640 ? 3 : 5; // 3 buttons on mobile, 5 on larger screens
     const halfVisible = Math.floor(maxVisibleButtons / 2);
     let startPage = Math.max(1, currentPage - halfVisible);
     let endPage = Math.min(totalPages, currentPage + halfVisible);
 
-    if (currentPage <= halfVisible)
+    if (currentPage <= halfVisible) {
       endPage = Math.min(maxVisibleButtons, totalPages);
-    if (currentPage + halfVisible >= totalPages)
+    }
+    if (currentPage + halfVisible >= totalPages) {
       startPage = Math.max(1, totalPages - maxVisibleButtons + 1);
+    }
 
     const pages = [];
     for (let i = startPage; i <= endPage; i++) {
@@ -18,10 +21,10 @@ const Pagination = ({ currentPage, totalPages, handlePageChange }) => {
         <button
           key={`page-${i}`}
           onClick={() => handlePageChange(i)}
-          className={`px-4 py-2 rounded cursor-pointer ${
+          className={`px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${
             currentPage === i
-              ? "bg-blue-500 text-white"
-              : "bg-gray-200 hover:bg-gray-300"
+              ? "bg-indigo-600 text-white shadow-sm"
+              : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm"
           }`}
           aria-label={`Page ${i}`}
           aria-current={currentPage === i ? "true" : undefined}
@@ -33,22 +36,21 @@ const Pagination = ({ currentPage, totalPages, handlePageChange }) => {
 
     if (startPage > 1) {
       pages.unshift(
-        <button
+        <span
           key="ellipsis-start"
-          className="px-4 py-2 bg-gray-200 rounded cursor-default"
-          disabled
+          className="px-2 sm:px-3 py-1 sm:py-2 text-gray-500 text-sm sm:text-base"
         >
           ...
-        </button>
+        </span>
       );
       pages.unshift(
         <button
           key="page-1"
           onClick={() => handlePageChange(1)}
-          className={`px-4 py-2 rounded ${
+          className={`px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${
             currentPage === 1
-              ? "bg-blue-500 text-white"
-              : "bg-gray-200 hover:bg-gray-300"
+              ? "bg-indigo-600 text-white shadow-sm"
+              : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm"
           }`}
           aria-label="Page 1"
         >
@@ -58,22 +60,21 @@ const Pagination = ({ currentPage, totalPages, handlePageChange }) => {
     }
     if (endPage < totalPages) {
       pages.push(
-        <button
+        <span
           key="ellipsis-end"
-          className="px-4 py-2 bg-gray-200 rounded cursor-default"
-          disabled
+          className="px-2 sm:px-3 py-1 sm:py-2 text-gray-500 text-sm sm:text-base"
         >
           ...
-        </button>
+        </span>
       );
       pages.push(
         <button
           key={`page-${totalPages}`}
           onClick={() => handlePageChange(totalPages)}
-          className={`px-4 py-2 rounded ${
+          className={`px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${
             currentPage === totalPages
-              ? "bg-blue-500 text-white"
-              : "bg-gray-200 hover:bg-gray-300"
+              ? "bg-indigo-600 text-white shadow-sm"
+              : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm"
           }`}
           aria-label={`Page ${totalPages}`}
         >
@@ -82,29 +83,35 @@ const Pagination = ({ currentPage, totalPages, handlePageChange }) => {
       );
     }
 
-    return pages.length > 0 ? pages : <span>No pages to display</span>;
+    return pages.length > 0 ? (
+      pages
+    ) : (
+      <span className="text-gray-500 text-sm">No pages to display</span>
+    );
   };
 
   return (
-    <div className="flex items-center justify-end space-x-2 py-4">
-      <button
-        onClick={() => handlePageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-        className="px-4 py-2 bg-gray-200 cursor-pointer rounded disabled:opacity-50 hover:bg-gray-300"
-        aria-label="Previous page"
-      >
-        Previous
-      </button>
-      {renderPaginationButtons()}
-      <button
-        onClick={() => handlePageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        className="px-4 py-2 bg-gray-200 cursor-pointer rounded disabled:opacity-50 hover:bg-gray-300"
-        aria-label="Next page"
-      >
-        Next
-      </button>
-      <span className="ml-4 text-gray-500 text-sm">
+    <div className="flex flex-col sm:flex-row items-center justify-end space-y-2 sm:space-y-0 sm:space-x-2 py-4">
+      <div className="flex items-center space-x-1 sm:space-x-2">
+        <button
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="px-3 sm:px-4 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          aria-label="Previous page"
+        >
+          Previous
+        </button>
+        {renderPaginationButtons()}
+        <button
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="px-3 sm:px-4 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          aria-label="Next page"
+        >
+          Next
+        </button>
+      </div>
+      <span className="text-gray-500 text-sm sm:text-base">
         Page {currentPage} of {totalPages}
       </span>
     </div>

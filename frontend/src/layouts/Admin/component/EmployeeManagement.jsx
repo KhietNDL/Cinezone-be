@@ -15,6 +15,9 @@ import Pagination from "../employeeComponent/Pagination";
 import EmployeeForm from "../employeeComponent/EmployeeForm";
 import DeletePopup from "../employeeComponent/DeletePopup";
 import EmployeeTooltip from "../employeeComponent/EmployeeTooltip";
+import { IoEyeOutline } from "react-icons/io5";
+import { FaRegEdit } from "react-icons/fa";
+import { RiDeleteBin5Line } from "react-icons/ri";
 
 const EmployeeManagement = () => {
   const [employees, setEmployees] = useState([]);
@@ -298,14 +301,14 @@ const EmployeeManagement = () => {
 
   return (
     <div
-      className="flex items-center justify-between"
+      className="flex flex-col items-center lg:items-start h-auto min-h-screen justify-between w-full max-w-full overflow-x-hidden"
       onClick={handleOutsideClick}
     >
       {loading && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999]">
-          <div className="bg-white rounded-lg p-6 flex flex-col items-center shadow-xl">
+          <div className="bg-white rounded-lg p-4 sm:p-6 flex flex-col items-center shadow-xl">
             <svg
-              className="animate-spin h-8 w-8 text-indigo-600 mb-4"
+              className="animate-spin h-6 sm:h-8 w-6 sm:w-8 text-indigo-600 mb-3 sm:mb-4"
               viewBox="0 0 24 24"
             >
               <circle
@@ -323,7 +326,7 @@ const EmployeeManagement = () => {
                 d="M4 12a8 8 0 018-8v8z"
               />
             </svg>
-            <div className="font-semibold text-lg text-indigo-700">
+            <div className="font-semibold text-base sm:text-lg text-indigo-700">
               {showEditForm
                 ? "Đang cập nhật nhân viên, vui lòng chờ..."
                 : "Đang thêm nhân viên, vui lòng chờ..."}
@@ -331,7 +334,7 @@ const EmployeeManagement = () => {
           </div>
         </div>
       )}
-      <div className="w-[90%] space-y-4">
+      <div className="w-[90%] md:w-[95%] lg:w-[95%] max-w-7xl space-y-4">
         <HeaderStats employees={employees} />
         <SearchAndAdd
           searchEmployee={searchEmployee}
@@ -339,16 +342,101 @@ const EmployeeManagement = () => {
           setPage={setPage}
           resetForm={resetForm}
           setShowAddForm={setShowAddForm}
+          showEditForm={showEditForm}
         />
-        <EmployeeTable
-          employees={filteredEmployees}
-          page={page}
-          itemsPerPage={itemsPerPage}
-          handleEdit={handleEdit}
-          handleDelete={handleDelete}
-          handleRowClick={handleRowClick}
-          formatDate={formatDate}
-        />
+        <div className="bg-white xl:p-2  rounded-md shadow-sm">
+          {/* Table Layout for sm and above */}
+          <div className="hidden sm:block">
+            <EmployeeTable
+              employees={filteredEmployees}
+              page={page}
+              itemsPerPage={itemsPerPage}
+              handleEdit={handleEdit}
+              handleDelete={handleDelete}
+              handleRowClick={handleRowClick}
+              formatDate={formatDate}
+            />
+          </div>
+          {/* Card Layout for Mobile */}
+          <div className="block sm:hidden space-y-4">
+            {filteredEmployees
+              .slice((page - 1) * itemsPerPage, page * itemsPerPage)
+              .map((emp) => (
+                <article
+                  key={emp.UserId}
+                  className="bg-white p-4 rounded-lg shadow-sm border border-slate-200"
+                  onClick={(e) => handleRowClick(emp, e)}
+                >
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={emp.avatar_url || "/default-avatar.png"}
+                      alt={emp.FullName}
+                      className="w-16 h-16 rounded-full object-cover"
+                    />
+                    <div className="flex-1">
+                      <h3 className="text-sm font-medium text-gray-900 truncate">
+                        {emp.FullName}
+                      </h3>
+                      <p className="text-xs text-gray-500 truncate">
+                        {emp.Email}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-4 text-xs grid grid-cols-2 gap-x-2 gap-y-4 text-gray-700">
+                    <p>
+                      <strong>DOB:</strong> {formatDate(emp.DateOfBirth)}
+                    </p>
+                    <p>
+                      <strong>Gender:</strong>{" "}
+                      {emp.Sex === 1
+                        ? "Male"
+                        : emp.Sex === 2
+                        ? "Female"
+                        : "Other"}
+                    </p>
+                    <p>
+                      <strong>Phone:</strong> {emp.PhoneNumber}
+                    </p>
+                    <p>
+                      <strong>Joined:</strong> {formatDate(emp.CreatedAt)}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRowClick(emp, e);
+                      }}
+                      className="text-blue-500 hover:text-blue-700"
+                      aria-label={`View ${emp.FullName}`}
+                    >
+                      <IoEyeOutline size={16} />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(emp);
+                      }}
+                      className="text-blue-500 hover:text-blue-700"
+                      aria-label={`Edit ${emp.FullName}`}
+                    >
+                      <FaRegEdit size={16} />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(emp);
+                      }}
+                      className="text-red-400 hover:text-red-600"
+                      aria-label={`Delete ${emp.FullName}`}
+                    >
+                      <RiDeleteBin5Line size={16} />
+                    </button>
+                  </div>
+                </article>
+              ))}
+          </div>
+        </div>
         <Pagination page={page} totalPages={totalPages} setPage={setPage} />
       </div>
       {(showAddForm || showEditForm) && (
@@ -393,12 +481,13 @@ const EmployeeManagement = () => {
       {selectedEmployeeForTooltip && (
         <EmployeeTooltip
           employee={selectedEmployeeForTooltip}
+          position={tooltipPosition}
           onClose={() => setSelectedEmployeeForTooltip(null)}
         />
       )}
       <ToastContainer
         position="top-right"
-        autoClose={3000}
+        autoClose={2000}
         hideProgressBar={false}
         newestOnTop={false}
         closeOnClick

@@ -3,8 +3,9 @@ import { MdOutlineAvTimer, MdMovieCreation, MdPeopleAlt } from "react-icons/md";
 import { IoTicketSharp } from "react-icons/io5";
 import { FaDoorOpen, FaTicket, FaUser } from "react-icons/fa6";
 import { NavLink } from "react-router-dom";
+import { X } from "lucide-react";
 
-const SidebarAdmin = () => {
+const SidebarAdmin = ({ onClose }) => {
   const menu = [
     {
       label: "Over View",
@@ -31,7 +32,6 @@ const SidebarAdmin = () => {
       icon: <FaDoorOpen size={20} />,
       to: "/admin/rooms",
     },
-
     {
       label: "Ticket Booking Management",
       icon: <IoTicketSharp size={20} />,
@@ -44,22 +44,44 @@ const SidebarAdmin = () => {
     },
   ];
 
+  const handleLinkClick = () => {
+    // Close sidebar on mobile when a link is clicked
+    if (window.innerWidth < 1024) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="w-full bg-white h-full rounded-[10px] shadow-md">
-      <div className="flex flex-col gap-2 p-4">
+    <div
+      className={`
+        h-full w-[260px] md:w-[308px] bg-white shadow-md
+        flex flex-col z-50 items-start rounded-br-2xl rounded-bl-2xl
+      `}
+    >
+      {/* Mobile: Header with close button */}
+      <div className="lg:hidden flex items-center justify-between border-gray-200 p-4 border-b w-full">
+        <h2 className="text-lg font-semibold text-gray-800">Menu</h2>
+        <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100">
+          <X size={20} />
+        </button>
+      </div>
+      {/* Menu */}
+      <div className="flex flex-col gap-2 p-4 w-full">
         {menu.map((item) => (
           <NavLink
             to={item.to}
             key={item.label}
+            onClick={handleLinkClick}
             className={({ isActive }) =>
-              `font-bold text-[16px] p-2 rounded flex items-center transition-all duration-200 transform hover:scale-105 ${
+              `font-bold text-[14px] md:text-[16px] p-3 md:p-2 rounded flex items-center transition-all duration-200 transform hover:scale-105 ${
                 isActive
-                  ? "bg-purple-100 text-purple-600"
+                  ? "bg-purple-100  text-purple-600"
                   : "text-gray-800 hover:bg-gray-100"
               }`
             }
           >
-            <div className="mr-2">{item.icon}</div> {item.label}
+            <div className="mr-3 md:mr-2 flex-shrink-0">{item.icon}</div>
+            <span className="truncate">{item.label}</span>
           </NavLink>
         ))}
       </div>
