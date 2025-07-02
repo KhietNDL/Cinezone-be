@@ -457,7 +457,7 @@ export const HoldingSeats = async (userId, showtimeId, seatIds ,productIds, prom
       showtimeId: showtimeId,
       seatIds: seatIds,
       productIds: productIds || [],
-      promotionTitle: promotionTitle,
+      promotionTitle: promotionTitle || "",
     });
      console.log("HoldingSeats Response:", response.data);
     return response.data;
@@ -510,7 +510,7 @@ export const getPromotionByTitle = async (title) => {
 export const ConfirmBooking = async (bookingId) => {   
   try {     
     const response = await api.post(`/bookings/confirm/${bookingId}`);     
-    cosnole.log("Confirm Booking Response:", response.data);
+    console.log("Confirm Booking Response:", response.data);
     return response.data;   
   } catch (error) {     
     console.error("Lỗi khi Confirm Booking :", error);     

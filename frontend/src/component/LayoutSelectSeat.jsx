@@ -23,6 +23,7 @@ export const LayoutSelectSeat = ({
     available: "text-purple-300",
     selected: "text-purple-100",
     taken: "text-purple-600",
+    holding: "text-blue-600",
     vip: "text-purple-200",
     normal: "text-purple-300",
     couple: "text-purple-400",
@@ -80,7 +81,7 @@ export const LayoutSelectSeat = ({
     return sortedRows;
   };
 
-  console.log("SEAT DATA: ", seatDataFromAPI);
+  
   
   useEffect(() => {
     if (seatDataFromAPI.length > 0) {
@@ -93,7 +94,7 @@ export const LayoutSelectSeat = ({
 
   const handleSeatClick = (seatNumber) => {
     const seat = seatMap[seatNumber];
-    if (!seat || seat.status === "taken" ) return;
+    if (!seat || seat.status === "taken" ||seat.status==="holding" ) return;
 
     const newSelectedSeats = new Set(selectedSeats);
     if (newSelectedSeats.has(seatNumber)) {
@@ -125,6 +126,7 @@ export const LayoutSelectSeat = ({
     const { seatNumber, status, type } = seat;
 
     if (status === "taken") return "text-purple-600";
+    if (status === "holding") return "text-yellow-200/40";
     if (selectedSeats.has(seatNumber)) return "text-purple-100";
 
     // Màu theo loại ghế - purple theme
@@ -144,6 +146,7 @@ export const LayoutSelectSeat = ({
     const { seatId, seatNumber, status, type, price } = seat;
     const isSelected = selectedSeats.has(seatNumber);
     const isTaken = status === "taken";
+    const isHolding = status === "holding";
     const isCouple = type === 'Couple';
 
     // Render ghế đôi (Couple)
@@ -159,7 +162,7 @@ export const LayoutSelectSeat = ({
             className={`transition-all duration-200 hover:scale-105 ${
               isTaken ? "cursor-not-allowed opacity-50" : "cursor-pointer"
             } ${getSeatColor(seat)} relative group`}
-            disabled={isTaken}
+            disabled={isTaken || isHolding}
             title={`${type} Seat ${seatNumber} - ${price.toLocaleString()}đ - ${status}`}
           >
             <MdOutlineChair 
@@ -191,10 +194,10 @@ export const LayoutSelectSeat = ({
           className={`transition-all duration-200 hover:scale-105 ${
             isTaken ? "cursor-not-allowed opacity-50" : "cursor-pointer"
           } ${getSeatColor(seat)} relative group`}
-          disabled={isTaken}
+          disabled={isTaken || isHolding  }
           title={`${type} Seat ${seatNumber} - ${price.toLocaleString()}đ - ${status}`}
         >
-          {isTaken || isSelected ? (
+          {isTaken || isHolding || isSelected ? (
             <PiArmchairFill 
               style={{ 
                 width: `${width}px`, 
