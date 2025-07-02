@@ -25,6 +25,7 @@ const { auth, isAdmin } = require('../middlewares/auth.middleware');
  *       required:
  *         - Name
  *         - SeatQuantity
+ *         - Type
  *       properties:
  *         CinemaRoomId:
  *           type: string
@@ -36,27 +37,59 @@ const { auth, isAdmin } = require('../middlewares/auth.middleware');
  *         SeatQuantity:
  *           type: integer
  *           description: Total number of seats in the room
- *         
-*/
+ *         Type:
+ *           type: string
+ *           description: Type of the cinema room (2D, 3D, IMAX, etc.)
+ */
 
 /**
  * @swagger
  * /api/cinema-rooms:
  *   get:
- *     summary: Get all cinema rooms
+ *     summary: Get all cinema rooms (with pagination, sort)
  *     description: Retrieve a list of all cinema rooms in the system
  *     tags: [Cinema Room Management]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: Page number (default 1)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: Number of items per page (default 10)
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *         description: Field to sort by (Name, SeatQuantity, Type, CreatedAt)
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [ASC, DESC]
+ *         description: Sort order (ASC or DESC)
  *     responses:
  *       200:
  *         description: List of all cinema rooms
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/CinemaRoom'
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 rooms:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/CinemaRoom'
+ *                 total:
+ *                   type: integer
+ *                   description: Total number of cinema rooms
  *       401:
  *         description: Unauthorized - Authentication required
  *       403:
@@ -154,6 +187,7 @@ router.get('/:id', auth, isAdmin, (req, res, next) => { console.log('Hit /:id ro
  *             required:
  *               - Name
  *               - SeatQuantity
+ *               - Type
  *             properties:
  *               Name:
  *                 type: string
@@ -161,6 +195,9 @@ router.get('/:id', auth, isAdmin, (req, res, next) => { console.log('Hit /:id ro
  *               SeatQuantity:
  *                 type: integer
  *                 description: Total number of seats in the room
+ *               Type:
+ *                 type: string
+ *                 description: Type of the cinema room (e.g. 2D, 3D, VIP, etc.)
  *     responses:
  *       201:
  *         description: Cinema room created successfully
@@ -205,6 +242,9 @@ router.post('/create', auth, isAdmin, createCinemaRoom);
  *               SeatQuantity:
  *                 type: integer
  *                 description: Updated total number of seats
+ *               Type:
+ *                 type: string
+ *                 description: Updated type of the cinema room
  *     responses:
  *       200:
  *         description: Cinema room updated successfully

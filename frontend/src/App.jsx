@@ -50,7 +50,7 @@ function App() {
         <Route path="/login" element={<MovieTheaterLogin />} />
         <Route path="/register" element={<RegistrationPage />} />
         <Route path="/forgot" element={<ForgotPasswordPage />} />
-        <Route path="/login/google/callback" element={<GoogleCallback />} />
+        <Route path="/auth/google/callback" element={<GoogleCallback />} />
         <Route path="/verification" element={<EmailVerification />} />
         <Route path="/resetPassword" element={<ResetPassword />} />
 

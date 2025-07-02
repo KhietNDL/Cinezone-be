@@ -1,12 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { getUser, logout } from "../services/API";
 import { jwtDecode } from "jwt-decode";
+import { useNavigate } from "react-router-dom";
+
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -40,15 +43,17 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("token", token);
     localStorage.setItem("userId", userId);
     try {
-      const decoded = jwtDecode(token);
-      setUser(decoded);
       const userData = await getUser(userId);
       setUser(userData.user);
+      return { success: true, user: userData.user };
     } catch (error) {
       console.error("Failed to fetch user in signIn:", error);
       localStorage.removeItem("token");
       localStorage.removeItem("userId");
-      throw error;
+      setUser(null);
+      
+      // Trả về object với thông tin lỗi
+      return { success: false, error: error.message };
     }
   };
 

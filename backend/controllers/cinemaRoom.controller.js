@@ -16,20 +16,28 @@ const ERROR_CODES = {
 const formatRoomData = (room) => ({
     CinemaRoomId: room.CinemaRoomId,
     Name: room.Name,
-    SeatQuantity: room.SeatQuantity
+    SeatQuantity: room.SeatQuantity,
+    Type: room.Type
 });
 
-// Get all cinema rooms
-const getAllCinemaRooms = async (_, res) => {
+// Get all cinema rooms with pagination and sort
+const getAllCinemaRooms = async (req, res) => {
     try {
-        const rooms = await CinemaRoom.getAllCinemaRooms();
-        res.json({ 
+        const { page = 1, limit = 10, sortBy = 'Name', sortOrder = 'ASC' } = req.query;
+        const { rooms, total } = await CinemaRoom.getCinemaRoomsPaginated({
+            page: parseInt(page),
+            limit: parseInt(limit),
+            sortBy,
+            sortOrder
+        });
+        res.json({
             message: 'Cinema rooms retrieved successfully',
-            rooms: rooms.map(formatRoomData)
+            rooms: rooms.map(formatRoomData),
+            total
         });
     } catch (error) {
         console.error('Get all cinema rooms error:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: 'Internal server error while retrieving cinema rooms',
             code: ERROR_CODES.SERVER_ERROR
         });
@@ -73,12 +81,12 @@ const getCinemaRoomById = async (req, res) => {
 // Create new cinema room
 const createCinemaRoom = async (req, res) => {
     try {
-        const { Name, SeatQuantity } = req.body;
+        const { Name, SeatQuantity, Type } = req.body;
 
         // Validate input
-        if (!Name || !SeatQuantity) {
+        if (!Name || !SeatQuantity || !Type) {
             return res.status(400).json({
-                error: 'Name and SeatQuantity are required',
+                error: 'Name, SeatQuantity, and Type are required',
                 code: ERROR_CODES.INVALID_INPUT
             });
         }
@@ -101,20 +109,21 @@ const createCinemaRoom = async (req, res) => {
         }
 
         const CreatedBy = req.user.UserId;
-        const id = await CinemaRoom.createCinemaRoom({ 
-            Name, 
+        const id = await CinemaRoom.createCinemaRoom({
+            Name,
             SeatQuantity,
-            CreatedBy 
+            Type,
+            CreatedBy
         });
 
         const newRoom = await CinemaRoom.getCinemaRoomById(id);
-        res.status(201).json({ 
+        res.status(201).json({
             message: 'Cinema room created successfully',
             room: formatRoomData(newRoom)
         });
     } catch (error) {
         console.error('Create cinema room error:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: 'Internal server error while creating cinema room',
             code: ERROR_CODES.SERVER_ERROR
         });
@@ -125,20 +134,20 @@ const createCinemaRoom = async (req, res) => {
 const updateCinemaRoom = async (req, res) => {
     try {
         const { id } = req.params;
-        const { Name, SeatQuantity } = req.body;
+        const { Name, SeatQuantity, Type } = req.body;
 
         // Validate UUID format
         if (!uuidValidate(id)) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 error: 'Invalid UUID format',
                 code: ERROR_CODES.INVALID_UUID
             });
         }
 
         // Validate input
-        if (!Name || !SeatQuantity) {
+        if (!Name || !SeatQuantity || !Type) {
             return res.status(400).json({
-                error: 'Name and SeatQuantity are required',
+                error: 'Name, SeatQuantity, and Type are required',
                 code: ERROR_CODES.INVALID_INPUT
             });
         }
@@ -154,7 +163,7 @@ const updateCinemaRoom = async (req, res) => {
         // Check if room exists
         const existingRoom = await CinemaRoom.getCinemaRoomById(id);
         if (!existingRoom) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 error: 'Cinema room not found',
                 code: ERROR_CODES.ROOM_NOT_FOUND
             });
@@ -172,27 +181,28 @@ const updateCinemaRoom = async (req, res) => {
         }
 
         const UpdatedBy = req.user.UserId;
-        const success = await CinemaRoom.updateCinemaRoom(id, { 
-            Name, 
-            SeatQuantity, 
-            UpdatedBy 
+        const success = await CinemaRoom.updateCinemaRoom(id, {
+            Name,
+            SeatQuantity,
+            Type,
+            UpdatedBy
         });
 
         if (!success) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 error: 'Cinema room not found or not updated',
                 code: ERROR_CODES.ROOM_NOT_FOUND
             });
         }
 
         const updatedRoom = await CinemaRoom.getCinemaRoomById(id);
-        res.json({ 
+        res.json({
             message: 'Cinema room updated successfully',
             room: formatRoomData(updatedRoom)
         });
     } catch (error) {
         console.error('Update cinema room error:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: 'Internal server error while updating cinema room',
             code: ERROR_CODES.SERVER_ERROR
         });
@@ -242,11 +252,12 @@ const deleteCinemaRoom = async (req, res) => {
 
         res.json({ message: 'Cinema room deleted successfully' });
     } catch (error) {
-        console.error('Delete cinema room error:', error);
+        
         res.status(500).json({ 
             error: 'Internal server error while deleting cinema room',
             code: ERROR_CODES.SERVER_ERROR
         });
+        console.error('Delete cinema room error:', error);
     }
 };
 
