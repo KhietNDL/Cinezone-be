@@ -199,3 +199,13 @@ export const checkInfoBookingById = async (bookingId) => {
     handleError(error);
   }
 };
+
+//Hủy booking bằng id
+export const cancelBookingById = async (bookingId) => {
+  try {
+    const response = await api.post(`/bookings/cancel/${encodeURIComponent(bookingId)}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
