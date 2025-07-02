@@ -61,7 +61,6 @@ const TicketInfomation = () => {
               setBookingData(parsedData); // Use local data instead of API response
               setPaymentStatus('success');
               toast.success("Payment successful!");
-              console.log("Payment successful!", parsedData);
             } catch (apiError) {
               console.error("Confirmation error:", apiError);
               // Still show local data even if confirmation fails
@@ -183,7 +182,7 @@ const TicketInfomation = () => {
         {/* Movie Details */}
         <div className="lg:col-span-2 rounded-xl  border border-gray-300 shadow-xl">
           <div className="bg-white p-6 rounded-xl">
-            <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex flex-col md:flex-row gap-6 items-center">
               <img
                 src={movie.PosterImage}
                 alt={`Poster ${movie.NameOfEnglish}`}
@@ -299,7 +298,7 @@ const TicketInfomation = () => {
 
                   {memberInfo.fullName && (
                     <div className="flex items-center justify-between">
-                      <p className="text-gray-600 w-[50%] flex items-center gap-2">
+                      <p className="text-gray-600 flex items-center gap-2">
                         <FaUser /> Full Name:
                       </p>
                       <p className="font-medium">{memberInfo.fullName}</p>

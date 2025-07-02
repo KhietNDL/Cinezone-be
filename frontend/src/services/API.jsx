@@ -78,9 +78,8 @@ export const register = async (userData) => {
 
 export const logout = async () => {
   try {
-    await api.post("/auth/logout");
-    localStorage.removeItem("token");
-    return { message: "Logged out successfully" };
+    const response = await api.post("/api/auth/logout");
+    return response.data;
   } catch (error) {
     handleError(error);
   }
@@ -126,7 +125,6 @@ export const resetPassword = async (credentials) => {
 export const getUser = async (id) => {
   try {
     const response = await api.get(`/auth/user/${id}`);
-
     return response.data;
   } catch (error) {
     handleError(error);
@@ -382,13 +380,38 @@ export const getCinemaRooms = async (params) => {
     handleError(error);
   }
 };
-
+export const searchCinemaRooms = async (name) => {
+  try {
+    const response = await api.get("/cinema-rooms/search", {
+      params: { name },
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+export const updateCinemaRoom = async (id, roomData) => {
+  try {
+    const response = await api.put(`/cinema-rooms/update/${id}`, roomData);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+export const deleteCinemaRoom = async (id) => {
+  try {
+    const response = await api.delete(`/cinema-rooms/delete/${id}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
 //API cho Booking FLow
 
 export const getShowtimeByMovieId = async (movieId) => {
   try {
     const response = await api.get(`/showtimes/movie/${movieId}/day`);
-    console.log(response.data)
+    console.log(response.data);
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy showtime theo movieId:", error);
@@ -398,12 +421,15 @@ export const getShowtimeByMovieId = async (movieId) => {
 
 export const getTimeByDay = async (movieId, day) => {
   try {
-    const response = await api.get(`/showtimes/movie/${movieId}/day/showtimes`, {
-      params: {
-        movieId: movieId,
-        day: day,
-      },
-    });
+    const response = await api.get(
+      `/showtimes/movie/${movieId}/day/showtimes`,
+      {
+        params: {
+          movieId: movieId,
+          day: day,
+        },
+      }
+    );
 
     console.log(response.data);
     return response.data;
@@ -423,11 +449,15 @@ export const getSeatsByShowtimeId = async (showtimeId) => {
   }
 };
 
-
-export const HoldingSeats = async (userId, showtimeId, seatIds,productIds, promoCode) => {
+export const HoldingSeats = async (
+  userId,
+  showtimeId,
+  seatIds,
+  productIds,
+  promoCode
+) => {
   try {
     const response = await api.post("/bookings/hold", {
-      
       userId: userId,
       showtimeId: showtimeId,
       seatIds: seatIds,
@@ -440,8 +470,7 @@ export const HoldingSeats = async (userId, showtimeId, seatIds,productIds, promo
     handleError(error);
     throw error;
   }
-}
-
+};
 
 export const getAllMethodsPayment = async () => {
   try {
@@ -480,13 +509,12 @@ export const getPromotionByTitle = async (title) => {
     handleError(error);
     throw error;
   }
-}
+};
 
 export const ConfirmBooking = async (bookingId) => {
-    try {
+  try {
     const response = await api.post("/bookings/confirm/${bookingId}", {
-      params:{bookingId: bookingId,}
-      
+      params: { bookingId: bookingId },
     });
     return response.data;
   } catch (error) {
@@ -494,7 +522,7 @@ export const ConfirmBooking = async (bookingId) => {
     handleError(error);
     throw error;
   }
-}
+};
 
 export const getBookingById = async (bookingId) => {
   try {
@@ -516,4 +544,4 @@ export const cancelBooking = async (bookingId) => {
     handleError(error);
     throw error;
   }
-}
+};

@@ -346,7 +346,7 @@ export const LayoutSelectSeat = ({
       </div>
 
       {/* Legend */}
-      <div className="mt-8 flex justify-center flex-wrap gap-6 text-sm">
+      {/* <div className="mt-8 flex justify-center flex-wrap gap-6 text-sm">
         <div className="flex items-center space-x-2">
           <PiArmchairLight className={seatColors.normal} size={20} />
           <span className="text-gray-400">Normal</span>
@@ -371,7 +371,38 @@ export const LayoutSelectSeat = ({
           <PiArmchairFill className={seatColors.holding} size={20} />
           <span className="text-gray-400">Holding</span>
         </div>
+      </div> */}
+
+      <div className="mt-8 overflow-x-auto w-full flex items-center justify-center">
+        <div className="flex justify-center items-center flex-wrap gap-4 sm:gap-6 text-sm sm:text-lg w-full sm:px-3 max-w-full px-5">
+          <div className="flex items-center space-x-2 min-w-fit">
+            <PiArmchairLight className={seatColors.normal} size={20} />
+            <span className="text-gray-400">Normal</span>
+          </div>
+          <div className="flex items-center space-x-2 min-w-fit">
+            <PiArmchairLight className={seatColors.vip} size={20} />
+            <span className="text-gray-400">VIP</span>
+          </div>
+          <div className="flex items-center space-x-2 min-w-fit">
+            <MdOutlineChair className={seatColors.couple} size={20} />
+            <span className="text-gray-400">Couple</span>
+          </div>
+          <div className="flex items-center space-x-2 min-w-fit">
+            <PiArmchairFill className={seatColors.selected} size={20} />
+            <span className="text-gray-400">Selecting</span>
+          </div>
+          <div className="flex items-center space-x-2 min-w-fit">
+            <PiArmchairFill className={seatColors.taken} size={20} />
+            <span className="text-gray-400">Taken</span>
+          </div>
+          <div className="flex items-center space-x-2 min-w-fit">
+            <PiArmchairFill className={seatColors.holding} size={20} />
+            <span className="text-gray-400">Holding</span>
+          </div>
+        </div>
       </div>
+
+
 
       {/* Selected Seats Info */}
       {selectedSeats.size > 0 && (

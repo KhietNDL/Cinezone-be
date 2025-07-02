@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Input, Spin } from "antd";
-import ShowtimeButton from "./ShowtimeButton";
 import { Link } from "react-router-dom";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
@@ -13,6 +12,7 @@ import {
   getCurrentMovies,
   searchMovies,
 } from "../../../services/APIForStaff/API";
+import { useDebounce } from '../../../hooks/useDebounce'
 
 export default function MoviePage() {
   const [selectedMovie, setSelectedMovie] = useState(null);
@@ -20,12 +20,14 @@ export default function MoviePage() {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
 
+  const debouncedSearch = useDebounce(search, 500); // delay 500ms
+
   const toSlug = (str) =>
     str
       .toLowerCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // bỏ dấu tiếng Việt
-      .replace(/[^a-z0-9]+/g, '-') // thay ký tự đặc biệt bằng -
-      .replace(/^-+|-+$/g, ''); // bỏ - ở đầu/cuối
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
 
   const getCurrentMovie = async () => {
     try {
@@ -38,14 +40,13 @@ export default function MoviePage() {
     }
   };
 
-  const handleSearch = async (value) => {
-    setSearch(value);
+  const fetchMovies = async (keyword) => {
     setLoading(true);
     try {
-      if (!value) {
+      if (!keyword) {
         await getCurrentMovie();
       } else {
-        const response = await searchMovies(value);
+        const response = await searchMovies(keyword);
         if (response.data) {
           setMovies(response.data);
         }
@@ -57,27 +58,20 @@ export default function MoviePage() {
     }
   };
 
+  // Gọi API khi debouncedSearch thay đổi
   useEffect(() => {
-    getCurrentMovie();
+    fetchMovies(debouncedSearch);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    getCurrentMovie(); // initial load
   }, []);
 
   const swiperBreakpoints = {
-    320: {
-      slidesPerView: 1,
-      spaceBetween: 50,
-    },
-    640: {
-      slidesPerView: 2,
-      spaceBetween: 30,
-    },
-    768: {
-      slidesPerView: 3,
-      spaceBetween: 40,
-    },
-    1024: {
-      slidesPerView: 4,
-      spaceBetween: 50,
-    },
+    320: { slidesPerView: 1, spaceBetween: 50 },
+    640: { slidesPerView: 2, spaceBetween: 30 },
+    768: { slidesPerView: 3, spaceBetween: 40 },
+    1024: { slidesPerView: 4, spaceBetween: 50 },
   };
 
   return (
@@ -89,7 +83,8 @@ export default function MoviePage() {
             placeholder="Search movie..."
             style={{ width: 250 }}
             value={search}
-            onChange={e => handleSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)} // cập nhật search input
+            allowClear
           />
         </div>
         <h5 className="mt-5">
@@ -106,9 +101,7 @@ export default function MoviePage() {
               modules={[Navigation, Pagination]}
               breakpoints={swiperBreakpoints}
               navigation
-              pagination={{
-                clickable: true,
-              }}
+              pagination={{ clickable: true }}
               slidesPerView={4}
               slidesPerGroup={2}
               loop={true}

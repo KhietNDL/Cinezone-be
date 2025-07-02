@@ -17,6 +17,19 @@ const SelectSeatsPage = () => {
     const [seatData, setSeatData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 640);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 640);
+        };
+
+        window.addEventListener('resize', handleResize);
+
+        // Cleanup khi component bị unmount
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
 
     useEffect(() => {
         const loadBookingData = () => {
@@ -136,21 +149,21 @@ const SelectSeatsPage = () => {
 
     return (
         <div className="p-4 mx-auto w-full bg-white">
-            <h1 className="text-3xl font-bold mb-4 text-[#9810FA]">Select Seats</h1>
+            <h1 className="text-3xl font-bold mb-4 text-[#9810FA] justify-between items-center flex flex-col sm:flex-row">
+                Select Seats
+            </h1>
 
             {/* Movie information section */}
-            <div className="flex items-start gap-4 border-b border-gray-300 pb-4">
+            <div className="flex items-center sm:items-start gap-4 border-b border-gray-300 pb-4 flex-col sm:flex-row">
                 <img
                     src={movieInfo.PosterImage}
                     alt={movieInfo.NameOfEnglish || ""}
-                    className="w-40 h-auto rounded-xl shadow"
+                    className="w-40 h-auto rounded-xl shadow "
                 />
-                <div className="flex-1">
+                <div className="flex flex-col items-center sm:items-start">
                     <div className="flex items-center gap-2">
-                        <div className="text-[#FFF8A7] text-shadow-2xs text-shadow-amber-500 -1 rounded-full shadow-md w-[125px] h-[30px] flex items-center justify-center"
-                            style={{
-                                background: "linear-gradient(90deg, #FACC15, #DDB61A, #DBBB3B, #CDB03D, #B1900C)",
-                            }}>
+                        <div className="text-[#FFF8A7] text-shadow-2xs text-shadow-amber-500 -1 rounded-full 
+                        bg-[linear-gradient(90deg,_#FACC15,_#DDB61A,_#DBBB3B,_#CDB03D,_#B1900C)] shadow-md w-[125px] h-[30px] flex items-center justify-center">
                             <p className="font-bold p-2 text-sm">Now Showing</p>
                         </div>
                         <div className="py-0.5 px-4 border-2 border-purple-700 bg-purple-300 rounded-lg text-purple-700 font-semibold"
@@ -158,9 +171,13 @@ const SelectSeatsPage = () => {
                             {bookingData.version}
                         </div>
                     </div>
-                    <h2 className="text-3xl font-bold mt-2 py-4">
-                        {movieInfo.NameOfEnglish} <span className="text-xl">{"("}{movieInfo.NameOfVietnamese}{")"}</span>
-                    </h2>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mt-2 py-4">
+                        <h2 className="text-3xl font-bold ">
+                            {movieInfo.NameOfEnglish}
+                        </h2>
+                        <p className="text-xl font-semibold">{"("}{movieInfo.NameOfVietnamese}{")"}</p>
+
+                    </div>
                     <p className="text-sm mt-1 flex gap-4">
                         <span className="py-2"><i className="fa-solid fa-clock"></i> {bookingData.time}</span>
                         <span className="py-2"><i className="fa-solid fa-location-dot"></i> {bookingData.room}</span>
@@ -172,9 +189,9 @@ const SelectSeatsPage = () => {
             {loading ? (
                 <div className="text-center my-8"><Spin size="large" /></div>
             ) : (
-                <div className="flex gap-10 justify-center bg-white mt-4">
-                    <div className="w-[70%] flex justify-center">
-                        <LayoutSelectSeat
+                <div className="flex flex-col sm:flex-row gap-10 justify-center bg-white mt-4">
+                    <div className="w-full sm:w-[70%] flex justify-center">
+                        {/* <LayoutSelectSeat
                             seatDataFromAPI={seatData}
                             initialSelectedSeats={selectedSeats}
                             onSeatSelect={handleSeatSelect}
@@ -187,17 +204,39 @@ const SelectSeatsPage = () => {
                                 available: "text-gray-500",
                                 selected: "text-[#5341DB]",
                                 taken: "text-[#6A7282]",
-                                holding: "text-gray-800",
+                                holding: "text-green-800",
                                 vip: "text-yellow-500",
                                 normal: "text-gray-700",
                                 couple: "text-pink-500",
                             }}
                             className="w-full"
+                        /> */}
+
+                        <LayoutSelectSeat
+                            seatDataFromAPI={seatData}
+                            initialSelectedSeats={selectedSeats}
+                            onSeatSelect={handleSeatSelect}
+                            textColor="text-[#6A57F5]"
+                            width={isMobile ? 15 : 30}
+                            height={isMobile ? 15 : 30}
+                            widthDouble={isMobile ? 20 : 42}
+                            heightDouble={isMobile ? 15 : 24}
+                            containerWidth={isMobile ? "100%" : "750px"}
+                            seatColors={{
+                                available: "text-gray-500",
+                                selected: "text-[#5341DB]",
+                                taken: "text-[#6A7282]",
+                                holding: "text-green-800",
+                                vip: "text-yellow-500",
+                                normal: "text-gray-700",
+                                couple: "text-pink-500",
+                            }}
+                            className={`w-full px-2 ${isMobile ? 'scale-[0.9]' : ''}`}
                         />
                     </div>
 
                     {/* Seat information */}
-                    <div className="w-[30%] h-[50%] rounded-2xl border border-gray-300 bg-white shadow-md p-4">
+                    <div className="w-full sm:w-[30%] h-[50%] rounded-2xl border border-gray-300 bg-white shadow-md p-4">
                         <div className="flex flex-col gap-2">
                             <h5 className="font-bold">
                                 <i className="fa-solid fa-couch"></i> Seat Information
@@ -220,7 +259,7 @@ const SelectSeatsPage = () => {
                                 <p className="flex items-center justify-between my-2">
                                     Total price:{" "}
                                     <span className="text-green-600 font-bold">
-                                        {formatPrice(getTotalPrice())} VND
+                                        {formatPrice(getTotalPrice())} VNĐ
                                     </span>
                                 </p>
                             </div>
@@ -234,7 +273,7 @@ const SelectSeatsPage = () => {
                                             const seat = seatData.find(s => s.seatNumber === seatNumber);
                                             return (
                                                 <Tag key={seatNumber} color="purple">
-                                                    {seatNumber} - {formatPrice(seat?.price || 0)} VND
+                                                    {seatNumber} - {formatPrice(seat?.price || 0)} VNĐ
                                                 </Tag>
                                             );
                                         })}
@@ -244,7 +283,7 @@ const SelectSeatsPage = () => {
 
                             <div className="mt-4 flex justify-center gap-2 py-5">
                                 <Button
-                                    style={{ backgroundColor: "#8A2BE2" }}
+                                    style={{ backgroundColor: "#8A2BE2", color: "white" }}
                                     type="primary"
                                     icon={<CheckOutlined />}
                                     onClick={handleContinue}

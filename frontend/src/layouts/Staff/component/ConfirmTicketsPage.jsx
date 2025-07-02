@@ -36,7 +36,7 @@ const ConfirmTicketsPage = () => {
   const [isBookingConfirmed, setIsBookingConfirmed] = useState(false);
   const [bookingData, setBookingData] = useState(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
-  
+
 
 
   // Load booking data from localStorage
@@ -157,7 +157,7 @@ const ConfirmTicketsPage = () => {
       let usedPoints = 0;
 
       if (memberChecked) {
-        
+
         if (values.convertToTicket === "Agree") {
           usedPoints = bookingData.selectedSeats.length * 10000;
           // console.log("Used points:", usedPoints, "Member score:", member.score);
@@ -432,7 +432,9 @@ const ConfirmTicketsPage = () => {
   return (
     <div className="p-4 mx-auto w-full bg-white">
       <ToastContainer position="top-right" autoClose={3000} />
-      <h1 className="text-3xl font-bold mb-6 text-purple-700">Confirm Tickets</h1>
+      <h1 className="text-3xl font-bold mb-4 text-[#9810FA] justify-between items-center flex flex-col sm:flex-row">
+        Confirm Tickets
+      </h1>
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Movie Info Section */}
@@ -442,16 +444,16 @@ const ConfirmTicketsPage = () => {
               <RiFilmAiFill /> Ticket Information
             </h2>
 
-            <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex flex-col md:flex-row gap-6 items-center justify-center sm:items-start sm:justify-center">
               <img
                 src={movieInfo.PosterImage}
                 alt={movieInfo.NameOfEnglish}
-                className="h-[300px] object-cover rounded-lg shadow w-[30%]"
+                className="sm:h-[300px] object-cover rounded-lg shadow sm:w-[30%] w-[90%] h-auto"
                 onError={(e) => e.target.src = '/placeholder-poster.jpg'}
               />
 
               <div className="flex-1">
-                <div className="flex items-center gap-3 mb-3">
+                <div className="flex items-center justify-center sm:justify-start gap-3 mb-3">
                   <div
                     className=" p-1 rounded-full shadow-md w-[110px] h-[25px] flex items-center justify-center"
                     style={{
@@ -471,13 +473,13 @@ const ConfirmTicketsPage = () => {
                   </span>
                 </div>
 
-                <div className="flex flex-col items-start w-full py-4">
+                <div className="flex flex-col sm:items-start w-full py-4 items-center justify-center">
                   <h3 className="text-2xl font-bold">
                     {movieInfo.NameOfEnglish}
                   </h3>
-                  <span className="text-xl text-gray-600 font-semibold">
+                  <p className="text-xl text-gray-600 font-semibold text-center">
                     ({movieInfo.NameOfVietnamese})
-                  </span>
+                  </p>
                 </div>
 
 
@@ -575,7 +577,7 @@ const ConfirmTicketsPage = () => {
                       <h3 className="font-semibold mb-3 flex items-center gap-2">
                         <FaUser /> Member
                       </h3>
-                      <div className="flex gap-3">
+                      <div className="flex gap-3 items-center justify-center">
                         <Field
                           name="memberSearch"
                           type="text"
@@ -603,7 +605,7 @@ const ConfirmTicketsPage = () => {
                       {/* Member Info */}
                       {memberChecked && member && (
                         <div className="mt-4 p-4 bg-white rounded-lg border border-gray-300">
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4">
                             <div>
                               <p className="text-gray-600 flex items-center gap-2">
                                 <FaIdCard /> Identity card:
@@ -632,8 +634,8 @@ const ConfirmTicketsPage = () => {
 
                           {/* Convert Points */}
                           {memberChecked && (
-                            <div className="mt-4 flex items-center gap-5">
-                              <label className="text-gray-700 mb-2 flex items-center gap-2">
+                            <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center gap-5">
+                              <label className="text-gray-700 flex items-center gap-2 sm:w-[30%] w-full ">
                                 <FaExchangeAlt /> Convert points to tickets:
                                 <span className="text-red-500">*</span>
                               </label>
@@ -657,7 +659,7 @@ const ConfirmTicketsPage = () => {
                             <label className="block text-gray-700 mb-2">
                               Promotion code:
                             </label>
-                            <div className="flex gap-3">
+                            <div className="flex gap-3 items-center justify-center">
                               <Field
                                 name="promotionCode"
                                 type="text"
@@ -786,7 +788,7 @@ const ConfirmTicketsPage = () => {
                       <button
                         type="button"
                         onClick={handleCancel}
-                        className="px-4 py-2 border-2 border-red-500 text-red-500 rounded-lg hover:bg-red-500 transition flex items-center gap-2 cursor-pointer
+                        className="px-2 py-1 sm:px-4 sm:py-2 border-2 border-red-500 text-red-500 rounded-lg hover:bg-red-500 transition flex items-center gap-2 cursor-pointer
                         hover:text-white "
                       >
                         <FaX /> Cancel
