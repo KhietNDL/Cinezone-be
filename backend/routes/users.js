@@ -318,6 +318,10 @@ router.get('/phone/:phoneNumber', auth, isAdminOrEmployee, getUserByPhoneNumber)
  *               pointsToExchange:
  *                 type: integer
  *                 description: Number of points to exchange
+ *               bookingId:
+ *                 type: string
+ *                 format: uuid
+ *                 description: (Optional) Related booking ID for this exchange
  *     responses:
  *       200:
  *         description: Score exchanged successfully

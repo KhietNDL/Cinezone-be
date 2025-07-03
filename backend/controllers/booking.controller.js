@@ -1,5 +1,7 @@
 const Booking = require('../models/booking.model');
 const { create } = require('../models/orderProduct.model');
+const ScoreHistory = require("../models/scorehistory.model");
+const User = require("../models/user.model");
 
 const getBookingById = async (req, res) => {
   const { bookingId } = req.params;
@@ -24,8 +26,9 @@ const getBookingsByMemberId = async (req, res) => {
 
 const createBooking = async (req, res) => {
   try {
-    const bookingId = await Booking.createBooking(req.body);
-    res.status(201).json({ bookingId });
+    const success = await Booking.createBooking(req.body);
+    if (!success) return res.status(404).json({ error: 'Booking not found' });
+    res.json({ message: 'Booking created' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -89,6 +92,30 @@ const confirmBooking = async (req, res) => {
   try {
     const { bookingId } = req.params;
     await Booking.confirmBooking(bookingId);
+
+    // Lấy thông tin booking vừa xác nhận
+    const booking = await Booking.getBookingById(bookingId);
+    if (booking) {
+      const ScoreValue = Math.floor((booking.TotalAmount || 0) / 10000);
+      if (ScoreValue > 0) {
+        // Ghi nhận lịch sử điểm
+        await ScoreHistory.createScoreHistory({
+          MemberId: booking.MemberId,
+          RelatedBookingId: bookingId,
+          ScoreValue: +ScoreValue,
+          ChangeType: '1',
+          ChangeDate: new Date(),
+          CreatedBy: booking.MemberId
+        });
+        // Cộng điểm vào user
+        const user = await User.findById(booking.MemberId);
+        if (user) {
+          const newScoreBalance = (user.ScoreBalance || 0) + ScoreValue;
+          await User.updateScoreBalance(booking.MemberId, newScoreBalance);
+        }
+      }
+    }
+
     res.json({ message: 'Booking confirmed successfully' });
   } catch (err) {
     res.status(400).json({ error: err.message });

@@ -86,6 +86,19 @@ exports.createShowtime = async (req, res) => {
         if (!Day || !isValidDate(Day)) return res.status(400).json({ error: 'Day must be YYYY-MM-DD', code: ERROR_CODES.INVALID_INPUT });
         if (!Array.isArray(Times) || Times.length === 0) return res.status(400).json({ error: 'Times must be a non-empty array', code: ERROR_CODES.INVALID_INPUT });
 
+        // Validate ngày không được là quá khứ và nếu là ngày hiện tại thì chỉ cho phép tạo showtime cho 7 ngày sau trở đi
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        const showDate = new Date(Day);
+        showDate.setHours(0,0,0,0);
+        if (showDate < today) {
+            return res.status(400).json({ error: 'Không thể tạo showtime cho ngày trong quá khứ!' });
+        }
+        const diffDays = Math.floor((showDate - today) / (1000 * 60 * 60 * 24));
+        if (diffDays < 7) {
+            return res.status(400).json({ error: 'Chỉ được phép tạo showtime cho ngày cách hiện tại ít nhất 7 ngày!' });
+        }
+
         const results = [];
         for (const Time of Times) {
             if (!isValidTime(Time)) {
