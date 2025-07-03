@@ -94,3 +94,16 @@ exports.cancelOrder = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.getOrderProductDetail = async (req, res) => {
+  try {
+    const { orderProductId } = req.params;
+    const detail = await OrderProduct.getOrderProductDetail(orderProductId);
+    if (!detail) {
+      return res.status(404).json({ error: 'OrderProduct not found' });
+    }
+    res.json({ status: 'success', data: detail });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

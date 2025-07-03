@@ -80,8 +80,8 @@ const holdBooking = async (req, res) => {
   try {
     //const userId = req.user.userId; // Lấy từ middleware xác thực
     const { userId, showtimeId, seatIds, promotionTitle } = req.body;
-    const createdBy = req.user.UserId; // Assuming user ID is available in req.user
-    const result = await Booking.holdBooking({ userId, showtimeId, seatIds, promotionTitle, createdBy });
+    const CreatedBy = req.user ? req.user.id : null; // Assuming user ID is available in req.user
+    const result = await Booking.holdBooking({ userId, showtimeId, seatIds, promotionTitle, CreatedBy });
     res.json(result);
   } catch (err) {
     res.status(400).json({ error: err.message });
