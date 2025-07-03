@@ -23,14 +23,26 @@ class Product {
       Description,
       Unit,
       Price,
+      Quantity,
       CreatedBy,
+      ImageUrl,
     } = data;
     const ProductId = uuidv4();
     const CreatedAt = new Date();
     await db.promise().query(
-      `INSERT INTO Products (ProductId, ProductName, Description, Unit, Price, IsDeleted, CreatedAt, CreatedBy)
-       VALUES (?, ?, ?, ?, ?, 0, ?, ?)`,
-      [ProductId, ProductName, Description, Unit, Price, CreatedAt, CreatedBy]
+      `INSERT INTO Products (ProductId, ProductName, Description, Unit, Price, Quantity, IsDeleted, CreatedAt, CreatedBy, ImageUrl)
+       VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`,
+      [
+        ProductId,
+        ProductName,
+        Description,
+        Unit,
+        Price,
+        Quantity,
+        CreatedAt,
+        CreatedBy,
+        ImageUrl,
+      ]
     );
     return ProductId;
   }
@@ -41,13 +53,25 @@ class Product {
       Description,
       Unit,
       Price,
+      Quantity,
       UpdatedBy,
+      ImageUrl,
     } = data;
     const UpdatedAt = new Date();
     const [result] = await db.promise().query(
-      `UPDATE Products SET ProductName=?, Description=?, Unit=?, Price=?, UpdatedAt=?, UpdatedBy=?
+      `UPDATE Products SET ProductName=?, Description=?, Unit=?, Price=?, Quantity=?, UpdatedAt=?, UpdatedBy=?, ImageUrl=?
        WHERE ProductId=? AND IsDeleted=0`,
-      [ProductName, Description, Unit, Price, UpdatedAt, UpdatedBy, productId]
+      [
+        ProductName,
+        Description,
+        Unit,
+        Price,
+        Quantity,
+        UpdatedAt,
+        UpdatedBy,
+        ImageUrl,
+        productId,
+      ]
     );
     return result.affectedRows > 0;
   }

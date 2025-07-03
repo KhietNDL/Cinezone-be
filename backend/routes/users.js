@@ -155,7 +155,7 @@ router.post(
   '/create',
   auth,
   isAdmin,
-  upload.single('avatar'), // hoặc upload.none() nếu không upload file
+  upload.single('avatar'),
   createUserValidator,
   createUser
 );
