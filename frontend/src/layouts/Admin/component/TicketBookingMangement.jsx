@@ -9,7 +9,35 @@ const TicketBookingManagement = () => {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [bookings, setBookings] = useState([]);
+  // eslint-disable-next-line no-unused-vars
   const [loading, setLoading] = useState(false);
+  const [bookingDetails, setBookingDetails] = useState({});
+
+  const getBookingStatusText = (status) => {
+    switch (status) {
+      case 1:
+        return "Pending";
+      case 2:
+        return "Paid";
+      case 3:
+        return "Completed";
+      case 4:
+        return "Cancelled";
+      default:
+        return "Unknown";
+    }
+  };
+
+  const formatDateTime = (isoString) => {
+    if (!isoString) return "";
+    const date = new Date(isoString);
+    const dd = String(date.getDate()).padStart(2, "0");
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const yyyy = date.getFullYear();
+    const hh = String(date.getHours()).padStart(2, "0");
+    const min = String(date.getMinutes()).padStart(2, "0");
+    return `${dd}/${mm}/${yyyy} - ${hh}:${min}`;
+  };
 
   const statsData = [
     { title: "Total Bookings", value: 5, icon: Users, color: "text-blue-600" },
@@ -32,6 +60,7 @@ const TicketBookingManagement = () => {
       color: "text-red-600",
     },
   ];
+
   useEffect(() => {
     const fetchBookings = async () => {
       setLoading(true);
@@ -46,9 +75,8 @@ const TicketBookingManagement = () => {
     };
     fetchBookings();
   }, []);
-  // Lọc và phân trang
 
-  const itemsPerPage = 8;
+  const itemsPerPage = 7;
   const totalItems = bookings.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -58,31 +86,57 @@ const TicketBookingManagement = () => {
 
   const getStatusBadge = (status) => {
     const statusStyles = {
-      Successful: "bg-green-100 text-green-800 border border-green-200",
       Pending: "bg-yellow-100 text-yellow-800 border border-yellow-200",
+      Paid: "bg-blue-100 text-blue-800 border border-blue-200",
+      Completed: "bg-green-100 text-green-800 border border-green-200",
+      Cancelled: "bg-red-100 text-red-800 border border-red-200",
+      Unknown: "bg-gray-100 text-gray-800 border border-gray-200",
     };
 
     return (
       <span
-        className={`px-2 py-1 rounded-full text-xs font-medium ${statusStyles[status]}`}
+        className={`px-2 py-1 rounded-full text-xs font-medium ${
+          statusStyles[status] || statusStyles.Unknown
+        }`}
       >
         {status}
       </span>
     );
   };
-  // Lấy chi tiết booking khi mở modal
+
+  useEffect(() => {
+    const fetchDetailsForCurrentPage = async () => {
+      for (const booking of currentBooking) {
+        const bookingId = booking.BookingId;
+        if (!bookingDetails[bookingId]) {
+          try {
+            const detail = await getBookingById(bookingId);
+            setBookingDetails((prev) => ({ ...prev, [bookingId]: detail }));
+          } catch (e) {
+            console.log(e);
+          }
+        }
+      }
+    };
+    if (currentBooking.length > 0) {
+      fetchDetailsForCurrentPage();
+    }
+  }, [currentBooking]);
+
   const openModal = async (booking) => {
     setIsModalOpen(true);
-    try {
-      const detail = await getBookingById(booking.BookingId);
-      setSelectedBooking({
-        ...booking,
-        ...detail,
-      });
-    } catch (error) {
-      console.log(error);
-
-      setSelectedBooking(booking); // fallback nếu lỗi
+    const bookingId = booking.BookingId;
+    if (!bookingDetails[bookingId]) {
+      try {
+        const detail = await getBookingById(bookingId);
+        setBookingDetails((prev) => ({ ...prev, [bookingId]: detail }));
+        setSelectedBooking({ ...booking, ...detail });
+      } catch (error) {
+        console.log(error);
+        setSelectedBooking(booking);
+      }
+    } else {
+      setSelectedBooking({ ...booking, ...bookingDetails[bookingId] });
     }
   };
 
@@ -90,6 +144,7 @@ const TicketBookingManagement = () => {
     setIsModalOpen(false);
     setTimeout(() => setSelectedBooking(null), 300);
   };
+
   const formatPrice = (price) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -102,17 +157,14 @@ const TicketBookingManagement = () => {
 
     return (
       <>
-        {/* Backdrop */}
         <div
-          className={`fixed inset-0 bg-blackblack/40 transition-opacity duration-300 z-50 ${
+          className={`fixed inset-0 bg-black/40 transition-opacity duration-300 z-50 ${
             isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
           }`}
           onClick={onClose}
         />
-
-        {/* Modal */}
         <div
-          className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${
+          className={`fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 ${
             isOpen ? "" : "pointer-events-none"
           }`}
         >
@@ -121,7 +173,6 @@ const TicketBookingManagement = () => {
               isOpen ? "scale-100 opacity-100" : "scale-95 opacity-0"
             }`}
           >
-            {/* Header */}
             <div className="bg-indigo-600 text-white p-6 relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/20 via-purple-600/20 to-pink-600/20 backdrop-blur-sm"></div>
               <div className="relative z-10">
@@ -159,17 +210,14 @@ const TicketBookingManagement = () => {
                 <div className="mt-4 bg-white/20 backdrop-blur-sm rounded-lg p-3">
                   <p className="text-white font-semibold">
                     Booking ID:{" "}
-                    <span className="text-indigo-100">{booking.bookingId}</span>
+                    <span className="text-indigo-100">{booking.BookingId}</span>
                   </p>
                 </div>
               </div>
             </div>
-
-            {/* Content */}
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-160px)] bg-gradient-to-br from-gray-50 to-white">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Customer Info */}
-                <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+                <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
                   <h4 className="font-bold text-gray-800 mb-4 flex items-center text-lg">
                     <div className="bg-blue-100 rounded-full p-2 mr-3">
                       <Users className="w-5 h-5 text-blue-600" />
@@ -209,9 +257,7 @@ const TicketBookingManagement = () => {
                     </div>
                   </div>
                 </div>
-
-                {/* Movie Info */}
-                <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+                <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
                   <h4 className="font-bold text-gray-800 mb-4 flex items-center text-lg">
                     <div className="bg-purple-100 rounded-full p-2 mr-3">
                       <Film className="w-5 h-5 text-purple-600" />
@@ -236,11 +282,9 @@ const TicketBookingManagement = () => {
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                      <span className="text-gray-600 font-medium">
-                        Theater:
-                      </span>
+                      <span className="text-gray-600 font-medium">Room:</span>
                       <span className="font-semibold text-gray-800">
-                        {booking.cinema}
+                        {booking.room}
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-gray-100">
@@ -259,9 +303,7 @@ const TicketBookingManagement = () => {
                     </div>
                   </div>
                 </div>
-
-                {/* Promotion & Concessions */}
-                <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+                <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
                   <h4 className="font-bold text-gray-800 mb-4 flex items-center text-lg">
                     <div className="bg-green-100 rounded-full p-2 mr-3">
                       <CheckCircle className="w-5 h-5 text-green-600" />
@@ -280,7 +322,7 @@ const TicketBookingManagement = () => {
                             : "bg-gray-100 text-gray-600"
                         }`}
                       >
-                        {booking.PromotionId || "None"}
+                        {booking.promotionTitle || "None"}
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-gray-100">
@@ -318,9 +360,7 @@ const TicketBookingManagement = () => {
                       )}
                   </div>
                 </div>
-
-                {/* Points & Payment */}
-                <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+                <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
                   <h4 className="font-bold text-gray-800 mb-4 flex items-center text-lg">
                     <div className="bg-yellow-100 rounded-full p-2 mr-3">
                       <Clock className="w-5 h-5 text-yellow-600" />
@@ -349,7 +389,7 @@ const TicketBookingManagement = () => {
                         Ticket Price:
                       </span>
                       <span className="font-semibold text-blue-600">
-                        {formatPrice(booking.ticketPrice)}
+                        {formatPrice(booking.totalPrice)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-3 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg px-4 mt-4">
@@ -363,8 +403,6 @@ const TicketBookingManagement = () => {
                   </div>
                 </div>
               </div>
-
-              {/* Status */}
               <div className="mt-6 bg-gradient-to-r from-white to-gray-50 rounded-xl p-6 shadow-lg border border-gray-100">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -376,7 +414,7 @@ const TicketBookingManagement = () => {
                     </span>
                   </div>
                   <div className="transform scale-110">
-                    {getStatusBadge(booking.status)}
+                    {getStatusBadge(getBookingStatusText(booking.status))}
                   </div>
                 </div>
               </div>
@@ -388,160 +426,198 @@ const TicketBookingManagement = () => {
   };
 
   return (
-    <div className="flex items-center h-full justify-between">
-      <div className="w-[90%] space-y-4">
-        {/* Stats Cards */}
-        <div className="flex items-center justify-between w-full">
-          {statsData.map((stat, index) => {
-            const IconComponent = stat.icon;
-            return (
-              <div
-                key={index}
-                className="bg-white rounded-md p-3 w-[23%] shadow-sm"
-              >
-                <div className="flex items-center justify-between">
-                  <p className="text-slate-500">{stat.title}</p>
-                  <div className={`p-2 rounded-full ${stat.color}`}>
-                    <IconComponent size={24} />
-                  </div>
-                </div>
-                <p className="font-bold text-[19px]">{stat.value}</p>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Search and Filter */}
-        <div className="w-full py-3 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="w-full">
-              <div className="flex items-center p-1 px-2 w-2/4 rounded-xl bg-white shadow-sm">
-                <div className="shrink-0">
-                  <IoSearchOutline size={20} />
-                </div>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                  }}
-                  className="p-2 focus:outline-none w-full"
-                  placeholder="Search by name or movie"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between gap-2">
-              <select className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <option>All</option>
-                <option>Successful</option>
-                <option>Pending</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Table */}
-          <div className="bg-white min-h-[340px] max-h-[340px] p-4 rounded-md shadow-sm relative">
-            <table className="w-full table-auto border-collapse">
-              <thead>
-                <tr className="text-left text-slate-500 text-sm border-b border-slate-200">
-                  <th className="py-2 text-center">#</th>
-                  <th className="py-2 text-center">Booking ID</th>
-                  <th className="py-2 text-center">Full name</th>
-                  <th className="py-2 text-center">Phone number</th>
-                  <th className="py-2 text-center">Movie</th>
-                  <th className="py-2 text-center">Time</th>
-                  <th className="py-2 text-center">Seat</th>
-                  <th className="py-2 text-center">Status</th>
-                  <th className="py-2 text-center">Action</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {currentBooking.map((booking) => (
-                  <tr
-                    key={booking.id}
-                    onClick={() => openModal(booking)}
-                    className="border-b border-slate-200 hover:bg-slate-100 text-sm"
-                  >
-                    <td className="py-2 text-center">{booking.id}</td>
-                    <td className="py-2 text-center">{booking.bookingId}</td>
-                    <td className="py-2 text-center">{booking.fullName}</td>
-                    <td className="py-2 text-center">{booking.phoneNumber}</td>
-                    <td className="py-2 text-center" title={booking.movie}>
-                      {booking.movie}
-                    </td>
-                    <td className="py-2 text-center">{booking.time}</td>
-                    <td className="py-2 text-center">{booking.seat}</td>
-                    <td className="py-2 text-center">
-                      {getStatusBadge(booking.status)}
-                    </td>
-                    <td className="py-2 text-center">
-                      <button
-                        onClick={() => openModal(booking)}
-                        className="text-blue-600 hover:text-blue-800 p-1 transition-colors"
-                      >
-                        <Eye size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="px-6 py-4 flex items-center justify-between border-t border-gray-200">
-            <div className="text-sm text-gray-700">
-              Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of{" "}
-              {totalItems} bookings
-            </div>
-            <div className="flex items-center justify-end space-x-2 pt-4">
-              <div
-                role="button"
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className={`px-3 py-1 text-sm cursor-pointer ${
-                  currentPage === 1
-                    ? "text-gray-300 cursor-not-allowed"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                Previous
-              </div>
-              {pageNumbers.map((page) => (
+    <div>
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+        <div className="w-[90%] md:w-[95%] lg:w-[95%] max-w-7xl space-y-4">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 lg:gap-4 w-full">
+            {statsData.map((stat, index) => {
+              const IconComponent = stat.icon;
+              return (
                 <div
-                  role="button"
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`px-3 py-1 text-sm rounded cursor-pointer ${
-                    currentPage === page
-                      ? "bg-blue-500 text-white"
-                      : "text-gray-700 hover:bg-gray-100"
+                  key={index}
+                  className="bg-white rounded-md p-3 shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs sm:text-sm text-slate-500">
+                      {stat.title}
+                    </p>
+                    <div className={`p-1.5 rounded-full ${stat.color}`}>
+                      <IconComponent size={20} className="sm:w-6 sm:h-6" />
+                    </div>
+                  </div>
+                  <p className="font-bold text-base sm:text-[19px] mt-1">
+                    {stat.value}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Search and Filter */}
+          <div className="w-full py-3 space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="w-full sm:w-auto">
+                <div className="flex items-center p-2 px-3 w-full sm:w-80 rounded-xl bg-white shadow-sm">
+                  <div className="shrink-0">
+                    <IoSearchOutline size={20} />
+                  </div>
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                    }}
+                    className="p-2 focus:outline-none w-full text-sm"
+                    placeholder="Search by name or movie"
+                  />
+                </div>
+              </div>
+              <div className="w-full sm:w-auto">
+                <select className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                  <option>All</option>
+                  <option>Successful</option>
+                  <option>Pending</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Table */}
+            <div className="bg-white min-h-[340px] max-h-[340px] p-2 lg:p-4 rounded-md shadow-sm overflow-x-auto">
+              <div className="min-w-[800px]">
+                <table className="w-full table-auto border-collapse">
+                  <thead>
+                    <tr className="text-left text-slate-500 text-xs sm:text-sm border-b border-slate-200">
+                      <th className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] text-center">
+                        Booking ID
+                      </th>
+                      <th className="py-2 px-2 sm:px-4 w-[120px] sm:w-[150px] text-center">
+                        Full Name
+                      </th>
+                      <th className="py-2 px-2 sm:px-4 w-[120px] sm:w-[140px] text-center hidden md:table-cell">
+                        Phone Number
+                      </th>
+                      <th className="py-2 px-2 sm:px-4 w-[120px] sm:w-[150px] text-center">
+                        Movie
+                      </th>
+                      <th className="py-2 px-2 sm:px-4 w-[120px] sm:w-[140px] text-center">
+                        Time
+                      </th>
+                      <th className="py-2 px-2 sm:px-4 w-[80px] sm:w-[100px] text-center hidden lg:table-cell">
+                        Seat
+                      </th>
+                      <th className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] text-center">
+                        Status
+                      </th>
+                      <th className="py-2 px-2 sm:px-4 w-[80px] sm:w-[100px] text-center">
+                        Action
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {currentBooking.map((booking) => (
+                      <tr
+                        key={booking.id}
+                        onClick={() => openModal(booking)}
+                        className="border-b border-slate-200 hover:bg-slate-100 text-xs sm:text-sm cursor-pointer"
+                      >
+                        <td className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] text-center">
+                          {booking.BookingId}
+                        </td>
+                        <td className="py-2 px-2 sm:px-4 w-[120px] sm:w-[150px] text-center">
+                          {bookingDetails[booking.BookingId]?.buyerName ||
+                            "N/A"}
+                        </td>
+                        <td className="py-2 px-2 sm:px-4 w-[120px] sm:w-[140px] text-center hidden md:table-cell">
+                          {bookingDetails[booking.BookingId]?.buyerPhone ||
+                            "N/A"}
+                        </td>
+                        <td className="py-2 px-2 sm:px-4 w-[120px] sm:w-[150px] text-center">
+                          {bookingDetails[booking.BookingId]
+                            ?.movieNameEnglish || "N/A"}
+                        </td>
+                        <td className="py-2 px-2 sm:px-4 w-[120px] sm:w-[140px] text-center">
+                          {formatDateTime(booking.BookingDate) || "N/A"}
+                        </td>
+                        <td className="py-2 px-2 sm:px-4 w-[80px] sm:w-[100px] text-center hidden lg:table-cell">
+                          {bookingDetails[booking.BookingId]?.seats || "N/A"}
+                        </td>
+                        <td className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] text-center">
+                          {getStatusBadge(
+                            getBookingStatusText(
+                              bookingDetails[booking.BookingId]?.status ??
+                                booking.status
+                            )
+                          )}
+                        </td>
+                        <td className="py-2 px-2 sm:px-4 w-[80px] sm:w-[100px] text-center">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openModal(booking);
+                            }}
+                            className="text-blue-600 hover:text-blue-800 p-1 sm:p-2 transition-colors"
+                          >
+                            <Eye size={16} className="sm:w-5 sm:h-5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Pagination */}
+            <div className="px-2 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between border-t border-gray-200">
+              <div className="text-xs sm:text-sm text-gray-700 mb-2 sm:mb-0">
+                Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of{" "}
+                {totalItems} bookings
+              </div>
+              <div className="flex items-center justify-end space-x-2 pt-2 sm:pt-0">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className={`px-2 sm:px-3 py-1 text-xs sm:text-sm ${
+                    currentPage === 1
+                      ? "text-gray-300 cursor-not-allowed"
+                      : "text-gray-500 hover:text-gray-700"
                   }`}
                 >
-                  {page}
-                </div>
-              ))}
-              <div
-                role="button"
-                onClick={() =>
-                  setCurrentPage(Math.min(totalPages, currentPage + 1))
-                }
-                disabled={currentPage === totalPages}
-                className={`px-3 py-1 text-sm cursor-pointer ${
-                  currentPage === totalPages
-                    ? "text-gray-300 cursor-not-allowed"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                Next
+                  Previous
+                </button>
+                {pageNumbers.map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-2 sm:px-3 py-1 text-xs sm:text-sm rounded ${
+                      currentPage === page
+                        ? "bg-blue-500 text-white"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  onClick={() =>
+                    setCurrentPage(Math.min(totalPages, currentPage + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                  className={`px-2 sm:px-3 py-1 text-xs sm:text-sm ${
+                    currentPage === totalPages
+                      ? "text-gray-300 cursor-not-allowed"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Next
+                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Modal */}
       {isModalOpen && (
         <BookingModal
           booking={selectedBooking}
