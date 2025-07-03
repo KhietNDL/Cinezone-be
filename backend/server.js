@@ -6,7 +6,7 @@ const session = require("express-session");
 const passport = require("./middlewares/passport");
 const cors = require("cors");
 const cleanupExpiredBookings = require("./jobs/bookingCleanup");
-const cleanupOldSeats = require('./jobs/seatCleanup');
+const cleanupOldSeats = require("./jobs/seatCleanup");
 const scoreHistoryRoutes = require("./routes/scorehistory");
 
 const app = express();
