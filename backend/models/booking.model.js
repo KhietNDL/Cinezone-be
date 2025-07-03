@@ -114,7 +114,7 @@ class Booking {
     showtimeId,
     seatIds,
     promotionTitle,
-    CreatedBy
+    CreatedBy,
   }) {
     const connection = await db.promise().getConnection();
     try {
@@ -214,7 +214,7 @@ class Booking {
 
       // 2. Đổi trạng thái các ghế từ "holding" sang "taken"
       await connection.query(
-       `UPDATE SeatShowtime
+        `UPDATE SeatShowtime
         SET Status = 'taken'
         WHERE BookingId = ? AND Status = 'holding'`,
         [bookingId]
@@ -517,23 +517,28 @@ class Booking {
 
   static async checkinBooking(bookingId) {
     // Chỉ cho phép checkin nếu status hiện tại là 2 (PAID)
-    const [rows] = await db.promise().query(
-      "SELECT Status FROM Bookings WHERE BookingId = ? AND IsDeleted = 0",
-      [bookingId]
-    );
+    const [rows] = await db
+      .promise()
+      .query(
+        "SELECT Status FROM Bookings WHERE BookingId = ? AND IsDeleted = 0",
+        [bookingId]
+      );
     if (!rows[0]) {
       return { success: false, message: "Booking not found" };
     }
     if (rows[0].Status !== 2) {
       return { success: false, message: "Booking is not in PAID status" };
     }
-    const [result] = await db.promise().query(
-      "UPDATE Bookings SET Status = 3, UpdatedAt = NOW() WHERE BookingId = ? AND Status = 2 AND IsDeleted = 0",
-      [bookingId]
-    );
+    const [result] = await db
+      .promise()
+      .query(
+        "UPDATE Bookings SET Status = 3, UpdatedAt = NOW() WHERE BookingId = ? AND Status = 2 AND IsDeleted = 0",
+        [bookingId]
+      );
     return {
       success: result.affectedRows > 0,
-      message: result.affectedRows > 0 ? "Check-in successful" : "Check-in failed"
+      message:
+        result.affectedRows > 0 ? "Check-in successful" : "Check-in failed",
     };
   }
   static async getBookingDetail(bookingId) {
@@ -560,7 +565,7 @@ SELECT
     JOIN Version v ON s.VersionId = v.VersionId
     JOIN Movies mv ON v.MovieId = mv.MovieId
     JOIN CinemaRooms cr ON s.CinemaRoomId = cr.CinemaRoomId
-    JOIN Promotions p ON b.PromotionId = p.PromotionId
+    LEFT JOIN Promotions p ON b.PromotionId = p.PromotionId
     WHERE b.BookingId = ? AND b.IsDeleted = 0;
     `,
       [bookingId]
@@ -573,14 +578,12 @@ SELECT
     SELECT s.SeatNumber, s.Price
     FROM SeatShowtime ss
     JOIN Seats s ON s.SeatId = ss.SeatId
-    WHERE ss.ShowtimeId = (
-      SELECT ShowtimeId FROM Bookings WHERE BookingId = ?
-    ) AND ss.Status IN ('taken', 'holding')
+    WHERE ss.BookingId = ?
+    AND ss.Status IN ('taken', 'holding')
       AND ss.IsDeleted = 0;
     `,
       [bookingId]
     );
-
 
     return {
       bookingId: rows[0].BookingId,
@@ -592,11 +595,18 @@ SELECT
       showTime: rows[0].Time,
       startTime: rows[0].StartTime,
       room: rows[0].Name,
-      seats: seats[0].SeatNumber,
+      seats: seats.map((s) => s.SeatNumber),
+      seatPrices: seats.reduce((acc, s) => {
+        acc[s.SeatNumber] = s.Price;
+        return acc;
+      }, {}),
+      totalPrice: seats.reduce((sum, s) => sum + Number(s.Price), 0),
+      promotionTitle: rows[0].Title,
+
       totalAmount: rows[0].TotalAmount,
-      buyerName: rows[0].buyerName, 
+      buyerName: rows[0].buyerName,
       buyerPhone: rows[0].buyerPhone,
-      status: rows[0].Status
+      status: rows[0].Status,
     };
   }
 }
