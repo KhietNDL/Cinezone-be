@@ -353,9 +353,11 @@ const PromotionManagement = () => {
                       </td>
                       <td className="py-2 text-center w-[150px] shrink-0">
                         {promotion.DiscountValue
-                          ? (
-                              Number(promotion.DiscountValue) * 1000
-                            ).toLocaleString("vi-VN") + " VND"
+                          ? Number(promotion.DiscountValue) % 1 === 0
+                            ? Number(promotion.DiscountValue) + "%"
+                            : Number(promotion.DiscountValue)
+                                .toFixed(2)
+                                .replace(/\.00$/, "") + "%"
                           : ""}
                       </td>
                       <td className="py-2 text-center">
@@ -553,7 +555,7 @@ const PromotionManagement = () => {
                   className="p-1 sm:p-2 hover:bg-white/10 rounded-full transition-colors"
                   aria-label="Close"
                 >
-                  <MdOutlineClose size={20} className="sm:size-24" />
+                  <MdOutlineClose size={30} />
                 </button>
               </div>
             </div>
