@@ -30,10 +30,31 @@ const getAllCinemaRooms = async (req, res) => {
             sortBy,
             sortOrder
         });
-        res.json({
-            message: 'Cinema rooms retrieved successfully',
-            rooms: rooms.map(formatRoomData),
-            total
+        // Tính toán pagination giống movie
+        const totalPages = limit > 0 ? Math.ceil(total / limit) : 1;
+        const pagination = {
+            total,
+            currentPage: parseInt(page),
+            totalPages,
+            limit: parseInt(limit)
+        };
+        if (limit > 0 && page > 1 && rooms.length === 0) {
+            return res.status(400).json({
+                error: "Page number exceeds available pages"
+            });
+        }
+        if (rooms.length === 0) {
+            return res.status(200).json({
+                status: "success",
+                message: "No cinema rooms found",
+                data: [],
+                pagination
+            });
+        }
+        res.status(200).json({
+            status: "success",
+            data: rooms.map(formatRoomData),
+            pagination
         });
     } catch (error) {
         console.error('Get all cinema rooms error:', error);
