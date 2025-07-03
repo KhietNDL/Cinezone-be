@@ -1,764 +1,851 @@
-import { Tag } from "antd";
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { IoMdCash } from "react-icons/io";
-import vnpay from "../../../assets/vnpay-seeklogo.png";
-import momo from "../../../assets/momo-seeklogo.png";
-import zalopay from '../../../assets/zalopay-seeklogo.svg'
+import { useNavigate } from "react-router-dom";
+import { Button, Tag, Spin, message, Switch } from "antd";
+import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
-import { ToastContainer, toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { RiFilmAiFill, RiMovie2AiFill } from "react-icons/ri";
+import { RiFilmAiFill, RiMovie2AiFill, RiDiscountPercentFill } from "react-icons/ri";
+import { FaMoneyBillWave, FaIdCard, FaUser, FaPhone, FaExchangeAlt } from "react-icons/fa";
+import { FaCalendarDays, FaLocationDot, FaCouch, FaFire, FaStar, FaX } from "react-icons/fa6";
+import { IoTime, IoSearch } from "react-icons/io5";
+import { IoMdCash } from "react-icons/io";
+import { FiLoader } from "react-icons/fi";
+import vnpay from "../../../assets/vnpay-seeklogo.png";
+import momo from "../../../assets/momo-seeklogo.png";
+import zalopay from '../../../assets/zalopay-seeklogo.svg';
 import {
   getMovieById, getUserByEmail, getUserByCCCD, getUserByPhone,
-  createBookingHold, createCashPayment, checkPromotion, confirmBooking
+  checkPromotion, createBookingHold, createMomoPayment, createCashPayment, confirmBooking
 } from "../../../services/APIForStaff/API";
 import { useAuth } from "../../../context/AuthContext";
+import { useDispatch, useSelector } from 'react-redux';
 import {
-  FaCalendarDays,
-  FaLocationDot,
-  FaCouch,
-  FaUser,
-  FaFire,
-} from "react-icons/fa6";
-import { IoTime } from "react-icons/io5";
+  setCompleteBooking,
+  resetBooking
+} from '../../../redux/features/sellingSlice'
 import {
-  FaMoneyBillWave,
-  FaIdCard,
-  FaIdBadge,
-  FaPhoneAlt,
-  FaExchangeAlt,
-} from "react-icons/fa";
+  setMember,
+  setMemberChecked,
+  resetMember
+} from '../../../redux/features/memberSlice'
 
-export default function ConfirmTicketsPage() {
+
+const formatPrice = (price) => {
+  return price?.toLocaleString('vi-VN');
+};
+
+const ConfirmTicketsPage = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const bookingData = useSelector((state) => state.selling);
+  const { member, memberChecked } = useSelector((state) => state.member);
 
   const [discount, setDiscount] = useState(null);
-  const [memberChecked, setMemberChecked] = useState(false);
-  const [member, setMember] = useState(null);
-  const [isSearching, setIsSearching] = useState(false); // Add loading state
-  const navigate = useNavigate();
-  const { user: staffUser } = useAuth();
-
-  const location = useLocation();
-  const {
-    movie,
-    day,
-    version,
-    time,
-    room,
-    selectedSeats = [],
-    totalPrice = 0,
-  } = location.state || {};
-
+  const [isSearching, setIsSearching] = useState(false);
   const [movieInfo, setMovieInfo] = useState(null);
   const [isBookingConfirmed, setIsBookingConfirmed] = useState(false);
-  const formatPrice = (price) => {
-    return price.toLocaleString('vi-VN');
-  };
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
-    if (!movie) {
-      // Nếu không có thông tin phim, quay lại trang trước
+    if (!bookingData?.selectedMovie) {
       navigate("/staff/ticket-selling");
       return;
     }
-    // Nếu đã có đủ thông tin phim, có thể lấy chi tiết từ API (nếu cần)
-    const fetchMovie = async () => {
+
+    const loadMovie = async () => {
       try {
-        const res = await getMovieById(movie.MovieId);
-        setMovieInfo(res.data || movie); // fallback nếu API lỗi
+        const res = await getMovieById(bookingData.selectedMovie.MovieId);
+        setMovieInfo(res.data || bookingData.selectedMovie);
       } catch {
-        setMovieInfo(movie);
+        setMovieInfo(bookingData.selectedMovie);
       }
     };
-    fetchMovie();
-  }, [movie, navigate]);
+    loadMovie();
+  }, [bookingData, navigate]);
 
-  if (!movieInfo) {
-    return <div>Loading movie info...</div>;
-  }
-
-  const ticket = {
-    // id: "TICKET12345",
-    movie: movie?.NameOfEnglish || "Unknown Movie",
-    screen: version || "Unknown Version",
-    date: day || "Unknown Date",
-    showtime: time || "Unknown Time",
-    room: room || "Unknown Room",
-    seats: selectedSeats,
-    price: 0,
-  };
-
-  // Tính tổng tiền gốc
-  const total = selectedSeats.reduce((sum, seatNumber) => {
-    const seat = location.state?.seatData?.find(s => s.seatNumber === seatNumber);
-    return sum + (seat?.price || 100000); // 100000 là giá mặc định nếu không có
-  }, 0);
-
-  const validationSchema = Yup.object().shape({
-    // Bỏ requirement memberId vì chúng ta dùng memberSearch để tìm kiếm
-    convertToTicket: Yup.string().when([], {
-      is: () => memberChecked,
-      then: (schema) => schema.required("Please select convert to ticket option"),
-      otherwise: (schema) => schema.notRequired(),
-    }),
-    promotionCode: Yup.string().when(["convertToTicket"], {
-      is: (convertToTicket) => convertToTicket === "Agree",
-      then: (schema) =>
-        schema.test(
-          "empty",
-          "Promotion code must be empty when Agree",
-          (val) => !val || val === ""
-        ),
-      otherwise: (schema) => schema,
-    }),
-    paymentMethod: Yup.string().required("Please select payment method"),
-  });
-
-  const handleAddPromotion = async (promotionCode, setFieldValue) => {
-    try {
-      if (!promotionCode || !promotionCode.trim()) {
-        toast.error("Please enter the promotional code.");
-        return;
-      }
-
-      const promotionResult = await checkPromotion(promotionCode);
-
-      if (promotionResult.promotions && promotionResult.promotions.length > 0) {
-        const promotion = promotionResult.promotions[0];
-
-        // Kiểm tra thời gian hiệu lực của promotion
-        const currentTime = new Date();
-        const startTime = new Date(promotion.StartTime);
-        const endTime = new Date(promotion.EndTime);
-
-        if (currentTime < startTime) {
-          toast.error("The promotional code is not yet valid.");
-          setFieldValue("promotionCode", "");
-          setDiscount(null);
-          return;
-        }
-
-        if (currentTime > endTime) {
-          toast.error("The promotional code has expired.");
-          setFieldValue("promotionCode", "");
-          setDiscount(null);
-          return;
-        }
-
-        // Áp dụng discount
-        const discountValue = parseFloat(promotion.DiscountValue);
-        setDiscount(discountValue);
-        toast.success(`Promotion code applied successfully! Discount ${discountValue}%`);
-      } else {
-        setDiscount(null);
-        toast.error("The promotional code is not valid!");
-        setFieldValue("promotionCode", "");
-      }
-    } catch (error) {
-      console.error("Error checking promotion:", error);
-      setDiscount(null);
-      toast.error("There was an error when checking the promotional code.");
-      setFieldValue("promotionCode", "");
-    }
-  };
-
-  const handleSubmit = async (values, { setSubmitting }) => {
-    try {
-      await validationSchema.validate(values, { abortEarly: false });
-
-      // Chuẩn bị dữ liệu cho API
-      const userId = memberChecked && member ? member.id : staffUser.id;
-      const showtimeId = location.state?.showtimeId;
-      const seatIds = location.state?.selectedSeats;
-      const promotionTitle = values.promotionCode && values.convertToTicket === "Disagree"
-        ? values.promotionCode
-        : "";
-
-      if (!showtimeId || !seatIds || seatIds.length === 0) {
-        toast.error("Missing mandatory ticket booking information");
-        return;
-      }
-
-      // Tính toán số tiền cuối cùng dựa trên khuyến mãi/option thành viên
-      let finalAmount = total;
-      if (memberChecked && values.convertToTicket === "Disagree" && discount) {
-        finalAmount = total * (1 - discount / 100);
-      } else if (memberChecked && values.convertToTicket === "Agree" && member) {
-        const seatsCount = seatIds.length;
-        const requiredScore = seatsCount * 10000;
-        if (member.score >= requiredScore) {
-          finalAmount = 0;
-        }
-      }
-
-      // 1. Đầu tiên tạo booking hold
-      const bookingResult = await createBookingHold(
-        userId,
-        showtimeId,
-        seatIds.map(seatNumber => {
-          const seat = location.state.seatData.find(s => s.seatNumber === seatNumber);
-          return seat?.seatId || seatNumber;
-        }),
-        [], // productIds rỗng
-        promotionTitle // truyền promotionTitle vào
-      );
-
-      // 2. Nếu phương thức thanh toán là Cash thì tạo cash payment
-      if (values.paymentMethod === "Cash") {
-        await createCashPayment(
-          bookingResult.bookingId, // từ response booking hold
-          finalAmount, // số tiền đã tính toán
-          `CASH-${Date.now()}` // reference duy nhất
-        );
-      }
-      // 3. Xác nhận booking sau khi thanh toán thành công
-      await confirmBooking(bookingResult.bookingId);
-      setIsBookingConfirmed(true);
-      toast.success("Payment by cash successful!");
-
-      // Chuyển hướng sang trang tiếp theo
-      setTimeout(() => {
-        navigate("/staff/ticket-selling/ticket-infomation", {
-          state: {
-            ...location.state,
-            bookingId: bookingResult.bookingId,
-            memberInfo: memberChecked ? member : null,
-            paymentMethod: values.paymentMethod,
-            amountPaid: finalAmount,
-            promotionTitle: promotionTitle,
-            isConfirmed: values.paymentMethod === "Cash",
-            discount: discount
-          }
-        });
-      }, 1000);
-
-    } catch (err) {
-      if (err.inner) {
-        err.inner.forEach((e) => toast.error(e.message));
-      } else {
-        toast.error(err.message || "Error processing the ticket booking");
-      }
-    } finally {
-      setSubmitting(false);
-    }
-  };
-  // FIXED: Enhanced member search function with better error handling
   const handleMemberSearch = async (searchValue) => {
     try {
-      if (!searchValue || !searchValue.trim()) {
-        setMemberChecked(false); // Reset khi input rỗng
-        setMember(null);
-        toast.error("Please enter member information");
-        return;
+      if (!searchValue.trim()) {
+        dispatch(resetMember());
+        setDiscount(null);
+        return toast.error("Please enter information");
       }
 
       setIsSearching(true);
+      let res = null;
 
-      let response = null;
-      const value = searchValue.trim();
-
-      // Simple regex to detect email, phone, or CCCD
-      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-      const isPhone = /^0\d{9,10}$/.test(value); // Vietnamese phone
-      const isCCCD = /^\d{9,12}$/.test(value);   // CCCD/CMND: 9-12 digits
-
-      if (isEmail) {
-        response = await getUserByEmail(value);
-      } else if (isPhone) {
-        response = await getUserByPhone(value);
-      } else if (isCCCD) {
-        response = await getUserByCCCD(value);
-      } else {
-        setMemberChecked(false); // Reset khi format không hợp lệ
-        setMember(null);
-        toast.error("Please enter a valid Email, Phone, or Identity Card number!");
-        setIsSearching(false);
-        return;
+      // Determine search type
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(searchValue)) {
+        res = await getUserByEmail(searchValue);
+      }
+      else if (/^0\d{9,10}$/.test(searchValue)) {
+        res = await getUserByPhone(searchValue);
+      }
+      else if (/^\d{9,12}$/.test(searchValue)) {
+        res = await getUserByCCCD(searchValue);
+      }
+      else {
+        throw new Error("Invalid Email/Phone/ID");
       }
 
-      let userData = null;
-      if (response?.data?.user) {
-        userData = response.data.user;
-      } else if (response?.data?.data?.user) {
-        userData = response.data.data.user;
-      } else if (response?.data && typeof response.data === 'object' && response.data.UserId) {
-        userData = response.data;
-      } else if (response?.user) {
-        userData = response.user;
-      }
+      const user = res.data?.user || res.user || res.data;
+      if (!user?.UserId) throw new Error("Member not found");
 
-      if (userData && userData.UserId) {
-        const memberData = {
-          id: userData.UserId,
-          identityCard: userData.CCCD || userData.IdentityCard || "Not updated",
-          fullName: userData.FullName || userData.fullName || "Not updated",
-          phone: userData.PhoneNumber || userData.phoneNumber || userData.Phone || "Not updated",
-          score: userData.score || userData.Score || 0,
-          email: userData.Email || userData.email || value,
-        };
+      const memberData = {
+        id: user.UserId,
+        fullName: user.FullName || "Not updated",
+        phone: user.PhoneNumber || user.Phone || "Not updated",
+        identityCard: user.CCCD || user.IdentityCard || "Not updated",
+        score: user.score || 0,
+        email: user.Email || searchValue
+      };
 
-        setMemberChecked(true); // Set true khi tìm thấy member
-        setMember(memberData);
-        toast.success("Member found successfully!");
-      } else {
-        setMemberChecked(false); // Reset khi không tìm thấy member
-        setMember(null);
-
-        if (response?.status === 200 && !userData) {
-          toast.error("No member found with this information!");
-        } else if (response?.status === 404) {
-          toast.error("Member not found!");
-        } else {
-          toast.error("Could not find member information!");
-        }
-      }
+      dispatch(setMember(memberData));
+      dispatch(setMemberChecked(true));
+      toast.success("Member found!");
     } catch (error) {
-      setMemberChecked(false); // Reset khi có lỗi
-      setMember(null);
-
-      if (error.response?.status === 404) {
-        toast.error("Member not found!");
-      } else if (error.response?.status === 400) {
-        toast.error("Invalid search information!");
-      } else if (error.response?.data?.message) {
-        toast.error(error.response.data.message);
-      } else if (error.message) {
-        toast.error(`Error: ${error.message}`);
-      } else {
-        toast.error("An error occurred while searching for member!");
-      }
+      dispatch(resetMember());
+      toast.error(error.message || "Search error");
     } finally {
       setIsSearching(false);
     }
   };
 
-  return (
-    <div className="p-4 mx-auto w-full ">
-      <ToastContainer />
-      <h1 className="text-3xl font-bold mb-4 text-[#9810FA]">
-        Confirm Tickets
-      </h1>
-      <div className="flex items-start gap-4 border-b border-gray-300 pb-4">
-        <img
-          src={movie?.PosterImage || "https://via.placeholder.com/150x225?text=Không+có+ảnh"}
-          alt={`Poster ${movie?.NameOfEnglish}`}
-          className="w-40 h-auto rounded-xl shadow"
-          onError={(e) => {
-            e.currentTarget.src = "https://via.placeholder.com/150x225?text=Ảnh+lỗi";
-            e.currentTarget.alt = "Không tải được ảnh";
-          }}
-        />
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <div className="text-[#FFF8A7] text-shadow-2xs text-shadow-amber-500 -1 rounded-full shadow-md w-[125px] h-[30px] flex items-center justify-center"
-              style={{
-                background: "linear-gradient(90deg, #FACC15, #DDB61A, #DBBB3B, #CDB03D, #B1900C)",
-              }}>
-              <p className="font-bold p-2 text-sm">Now Showing</p>
-            </div>
-            <div className="py-0.5 px-4 border-2 border-purple-700 bg-purple-300 rounded-lg text-purple-700 font-semibold" title={version}>{version}</div>
-          </div>
-          <h2 className="text-3xl font-bold mt-2 py-4">
-            {movieInfo.NameOfEnglish} <span className="text-xl">{"("}{movieInfo.NameOfVietnamese}{")"}</span>
-          </h2>
-          <p className="text-sm mt-1 flex gap-4">
-            <span className="py-2"><i className="fa-solid fa-clock"></i> {time}</span>
-            <span className="py-2"><i className="fa-solid fa-location-dot"></i> {room}</span>
-            <span className="py-2"><i className="fa-solid fa-couch"></i> Rows: A-J</span>
-          </p>
-        </div>
-      </div>
+  const handleAddPromotion = async (promotionCode, setFieldValue) => {
+    try {
+      if (!promotionCode?.trim()) {
+        toast.error("Please enter a promotion code");
+        return;
+      }
 
-      <Formik
-        initialValues={{
-          memberSearch: "",
-          convertToTicket: "",
-          promotionCode: "",
-          paymentMethod: "",
-        }}
-        validationSchema={validationSchema}
-        onSubmit={handleSubmit}
-      >
-        {({ values, setFieldValue, isSubmitting }) => {
-          // Logic tính toán tổng tiền và điểm
-          let displayFinalTotal = total;
-          let displayUsedScore = 0;
-          let displayUpdatedScore = member ? member.score : 0;
-          let enoughScore = false;
+      const res = await checkPromotion(promotionCode);
+      if (!res.promotions?.length) {
+        throw new Error("Invalid promotion code");
+      }
 
-          if (memberChecked && values.convertToTicket === "Agree" && member) {
-            const seatsCount = ticket.seats.length;
-            const requiredScore = seatsCount * 10000;
-            if (member.score >= requiredScore) {
-              displayFinalTotal = 0;
-              displayUsedScore = requiredScore;
-              displayUpdatedScore = member.score - requiredScore;
-              enoughScore = true;
-            } else {
-              displayFinalTotal = total;
-              displayUsedScore = 0;
-              displayUpdatedScore = member.score;
-              enoughScore = false;
-            }
-          } else if (memberChecked && values.convertToTicket === "Disagree" && discount) {
-            displayFinalTotal = total * (1 - discount / 100);
+      const promotion = res.promotions[0];
+      const now = new Date();
+      const start = new Date(promotion.StartTime);
+      const end = new Date(promotion.EndTime);
+
+      if (now < start) {
+        throw new Error("Promotion not yet valid");
+      }
+      if (now > end) {
+        throw new Error("Promotion has expired");
+      }
+
+      setDiscount(promotion.DiscountValue);
+      toast.success(`Successfully applied ${promotion.DiscountValue}% discount`);
+    } catch (error) {
+      setDiscount(null);
+      setFieldValue("promotionCode", "");
+      toast.error(error.message);
+    }
+  };
+
+   const handleSubmit = async (values, { setSubmitting }) => {
+    console.log("=== SUBMIT STARTED ===");
+    console.log("Form values:", values);
+    console.log("Booking data:", bookingData);
+
+    try {
+      // 1. Validate form before processing
+      await validationSchema.validate(values, { abortEarly: false });
+
+      // 2. Check booking data
+      if (!bookingData?.selectedSeats?.length || !bookingData.showtimeId) {
+        console.error("Invalid booking data:", {
+          selectedSeats: bookingData?.selectedSeats,
+          showtimeId: bookingData?.showtimeId
+        });
+        throw new Error("Invalid ticket data, please select again");
+      }
+
+      // 3. Prepare data
+      const userId = memberChecked ? member?.id : user?.userId || user?.id;
+      console.log("User ID:", userId);
+
+      if (!userId) {
+        throw new Error("Could not determine user ID");
+      }
+
+      const promotionTitle = values.promotionCode && values.convertToTicket === "Disagree"
+        ? values.promotionCode
+        : "";
+
+      // 4. Calculate final amount
+      let finalAmount = bookingData.totalPrice;
+      let usedPoints = 0;
+
+      if (memberChecked) {
+        if (values.convertToTicket === "Agree") {
+          usedPoints = bookingData.selectedSeats.length * 10000;
+
+          if (member.score < usedPoints) {
+            throw new Error(`Not enough points. Need ${usedPoints} points, you have ${member.score} points`);
+          }
+          finalAmount = 0;
+        } else if (values.convertToTicket === "Disagree" && discount) {
+          finalAmount = Math.round(bookingData.totalPrice * (1 - discount / 100));
+        }
+      }
+
+      console.log("Final amount:", finalAmount);
+
+      // 5. Create booking hold
+      console.log("Creating booking hold...");
+      const seatIds = bookingData.selectedSeats.map(seat => {
+        const seatData = bookingData.seatData.find(s => s.seatNumber === seat);
+        return seatData?.seatId || seat;
+      });
+
+      console.log("Seat IDs:", seatIds);
+
+      const bookingRes = await createBookingHold(
+        userId,
+        bookingData.showtimeId,
+        seatIds,
+        [], // combo items - empty array
+        promotionTitle
+      );
+
+      console.log("Booking hold response:", bookingRes);
+
+      if (!bookingRes?.bookingId) {
+        console.error("Booking creation failed:", bookingRes);
+        throw new Error("Failed to create booking");
+      }
+
+      // 6. Prepare complete booking data
+      const completeBooking = {
+        ...bookingData,
+        bookingId: bookingRes.bookingId,
+        memberInfo: memberChecked ? member : null,
+        paymentMethod: values.paymentMethod,
+        amountPaid: finalAmount,
+        promotionTitle,
+        isConfirmed: values.paymentMethod === "Cash",
+        discount,
+        usedPoints
+      };
+
+      // 7. Update Redux state immediately
+      dispatch(setCompleteBooking(completeBooking));
+      console.log("Complete booking dispatched to Redux:", completeBooking);
+
+      // 8. Process payment based on method
+      console.log("Processing payment method:", values.paymentMethod);
+
+      if (values.paymentMethod === "Cash") {
+        console.log("Processing cash payment...");
+
+        const cashRes = await createCashPayment(
+          bookingRes.bookingId,
+          finalAmount,
+          `CASH-${Date.now()}`
+        );
+
+        console.log("Cash payment response:", cashRes);
+        
+        const confirmRes = await confirmBooking(bookingRes.bookingId);
+        console.log("Confirm booking response:", confirmRes);
+        
+        // Update booking as confirmed in Redux
+        dispatch(setCompleteBooking({
+          ...completeBooking,
+          isConfirmed: true
+        }));
+        
+        setIsBookingConfirmed(true);
+        toast.success("Cash payment successful!");
+
+        setTimeout(() => {
+          console.log("Redirecting to ticket information...");
+          navigate("/staff/ticket-selling/ticket-infomation");
+        }, 1000);
+
+      } else if (values.paymentMethod === "Momo") {
+        console.log("Processing Momo payment...");
+        setIsRedirecting(true);
+
+        try {
+          const momoRes = await createMomoPayment(
+            bookingRes.bookingId,
+            finalAmount,
+            `${window.location.origin}/staff/ticket-selling/ticket-infomation`,
+            userId
+          );
+
+          console.log("Momo payment response:", momoRes);
+
+          const payUrl = momoRes?.payUrl || momoRes?.data?.payUrl;
+
+          if (!payUrl) {
+            console.error("No pay URL received:", momoRes);
+            setIsRedirecting(false);
+            throw new Error("Did not receive payment URL from Momo");
           }
 
-          return (
-            <Form>
-              <div className="flex items-start  p-4">
-                <div className="flex flex-col  w-[70%] border-r border-gray-300 p-4 ">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
-                    <i className="fa-solid fa-ticket"></i> Ticket
+          console.log("Redirecting to:", payUrl);
+          window.location.href = payUrl;
+
+        } catch (error) {
+          console.error("Momo payment error:", error);
+          setIsRedirecting(false);
+          throw error;
+        }
+
+      } else if (values.paymentMethod === "VNPay") {
+        throw new Error("VNPay payment method not yet supported");
+
+      } else if (values.paymentMethod === "ZaloPay") {
+        throw new Error("ZaloPay payment method not yet supported");
+
+      } else {
+        throw new Error("Invalid payment method");
+      }
+
+    } catch (error) {
+      console.error("=== PAYMENT ERROR ===");
+      console.error("Error details:", error);
+
+      // Show detailed validation errors
+      if (error.inner && Array.isArray(error.inner)) {
+        console.error("Validation errors:", error.inner);
+        error.inner.forEach(e => {
+          console.error("Field error:", e.path, e.message);
+          toast.error(`${e.path}: ${e.message}`);
+        });
+      } else {
+        toast.error(error.message || "Error processing ticket booking");
+      }
+
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+    const handleCancel = () => {
+    dispatch(resetBooking());
+    dispatch(resetMember());
+    navigate("/staff/ticket-selling");
+  };
+
+  // Modified validation schema for easier debugging
+  const validationSchema = Yup.object().shape({
+    convertToTicket: Yup.string().when([], {
+      is: () => memberChecked, // Only validate when memberChecked = true
+      then: (schema) => schema
+        .required("Please select point usage method")
+        .oneOf(["Agree", "Disagree"], "Invalid method"),
+      otherwise: (schema) => schema.notRequired()
+    }),
+
+    promotionCode: Yup.string().when(["convertToTicket"], {
+      is: (convertToTicket) => memberChecked && convertToTicket === "Disagree",
+      then: (schema) => schema.optional(),
+      otherwise: (schema) => schema.test(
+        "empty",
+        "Cannot enter promotion code when not a member or converting points",
+        val => !val || val.trim() === ""
+      )
+    }),
+
+    paymentMethod: Yup.string()
+      .required("Please select payment method")
+      .oneOf(["Cash", "Momo", "VNPay", "ZaloPay"], "Invalid payment method"),
+  });
+
+  // Added debug function to test validation
+  const debugFormValidation = async (values) => {
+    console.log("=== DEBUGGING FORM VALIDATION ===");
+    console.log("Form values:", values);
+    console.log("Member checked:", memberChecked);
+    console.log("Member data:", member);
+
+    try {
+      await validationSchema.validate(values, { abortEarly: false });
+      // console.log("✅ Validation passed");
+      return true;
+    } catch (error) {
+      console.log("❌ Validation failed");
+      console.log("Validation errors:", error.errors);
+      if (error.inner) {
+        error.inner.forEach(err => {
+          console.log(`Field: ${err.path}, Error: ${err.message}`);
+        });
+      }
+      return false;
+    }
+  };
+
+  if (isRedirecting) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Spin size="large" tip="Redirecting to payment page..." />
+      </div>
+    );
+  }
+
+  if (!bookingData || !movieInfo) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 mx-auto w-full bg-white">
+      <ToastContainer position="top-right" autoClose={3000} />
+      <h1 className="text-3xl font-bold mb-4 text-[#9810FA] justify-between items-center flex flex-col sm:flex-row">
+        Confirm Tickets
+      </h1>
+
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Movie Info Section */}
+        <div className="lg:w-2/3">
+          <div className="bg-white border border-gray-300 rounded-lg shadow-md p-6 mb-6">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <RiFilmAiFill /> Ticket Information
+            </h2>
+
+            <div className="flex flex-col md:flex-row gap-6 items-center justify-center sm:items-start sm:justify-center">
+              <img
+                src={movieInfo.PosterImage}
+                alt={movieInfo.NameOfEnglish}
+                className="sm:h-[300px] object-cover rounded-lg shadow sm:w-[30%] w-[90%] h-auto"
+                onError={(e) => e.target.src = '/placeholder-poster.jpg'}
+              />
+
+              <div className="flex-1">
+                <div className="flex items-center justify-center sm:justify-start gap-3 mb-3">
+                  <div
+                    className=" p-1 rounded-full shadow-md w-[110px] h-[25px] flex items-center justify-center"
+                    style={{
+                      background: "linear-gradient(90deg, #FACC15, #DDB61A, #DBBB3B, #CDB03D, #B1900C)",
+                      color: "#FFF8A7"
+                    }}
+                  >
+                    <p className="font-bold p-2 text-xs"
+                      style={{
+                        fontSize: "0.75rem",
+                        lineHeight: "1rem",
+                        textShadow: "0 1px 2px Orange"
+                      }}>Now Showing</p>
+                  </div>
+                  <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-md border border-purple-800 text-xs font-medium">
+                    {bookingData.selectedVersion}
+                  </span>
+                </div>
+
+                <div className="flex flex-col sm:items-start w-full py-4 items-center justify-center">
+                  <h3 className="text-2xl font-bold">
+                    {movieInfo.NameOfEnglish}
                   </h3>
-                  <div>
-                    <div className="flex flex-col gap-2 justify-center  border-b border-gray-300 px-4 pb-4 ">
-                      <div className="flex flex-col py-2">
-                        <span className="w-[26%] font-semibold text-gray-800 flex gap-1 items-center">
-                          <RiFilmAiFill /> Movie
-                        </span>
-                        <span className="text-gray-600">{ticket.movie}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <div className="w-[50%]">
-                          <div className="flex flex-col py-2">
-                            <span className="w-[50%] font-semibold text-gray-800 flex gap-1 items-center">
-                              <RiMovie2AiFill /> Screan
-                            </span>
-                            <span className="text-gray-600">
-                              {ticket.screen}
-                            </span>
-                          </div>
-                          <div className="flex flex-col py-2">
-                            <span className="w-[50%] font-semibold text-gray-800 flex gap-1 items-center">
-                              <FaCalendarDays /> Date
-                            </span>
-                            <span className="text-gray-600">{ticket.date}</span>
-                          </div>
-                          <div className="flex flex-col py-2">
-                            <span className="w-[50%] font-semibold text-gray-800 flex gap-1 items-center">
-                              <IoTime /> Show Time
-                            </span>
-                            <span className="text-gray-600">
-                              {ticket.showtime}
-                            </span>
-                          </div>
+                  <p className="text-xl text-gray-600 font-semibold text-center">
+                    ({movieInfo.NameOfVietnamese})
+                  </p>
+                </div>
+
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className="flex items-center">
+                    <div className="flex items-center gap-1 font-semibold w-[30%]">
+                      <FaCalendarDays className="text-xl" /> Day:
+                    </div>
+                    <span className="text-gray-700">{bookingData.selectedDay}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="flex items-center gap-1 font-semibold w-[30%]">
+                      <IoTime className="text-xl" /> Time:
+                    </div>
+                    <span className="text-gray-700">{bookingData.selectedTime}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="flex items-center gap-1 font-semibold w-[30%]">
+                      <FaLocationDot className="text-xl" /> Room:
+                    </div>
+                    <span className="text-gray-700">{bookingData.room}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="flex items-center gap-1 font-semibold w-[30%]">
+                      <FaCouch className="text-xl" /> Seats:
+                    </div>
+                    <span className="text-gray-700">
+                      {bookingData.selectedSeats.join(", ")} - ({bookingData.selectedSeats.length} tickets)
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <h4 className="font-semibold mb-2">Price Details:</h4>
+                  <div className="space-y-2">
+                    {bookingData.selectedSeats.map((seat, index) => {
+                      const seatInfo = bookingData.seatData.find(s => s.seatNumber === seat);
+                      return (
+                        <div key={index} className="flex justify-between">
+                          <span>Seat {seat}:</span>
+                          <span>{formatPrice(seatInfo?.price || 0)} VNĐ</span>
                         </div>
-                        <div className="w-[50%]">
-                          <div className="flex flex-col py-2">
-                            <span className="w-[50%] font-semibold text-gray-800 flex gap-1 items-center">
-                              <FaLocationDot /> Room
-                            </span>
-                            <span className="text-gray-600">{ticket.room}</span>
-                          </div>
-                          <div className="flex flex-col py-2">
-                            <span className="w-[50%] font-semibold text-gray-800 flex gap-1 items-center">
-                              <FaCouch /> Seats
-                            </span>
-                            <div className="flex items-center gap-5">
-                              <span className="text-gray-600">
-                                {ticket.seats.join(", ")}{" "}
-                              </span>
-                              <span className="text-gray-500">•</span>
-                              <span className="text-sm text-gray-500">
-                                {ticket.seats.length} ticket(s)
-                              </span>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t flex justify-between items-center">
+                    <span className="font-bold text-lg">Total:</span>
+                    <span className="text-green-600 font-bold text-xl">
+                      {formatPrice(bookingData.totalPrice)} VNĐ
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Payment Method Section */}
+          <div className="bg-white rounded-lg shadow-md p-6 border border-gray-300">
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+              <FaMoneyBillWave /> Payment Method
+            </h2>
+
+            <Formik
+              initialValues={{
+                memberSearch: "",
+                convertToTicket: "Disagree",
+                promotionCode: "",
+                paymentMethod: "",
+              }}
+              validationSchema={validationSchema}
+              onSubmit={handleSubmit}
+            >
+              {({ values, setFieldValue, isSubmitting }) => {
+                // Calculate final price
+                let finalPrice = bookingData.totalPrice;
+                let usedPoints = 0;
+                let remainingPoints = member?.score || 0;
+
+                if (memberChecked && values.convertToTicket === "Disagree" && discount) {
+                  finalPrice = bookingData.totalPrice * (1 - discount / 100);
+                }
+                else if (memberChecked && values.convertToTicket === "Agree") {
+                  usedPoints = bookingData.selectedSeats.length * 10000;
+                  if (member.score >= usedPoints) {
+                    finalPrice = 0;
+                    remainingPoints = member.score - usedPoints;
+                  }
+                }
+
+                return (
+                  <Form>
+                    {/* Member Search Section */}
+                    <div className="mb-6">
+                      <h3 className="font-semibold mb-3 flex items-center gap-2">
+                        <FaUser /> Member
+                      </h3>
+                      <div className="flex gap-3 items-center justify-center">
+                        <Field
+                          name="memberSearch"
+                          type="text"
+                          placeholder="Email / Phone / ID"
+                          className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleMemberSearch(values.memberSearch)}
+                          disabled={isSearching}
+                          className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 flex items-center gap-2 cursor-pointer"
+                        >
+                          {isSearching ? (
+                            <>
+                              <FiLoader className="animate-spin h-4 w-4 text-white" /> Checking...
+                            </>
+                          ) : (
+                            <>
+                              <IoSearch className="text-xl" /> Check
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Member Info */}
+                      {memberChecked && member && (
+                        <div className="mt-4 p-4 bg-white rounded-lg border border-gray-300">
+                          <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-gray-600 flex items-center gap-2">
+                                <FaIdCard /> Identity card:
+                              </p>
+                              <p className="font-medium">{member.identityCard}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-600 flex items-center gap-2">
+                                <FaUser /> Full Name:
+                              </p>
+                              <p className="font-medium">{member.fullName}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-600 flex items-center gap-2">
+                                <FaPhone /> Phone:
+                              </p>
+                              <p className="font-medium">{member.phone}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-600 flex items-center gap-2">
+                                <FaStar /> Points:
+                              </p>
+                              <p className="font-medium flex items-center gap-1 text-green-600"><FaFire /> {member.score}</p>
                             </div>
                           </div>
-                          <div className="flex flex-col py-2">
-                            <span className="w-[50%] font-semibold text-gray-800 flex gap-1 items-center">
-                              <FaMoneyBillWave /> Price
-                            </span>
-                            <div className="text-gray-600">
-                              {ticket.seats.map((seatNumber, index) => {
-                                const seat = location.state?.seatData?.find(s => s.seatNumber === seatNumber);
-                                const seatPrice = seat?.price;
-                                return (
-                                  <div key={index} className="flex justify-between">
-                                    <span>{seatNumber}:</span>
-                                    <span>{formatPrice(seatPrice)} VNĐ</span>
-                                  </div>
-                                );
-                              })}
 
+                          {/* Convert Points */}
+                          {memberChecked && (
+                            <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center gap-5">
+                              <label className="text-gray-700 flex items-center gap-2 sm:w-[30%] w-full ">
+                                <FaExchangeAlt /> Convert points to tickets:
+                                <span className="text-red-500">*</span>
+                              </label>
+                              <Field name="convertToTicket">
+                                {({ field }) => (
+                                  <Switch
+                                    checked={field.value === "Agree"}
+                                    onChange={(checked) => {
+                                      setFieldValue('convertToTicket', checked ? "Agree" : "Disagree");
+                                    }}
+                                    checkedChildren="Agree"
+                                    unCheckedChildren="Disagree"
+                                  />
+                                )}
+                              </Field>
                             </div>
+                          )}
+
+                          {/* Promotion Code */}
+                          <div className="mt-4">
+                            <label className="block text-gray-700 mb-2">
+                              Promotion code:
+                            </label>
+                            <div className="flex gap-3 items-center justify-center">
+                              <Field
+                                name="promotionCode"
+                                type="text"
+                                disabled={values.convertToTicket === "Agree"}
+                                placeholder="Enter promotion code"
+                                className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleAddPromotion(values.promotionCode, setFieldValue)}
+                                disabled={values.convertToTicket === "Agree" || !values.promotionCode}
+                                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 cursor-pointer"
+                              >
+                                Add
+                              </button>
+                            </div>
+                            {discount && values.convertToTicket === "Disagree" && (
+                              <p className="mt-2 text-green-600">
+                                Applied {discount}% discount
+                              </p>
+                            )}
                           </div>
                         </div>
-                      </div>
+                      )}
                     </div>
-                    <div className="p-5 flex ">
-                      <span className="w-[50%] text-xl font-bold">Total:</span>
-                      <span className="text-emerald-700 text-xl font-bold">
-                        {formatPrice(displayFinalTotal)} VNĐ
-                        {discount && values.convertToTicket === "Disagree" && (
-                          <span className="text-gray-500 text-base font-normal ml-2 line-through">
-                            {formatPrice(total)} VNĐ
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                    {memberChecked && values.convertToTicket === "Agree" && (
-                      <div className="flex flex-col border-t border-gray-300">
-                        {!enoughScore && (
-                          <div className="text-red-500 px-4 w-full">
-                            Not enough score to convert all tickets!
-                          </div>
-                        )}
-                        <div className="flex items-center w-full">
-                          <div className="flex flex-col px-5 py-2 w-[50%]">
-                            <span className="w-[50%] font-semibold text-gray-800 ">
-                              Used Score
-                            </span>
-                            <span className="text-emerald-600 font-semibold flex gap-1 items-center">
-                              <FaFire /> {displayUsedScore}
-                            </span>
-                          </div>
 
-                          <div className="flex flex-col py-2 w-[50%]">
-                            <span className="w-[50%] font-semibold text-gray-800 ">
-                              Remaining Score
-                            </span>
-                            <span className="text-orange-400 font-semibold flex gap-1 items-center">
-                              <FaFire /> {displayUpdatedScore}
-                            </span>
-                          </div>
-                        </div>
+                    {/* Payment Options */}
+                    <div className="mb-6">
+                      <h3 className="font-semibold mb-3 text-xl">Select Payment method: <span className="text-red-500">*</span></h3>
 
-                      </div>
-                    )}
-                    <div className="flex flex-col gap-2 justify-center items-center border border-gray-300 p-4 rounded-2xl bg-white shadow-md">
-                      <h4 className="text-black text-xl font-medium mb-4">
-                        Payment Method
-                      </h4>
-                      <div className="flex flex-col gap-3 w-full md:flex-row justify-center">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {[
                           {
                             value: "Cash",
-                            label: "Pay with Cash",
-                            icon: (
-                              <IoMdCash size={36} className="mx-auto mb-2" />
-                            ),
-                          },
-                          {
-                            value: "ZaloPay",
-                            label: "Pay with ZaloPay",
-                            icon: (
-                              <img
-                                src={zalopay}
-                                alt="zalopay"
-                                className="w-14 h-10 object-contain mx-auto mb-2"
-                              />
-                            ),
-                          },
-                          {
-                            value: "VNPay",
-                            label: "Pay with VNPay",
-                            icon: (
-                              <img
-                                src={vnpay}
-                                alt="vnpay"
-                                className="w-14 h-10 object-contain mx-auto mb-2"
-                              />
-                            ),
+                            label: "Cash",
+                            icon: <IoMdCash className="text-3xl mx-auto mb-2" />,
+                            color: "bg-pink-100 border border-pink-300 ring-4 ring-pink-400 focus:ring-4"
                           },
                           {
                             value: "Momo",
-                            label: "Pay with Momo",
-                            icon: (
-                              <img
-                                src={momo}
-                                alt="momo"
-                                className="w-10 h-10 object-contain mx-auto mb-2"
-                              />
-                            ),
+                            label: "Momo Wallet",
+                            icon: <img src={momo} alt="Momo" className="h-8 mx-auto mb-2" />,
+                            color: "bg-pink-100 border border-pink-300 ring-4 ring-pink-400 focus:ring-4"
                           },
+                          {
+                            value: "VNPay",
+                            label: "VNPay",
+                            icon: <img src={vnpay} alt="VNPay" className="h-8 mx-auto mb-2" />,
+                            color: "bg-pink-100 border border-pink-300 ring-4 ring-pink-400 focus:ring-4"
+                          },
+                          {
+                            value: "ZaloPay",
+                            label: "ZaloPay",
+                            icon: <img src={zalopay} alt="ZaloPay" className="h-8 mx-auto mb-2" />,
+                            color: "bg-pink-100 border border-pink-300 ring-4 ring-pink-400 focus:ring-4"
+                          }
                         ].map((method) => (
                           <label
                             key={method.value}
-                            className={`cursor-pointer w-48 h-32 flex flex-col items-center justify-center border-5 rounded-xl transition
-                                        ${values.paymentMethod === method.value ? "border-purple-600 bg-purple-50 shadow-lg"
-                                : "border-gray-300 bg-white hover:border-purple-400"
-                              } relative`}>
+                            className={`border rounded-lg p-3 cursor-pointer transition-all ${values.paymentMethod === method.value ? 'ring-4 ring-purple-500 ' + method.color : 'hover:border-purple-300 hover:ring-4 hover:ring-purple-500'}`}
+                          >
                             <Field
                               type="radio"
                               name="paymentMethod"
                               value={method.value}
-                              className="absolute top-2 right-2 accent-purple-600"
+                              className="hidden"
                             />
                             {method.icon}
-                            <span className="font-semibold text-base text-gray-700 text-center">
-                              {method.label}
-                            </span>
+                            <div className="text-center font-medium">{method.label}</div>
                           </label>
                         ))}
                       </div>
                     </div>
-                    <div className="flex justify-center items-center p-4">
-                      <button
-                        type="submit"
-                        className="bg-purple-600 text-white px-6 py-3 rounded-lg
-                                                hover:bg-purple-400 transition duration-300 h-10 flex 
-                                                items-center justify-center gap-2"
-                        disabled={isSubmitting}
-                      >
-                        <i className="fa-solid fa-ticket"></i> Confirm Ticket(s)
-                      </button>
-                      <Link to="/staff/ticket-selling">
-                        <button
-                          type="button"
-                          className="bg-white text-red-700 border
-                                                    border-b-red-700 px-6 py-3 rounded-lg hover:bg-red-800
-                                                    hover:text-white transition duration-300 ml-4 h-10 flex items-center
-                                                    justify-center gap-2"
-                        >
-                          <i className="fa-solid fa-xmark"></i> Cancel
-                        </button>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-4 w-[40%] p-4">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
-                    <i className="fa-solid fa-users"></i> Member
-                  </h3>
-                  <div className="mt-4 flex gap-3">
-                    <Field
-                      type="text"
-                      name="memberSearch"
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none
-                               bg-white focus:ring-2 focus:ring-purple-700"
-                      onChange={(e) => {
-                        // Reset khi người dùng xóa input
-                        if (!e.target.value.trim()) {
-                          setMemberChecked(false);
-                          setMember(null);
-                        }
-                        // Cập nhật giá trị form
-                        setFieldValue("memberSearch", e.target.value);
-                      }}
-                      placeholder="Email / Phone Number / ID Card"
-                      title="Email / Phone Number / ID Card"
-                    />
-                    <button
-                      type="button"
-                      className="bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-purple-400 disabled:bg-gray-400"
-                      style={{ borderLeft: "none" }}
-                      disabled={isSearching}
-                      onClick={() => handleMemberSearch(values.memberSearch)}
-                    >
-                      <i className={`fa-solid ${isSearching ? 'fa-spinner fa-spin' : 'fa-magnifying-glass'} mr-2`}></i>
-                      {isSearching ? 'Searching...' : 'Check'}
-                    </button>
-                  </div>
-                  {/* Chỉ hiển thị thông tin member khi đã check thành công */}
-                  {memberChecked && member && (
-                    <div>
-                      <div className="p-4 flex flex-col gap-3">
-                        {/* <div className="flex justify-between">
-                          <span className="text-gray-600 flex gap-1 items-start w-[50%]">
-                            <FaIdBadge /> Member ID:
-                          </span>
-                          <span className="font-medium w-[50%]">{member.id}</span>
-                        </div> */}
-                        <div className="flex justify-between ">
-                          <span className="text-gray-600 flex gap-1 items-center">
-                            <FaIdCard /> Identity card:
-                          </span>
-                          <span className="font-medium">
-                            {member.identityCard}
-                          </span>
-                        </div>
+
+                    {/* Price Summary */}
+                    <div className="bg-white p-4 rounded-lg mb-6">
+                      <h3 className="font-semibold mb-3 text-lg">Payment Summary</h3>
+                      <div className="space-y-2">
                         <div className="flex justify-between">
-                          <span className="text-gray-600 flex gap-1 items-center">
-                            <FaUser /> Full Name:
-                          </span>
-                          <span className="font-medium">{member.fullName}</span>
+                          <span>Total ticket price:</span>
+                          <span>{formatPrice(bookingData.totalPrice)} VNĐ</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600 flex gap-1 items-center">
-                            <FaPhoneAlt /> Phone:
-                          </span>
-                          <span className="font-medium">{member.phone}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Score:</span>
-                          <span className="text-teal-700 font-medium flex gap-1 items-center">
-                            <FaFire /> {member.score}
-                          </span>
-                        </div>
-                        <div className="mt-4 flex justify-between">
-                          <span className="w-[80%] flex items-center gap-1">
-                            <FaExchangeAlt /> Convert to ticket:
-                            <span className="text-red-500">*</span>
-                          </span>
-                          <div className="flex flex-col items-start justify-start w-[30%]">
-                            <div className="form-check">
-                              <label className="form-check-label">
-                                <Field
-                                  type="radio"
-                                  className="form-check-input"
-                                  name="convertToTicket"
-                                  value="Agree"
-                                />{" "}
-                                Agree
-                              </label>
-                            </div>
-                            <div className="form-check">
-                              <label className="form-check-label">
-                                <Field
-                                  type="radio"
-                                  className="form-check-input"
-                                  name="convertToTicket"
-                                  value="Disagree"
-                                />{" "}
-                                Disagree
-                              </label>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="mt-4 flex gap-3">
-                          <Field
-                            type="text"
-                            name="promotionCode"
-                            disabled={!memberChecked || values.convertToTicket !== "Disagree"}
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none
-                             focus:ring-2 focus:ring-purple-700 bg-white"
-                            placeholder="Promotion code..."
-                          />
-                          <button
-                            type="button"
-                            className="bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-purple-400"
-                            style={{ borderLeft: "none" }}
-                            disabled={values.convertToTicket === "Agree"}
-                            onClick={() =>
-                              handleAddPromotion(
-                                values.promotionCode,
-                                setFieldValue
-                              )
-                            }
-                          >
-                            Add
-                          </button>
-                        </div>
-                        {discount && values.convertToTicket === "Disagree" && (
+
+                        {memberChecked && values.convertToTicket === "Disagree" && discount && (
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Discount:</span>
-                            <span className="text-emerald-600 text-xl font-bold">
-                              {discount}%
+                            <span>Discount {discount}%:</span>
+                            <span className="text-green-600">
+                              -{formatPrice(bookingData.totalPrice * discount / 100)} VNĐ
                             </span>
+                          </div>
+                        )}
+
+                        {memberChecked && values.convertToTicket === "Agree" && (
+                          <div className="flex justify-between">
+                            <span>Points used:</span>
+                            <span className="text-orange-500 flex items-center gap-1">
+                              -{formatPrice(usedPoints)} <FaFire />
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="border-t pt-2 mt-2 flex justify-between font-bold text-lg">
+                          <span>Total Amount:</span>
+                          <span className="text-purple-600">
+                            {formatPrice(finalPrice)} VNĐ
+                          </span>
+                        </div>
+
+                        {memberChecked && values.convertToTicket === "Agree" && (
+                          <div className="pt-2 mt-2 flex flex-col gap-2 text-md">
+                            <div className="flex justify-between">
+                              <span>Points used:</span>
+                              <span className="text-orange-500 flex items-center gap-1"><FaFire /> {usedPoints}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Points remaining:</span>
+                              <span className="text-green-600 flex items-center gap-1"><FaFire /> {remainingPoints}</span>
+                            </div>
                           </div>
                         )}
                       </div>
                     </div>
-                  )}
+
+                    {/* Action Buttons */}
+                    <div className="flex justify-end gap-4">
+                      <button
+                        type="button"
+                        onClick={handleCancel}
+                        className="px-2 py-1 sm:px-4 sm:py-2 border-2 border-red-500 text-red-500 rounded-lg hover:bg-red-500 transition flex items-center gap-2 cursor-pointer
+                        hover:text-white "
+                      >
+                        <FaX /> Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSubmitting || !values.paymentMethod}
+                        className="px-6 py-2 border-2 border-purple-600 bg-purple-600 text-white rounded-lg hover:bg-white hover:text-purple-600
+                         disabled:bg-gray-400 disabled:border-gray-400 disabled:text-white  transition flex items-center gap-2 cursor-pointer"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            <CheckOutlined />
+                            Confirm Payment
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </Form>
+                );
+              }}
+            </Formik>
+          </div>
+        </div>
+
+        {/* Order Summary Section */}
+        <div className="lg:w-1/3">
+          <div className="bg-white rounded-lg shadow-md p-6 sticky top-4 border border-gray-300">
+            <h2 className="text-xl font-bold mb-4">Customer Order</h2>
+
+            <div className="mb-4">
+              <div className="flex items-center justify-between py-2">
+                <p className="text-gray-600">Movie:</p>
+                <h3 className="font-semibold">{movieInfo.NameOfEnglish}</h3>
+              </div>
+              <div className="text-gray-600 flex flex-col gap-2">
+                <p className="flex justify-between">
+                  <span>Showtime:</span>
+                  <span className="text-black">{bookingData.selectedDay} - {bookingData.selectedTime}</span>
+                </p>
+                <p className="flex justify-between">
+                  <span>Room:</span>
+                  <span className="text-black">{bookingData.room}</span>
+                </p>
+                <p className="flex justify-between">
+                  <span>Seats:</span>
+                  <span className="text-black">{bookingData.selectedSeats.join(", ")}</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="border-t pt-4">
+              <h3 className="font-semibold mb-2">Price Details</h3>
+              <div className="space-y-2">
+                {bookingData.selectedSeats.map((seat, index) => {
+                  const seatInfo = bookingData.seatData.find(s => s.seatNumber === seat);
+                  return (
+                    <div key={index} className="flex justify-between">
+                      <span>Seat {seat}:</span>
+                      <span>{formatPrice(seatInfo?.price || 0)} VNĐ</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="border-t mt-4 pt-4">
+                <div className="flex justify-between font-bold text-lg">
+                  <span>Total:</span>
+                  <span className="text-purple-600">
+                    {formatPrice(bookingData.totalPrice)} VNĐ
+                  </span>
                 </div>
               </div>
-            </Form>
-          );
-        }}
-      </Formik>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
-}
+};
+
+export default ConfirmTicketsPage;

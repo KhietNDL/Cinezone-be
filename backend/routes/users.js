@@ -15,6 +15,8 @@ const {
 } = require("../controllers/user.management.controller");
 const { createUserValidator, updateUserValidator } = require('../middlewares/user.management.validator');
 const { auth, isAdmin, isAdminOrEmployee} = require("../middlewares/auth.middleware");
+const { exchangeScore } = require("../controllers/user.controller");
+
 // Route to get all users
 /**
  * @swagger
@@ -290,5 +292,42 @@ router.get('/cccd/:cccd', auth, isAdminOrEmployee, getUserByCCCD);
  *         description: Internal server error
  */
 router.get('/phone/:phoneNumber', auth, isAdminOrEmployee, getUserByPhoneNumber);
+
+/**
+ * @swagger
+ * /api/user/{userId}/exchange-score:
+ *   post:
+ *     summary: Exchange score for money
+ *     tags: [User Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the user to exchange score
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               pointsToExchange:
+ *                 type: integer
+ *                 description: Number of points to exchange
+ *     responses:
+ *       200:
+ *         description: Score exchanged successfully
+ *       400:
+ *         description: Invalid request or insufficient score
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
+ */
+router.post('/:userId/exchange-score', auth, exchangeScore);
 
 module.exports = router;

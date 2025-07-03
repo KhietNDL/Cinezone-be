@@ -1,17 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FaRegEdit } from "react-icons/fa";
 import { GoPlus } from "react-icons/go";
-import { IoMdPersonAdd } from "react-icons/io";
-import { IoCloseSharp, IoSearchOutline, IoTime } from "react-icons/io5";
+import {
+  IoEyeOutline,
+  IoSearchOutline,
+  IoTime,
+  IoCloseSharp,
+} from "react-icons/io5";
 import { MdPeopleAlt } from "react-icons/md";
 import { RiDeleteBin5Line } from "react-icons/ri";
 import {
-  getUserAdmin,
-  deleteUserAdmin,
-  createUserAdmin,
-  updateUserAdmin,
+  getAllUsers,
+  createUser,
+  editUser,
+  deleteUser,
+  searchUserByName,
 } from "../../../services/APIForAdmin/API";
 import { toast } from "react-toastify";
+import { IoMdPersonAdd } from "react-icons/io";
 
 export const UserManagement = () => {
   const [showAddModal, setShowAddModal] = useState(false);
@@ -24,115 +30,141 @@ export const UserManagement = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
   const [users, setUsers] = useState([]);
-  const [formData, setFormData] = useState({
-    FullName: "",
-    DateOfBirth: "",
-    Sex: "",
-    Email: "",
-    Password: "",
-    PhoneNumber: "",
-    Address: "",
-    CCCD: "",
-    avatar_url: "",
-    CreatedAt: "",
-  });
+  const [allUsers, setAllUsers] = useState([]);
+
+  // Form states
+  const [fullName, setFullName] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [sex, setSex] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [address, setAddress] = useState("");
+  const [cccd, setCCCD] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarFile, setAvatarFile] = useState(null);
+
+  const resetForm = () => {
+    setFullName("");
+    setDateOfBirth("");
+    setSex("");
+    setEmail("");
+    setPassword("");
+    setPhoneNumber("");
+    setAddress("");
+    setCCCD("");
+    setAvatarUrl("");
+    setAvatarFile(null);
+  };
+
   useEffect(() => {
     loadUsers();
   }, []);
 
   const loadUsers = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const response = await getUserAdmin();
-
-      if (response && response.users) {
-        const transformedUsers = response.users.map((user, index) => ({
-          id: user.UserId || index + 1,
-          avatar: user.avatar_url || "/api/placeholder/40/40",
-          fullName: user.FullName || "",
-          identityNumber: user.CCCD || "",
-          dateOfBirth: user.DateOfBirth
-            ? new Date(user.DateOfBirth).toLocaleDateString("vi-VN")
-            : "",
-          sex: user.sex === 1 ? "Male" : user.Sex === 0 ? "Female" : "",
-          email: user.Email || "",
-          phone: user.PhoneNumber || "",
-          address: user.Address || "",
-          registerDate: user.CreatedAt
-            ? new Date(user.CreatedAt).toLocaleDateString("vi-VN")
-            : "",
-          originalData: user,
-        }));
-        setUsers(transformedUsers);
+      const res = await getAllUsers();
+      if (res.users) {
+        setUsers(res.users);
+        setAllUsers(res.users);
       }
     } catch (error) {
-      console.error("Error loading users:", error);
+      console.error("Load users error:", error);
       toast.error("Failed to load users");
+      setUsers([]);
+      setAllUsers([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+  const searchTimeout = useRef();
+  useEffect(() => {
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(() => {
+      if (searchTerm.trim() === "") {
+        setUsers(allUsers);
+      } else {
+        handleSearchUser(searchTerm.trim());
+      }
+    }, 400);
+    return () => clearTimeout(searchTimeout.current);
+  }, [searchTerm, allUsers]);
+
+  const handleSearchUser = async (keyword) => {
+    try {
+      const res = await searchUserByName(keyword);
+      if (res.users) {
+        setUsers(res.users);
+      }
+    } catch (error) {
+      console.error("Search error:", error);
+      toast.error("Failed to search users");
+      setUsers([]);
+    }
   };
+
+  const formatDateToYYYYMMDD = (dateStr) => {
+    if (!dateStr) return "";
+    if (dateStr.includes("-")) return dateStr.replace(/-/g, "/");
+    if (dateStr.includes("/")) {
+      const parts = dateStr.split("/");
+      if (parts[2]?.length === 4) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+    }
+    return dateStr;
+  };
+
+  const formatDate = (dateString) =>
+    dateString ? dateString.split("T")[0] : "";
 
   const handleAddUser = async () => {
     try {
       setAddLoading(true);
       if (
-        !formData.FullName ||
-        !formData.DateOfBirth ||
-        !formData.Password ||
-        !formData.Sex ||
-        !formData.Email ||
-        !formData.PhoneNumber ||
-        !formData.Address ||
-        !formData.CCCD ||
-        !formData.avatar_url
+        !fullName ||
+        !dateOfBirth ||
+        !password ||
+        !sex ||
+        !email ||
+        !phoneNumber ||
+        !address ||
+        !cccd
       ) {
         toast.error("Please fill in all required fields");
         return;
       }
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.Email)) {
+      if (!emailRegex.test(email)) {
         toast.error("Please enter a valid email address");
         return;
       }
-      if (formData.PhoneNumber.length < 10) {
+      if (phoneNumber.length < 10) {
         toast.error("Please enter a valid phone number");
         return;
       }
-
-      const userData = {
-        FullName: formData.FullName.trim(),
-        DateOfBirth: formData.DateOfBirth,
-        Password: formData.Password,
-        Sex: parseInt(formData.Sex), // Đảm bảo Sex là number
-        Email: formData.Email.trim(),
-        PhoneNumber: formData.PhoneNumber.trim(),
-        avatar_url: formData.avatar_url.trim() || "",
-        Address: formData.Address.trim(),
-        CCCD: formData.CCCD.trim(),
-      };
-
-      console.log("Sending user data:", userData);
-      const response = await createUserAdmin(userData);
-
+      const formData = new FormData();
+      formData.append("fullName", fullName.trim());
+      formData.append("dateOfBirth", formatDateToYYYYMMDD(dateOfBirth));
+      formData.append("password", password);
+      formData.append("sex", parseInt(sex));
+      formData.append("email", email.trim());
+      formData.append("phoneNumber", phoneNumber.trim());
+      formData.append("address", address.trim());
+      formData.append("cccd", cccd.trim());
+      if (avatarFile) {
+        formData.append("avatar", avatarFile);
+      }
+      const response = await createUser(formData);
       if (response) {
         await loadUsers();
         setShowAddModal(false);
         resetForm();
-
         toast.success("User created successfully");
-        console.log("User created successfully:", response);
       }
     } catch (error) {
-      console.error("Error adding user:", error);
       toast.error(
         "Failed to create user: " + (error.message || "Unknown error")
       );
@@ -141,77 +173,28 @@ export const UserManagement = () => {
     }
   };
 
-  const handleEditUser = (user) => {
-    setSelectedUser(user);
-    setFormData({
-      FullName: user.fullName,
-      Password: "",
-      DateOfBirth: user.originalData?.DateOfBirth
-        ? user.originalData.DateOfBirth.split("T")[0]
-        : user.dateOfBirth,
-      Sex: user.sex === "Male" ? "1" : user.sex === "Female" ? "0" : "",
-      CCCD: user.identityNumber,
-      Email: user.email,
-      Address: user.address,
-      PhoneNumber: user.phone,
-      avatar_url:
-        user.avatar && user.avatar !== "/api/placeholder/40/40"
-          ? user.avatar
-          : "",
-    });
-    setShowEditModal(true);
-  };
-
   const handleUpdateUser = async () => {
+    if (!selectedUser) return;
     try {
       setAddLoading(true);
-      if (
-        !formData.FullName ||
-        !formData.DateOfBirth ||
-        !formData.Sex ||
-        !formData.Email ||
-        !formData.PhoneNumber ||
-        !formData.Address ||
-        !formData.CCCD ||
-        !formData.avatar_url
-      ) {
-        toast.error("Please fill in all required fields");
-        return;
+      const formData = new FormData();
+      formData.append("fullName", fullName.trim());
+      formData.append("dateOfBirth", formatDateToYYYYMMDD(dateOfBirth));
+      if (password) formData.append("password", password);
+      formData.append("sex", parseInt(sex));
+      formData.append("email", email.trim());
+      formData.append("phoneNumber", phoneNumber.trim());
+      formData.append("address", address.trim());
+      formData.append("cccd", cccd.trim());
+      if (avatarFile) {
+        formData.append("avatar", avatarFile);
       }
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.Email)) {
-        toast.error("Please enter a valid email address");
-        return;
-      }
-
-      if (formData.PhoneNumber.length < 10) {
-        toast.error("Please enter a valid phone number");
-        return;
-      }
-      const userData = {
-        FullName: formData.FullName.trim(),
-        DateOfBirth: formData.DateOfBirth,
-        Sex: parseInt(formData.Sex),
-        Email: formData.Email.trim(),
-        PhoneNumber: formData.PhoneNumber.trim(),
-        avatar_url: formData.avatar_url.trim() || "",
-        Address: formData.Address.trim(),
-        CCCD: formData.CCCD.trim(),
-      };
-      if (formData.Password && formData.Password.trim() !== "") {
-        userData.Password = formData.Password;
-      }
-      const userId = selectedUser.originalData?.UserId || selectedUser.id;
-
-      const response = await updateUserAdmin({ userId, user: userData });
-      if (response) {
-        await loadUsers();
-        setShowEditModal(false);
-        resetForm();
-        toast.success("User updated successfully");
-      }
+      await editUser(selectedUser.UserId, formData);
+      await loadUsers();
+      setShowEditModal(false);
+      resetForm();
+      toast.success("User updated successfully");
     } catch (error) {
-      console.error("Error updating user:", error);
       toast.error(
         "Failed to update user: " + (error.message || "Unknown error")
       );
@@ -220,468 +203,788 @@ export const UserManagement = () => {
     }
   };
 
-  const handleDeleteUser = (user) => {
-    setSelectedUser(user);
-    setShowDeleteModal(true);
-  };
-
   const confirmDeleteUser = async () => {
     if (!selectedUser) return;
-
     try {
       setDeleteLoading(true);
-      const userId = selectedUser.originalData?.UserId || selectedUser.id;
-      const response = await deleteUserAdmin(userId);
-
-      if (response !== null) {
-        setUsers(users.filter((user) => user.id !== selectedUser.id));
-        setShowDeleteModal(false);
-        setSelectedUser(null);
-        toast.success("User deleted successfully");
-      }
+      await deleteUser(selectedUser.UserId);
+      setUsers(users.filter((user) => user.UserId !== selectedUser.UserId));
+      setShowDeleteModal(false);
+      setSelectedUser(null);
+      toast.success("User deleted successfully");
     } catch (error) {
-      console.error("Error deleting user:", error);
+      console.error("Delete error:", error);
       toast.error("Failed to delete user");
     } finally {
       setDeleteLoading(false);
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      FullName: "",
-      Password: "",
-      DateOfBirth: "",
-      Sex: "",
-      CCCD: "",
-      Email: "",
-      Address: "",
-      PhoneNumber: "",
-      avatar_url: "",
-    });
+  const handleEditUser = (user) => {
+    setSelectedUser(user);
+    setFullName(user.FullName || "");
+    let dob = "";
+    if (user.DateOfBirth) {
+      if (user.DateOfBirth.includes("/")) {
+        const [day, month, year] = user.DateOfBirth.split("/");
+        dob = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+      } else {
+        dob = user.DateOfBirth.slice(0, 10);
+      }
+    }
+    setDateOfBirth(dob);
+    let gender = "";
+    if (user.originalData?.Sex !== undefined) {
+      gender = String(user.originalData.Sex);
+    } else if (user.Sex === 1 || user.Sex === "1" || user.Sex === "Male") {
+      gender = "1";
+    } else if (user.Sex === 2 || user.Sex === "2" || user.Sex === "Female") {
+      gender = "2";
+    }
+    setSex(gender);
+    setEmail(user.Email || "");
+    setPassword("");
+    setPhoneNumber(user.PhoneNumber || "");
+    setAddress(user.Address || "");
+    setCCCD(user.CCCD || "");
+    setAvatarUrl(user.avatar_url || "");
+    setAvatarFile(null);
+    setShowEditModal(true);
   };
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleDeleteUser = (user) => {
+    setSelectedUser(user);
+    setShowDeleteModal(true);
+  };
 
   const itemsPerPage = 5;
-  const totalItems = filteredUsers.length;
+  const totalItems = users.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentUser = filteredUsers.slice(startIndex, endIndex);
-  const pageNumbers = [];
-  for (let i = 1; i <= totalPages; i++) {
-    pageNumbers.push(i);
-  }
+  const currentUsers = users.slice(startIndex, endIndex);
 
-  if (loading) {
+  const renderPaginationButtons = () => {
+    const maxVisibleButtons = window.innerWidth < 640 ? 3 : 5;
+    const halfVisible = Math.floor(maxVisibleButtons / 2);
+    let startPage = Math.max(1, currentPage - halfVisible);
+    let endPage = Math.min(totalPages, currentPage + halfVisible);
+
+    if (currentPage <= halfVisible) {
+      endPage = Math.min(maxVisibleButtons, totalPages);
+    }
+    if (currentPage + halfVisible >= totalPages) {
+      startPage = Math.max(1, totalPages - maxVisibleButtons + 1);
+    }
+
+    const pages = [];
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={`page-${i}`}
+          onClick={() => setCurrentPage(i)}
+          className={`px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${
+            currentPage === i
+              ? "bg-indigo-600 text-white shadow-sm"
+              : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm"
+          }`}
+          aria-label={`Page ${i}`}
+          aria-current={currentPage === i ? "true" : undefined}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    if (startPage > 1) {
+      pages.unshift(
+        <span
+          key="ellipsis-start"
+          className="px-2 sm:px-3 py-1 sm:py-2 text-gray-500 text-sm sm:text-base"
+        >
+          ...
+        </span>
+      );
+      pages.unshift(
+        <button
+          key="page-1"
+          onClick={() => setCurrentPage(1)}
+          className={`px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${
+            currentPage === 1
+              ? "bg-indigo-600 text-white shadow-sm"
+              : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm"
+          }`}
+          aria-label="Page 1"
+        >
+          1
+        </button>
+      );
+    }
+    if (endPage < totalPages) {
+      pages.push(
+        <span
+          key="ellipsis-end"
+          className="px-2 sm:px-3 py-1 sm:py-2 text-gray-500 text-sm sm:text-base"
+        >
+          ...
+        </span>
+      );
+      pages.push(
+        <button
+          key={`page-${totalPages}`}
+          onClick={() => setCurrentPage(totalPages)}
+          className={`px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${
+            currentPage === totalPages
+              ? "bg-indigo-600 text-white shadow-sm"
+              : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm"
+          }`}
+          aria-label={`Page ${totalPages}`}
+        >
+          {totalPages}
+        </button>
+      );
+    }
+
+    return pages.length > 0 ? (
+      pages
+    ) : (
+      <span className="text-gray-500 text-sm">No pages to display</span>
+    );
+  };
+
+  if (addLoading || deleteLoading || loading) {
     return (
-      <div className="p-[20px] flex items-center justify-center h-full">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
-          <p className="mt-4 text-gray-600">Loading users...</p>
+      <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999]">
+        <div className="bg-white rounded-lg p-4 sm:p-6 flex flex-col items-center shadow-xl">
+          <svg
+            className="animate-spin h-6 sm:h-8 w-6 sm:w-8 text-indigo-600 mb-3 sm:mb-4"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+              fill="none"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v8z"
+            />
+          </svg>
+          <div className="font-semibold text-base sm:text-lg text-indigo-700">
+            {addLoading
+              ? showEditModal
+                ? "Updating user, please wait..."
+                : "Adding user, please wait..."
+              : deleteLoading
+              ? "Deleting user, please wait..."
+              : "Loading users, please wait..."}
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center h-full justify-between">
-      <div className="w-[90%] space-y-4">
+    <div className="flex flex-col items-center lg:items-start h-auto min-h-screen w-full max-w-full overflow-x-hidden">
+      <div className="w-[90%] md:w-[95%] lg:w-[95%] max-w-7xl space-y-4">
         {/* Stats Cards */}
-        <div className="flex items-center justify-between w-full">
-          <div className="bg-white rounded-md p-3 w-[23%] shadow-sm">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4 w-full">
+          <div className="bg-white rounded-lg p-2 sm:p-3 flex-1 shadow-sm">
             <div className="flex items-center justify-between">
-              <p className="text-slate-500">Total User</p>
-              <div className="p-2 bg-sky-100 rounded-full">
+              <p className="text-slate-500 text-sm sm:text-base">Total Users</p>
+              <div className="p-1 sm:p-2 bg-sky-100 rounded-lg flex items-center justify-center">
                 <MdPeopleAlt size={20} className="text-blue-500" />
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900">1200</div>
+            <p className="font-bold text-base sm:text-[19px]">{users.length}</p>
           </div>
-          <div className="bg-white rounded-md p-3 w-[23%] shadow-sm">
+          <div className="bg-white rounded-lg p-2 sm:p-3 flex-1 shadow-sm">
             <div className="flex items-center justify-between">
-              <p className="text-slate-500">On Leave</p>
-              <div className="p-2 bg-rose-50 rounded-full">
+              <p className="text-slate-500 text-sm sm:text-base">On Leave</p>
+              <div className="p-1 sm:p-2 bg-rose-50 rounded-lg flex items-center justify-center">
                 <IoTime size={20} className="text-red-500" />
               </div>
             </div>
-            <div className="font-bold text-[19px]">25,340</div>
+            <p className="font-bold text-base sm:text-[19px]">25,340</p>
           </div>
-          <div className="bg-white rounded-md p-3 w-[23%] shadow-sm">
+          <div className="bg-white rounded-lg p-2 sm:p-3 flex-1 shadow-sm">
             <div className="flex items-center justify-between">
-              <p className="text-slate-500">New Hires</p>
-              <div className="p-2 bg-sky-100 rounded-full">
+              <p className="text-slate-500 text-sm sm:text-base">New Hires</p>
+              <div className="p-1 sm:p-2 bg-sky-100 rounded-lg flex items-center justify-center">
                 <IoMdPersonAdd size={20} className="text-blue-500" />
               </div>
             </div>
-            <div className="font-bold text-[19px]">25,340</div>
+            <p className="font-bold text-base sm:text-[19px]">25,340</p>
           </div>
-          <div className="bg-white rounded-md p-3 w-[23%] shadow-sm">
+          <div className="bg-white rounded-lg p-2 sm:p-3 flex-1 shadow-sm">
             <div className="flex items-center justify-between">
-              <p className="text-slate-500">Resigned</p>
-              <div className="p-2 bg-rose-50 rounded-full">
+              <p className="text-slate-500 text-sm sm:text-base">Resigned</p>
+              <div className="p-1 sm:p-2 bg-rose-50 rounded-lg flex items-center justify-center">
                 <IoCloseSharp size={20} className="text-red-500" />
               </div>
             </div>
-            <div className="font-bold text-[19px]">25,340</div>
+            <p className="font-bold text-base sm:text-[19px]">25,340</p>
           </div>
         </div>
 
-        {/* User Table */}
-        <div className="w-full py-3 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="w-full">
-              <div className="flex items-center p-1 px-2 w-2/4 rounded-xl bg-white shadow-sm">
-                <div className="shrink-0">
-                  <IoSearchOutline size={20} />
-                </div>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="p-2 focus:outline-none w-full"
-                  placeholder="Search by name or email"
-                />
-              </div>
-            </div>
-            <div className="flex items-center justify-between gap-2">
-              <div
-                role="button"
-                onClick={() => setShowAddModal(true)}
-                className="flex items-center text-[#6051F3] hover:bg-slate-50 p-2 rounded-md active:bg-slate-100 bg-white shadow-sm"
-              >
-                <GoPlus size={20} className="mr-2" />
-                Add
-              </div>
-            </div>
+        {/* Search and Add */}
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-2 w-full">
+          <div className="flex items-center p-1 px-2 w-full max-w-[400px] rounded-lg bg-white shadow-sm">
+            <IoSearchOutline size={20} />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="p-1 sm:p-2 focus:outline-none w-full text-sm sm:text-base"
+              placeholder="Search by name or email"
+            />
           </div>
-
-          <div className="bg-white p-4 rounded-md shadow-sm w-full max-w-4xl mx-auto">
-            {currentUser.length === 0 ? (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-gray-500">No users found</p>
-              </div>
-            ) : (
-              <table className="w-full table-auto border-collapse">
-                <thead>
-                  <tr className="text-left text-slate-500 text-sm border-b border-slate-200">
-                    <th className="py-2 text-center">Avatar</th>
-                    <th className="py-2 text-center">Full Name</th>
-                    <th className="py-2 text-center">Identity number</th>
-                    <th className="py-2 text-center">Date of Birth</th>
-                    <th className="py-2 text-center">Gender</th>
-                    <th className="py-2 text-center">Email</th>
-                    <th className="py-2 text-center">Address</th>
-                    <th className="py-2 text-center">Phone</th>
-                    <th className="py-2 text-center">Register Date</th>
-                    <th className="py-2 text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentUser.map((user) => (
-                    <tr
-                      key={user.id}
-                      role="button"
-                      className="border-b border-slate-200 hover:bg-slate-100 text-sm"
-                    >
-                      <td className="py-2 text-center">
-                        <div className="flex justify-center">
-                          {user.avatar &&
-                          user.avatar !== "/api/placeholder/40/40" ? (
-                            <img
-                              src={user.avatar}
-                              alt={user.fullName}
-                              className="w-10 h-10 rounded-full object-cover"
-                              onError={(e) => {
-                                e.target.src = "/api/placeholder/40/40";
-                              }}
-                            />
-                          ) : (
-                            <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
-                              <span className="text-white text-xs">
-                                {user.fullName?.charAt(0)?.toUpperCase() || "U"}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-2 text-center">{user.fullName}</td>
-                      <td className="py-2 text-center">
-                        {user.identityNumber}
-                      </td>
-                      <td className="py-2 text-center">{user.dateOfBirth}</td>
-                      <td className="py-2 text-center">{user.sex}</td>
-                      <td className="py-2 text-center max-w-[150px] break-words whitespace-pre-line">
-                        {user.email}
-                      </td>
-                      <td className="py-2 text-center">{user.address}</td>
-                      <td className="py-2 text-center">{user.phone}</td>
-                      <td className="py-2 text-center">{user.registerDate}</td>
-                      <td className="py-2 text-center">
-                        <div className="flex items-center justify-center gap-3">
-                          <div
-                            role="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditUser(user);
-                            }}
-                            className="text-blue-500 hover:text-blue-700"
-                            title="Edit"
-                          >
-                            <FaRegEdit size={20} />
-                          </div>
-                          <div
-                            role="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteUser(user);
-                            }}
-                            className="text-red-400 hover:text-red-600"
-                            title="Delete"
-                          >
-                            <RiDeleteBin5Line size={20} />
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-
-          {/* Pagination */}
-          {totalItems > 0 && (
-            <div className="px-6 py-4 flex items-center justify-between border-t border-gray-200">
-              <div className="text-sm text-gray-700">
-                Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of{" "}
-                {totalItems} users
-              </div>
-              <div className="flex items-center justify-end space-x-2 pt-4">
-                <div
-                  role="button"
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                  className={`px-3 py-1 text-sm cursor-pointer ${
-                    currentPage === 1
-                      ? "text-gray-300 cursor-not-allowed"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  Previous
-                </div>
-                {pageNumbers.map((page) => (
-                  <div
-                    role="button"
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`px-3 py-1 text-sm rounded cursor-pointer ${
-                      currentPage === page
-                        ? "bg-blue-500 text-white"
-                        : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                  >
-                    {page}
-                  </div>
-                ))}
-                <div
-                  role="button"
-                  onClick={() =>
-                    setCurrentPage(Math.min(totalPages, currentPage + 1))
-                  }
-                  disabled={currentPage === totalPages}
-                  className={`px-3 py-1 text-sm cursor-pointer ${
-                    currentPage === totalPages
-                      ? "text-gray-300 cursor-not-allowed"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  Next
-                </div>
-              </div>
-            </div>
+          {!showEditModal && (
+            <button
+              onClick={() => {
+                resetForm();
+                setShowAddModal(true);
+              }}
+              className="flex items-center text-indigo-600 hover:bg-gray-50 p-2 rounded-lg active:bg-gray-100 bg-white shadow-sm w-full sm:w-auto text-sm sm:text-base"
+            >
+              <GoPlus size={18} className="mr-1 sm:mr-2" />
+              Add User
+            </button>
           )}
         </div>
+
+        {/* Table and Card Layout */}
+        <div className="bg-white p-2 sm:p-3 md:p-4 rounded-lg shadow-sm">
+          {/* Table Layout for sm and above */}
+          <div className="hidden sm:block">
+            <table className="w-full table-auto border-collapse">
+              <thead>
+                <tr className="text-left text-slate-500 text-xs sm:text-sm border-b border-gray-200">
+                  <th className="py-2 px-2 sm:px-4 w-[60px] sm:w-[80px] shrink-0 text-center">
+                    Avatar
+                  </th>
+                  <th className="py-2 px-2 sm:px-4 w-[150px] sm:w-[180px] md:w-[200px] shrink-0">
+                    Full Name
+                  </th>
+                  <th className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] shrink-0 text-center hidden xl:table-cell">
+                    DOB
+                  </th>
+                  <th className="py-2 px-2 sm:px-4 w-[80px] sm:w-[100px] shrink-0 text-center hidden xl:table-cell">
+                    Gender
+                  </th>
+                  <th className="py-2 px-2 sm:px-4 w-[150px] sm:w-[180px] md:w-[200px] shrink-0 text-center hidden md:table-cell">
+                    Email
+                  </th>
+                  <th className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] shrink-0 text-center">
+                    Phone
+                  </th>
+                  <th className="py-2 px-2 sm:px-4 w-[80px] shrink-0 text-center">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentUsers.map((user) => (
+                  <tr
+                    key={user.UserId}
+                    onClick={() => handleEditUser(user)}
+                    className="border-b cursor-pointer border-gray-200 hover:bg-gray-50 text-xs sm:text-sm transition-colors"
+                  >
+                    <td className="py-2 px-2 sm:px-4 w-[60px] sm:w-[80px] shrink-0 text-center">
+                      <img
+                        src={user.avatar_url || "/default-avatar.png"}
+                        alt={user.FullName || "Avatar"}
+                        loading="lazy"
+                        className="w-8 sm:w-10 h-8 sm:h-10 rounded-full object-cover mx-auto"
+                      />
+                    </td>
+                    <td className="py-2 px-2 sm:px-4 w-[150px] sm:w-[180px] md:w-[200px] shrink-0">
+                      <span className="block text-center">
+                        {user.FullName?.length > 20 ? (
+                          <span title={user.FullName}>
+                            {user.FullName.slice(0, 20) + "..."}
+                          </span>
+                        ) : (
+                          user.FullName || "N/A"
+                        )}
+                      </span>
+                    </td>
+                    <td className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] shrink-0 text-center hidden xl:table-cell">
+                      {formatDate(user.DateOfBirth)}
+                    </td>
+                    <td className="py-2 px-2 sm:px-4 w-[80px] sm:w-[100px] shrink-0 text-center hidden xl:table-cell">
+                      {user.Sex === 1 || user.Sex === "1" || user.Sex === "Male"
+                        ? "Male"
+                        : user.Sex === 2 ||
+                          user.Sex === "2" ||
+                          user.Sex === "Female"
+                        ? "Female"
+                        : "Other"}
+                    </td>
+                    <td className="py-2 px-2 sm:px-4 w-[150px] sm:w-[180px] md:w-[200px] shrink-0 text-center hidden md:table-cell">
+                      <span className="block text-center">
+                        {user.Email?.length > 20 ? (
+                          <span title={user.Email}>
+                            {user.Email.slice(0, 20) + "..."}
+                          </span>
+                        ) : (
+                          user.Email || "N/A"
+                        )}
+                      </span>
+                    </td>
+                    <td className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] shrink-0 text-center">
+                      {user.PhoneNumber || "N/A"}
+                    </td>
+                    <td className="py-2 px-2 sm:px-4 w-[80px] shrink-0 text-center">
+                      <div className="flex justify-center space-x-2 sm:space-x-3">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditUser(user);
+                          }}
+                          className="text-blue-500 hover:text-blue-700 p-1 sm:p-2"
+                          title="Edit"
+                          aria-label={`Edit ${user.FullName || "user"}`}
+                        >
+                          <FaRegEdit size={18} sm={20} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteUser(user);
+                          }}
+                          className="text-red-400 hover:text-red-600 p-1 sm:p-2"
+                          title="Delete"
+                          aria-label={`Delete ${user.FullName || "user"}`}
+                        >
+                          <RiDeleteBin5Line size={18} sm={20} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {/* Card Layout for Mobile */}
+          <div className="block sm:hidden space-y-4">
+            {currentUsers.map((user) => (
+              <article
+                key={user.UserId}
+                className="bg-white p-4 rounded-lg shadow-sm border border-slate-200"
+                onClick={() => handleEditUser(user)}
+              >
+                <div className="flex items-center gap-4">
+                  <img
+                    src={user.avatar_url || "/default-avatar.png"}
+                    alt={user.FullName || "Avatar"}
+                    className="w-16 h-16 rounded-full object-cover"
+                  />
+                  <div className="flex-1">
+                    <h3 className="text-sm font-medium text-gray-900 truncate">
+                      {user.FullName?.length > 20 ? (
+                        <span title={user.FullName}>
+                          {user.FullName.slice(0, 20) + "..."}
+                        </span>
+                      ) : (
+                        user.FullName || "N/A"
+                      )}
+                    </h3>
+                    <p className="text-xs text-gray-500 truncate">
+                      {user.Email?.length > 20 ? (
+                        <span title={user.Email}>
+                          {user.Email.slice(0, 20) + "..."}
+                        </span>
+                      ) : (
+                        user.Email || "N/A"
+                      )}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4 text-xs grid grid-cols-2 gap-x-2 gap-y-4 text-gray-700">
+                  <p>
+                    <strong>DOB:</strong> {formatDate(user.DateOfBirth)}
+                  </p>
+                  <p>
+                    <strong>Gender:</strong>{" "}
+                    {user.Sex === 1 || user.Sex === "1" || user.Sex === "Male"
+                      ? "Male"
+                      : user.Sex === 2 ||
+                        user.Sex === "2" ||
+                        user.Sex === "Female"
+                      ? "Female"
+                      : "Other"}
+                  </p>
+                  <p>
+                    <strong>Phone:</strong> {user.PhoneNumber || "N/A"}
+                  </p>
+                </div>
+                <div className="flex justify-center space-x-2 sm:space-x-3">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditUser(user);
+                    }}
+                    className="text-blue-500 hover:text-blue-700"
+                    aria-label={`Edit ${user.FullName || "user"}`}
+                  >
+                    <FaRegEdit size={16} />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteUser(user);
+                    }}
+                    className="text-red-400 hover:text-red-600"
+                    aria-label={`Delete ${user.FullName || "user"}`}
+                  >
+                    <RiDeleteBin5Line size={16} />
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+
+        {/* Pagination */}
+        {totalItems > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between px-4 sm:px-6 py-4 border-t border-gray-200">
+            <div className="text-sm text-gray-700 mb-2 sm:mb-0">
+              Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of{" "}
+              {totalItems} users
+            </div>
+            <div className="flex items-center space-x-1 sm:space-x-2">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="px-3 sm:px-4 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                aria-label="Previous page"
+              >
+                Previous
+              </button>
+              {renderPaginationButtons()}
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                }
+                disabled={currentPage === totalPages}
+                className="px-3 sm:px-4 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                aria-label="Next page"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Add User Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white text-black rounded-lg p-6 w-96 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">Add New User</h2>
-
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+      {/* Add/Edit User Modal */}
+      {(showAddModal || showEditModal) && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg sm:max-w-xl max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="bg-indigo-600 px-4 sm:px-6 py-3 sm:py-4 text-white">
+              <div className="flex items-center justify-between">
                 <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Full Name*
-                  </label>
-                  <input
-                    type="text"
-                    name="FullName"
-                    value={formData.FullName}
-                    onChange={handleInputChange}
-                    placeholder="Enter full name"
-                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                  />
+                  <h2 className="text-xl sm:text-2xl font-bold">
+                    {showEditModal ? "Edit User" : "Add New User"}
+                  </h2>
+                  <p className="text-indigo-100 text-xs sm:text-sm mt-1">
+                    {showEditModal
+                      ? "Update the details below to edit the user"
+                      : "Fill in the details below to add a user"}
+                  </p>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Date of Birth*
-                  </label>
-                  <input
-                    type="date"
-                    name="DateOfBirth"
-                    value={formData.DateOfBirth}
-                    onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Password*
-                </label>
-                <input
-                  type="password"
-                  name="Password"
-                  value={formData.Password}
-                  onChange={handleInputChange}
-                  placeholder="Enter password"
-                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Gender*
-                </label>
-                <div className="flex gap-4">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="Sex"
-                      value="1"
-                      checked={formData.Sex === "1"}
-                      onChange={handleInputChange}
-                      className="mr-2"
+                <button
+                  onClick={() => {
+                    if (showAddModal) setShowAddModal(false);
+                    if (showEditModal) setShowEditModal(false);
+                    resetForm();
+                  }}
+                  className="p-1 sm:p-2 hover:bg-indigo-700 rounded-full transition-colors"
+                  aria-label="Close modal"
+                >
+                  <svg
+                    className="w-5 sm:w-6 h-5 sm:h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
                     />
-                    Male
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="Sex"
-                      value="0"
-                      checked={formData.Sex === "0"}
-                      onChange={handleInputChange}
-                      className="mr-2"
-                    />
-                    Female
-                  </label>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Identity Card*
-                  </label>
-                  <input
-                    type="text"
-                    name="CCCD"
-                    value={formData.CCCD}
-                    onChange={handleInputChange}
-                    placeholder="Enter identity card number"
-                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Email*
-                  </label>
-                  <input
-                    type="email"
-                    name="Email"
-                    value={formData.Email}
-                    onChange={handleInputChange}
-                    placeholder="Enter email address"
-                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Address*
-                </label>
-                <input
-                  type="text"
-                  name="Address"
-                  value={formData.Address}
-                  onChange={handleInputChange}
-                  placeholder="Enter address"
-                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Phone Number*
-                </label>
-                <input
-                  type="tel"
-                  name="PhoneNumber"
-                  value={formData.PhoneNumber}
-                  onChange={handleInputChange}
-                  placeholder="Enter phone number"
-                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Avatar URL
-                </label>
-                <input
-                  type="url"
-                  name="avatar_url"
-                  value={formData.avatar_url}
-                  onChange={handleInputChange}
-                  placeholder="Enter avatar image URL"
-                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                />
+                  </svg>
+                </button>
               </div>
             </div>
-
-            <div className="flex justify-end gap-2 mt-6">
+            {/* Form */}
+            <div className="p-4 sm:p-6">
+              <div className="space-y-4 sm:space-y-6">
+                <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center">
+                    <svg
+                      className="w-4 sm:w-5 h-4 sm:h-5 mr-2 text-indigo-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2h4a1 1 0 110 2h-1v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6H3a1 1 0 110-2h4z"
+                      />
+                    </svg>
+                    User Information
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div>
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                        Full Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder="Enter full name"
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-xs sm:text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                        Date of Birth <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        value={dateOfBirth}
+                        onChange={(e) => setDateOfBirth(e.target.value)}
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-xs sm:text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                        Gender <span className="text-red-500">*</span>
+                      </label>
+                      <div className="flex gap-3 sm:gap-4 mt-2">
+                        <label className="flex items-center text-xs sm:text-sm">
+                          <input
+                            type="radio"
+                            name="Sex"
+                            value="1"
+                            checked={sex === "1"}
+                            onChange={(e) => setSex(e.target.value)}
+                            className="mr-1 sm:mr-2"
+                          />
+                          Male
+                        </label>
+                        <label className="flex items-center text-xs sm:text-sm">
+                          <input
+                            type="radio"
+                            name="Sex"
+                            value="2"
+                            checked={sex === "2"}
+                            onChange={(e) => setSex(e.target.value)}
+                            className="mr-1 sm:mr-2"
+                          />
+                          Female
+                        </label>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                        Identity Card <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={cccd}
+                        onChange={(e) => setCCCD(e.target.value)}
+                        placeholder="Enter identity card number"
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-xs sm:text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                        Email <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Enter email address"
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-xs sm:text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                        Phone Number <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        placeholder="Enter phone number"
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-xs sm:text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                        Address <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        placeholder="Enter address"
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-xs sm:text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                        Password
+                        {showEditModal ? "" : " "}
+                      </label>
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder={
+                          showEditModal
+                            ? "Enter new password (leave blank to keep current)"
+                            : "Enter password"
+                        }
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-xs sm:text-sm"
+                      />
+                    </div>
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2 w-full">
+                        Avatar
+                      </label>
+                      <div className="w-full flex flex-col items-center">
+                        <div className="relative w-20 sm:w-24 h-20 sm:h-24 rounded-full border border-gray-300 bg-white flex items-center justify-center overflow-hidden mb-2">
+                          {avatarUrl ? (
+                            <img
+                              src={avatarUrl}
+                              alt="Avatar"
+                              className="object-cover w-full h-full"
+                              onError={(e) =>
+                                (e.target.src = "/default-avatar.png")
+                              }
+                            />
+                          ) : (
+                            <span className="text-gray-400 text-xs sm:text-sm">
+                              No Image
+                            </span>
+                          )}
+                          {avatarUrl && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setAvatarUrl("");
+                                setAvatarFile(null);
+                              }}
+                              className="absolute top-1 right-1 bg-white rounded-full p-1 shadow hover:bg-red-100 transition"
+                              title="Remove image"
+                              aria-label="Remove avatar"
+                            >
+                              <svg
+                                className="w-3 sm:w-4 h-3 sm:h-4 text-red-500"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M6 18L18 6M6 6l12 12"
+                                />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          id="avatar-upload"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              setAvatarFile(file);
+                              const reader = new FileReader();
+                              reader.onload = (ev) =>
+                                setAvatarUrl(ev.target.result);
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                        <label
+                          htmlFor="avatar-upload"
+                          className="px-3 sm:px-4 py-1 sm:py-2 bg-indigo-600 text-white rounded-lg cursor-pointer hover:bg-indigo-700 transition text-xs sm:text-sm"
+                        >
+                          Upload Image
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* Footer */}
+            <div className="bg-gray-50 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 flex justify-end space-x-2 sm:space-x-3">
               <button
                 onClick={() => {
-                  setShowAddModal(false);
+                  if (showAddModal) setShowAddModal(false);
+                  if (showEditModal) setShowEditModal(false);
                   resetForm();
                 }}
-                disabled={addLoading}
-                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
+                className="px-4 sm:px-6 py-2 sm:py-3 text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg font-medium transition-colors text-xs sm:text-sm"
+                aria-label="Cancel"
               >
                 Cancel
               </button>
               <button
-                onClick={handleAddUser}
                 disabled={addLoading}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                onClick={showEditModal ? handleUpdateUser : handleAddUser}
+                className="px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-all shadow-sm hover:shadow-md flex items-center text-xs sm:text-sm"
+                aria-label={showEditModal ? "Update user" : "Add user"}
               >
                 {addLoading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Creating...
+                    <svg
+                      className="animate-spin h-4 sm:h-5 w-4 sm:w-5 mr-1 sm:mr-2 text-white"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8z"
+                      />
+                    </svg>
+                    {showEditModal ? "Updating..." : "Creating..."}
                   </>
+                ) : showEditModal ? (
+                  "Update"
                 ) : (
                   "Add User"
                 )}
@@ -691,203 +994,36 @@ export const UserManagement = () => {
         </div>
       )}
 
-      {/* Edit User Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white text-black rounded-lg p-6 w-96 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">Edit User</h2>
-
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Full Name*
-                  </label>
-                  <input
-                    type="text"
-                    name="FullName"
-                    value={formData.FullName}
-                    onChange={handleInputChange}
-                    placeholder="Enter full name"
-                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Date of Birth*
-                  </label>
-                  <input
-                    type="date"
-                    name="DateOfBirth"
-                    value={formData.DateOfBirth}
-                    onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  name="Password"
-                  value={formData.Password}
-                  onChange={handleInputChange}
-                  placeholder="Enter new password (leave blank to keep current)"
-                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Gender*
-                </label>
-                <div className="flex gap-4">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="Sex"
-                      value="1"
-                      checked={formData.Sex === "1"}
-                      onChange={handleInputChange}
-                      className="mr-2"
-                    />
-                    Male
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="Sex"
-                      value="0"
-                      checked={formData.Sex === "0"}
-                      onChange={handleInputChange}
-                      className="mr-2"
-                    />
-                    Female
-                  </label>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Identity Card*
-                  </label>
-                  <input
-                    type="text"
-                    name="CCCD"
-                    value={formData.CCCD}
-                    onChange={handleInputChange}
-                    placeholder="Enter identity card number"
-                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Email*
-                  </label>
-                  <input
-                    type="email"
-                    name="Email"
-                    value={formData.Email}
-                    onChange={handleInputChange}
-                    placeholder="Enter email address"
-                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Address*
-                </label>
-                <input
-                  type="text"
-                  name="Address"
-                  value={formData.Address}
-                  onChange={handleInputChange}
-                  placeholder="Enter address"
-                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Phone Number*
-                </label>
-                <input
-                  type="tel"
-                  name="PhoneNumber"
-                  value={formData.PhoneNumber}
-                  onChange={handleInputChange}
-                  placeholder="Enter phone number"
-                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Avatar URL
-                </label>
-                <input
-                  type="url"
-                  name="avatar_url"
-                  value={formData.avatar_url}
-                  onChange={handleInputChange}
-                  placeholder="Enter avatar image URL"
-                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 mt-6">
-              <button
-                onClick={() => {
-                  setShowEditModal(false);
-                  resetForm();
-                }}
-                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUpdateUser}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Update
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Delete User Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white text-black rounded-lg p-6 w-96">
-            <h2 className="text-xl font-bold mb-4 text-red-600">Delete User</h2>
-            <p className="mb-6">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white text-black rounded-lg p-4 sm:p-6 w-full max-w-sm sm:max-w-md">
+            <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 text-red-600">
+              Delete User
+            </h2>
+            <p className="mb-4 sm:mb-6 text-xs sm:text-sm">
               Are you sure you want to delete user{" "}
-              <strong>{selectedUser?.fullName}</strong>? This action cannot be
-              undone.
+              <strong>{selectedUser?.FullName || "this user"}</strong>? This
+              action cannot be undone.
             </p>
-            <div className="flex justify-end gap-2 mt-6">
+            <div className="flex justify-end gap-2 sm:gap-3">
               <button
                 onClick={() => setShowDeleteModal(false)}
                 disabled={deleteLoading}
-                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
+                className="px-3 sm:px-4 py-1 sm:py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 text-xs sm:text-sm"
+                aria-label="Cancel"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDeleteUser}
                 disabled={deleteLoading}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 flex items-center"
+                className="px-3 sm:px-4 py-1 sm:py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center text-xs sm:text-sm"
+                aria-label="Delete user"
               >
                 {deleteLoading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <div className="animate-spin rounded-full h-3 sm:h-4 w-3 sm:w-4 border-b-2 border-white mr-1 sm:mr-2"></div>
                     Deleting...
                   </>
                 ) : (

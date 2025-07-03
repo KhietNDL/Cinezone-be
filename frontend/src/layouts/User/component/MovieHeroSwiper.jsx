@@ -332,9 +332,8 @@ const MovieHeroSwiper = ({ movieData }) => {
       </div>
 
       <div className="absolute inset-0 flex items-center justify-center h-full w-full z-10 p-4 md:p-8 ">
-        <div className="flex flex-col md:flex-row items-center  h-full w-full max-w-7xl mx-auto gap-6 md:gap-8">
-          {/* Movie Poster - Optimized for all screens */}
-          <div className="flex-shrink-0 w-[150px] sm:w-[150px] md:w-[200px] lg:w-[250px]">
+        <div className="flex flex-col md:flex-row items-center h-full w-full md:px-10 gap-6 md:gap-8">
+          <div className="hidden md:block flex-shrink-0 w-[150px] sm:w-[150px] md:w-[200px] lg:w-[250px]">
             <div className="relative group">
               <img
                 src={currentMovie.PosterImage}
@@ -342,17 +341,14 @@ const MovieHeroSwiper = ({ movieData }) => {
                 loading="lazy"
                 className="w-full h-[350px] rounded-2xl shadow-2xl transform transition-all duration-500 group-hover:scale-105"
               />
-              {/* Enhanced Poster Glow Effect */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#6a57f5]/30 to-transparent rounded-2xl opacity-75 group-hover:opacity-100 transition-opacity duration-300" />
             </div>
           </div>
 
-          {/* Left Content - Optimized for readability and spacing */}
-          <div className="flex flex-col justify-center space-y-6 md:w-1/2 lg:w-3/5">
-            {/* Genre Tags - Improved styling */}
+          <div className="flex flex-col justify-center mt-auto mb-[20px] md:mb-0 md:mt-0 w-full space-y-6 md:w-1/2 lg:w-3/5">
             {currentMovie.Genres && (
               <div className="flex flex-wrap gap-2">
-                {currentMovie.Genres.split(", ").map((genre, index) => (
+                {currentMovie.Genres.split(",").map((genre, index) => (
                   <span
                     key={index}
                     className="bg-black/60 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-sm font-medium tracking-wide transition-colors hover:bg-black/80"
@@ -362,19 +358,19 @@ const MovieHeroSwiper = ({ movieData }) => {
                 ))}
               </div>
             )}
-
-            {/* Title - Enhanced typography */}
             <h1 className="text-2xl sm:text-4xl  font-extrabold text-white leading-tight tracking-tight">
               {currentMovie.NameOfEnglish}
             </h1>
-
-            {/* Description - Improved readability */}
-            <p className="text-white/85 text-sm sm:text-base md:text-[18px] max-w-xl leading-relaxed line-clamp-4">
-              {currentMovie.ContentSynopsis}
-            </p>
-
-            {/* Action Buttons - Modernized and responsive */}
-            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            {currentMovie.ContentSynopsis?.length > 100 ? (
+              <p className="text-white/85 text-sm hidden md:block sm:text-base md:text-[18px] max-w-xl leading-relaxed line-clamp-4">
+                {currentMovie.ContentSynopsis.slice(0, 100) + "..."}
+              </p>
+            ) : (
+              <p className="text-white/85 text-sm hidden md:block sm:text-base md:text-[18px] max-w-xl leading-relaxed line-clamp-4">
+                {currentMovie.ContentSynopsis}
+              </p>
+            )}
+            <div className="flex  flex-row gap-3 w-full sm:w-auto">
               <button
                 onClick={() => handleClickMovie(currentMovie.NameOfEnglish)}
                 className="bg-[#6a57f5] hover:bg-[#5a47e5] text-white px-6 py-2.5 rounded-full font-semibold text-sm sm:text-base transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg shadow-[#6a57f5]/40 focus:outline-none focus:ring-2 focus:ring-[#6a57f5]/50"
@@ -382,7 +378,6 @@ const MovieHeroSwiper = ({ movieData }) => {
               >
                 Book Now
               </button>
-
               <button
                 onClick={handleOpenPopup}
                 className="bg-transparent border-2 border-white/40 hover:border-white/70 hover:bg-white/10 text-white px-6 py-2.5 rounded-full font-semibold text-sm sm:text-base transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-white/50"

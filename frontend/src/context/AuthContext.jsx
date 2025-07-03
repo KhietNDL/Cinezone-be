@@ -1,36 +1,42 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { getUser, logout } from "../services/API";
+import { jwtDecode } from "jwt-decode";
+import { useNavigate } from "react-router-dom";
+
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const initializeAuth = async () => {
       const token = localStorage.getItem("token");
       const userId = localStorage.getItem("userId");
 
       if (token && userId) {
         try {
+          const decoded = jwtDecode(token);
+          setUser(decoded); // Set user tạm thời từ JWT
           const userData = await getUser(userId);
           setUser(userData.user);
         } catch (error) {
-          console.error("Failed to fetch user:", error);
-          localStorage.removeItem("token");
-          localStorage.removeItem("userId");
-          setUser(null); // <- thêm dòng này
-          setUser(null);
+          console.error("Auth error:", error);
+          if (error.response?.status === 401) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("userId");
+            setUser(null);
+          }
         }
       } else {
-        setUser(null); // <- thêm dòng này nếu không có token
+        setUser(null);
       }
-
       setIsLoading(false);
     };
 
-    fetchUser();
+    initializeAuth();
   }, []);
 
   const signIn = async (token, userId) => {
@@ -39,10 +45,15 @@ export const AuthProvider = ({ children }) => {
     try {
       const userData = await getUser(userId);
       setUser(userData.user);
+      return { success: true, user: userData.user };
     } catch (error) {
       console.error("Failed to fetch user in signIn:", error);
       localStorage.removeItem("token");
       localStorage.removeItem("userId");
+      setUser(null);
+      
+      // Trả về object với thông tin lỗi
+      return { success: false, error: error.message };
     }
   };
 
@@ -61,7 +72,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, isLoading, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, isLoading, signIn, signOut, setUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -151,9 +151,7 @@ export const createBookingHold = async (
 // Xác nhận booking
 export const confirmBooking = async (bookingId) => {
   try {
-    const response = await api.get(
-      `/showtimes/filter?movieId=${movieId}&day=${day}`
-    );
+    const response = await api.post(`/bookings/confirm/${bookingId}`);
     return response.data;
   } catch (error) {
     handleError(error);
@@ -163,9 +161,31 @@ export const confirmBooking = async (bookingId) => {
 // Thanh toán bằng tiền mặt
 export const createCashPayment = async (bookingId, amount, reference) => {
   try {
-    const response = await api.get(
-      `/showtimes/movie-name/${encodeURIComponent(movieName)}/showtimes`
-    );
+    const response = await api.post("/payment/offline", {
+      bookingId,
+      amount,
+      reference,
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+// Thanh toán bằng momo
+export const createMomoPayment = async (
+  bookingId,
+  amount,
+  returnUrl,
+  userId
+) => {
+  try {
+    const response = await api.post("/payment/momo", {
+      bookingId,
+      amount,
+      returnUrl,
+      userId,
+    });
     return response.data;
   } catch (error) {
     handleError(error);
@@ -176,8 +196,30 @@ export const createCashPayment = async (bookingId, amount, reference) => {
 export const checkPromotion = async (promotionTitle) => {
   try {
     const response = await api.get(
-      `/showtimes/time/${encodeURIComponent(movieName)}/day?day=${day}`
+      `/promotions/search?title=${encodeURIComponent(promotionTitle)}`
     );
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+// Kiểm tra booking
+export const checkInfoBookingById = async (bookingId) => {
+  try {
+    const response = await api.get(
+      `/bookings/detail/${encodeURIComponent(bookingId)}`
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+//Hủy booking bằng id
+export const cancelBookingById = async (bookingId) => {
+  try {
+    const response = await api.post(`/bookings/cancel/${encodeURIComponent(bookingId)}`);
     return response.data;
   } catch (error) {
     handleError(error);

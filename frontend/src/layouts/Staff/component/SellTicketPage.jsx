@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button, Input, Spin } from "antd";
 import { Link } from "react-router-dom";
@@ -19,17 +18,59 @@ import {
 import ItemCard from "./ItemCard";
 import ShowtimeButton from "./ShowtimeButton";
 
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  setSelectedMovie,
+  setSelectedDay,
+  setSelectedVersion,
+  setSelectedTime,
+  setRoom,
+  setShowtimeId,
+  resetBooking
+} from '../../../redux/features/sellingSlice'
+
+// Helper functions for localStorage
+const saveToLocalStorage = (key, value) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.error("Error saving to localStorage:", error);
+  }
+};
+
+const loadFromLocalStorage = (key, defaultValue) => {
+  try {
+    const value = localStorage.getItem(key);
+    return value ? JSON.parse(value) : defaultValue;
+  } catch (error) {
+    console.error("Error loading from localStorage:", error);
+    return defaultValue;
+  }
+};
+
+const clearLocalStorageByKey = (key) => {
+  try {
+    localStorage.removeItem(key);
+  } catch (error) {
+    console.error("Error clearing localStorage:", error);
+  }
+};
+
 const SellTicketPage = () => {
-  const [selectedMovie, setSelectedMovie] = useState(null);
+  const dispatch = useDispatch();
+  const {
+    selectedMovie,
+    selectedDay,
+    selectedVersion,
+    selectedTime,
+    room,
+    showtimeId
+  } = useSelector((state) => state.selling);
+
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedDay, setSelectedDay] = useState(null);
   const [days, setDays] = useState([]);
   const [versionsAndTimes, setVersionsAndTimes] = useState([]);
-  const [selectedVersion, setSelectedVersion] = useState(null);
-  const [selectedTime, setSelectedTime] = useState(null);
-  const [room, setRoom] = useState("");
-  const [showtimeId, setShowtimeId] = useState("");
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -38,7 +79,9 @@ const SellTicketPage = () => {
     setSelectedTime(null);
     setDays([]);
     setVersionsAndTimes([]);
-    setRoom("");
+    dispatch(setRoom(""));
+    dispatch(setShowtimeId(""));
+
     if (selectedMovie) {
       getShowtimesByMovieId(selectedMovie.MovieId).then(res => {
         if (res?.showtimes) {
@@ -57,13 +100,15 @@ const SellTicketPage = () => {
         }
       });
     }
-  }, [selectedMovie]);
+  }, [selectedMovie, dispatch]);
 
   useEffect(() => {
-    setSelectedVersion(null);
-    setSelectedTime(null);
+    dispatch(setSelectedVersion(null));
+    dispatch(setSelectedTime(null));
     setVersionsAndTimes([]);
-    setRoom("");
+    dispatch(setRoom(""));
+    dispatch(setShowtimeId(""));
+
     if (selectedMovie && selectedDay) {
       const [day, month, year] = selectedDay.split('/');
       const formattedDay = `${year}-${month}-${day}`;
@@ -73,37 +118,26 @@ const SellTicketPage = () => {
         }
       });
     }
-  }, [selectedDay, selectedMovie]);
+  }, [selectedDay, selectedMovie, dispatch]);
 
-  // useEffect(() => {
-  //   if (selectedVersion && selectedTime && versionsAndTimes.length > 0) {
-  //     const verObj = versionsAndTimes.find(v => v.version === selectedVersion);
-  //     if (verObj) {
-  //       const t = verObj.showtimes.find(t => t.time === selectedTime);
-  //       setRoom(t ? t.roomName : "");
-  //     }
-  //   } else {
-  //     setRoom("");
-  //   }
-  // }, [selectedVersion, selectedTime, versionsAndTimes]);
   useEffect(() => {
     if (selectedVersion && selectedTime && versionsAndTimes.length > 0) {
       const verObj = versionsAndTimes.find(v => v.version === selectedVersion);
       if (verObj) {
         const showtime = verObj.showtimes.find(t => t.time === selectedTime);
         if (showtime) {
-          setRoom(showtime.roomName);
-          setShowtimeId(showtime.showtimeId); // Cập nhật showtimeId khi có lựa chọn
+          dispatch(setRoom(showtime.roomName));
+          dispatch(setShowtimeId(showtime.showtimeId));
         } else {
-          setRoom("");
-          setShowtimeId("");
+          dispatch(setRoom(""));
+          dispatch(setShowtimeId(""));
         }
       }
     } else {
-      setRoom("");
-      setShowtimeId("");
+      dispatch(setRoom(""));
+      dispatch(setShowtimeId(""));
     }
-  }, [selectedVersion, selectedTime, versionsAndTimes]);
+  }, [selectedVersion, selectedTime, versionsAndTimes, dispatch]);
 
   const getCurrentMovie = async () => {
     try {
@@ -133,6 +167,10 @@ const SellTicketPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCancel = () => {
+    dispatch(resetBooking());
   };
 
   useEffect(() => {
@@ -180,9 +218,9 @@ const SellTicketPage = () => {
                     item={movie}
                     type="movie"
                     onSelect={() =>
-                      setSelectedMovie(
+                      dispatch(setSelectedMovie(
                         selectedMovie?.MovieId === movie.MovieId ? null : movie
-                      )
+                      ))
                     }
                     selected={selectedMovie?.MovieId === movie.MovieId}
                   />
@@ -199,10 +237,11 @@ const SellTicketPage = () => {
           <ShowtimeButton
             selectedDay={selectedDay}
             onSelectDay={(day) => {
-              setSelectedDay(day);
-              setSelectedVersion(null);
-              setSelectedTime(null);
+              dispatch(setSelectedDay(day));
+              dispatch(setSelectedVersion(null));
+              dispatch(setSelectedTime(null));
             }}
+
             days={days}
             showDay
           />
@@ -232,13 +271,12 @@ const SellTicketPage = () => {
                 >
                   {ver.version}
 
-
                   <ShowtimeButton
                     parentVersion={ver.version}
                     selectedTime={selectedTime}
                     onSelectTime={(ver, time) => {
-                      setSelectedVersion(ver);
-                      setSelectedTime(time);
+                      dispatch(setSelectedVersion(ver));
+                      dispatch(setSelectedTime(time));
                     }}
                     times={ver.showtimes}
                     showTime
@@ -258,22 +296,22 @@ const SellTicketPage = () => {
       )}
 
       <div className="flex items-center justify-center gap-4">
-        <Link to="/staff/ticket-selling/select-seats"
-          state={{
-            movie: selectedMovie,
-            day: selectedDay,
-            version: selectedVersion,
-            time: selectedTime,
-            room: room,
-            showtimeId: showtimeId
-          }}>
-          <button className="font-semibold px-4 py-2 bg-[#8A2BE2] rounded-md text-white cursor-pointer hover:bg-white 
-          hover:text-[#8A2BE2] border-2 border-[#8A2BE2]">
+        <Link
+          to="/staff/ticket-selling/select-seats"
+        >
+          <button
+            className="font-semibold px-4 py-2 bg-[#8A2BE2] rounded-md text-white cursor-pointer hover:bg-white 
+            hover:text-[#8A2BE2] border-2 border-[#8A2BE2]"
+            disabled={!selectedMovie || !selectedDay || !selectedVersion || !selectedTime}
+          >
             <i className="fa-solid fa-couch"></i> Select seats
           </button>
         </Link>
-        <button className="font-semibold px-4 py-2 border-2 border-red-500 text-red-500 rounded-md cursor-pointer 
-        hover:text-white hover:bg-red-500" >
+        <button
+          className="font-semibold px-4 py-2 border-2 border-red-500 text-red-500 rounded-md cursor-pointer 
+          hover:text-white hover:bg-red-500"
+          onClick={handleCancel}
+        >
           <i className="fa-solid fa-xmark"></i> Cancel
         </button>
       </div>

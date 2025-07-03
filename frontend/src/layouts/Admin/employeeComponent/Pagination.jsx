@@ -1,35 +1,118 @@
 import React from "react";
 
 const Pagination = ({ page, totalPages, setPage }) => {
-  return (
-    <div className="flex items-center justify-end space-x-2 pt-4">
-      <button
-        onClick={() => setPage((p) => Math.max(p - 1, 1))}
-        disabled={page === 1}
-        className="px-3 py-1 bg-white shadow-sm rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        Previous
-      </button>
-      {Array.from({ length: totalPages }).map((_, i) => (
+  const renderPaginationButtons = () => {
+    const maxVisibleButtons = window.innerWidth < 640 ? 3 : 5;
+    const halfVisible = Math.floor(maxVisibleButtons / 2);
+    let startPage = Math.max(1, page - halfVisible);
+    let endPage = Math.min(totalPages, page + halfVisible);
+
+    if (page <= halfVisible) {
+      endPage = Math.min(maxVisibleButtons, totalPages);
+    }
+    if (page + halfVisible >= totalPages) {
+      startPage = Math.max(1, totalPages - maxVisibleButtons + 1);
+    }
+
+    const pages = [];
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
         <button
-          key={i}
-          onClick={() => setPage(i + 1)}
-          className={`px-3 py-1 rounded shadow-sm ${
-            page === i + 1
-              ? "bg-[#6051F3] text-white"
-              : "bg-white hover:bg-gray-100"
+          key={`page-${i}`}
+          onClick={() => setPage(i)}
+          className={`px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${
+            page === i
+              ? "bg-indigo-600 text-white shadow-sm"
+              : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm"
           }`}
+          aria-label={`Page ${i}`}
+          aria-current={page === i ? "true" : undefined}
         >
-          {i + 1}
+          {i}
         </button>
-      ))}
-      <button
-        onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-        disabled={page === totalPages}
-        className="px-3 py-1 bg-white shadow-sm rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        Next
-      </button>
+      );
+    }
+
+    if (startPage > 1) {
+      pages.unshift(
+        <span
+          key="ellipsis-start"
+          className="px-2 sm:px-3 py-1 sm:py-2 text-gray-500 text-sm sm:text-base"
+        >
+          ...
+        </span>
+      );
+      pages.unshift(
+        <button
+          key="page-1"
+          onClick={() => setPage(1)}
+          className={`px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${
+            page === 1
+              ? "bg-indigo-600 text-white shadow-sm"
+              : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm"
+          }`}
+          aria-label="Page 1"
+        >
+          1
+        </button>
+      );
+    }
+    if (endPage < totalPages) {
+      pages.push(
+        <span
+          key="ellipsis-end"
+          className="px-2 sm:px-3 py-1 sm:py-2 text-gray-500 text-sm sm:text-base"
+        >
+          ...
+        </span>
+      );
+      pages.push(
+        <button
+          key={`page-${totalPages}`}
+          onClick={() => setPage(totalPages)}
+          className={`px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${
+            page === totalPages
+              ? "bg-indigo-600 text-white shadow-sm"
+              : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm"
+          }`}
+          aria-label={`Page ${totalPages}`}
+        >
+          {totalPages}
+        </button>
+      );
+    }
+
+    return pages.length > 0 ? (
+      pages
+    ) : (
+      <span className="text-gray-500 text-sm">No pages to display</span>
+    );
+  };
+
+  return (
+    <div className="flex flex-col sm:flex-row items-center justify-end space-y-2 sm:space-y-0 sm:space-x-2 py-4">
+      <div className="flex items-center space-x-1 sm:space-x-2">
+        <button
+          onClick={() => setPage((p) => Math.max(p - 1, 1))}
+          disabled={page === 1}
+          className="px-3 sm:px-4 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          aria-label="Previous page"
+        >
+          Previous
+        </button>
+        {renderPaginationButtons()}
+        <button
+          onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+          disabled={page === totalPages}
+          className="px-3 sm:px-4 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          aria-label="Next page"
+        >
+          Next
+        </button>
+      </div>
+      <span className="text-gray-500 text-sm sm:text-base">
+        Page {page} of {totalPages}
+      </span>
     </div>
   );
 };

@@ -297,6 +297,87 @@ class Booking {
     }
   }
 
+  static async checkinBooking(bookingId) {
+    // Chỉ cho phép checkin nếu status hiện tại là 2 (PAID)
+    const [rows] = await db
+      .promise()
+      .query(
+        "SELECT Status FROM Bookings WHERE BookingId = ? AND IsDeleted = 0",
+        [bookingId]
+      );
+    if (!rows[0]) {
+      return { success: false, message: "Booking not found" };
+    }
+    if (rows[0].Status !== 2) {
+      return { success: false, message: "Booking is not in PAID status" };
+    }
+    const [result] = await db
+      .promise()
+      .query(
+        "UPDATE Bookings SET Status = 3, UpdatedAt = NOW() WHERE BookingId = ? AND Status = 2 AND IsDeleted = 0",
+        [bookingId]
+      );
+    return {
+      success: result.affectedRows > 0,
+      message:
+        result.affectedRows > 0 ? "Check-in successful" : "Check-in failed",
+    };
+  }
+  static async getBookingDetail(bookingId) {
+    // Lấy thông tin booking, showtime, movie, user
+    const [rows] = await db.promise().query(
+      `
+    SELECT 
+      b.BookingId,
+      b.TotalAmount,
+      b.BookingDate,
+      u.FullName AS buyerName,
+      u.PhoneNumber AS buyerPhone,
+      mv.NameOfVietnamese,
+      mv.NameOfEnglish,
+      s.Day,
+      s.Time,
+      cr.Name
+    FROM Bookings b
+    JOIN Users u ON b.MemberId = u.UserId
+    JOIN Showtimes s ON b.ShowtimeId = s.ShowtimeId
+    JOIN Version v ON s.VersionId = v.VersionId
+    JOIN Movies mv ON v.MovieId = mv.MovieId
+    JOIN CinemaRooms cr ON s.CinemaRoomId = cr.CinemaRoomId
+    WHERE b.BookingId = ? AND b.IsDeleted = 0
+    `,
+      [bookingId]
+    );
+    if (!rows[0]) return null;
+
+    // Lấy danh sách ghế chỉ của booking này
+    const [seats] = await db.promise().query(
+      `
+    SELECT s.SeatNumber
+    FROM SeatShowtime ss
+    JOIN Seats s ON ss.SeatId = s.SeatId
+    WHERE ss.BookingId = ?
+      AND ss.Status IN ('taken', 'holding')
+      AND ss.IsDeleted = 0
+    `,
+      [bookingId]
+    );
+
+    return {
+      bookingId: rows[0].BookingId,
+      movieNameVN: rows[0].NameOfVietnamese,
+      movieNameEnglish: rows[0].NameOfEnglish,
+      showDate: normalizeDate(rows[0].Day),
+      showTime: rows[0].Time,
+      startTime: rows[0].StartTime,
+      room: rows[0].Name,
+      seats: seats.map((s) => s.SeatNumber),
+      totalAmount: rows[0].TotalAmount,
+      buyerName: rows[0].buyerName,
+      buyerPhone: rows[0].buyerPhone,
+    };
+  }
+
   static async cancelBooking(bookingId) {
     const connection = await db.promise().getConnection();
     try {
@@ -304,7 +385,116 @@ class Booking {
 
       // 1. Đổi trạng thái booking sang CANCELLED (4)
       await connection.query(
-        `UPDATE Bookings SET Status = 4 WHERE BookingId = ? AND IsDeleted = 0 AND (Status = 1 OR Status = 2)`,
+        `UPDATE Bookings SET Status = 4 WHERE BookingId = ? AND Status IN (1,2)`,
+        [bookingId]
+      );
+
+      // 2. Đổi trạng thái các ghế từ "holding" hoặc "taken" sang "available"
+      await connection.query(
+        `DELETE FROM SeatShowtime
+         WHERE BookingId = ? AND Status IN ('holding', 'taken')`,
+        [bookingId]
+      );
+
+      await connection.commit();
+      return true;
+    } catch (err) {
+      await connection.rollback();
+      throw err;
+    } finally {
+      connection.release();
+    }
+  }
+
+  static async checkinBooking(bookingId) {
+    // Chỉ cho phép checkin nếu status hiện tại là 2 (PAID)
+    const [rows] = await db
+      .promise()
+      .query(
+        "SELECT Status FROM Bookings WHERE BookingId = ? AND IsDeleted = 0",
+        [bookingId]
+      );
+    if (!rows[0]) {
+      return { success: false, message: "Booking not found" };
+    }
+    if (rows[0].Status !== 2) {
+      return { success: false, message: "Booking is not in PAID status" };
+    }
+    const [result] = await db
+      .promise()
+      .query(
+        "UPDATE Bookings SET Status = 3, UpdatedAt = NOW() WHERE BookingId = ? AND Status = 2 AND IsDeleted = 0",
+        [bookingId]
+      );
+    return {
+      success: result.affectedRows > 0,
+      message:
+        result.affectedRows > 0 ? "Check-in successful" : "Check-in failed",
+    };
+  }
+  static async getBookingDetail(bookingId) {
+    // Lấy thông tin booking, showtime, movie, user
+    const [rows] = await db.promise().query(
+      `
+    SELECT 
+      b.BookingId,
+      b.TotalAmount,
+      b.BookingDate,
+      u.FullName AS buyerName,
+      u.PhoneNumber AS buyerPhone,
+      mv.NameOfVietnamese,
+      mv.NameOfEnglish,
+      s.Day,
+      s.Time,
+      cr.Name
+    FROM Bookings b
+    JOIN Users u ON b.MemberId = u.UserId
+    JOIN Showtimes s ON b.ShowtimeId = s.ShowtimeId
+    JOIN Version v ON s.VersionId = v.VersionId
+    JOIN Movies mv ON v.MovieId = mv.MovieId
+    JOIN CinemaRooms cr ON s.CinemaRoomId = cr.CinemaRoomId
+    WHERE b.BookingId = ? AND b.IsDeleted = 0
+    `,
+      [bookingId]
+    );
+    if (!rows[0]) return null;
+
+    // Lấy danh sách ghế chỉ của booking này
+    const [seats] = await db.promise().query(
+      `
+    SELECT s.SeatNumber
+    FROM SeatShowtime ss
+    JOIN Seats s ON ss.SeatId = s.SeatId
+    WHERE ss.BookingId = ?
+      AND ss.Status IN ('taken', 'holding')
+      AND ss.IsDeleted = 0
+    `,
+      [bookingId]
+    );
+
+    return {
+      bookingId: rows[0].BookingId,
+      movieNameVN: rows[0].NameOfVietnamese,
+      movieNameEnglish: rows[0].NameOfEnglish,
+      showDate: normalizeDate(rows[0].Day),
+      showTime: rows[0].Time,
+      startTime: rows[0].StartTime,
+      room: rows[0].Name,
+      seats: seats.map((s) => s.SeatNumber),
+      totalAmount: rows[0].TotalAmount,
+      buyerName: rows[0].buyerName,
+      buyerPhone: rows[0].buyerPhone,
+    };
+  }
+
+  static async cancelBooking(bookingId) {
+    const connection = await db.promise().getConnection();
+    try {
+      await connection.beginTransaction();
+
+      // 1. Đổi trạng thái booking sang CANCELLED (4)
+      await connection.query(
+        `UPDATE Bookings SET Status = 4 WHERE BookingId = ? AND Status IN (1,2)`,
         [bookingId]
       );
 
@@ -402,13 +592,7 @@ SELECT
       showTime: rows[0].Time,
       startTime: rows[0].StartTime,
       room: rows[0].Name,
-      seats: seats.map((s) => s.SeatNumber),
-      seatPrices: seats.reduce((acc, s) => {
-        acc[s.SeatNumber] = s.Price;
-        return acc;
-      }, {}),
-      totalPrice: seats.reduce((sum, s) => sum + Number(s.Price), 0),
-      promotionTitle: rows[0].Title,
+      seats: seats[0].SeatNumber,
       totalAmount: rows[0].TotalAmount,
       buyerName: rows[0].buyerName, 
       buyerPhone: rows[0].buyerPhone,

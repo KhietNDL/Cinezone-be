@@ -10,16 +10,14 @@ import { GoClockFill } from "react-icons/go";
 import { Pagination, Navigation } from "swiper/modules";
 import { useNavigate } from "react-router-dom";
 import MovieHeroSwiper from "./MovieHeroSwiper";
-import promotionMovie1 from "../../../assets/PromotionMovie1.jpg";
-import promotionMovie2 from "../../../assets/PromotionMovie2.jpg";
-import promotionMovie3 from "../../../assets/PromotionMovie3.jpg";
-
 import { slugify } from "./Slug";
 import {
   getCurrentMovies,
   getMovies,
+  getPromotion,
   getUpcomingMovies,
 } from "../../../services/API";
+import { toast } from "react-toastify";
 
 const LandingPage = () => {
   const [movieData, setMovieData] = useState([]);
@@ -35,33 +33,19 @@ const LandingPage = () => {
   const [isHovered, setIsHovered] = useState(false);
   const [currentMovies, setCurrentMovies] = useState([]);
   const [upcomingMovies, setUpcomingMovies] = useState([]);
-  const [promotionData] = useState([
-    {
-      idPromotion: 1,
-      imageUrl: promotionMovie1,
-      namePromotion: "Buy 2 Get 1 Free",
-      startActive: "May 20, 2025",
-      endActive: "June 20, 2025",
-      isActive: "active",
-    },
-    {
-      idPromotion: 2,
-      imageUrl: promotionMovie2,
-      namePromotion: "Happy Wednesday - 50% Off",
-      startActive: "May 20, 2025",
-      endActive: "June 20, 2025",
-      isActive: "active",
-    },
-    {
-      idPromotion: 3,
-      imageUrl: promotionMovie3,
-      namePromotion: "International Children's Day - 30% Off",
-      startActive: "June 1, 2025",
-      endActive: "June 2, 2025",
-      isActive: "active",
-    },
-  ]);
-
+  const [promotionData, setPromotionData] = useState([]);
+  const [hoveredPromotion, setHoveredPromotion] = useState(null);
+  const fetchPromotions = async () => {
+    try {
+      const res = await getPromotion();
+      if (res.data) {
+        setPromotionData(res.data);
+      }
+    } catch (error) {
+      console.error("Error fetching promotions:", error);
+      setPromotionData([]);
+    }
+  };
   const getMovie = async () => {
     try {
       const response = await getMovies({
@@ -112,6 +96,7 @@ const LandingPage = () => {
     getCurrentMovie();
     getUpcomingMovie();
     getMovie();
+    fetchPromotions();
   }, [itemsPerPage, currentPage]);
   const navigate = useNavigate();
   //  const slugify = (str) => {
@@ -194,13 +179,13 @@ const LandingPage = () => {
 
   return (
     <div className="w-full select-none landingPage">
-      {/* HERO SECTION - Thay thế bằng MovieHeroSwiper */}
+      {/* HERO SECTION - Replace with MovieHeroSwiper */}
       <MovieHeroSwiper movieData={movieData} />
 
       {/* Screen 3D Effect */}
       <div className="w-full mt-10 px-4">
         <div className="w-full h-[40px] relative overflow-hidden group">
-          {/* SVG cho đường cong gradient */}
+          {/* SVG for gradient curve */}
           <svg
             width="100%"
             height="100%"
@@ -209,7 +194,7 @@ const LandingPage = () => {
             preserveAspectRatio="none"
             style={{ background: "transparent" }}
           >
-            {/* Định nghĩa gradient từ nhạt đến đậm ở giữa */}
+            {/* Define gradient from light to dark in the middle */}
             <defs>
               <linearGradient
                 id="purpleGradient"
@@ -274,7 +259,7 @@ const LandingPage = () => {
               </linearGradient>
             </defs>
 
-            {/* Đường cong với hiệu ứng glow */}
+            {/* Curve with glow effect */}
             <path
               d="M 0 20 Q 400 0 800 20"
               stroke="url(#purpleGlow)"
@@ -284,7 +269,7 @@ const LandingPage = () => {
               className="blur-[1px] transition-all duration-500 group-hover:blur-[0px] group-hover:stroke-[7px] group-hover:[stroke:url(#purpleGlowHover)]"
             />
 
-            {/* Đường cong chính */}
+            {/* Main curve */}
             <path
               d="M 0 20 Q 400 0 800 20"
               stroke="url(#purpleGradient)"
@@ -294,7 +279,7 @@ const LandingPage = () => {
               className="transition-all duration-500 group-hover:stroke-[6px] group-hover:[stroke:url(#purpleGradientHover)]"
             />
 
-            {/* Ánh sáng nhẹ phía dưới khi hover */}
+            {/* Soft light below on hover */}
             <path
               d="M 0 25 Q 400 5 800 25"
               stroke="url(#lightGlowBelow)"
@@ -307,13 +292,13 @@ const LandingPage = () => {
         </div>
       </div>
 
-      {/* TRENDING MOVIE */}
-      <div className=" w-full px-[30px] pt-[40px] space-y-3 ">
+      {/* NOW SHOWING */}
+      <div className="w-full px-[30px] pt-[40px] space-y-3 ">
         <div className="flex justify-center items-center text-white">
           <p className="font-bold pb-[30px] text-center text-[30px]">
-            Now showing
+            Now Showing
           </p>
-        </div>{" "}
+        </div>
         <div className="flex items-center justify-center mt-[20px] ">
           <Swiper
             breakpoints={swiperBreakpoints}
@@ -396,8 +381,16 @@ const LandingPage = () => {
                   )}
                 </div>
 
-                <div className="text-white text-center font-semibold text-sm md:text-base px-2">
-                  {item.NameOfEnglish}
+                <div className="text-white text-center font-semibold text-sm md:text-base px-1">
+                  {item.NameOfEnglish?.length > 10 ? (
+                    <h3 className="font-bold text-lg mb-3 text-white">
+                      {item.NameOfEnglish.slice(0, 10) + "..."}
+                    </h3>
+                  ) : (
+                    <h3 className="font-bold text-lg mb-3 text-white">
+                      {item.NameOfEnglish}
+                    </h3>
+                  )}
                 </div>
                 <div className="flex xl:flex-row md:flex-col sm:flex-row justify-evenly md:space-y-2 xl:space-y-0 sm:space-y-0 sm:space-x-1 items-center w-full px-2">
                   <div
@@ -412,7 +405,7 @@ const LandingPage = () => {
                     onClick={() => handleClickMovie(item.NameOfEnglish)}
                     className="bg-[#6a57f5] rounded-4xl px-6 py-2 text-white hover:bg-[#6957f5ea] text-[12px]  shadow-[#6a57f5]  shadow-sm sm:w-auto "
                   >
-                    Book now
+                    Book Now
                   </div>
                 </div>
               </SwiperSlide>
@@ -425,7 +418,7 @@ const LandingPage = () => {
       <div className="w-full px-4 md:px-[30px] pt-[30px] md:pt-[40px] space-y-3">
         <div className="flex justify-center items-center text-white">
           <p className="font-bold pb-[20px] md:pb-[30px] text-[24px] md:text-[30px]">
-            Coming soon
+            Coming Soon
           </p>
         </div>
         <div className="flex items-center justify-center mt-[15px] md:mt-[20px]">
@@ -508,8 +501,16 @@ const LandingPage = () => {
                   )}
                 </div>
 
-                <div className="text-white text-center font-semibold text-sm md:text-base px-2">
-                  {item.NameOfEnglish}
+                <div className="text-white text-center font-semibold text-sm md:text-base ">
+                  {item.NameOfEnglish?.length > 10 ? (
+                    <h3 className="font-bold text-lg mb-3 text-white">
+                      {item.NameOfEnglish.slice(0, 10) + "..."}
+                    </h3>
+                  ) : (
+                    <h3 className="font-bold text-lg mb-3 text-white">
+                      {item.NameOfEnglish}
+                    </h3>
+                  )}
                 </div>
                 <div className="flex md:flex-col lg:flex-row sm:flex-row justify-center md:space-y-2 sm:space-y-0 sm:space-x-1 items-center w-full px-2">
                   <div
@@ -542,24 +543,49 @@ const LandingPage = () => {
             modules={[Pagination, Navigation]}
             className="mySwiper"
           >
-            {promotionData.map((item) => (
-              <SwiperSlide
-                key={item.idPromotion}
-                className="w-full flex flex-col justify-center items-center pb-2 rounded-xl space-y-2"
-              >
-                <div className="relative h-[180px] w-full md:h-[200px] lg:h-[180px]">
-                  <img
-                    src={item.imageUrl}
-                    alt={item.namePromotion}
-                    className="w-full rounded-md h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                  {/* Decorative circles and dashed line */}
-                  <div className="absolute w-[40px] md:w-[60px] h-[40px] md:h-[60px] lg:w-[50px] lg:h-[50px] rounded-full bg-black top-[-20px] md:top-[-30px] md:right-[10%] lg:right-[20%] right-[20%] transform translate-x-1/2 md:translate-x-0"></div>
-                  <div className="absolute w-[40px] md:w-[60px] h-[40px] md:h-[60px] lg:w-[50px] lg:h-[50px] rounded-full bg-black bottom-[-20px] md:bottom-[-30px] lg:right-[20%] md:right-[10%] right-[20%]  transform translate-x-1/2 md:translate-x-0"></div>
-                  <div className=" absolute h-[75%] top-[12%] border-dashed border-black  border-2 md:right-[45px] right-[70px] lg:right-[35%] xl:right-[27%]"></div>
-                </div>
-              </SwiperSlide>
-            ))}
+            {promotionData
+              .filter((item) => {
+                const now = new Date();
+                const start = new Date(item.StartTime || item.startTime);
+                const end = new Date(item.EndTime || item.endTime);
+                return start <= now && now <= end;
+              })
+              .map((item) => (
+                <SwiperSlide
+                  key={item.idPromotion}
+                  className="w-full flex flex-col justify-center items-center pb-2 rounded-xl space-y-2"
+                  onMouseEnter={() => setHoveredPromotion(item.idPromotion)}
+                  onMouseLeave={() => setHoveredPromotion(null)}
+                >
+                  <div className="relative h-[180px] w-full md:h-[200px] lg:h-[180px]">
+                    <img
+                      src={item.Image}
+                      alt={item.Title}
+                      className="w-full rounded-md h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                    {/* Hover: Show code/title */}
+                    {hoveredPromotion === item.idPromotion && (
+                      <div
+                        className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-md cursor-pointer transition"
+                        onClick={() => {
+                          navigator.clipboard.writeText(
+                            item.Title || item.title || ""
+                          );
+                          toast.success("Copied!");
+                        }}
+                      >
+                        <span className="text-white text-lg font-bold bg-black/60 px-4 py-2 rounded shadow">
+                          {item.Title || item.title}
+                        </span>
+                      </div>
+                    )}
+                    {/* Decorative circles and dashed line */}
+                    <div className="absolute w-[40px] md:w-[60px] h-[40px] md:h-[60px] lg:w-[50px] lg:h-[50px] rounded-full bg-black top-[-20px] md:top-[-30px] md:right-[10%] lg:right-[20%] right-[20%] transform translate-x-1/2 md:translate-x-0"></div>
+                    <div className="absolute w-[40px] md:w-[60px] h-[40px] md:h-[60px] lg:w-[50px] lg:h-[50px] rounded-full bg-black bottom-[-20px] md:bottom-[-30px] lg:right-[20%] md:right-[10%] right-[20%]  transform translate-x-1/2 md:translate-x-0"></div>
+                    <div className=" absolute h-[75%] top-[12%] border-dashed border-black  border-2 md:right-[45px] right-[70px] lg:right-[35%] xl:right-[27%]"></div>
+                  </div>
+                </SwiperSlide>
+              ))}
           </Swiper>
         </div>
       </div>

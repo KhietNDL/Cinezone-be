@@ -78,9 +78,8 @@ export const register = async (userData) => {
 
 export const logout = async () => {
   try {
-    await api.post("/auth/logout");
-    localStorage.removeItem("token");
-    return { message: "Logged out successfully" };
+    const response = await api.post("/api/auth/logout");
+    return response.data;
   } catch (error) {
     handleError(error);
   }
@@ -126,7 +125,6 @@ export const resetPassword = async (credentials) => {
 export const getUser = async (id) => {
   try {
     const response = await api.get(`/auth/user/${id}`);
-
     return response.data;
   } catch (error) {
     handleError(error);
@@ -135,57 +133,15 @@ export const getUser = async (id) => {
 
 export const updateAccount = async (id, formData) => {
   try {
-    console.log("User ID:", id);
-    console.log("FormData content:");
-
-    // Debug FormData contents
-    for (let [key, value] of formData.entries()) {
-      if (key === "avatar" && value instanceof File) {
-        console.log(
-          `${key}:`,
-          `File - ${value.name} (${value.size} bytes, ${value.type})`
-        );
-      } else {
-        console.log(`${key}:`, value);
-      }
-    }
-
     const response = await api.put(`/auth/profile/${id}`, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
-      timeout: 30000, // 30 second timeout for file uploads
+      timeout: 30000,
     });
-
-    console.log("API Response:", response.data);
     return response.data;
   } catch (error) {
     console.error("updateAccount API Error:", error);
-
-    // More detailed error handling
-    if (error.response) {
-      console.error("Error Response Status:", error.response.status);
-      console.error("Error Response Data:", error.response.data);
-      console.error("Error Response Headers:", error.response.headers);
-
-      // Check if it's a server error with specific code
-      if (error.response.data?.code) {
-        const serverError = new Error(
-          error.response.data.error || error.response.data.message
-        );
-        serverError.code = error.response.data.code;
-        throw serverError;
-      }
-    } else if (error.request) {
-      console.error("No response received:", error.request);
-      throw new Error("No response from server. Please check your connection.");
-    } else {
-      console.error("Request setup error:", error.message);
-      throw new Error("Failed to setup request: " + error.message);
-    }
-
-    // Re-throw the original error if no specific handling
-    throw error;
   }
 };
 // API Promotion
@@ -197,6 +153,7 @@ export const getPromotion = async (params) => {
     handleError(error);
   }
 };
+
 export const createPromotion = async (formData) => {
   try {
     const response = await api.post("/promotions/create", formData, {
@@ -382,14 +339,37 @@ export const getCinemaRooms = async (params) => {
     handleError(error);
   }
 };
-
+export const searchCinemaRooms = async (name) => {
+  try {
+    const response = await api.get("/cinema-rooms/search", {
+      params: { name },
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+export const updateCinemaRoom = async (id, roomData) => {
+  try {
+    const response = await api.put(`/cinema-rooms/update/${id}`, roomData);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+export const deleteCinemaRoom = async (id) => {
+  try {
+    const response = await api.delete(`/cinema-rooms/delete/${id}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
 //API cho Booking FLow
 
-export const getShowtimeByMovieName = async (movieName) => {
+export const getShowtimeByMovieId = async (movieId) => {
   try {
-    const response = await api.get(
-      `/showtimes/movie-name/${movieName}/showtimes`
-    );
+    const response = await api.get(`/showtimes/movie/${movieId}/day`);
     console.log(response.data);
     return response.data;
   } catch (error) {
@@ -398,19 +378,152 @@ export const getShowtimeByMovieName = async (movieName) => {
   }
 };
 
-export const getTimeByDay = async (movieName, day) => {
+export const getTimeByDay = async (movieId, day) => {
   try {
-    const response = await api.get(`/showtimes/time/${movieName}/day`, {
-      params: {
-        movieName: movieName,
-        day: day,
-      },
-    });
+    const response = await api.get(
+      `/showtimes/movie/${movieId}/day/showtimes`,
+      {
+        params: {
+          movieId: movieId,
+          day: day,
+        },
+      }
+    );
 
     console.log(response.data);
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy showtime theo movieId va Day:", error);
+    throw error;
+  }
+};
+
+export const getSeatsByShowtimeId = async (showtimeId) => {
+  try {
+    const response = await api.get(`/showtimes/${showtimeId}/seats`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy seats theo showtimeID:", error);
+    throw error;
+  }
+};
+
+export const HoldingSeats = async (
+  userId,
+  showtimeId,
+  seatIds,
+  productIds,
+  promotionTitle
+) => {
+  try {
+    const response = await api.post("/bookings/hold", {
+      userId: userId,
+      showtimeId: showtimeId,
+      seatIds: seatIds,
+      productIds: productIds || [],
+      promotionTitle: promotionTitle || "",
+    });
+    console.log("HoldingSeats Response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi HodingSeats :", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const getAllMethodsPayment = async () => {
+  try {
+    const response = await api.get("/payment/methods");
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy phương thức thanh toán:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const createMomoPayment = async (data) => {
+  const res = await api.post("/payment/momo", data);
+  return res.data;
+};
+
+export const createVnpayPayment = async (data) => {
+  const res = await api.post("/payment/vnpay", data);
+  return res.data;
+};
+
+export const createZalopayPayment = async (data) => {
+  const res = await api.post("/payment/zalopay", data);
+  return res.data;
+};
+
+export const getPromotionByTitle = async (title) => {
+  try {
+    const response = await api.get("/promotions/search", {
+      params: { title },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi tìm kiếm khuyến mãi:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const ConfirmBooking = async (bookingId) => {
+  try {
+    const response = await api.post(`/bookings/confirm/${bookingId}`);
+    console.log("Confirm Booking Response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi Confirm Booking :", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const getBookingById = async (bookingId) => {
+  try {
+    const response = await api.get(`/bookings/detail/${bookingId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy thông tin đặt vé:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const cancelBooking = async (bookingId) => {
+  try {
+    const response = await api.post(`/bookings/cancel/${bookingId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi huỷ đặt vé:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const getBookingHistory = async (memberId) => {
+  try {
+    const response = await api.get(`/bookings/member/${memberId}`);
+    console.log("Booking History:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy lịch sử đặt vé:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const getAllProducts = async () => {
+  try {
+    const response = await api.get("/products");
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách sản phẩm owr API:", error);
+    handleError(error);
     throw error;
   }
 };

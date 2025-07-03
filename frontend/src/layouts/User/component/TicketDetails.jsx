@@ -1,232 +1,150 @@
-import { useLocation, useNavigate } from "react-router-dom";
-import { Download, Share2, QrCode, MapPin, Calendar, Clock, Users, CreditCard, CheckCircle } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { cancelBooking, ConfirmBooking, getBookingById } from "../../../services/API";
 
 const TicketDetails = () => {
-  const { state } = useLocation();
-  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [ticket, setTicket] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [isCancelled, setIsCancelled] = useState(false);
 
-  // Lấy thông tin từ state hoặc sử dụng giá trị mặc định
-  const {
-    movieTitle = "Unknown Movie",
-    screen = "Screen 1",
-    showtimeDate = "2024-06-12",
-    showtimeTime = "14:00",
-    timeRange = "14:00 - 16:30",
-    room = "Room A",
-    seats = ["A5", "A6"],
-    pricePerTicket = 120000,
-    numberOfTickets = 2,
-    discount = 0,
-    ticketId = "TK" + Date.now(),
-    cardHolder = "John Doe",
-    email = "john@example.com",
-    identity = "123456789",
-    phone = "0123456789",
-    description = "An amazing movie experience",
-    selectedSeats = ["A5", "A6"],
-    cinema = "CGV Crescent Mall",
-    date = "2024-06-12",
-    time = "14:00",
-    total = 240000,
-    comboPrice = 0
-  } = state || {};
+  const resultCode = searchParams.get("resultCode");
+  const extraDataRaw = searchParams.get("extraData");
 
-  const handleDownloadTicket = () => {
-    alert("Downloading ticket...");
-  };
+  let bookingId = null;
+  try {
+    if (!extraDataRaw) throw new Error("Missing extraData");
+    const decoded = decodeURIComponent(extraDataRaw);
+    const extraData = JSON.parse(decoded);
+    bookingId = extraData.bookingId;
+  } catch (err) {
+    console.error("❌ Failed to parse extraData:", err);
+    setError("Không thể lấy thông tin vé.");
+    setLoading(false);
+  }
 
-  const handleShareTicket = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: `Movie Ticket - ${movieTitle}`,
-        text: `I'm watching ${movieTitle} at ${cinema} on ${date} at ${time}`,
-      });
-    } else {
-      navigator.clipboard.writeText(`Movie: ${movieTitle}\nCinema: ${cinema}\nDate: ${date}\nTime: ${time}\nSeats: ${selectedSeats.join(", ")}`);
-      alert("Ticket details copied to clipboard!");
+  useEffect(() => {
+    //cancel hoac thanh toan that bai
+    if (resultCode !== "0") {
+      setIsCancelled(true);
+
+      const fetchCancelBooking = async () => {
+        try {
+          if (bookingId) {
+            console.log( " CancelBooking vì huỷ hoặc thất bại...");
+            await cancelBooking(bookingId);
+            console.log("Booking đã bị huỷ.");
+          }
+        } catch (err) {
+          console.error("Lỗi khi huỷ booking:", err);
+        }
+        finally {
+          setLoading(false);
+        }
+      };
+
+      fetchCancelBooking();
+      return;
+
     }
-  };
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
+
+    if (!bookingId) return;
+
+    const fetchTicketInfo = async () => {
+      try {
+        await ConfirmBooking(bookingId);
+        const ticketResponse = await getBookingById(bookingId);
+        setTicket(ticketResponse);
+        console.log("Ticket details fetched successfully:", ticketResponse);
+      } catch (err) {
+        setError("Không thể tải thông tin vé.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTicketInfo();
+  }, [bookingId, resultCode]);
+
+  if (loading) return <div className="text-white p-6">Đang tải thông tin vé...</div>;
+  if (error) return <div className="text-red-400 p-6">{error}</div>;
+
+  //cancelled booking
+  if (isCancelled) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] flex flex-col items-center justify-center text-center text-white p-10">
+        <h1 className="text-4xl font-bold text-red-500 mb-4">Ticket Cancelled</h1>
+        <p className="text-white/70 text-lg mb-6">
+          The transaction was cancelled or failed. Your booking has been cancelled.
+        </p>
+        <a
+          href="/"
+          className=" bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500  hover:from-purple-700 hover:via-purple-600 hover:to-pink-600 shadow-xl hover:shadow-2xl hover:shadow-purple-500/20 
+                           transform hover:scale-[1.02] transition-all duration-300 ease-out
+                           border border-purple-400/20 px-6 py-3 rounded-full text-white font-semibold"
+        >
+          Back Home
+        </a>
+      </div>
+    );
+  }
+
+  // When successfully payment
+  if (!ticket) return <div className="text-gray-400 p-6">Không tìm thấy vé.</div>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        
-       
+    <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] flex items-center justify-center py-10 px-4">
+      <div className="flex w-full max-w-4xl rounded-2xl overflow-hidden border-2 border-white/60  shadow-2xl">
+        {/* Left */}
+        <div className="w-1/2 bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] p-8 flex flex-col justify-between">
+          <div>
+            <h2 className="text-white text-2xl font-bold mb-2">🎟️Your Ticket</h2>
+            <p className="text-sm text-white/70 mb-6">Enjoy your movie experience!</p>
 
-       
-
-        {/* Main Ticket Card */}
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden border mt-[70px]">
-          
-          {/* Ticket Header */}
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 text-center">
-            <div className="flex items-center justify-center mb-3">
-              <QrCode className="w-6 h-6 mr-2" />
-              <h1 className="text-xl font-bold">ELECTRONIC TICKET</h1>
-            </div>
-            <p className="text-indigo-100">Booking ID: {ticketId}</p>
-          </div>
-
-          {/* Movie Title */}
-          <div className="text-center py-6 border-b">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">{movieTitle}</h2>
-            <p className="text-gray-600">{description}</p>
-          </div>
-
-          {/* Ticket Details */}
-          <div className="p-6">
-            <div className="grid md:grid-cols-2 gap-8">
-              
-              {/* Left Column - Show Information */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Show Information</h3>
-                
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <MapPin className="w-5 h-5 text-indigo-600 mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-gray-800">Cinema</p>
-                      <p className="text-gray-600">{cinema}</p>
-                      <p className="text-sm text-gray-500">{screen} • {room}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <Calendar className="w-5 h-5 text-indigo-600 mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-gray-800">Date</p>
-                      <p className="text-gray-600">{formatDate(date)}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <Clock className="w-5 h-5 text-indigo-600 mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-gray-800">Show Time</p>
-                      <p className="text-gray-600">{timeRange || time}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <Users className="w-5 h-5 text-indigo-600 mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-gray-800">Seats</p>
-                      <p className="text-gray-600">{selectedSeats.join(", ")}</p>
-                      <p className="text-sm text-gray-500">{numberOfTickets} ticket(s)</p>
-                    </div>
-                  </div>
-                </div>
+            <div className="text-white space-y-3">
+              <div><span className="text-white/60">Movie: </span><span className="font-bold">{ticket.movieNameEnglish}</span></div>
+              <div><span className="text-white/60">Time: </span><span className="font-bold">{ticket.showTime}</span></div>
+              <div><span className="text-white/60">Date: </span><span className="font-bold">{new Date(ticket.showDate).toLocaleDateString("en-GB")}</span></div>
+              <div><span className="text-white/60">Room: </span><span className="font-bold">{ticket.room}</span></div>
+              <div><span className="text-white/60">Seats: </span>
+                <span className="font-bold">
+                  {Array.isArray(ticket.seats) ? ticket.seats.join(", ") : ticket.seats}
+                </span>
               </div>
-
-              {/* Right Column - Customer & Payment */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Booking Details</h3>
-                
-                {/* Customer Info */}
-                <div className="mb-6">
-                  <h4 className="font-semibold text-gray-700 mb-3">Customer Information</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Name:</span>
-                      <span className="font-medium">{cardHolder}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Email:</span>
-                      <span className="font-medium">{email}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Phone:</span>
-                      <span className="font-medium">{phone}</span>
-                    </div>
-                    {identity && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">ID Card:</span>
-                        <span className="font-medium">{identity}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Payment Summary */}
-                <div>
-                  <h4 className="font-semibold text-gray-700 mb-3">Payment Summary</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span>Tickets ({numberOfTickets})</span>
-                      <span>{(pricePerTicket * numberOfTickets).toLocaleString("vi-VN")}₫</span>
-                    </div>
-                    {comboPrice > 0 && (
-                      <div className="flex justify-between">
-                        <span>Combo</span>
-                        <span>{comboPrice.toLocaleString("vi-VN")}₫</span>
-                      </div>
-                    )}
-                    {discount > 0 && (
-                      <div className="flex justify-between text-green-600">
-                        <span>Discount</span>
-                        <span>-{discount.toLocaleString("vi-VN")}₫</span>
-                      </div>
-                    )}
-                    <div className="border-t pt-2 mt-3">
-                      <div className="flex justify-between font-semibold text-base">
-                        <span>Total Paid</span>
-                        <span className="text-indigo-600">{total.toLocaleString("vi-VN")}₫</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <div><span className="text-white/60">Price: </span><span className="font-bold">{ticket.totalAmount?.toLocaleString()} đ</span></div>
             </div>
           </div>
 
-          {/* QR Code Section */}
-          <div className="border-t bg-gray-50 p-6 text-center">
-            <div className="inline-block bg-white p-4 rounded-lg shadow-sm border">
-              <div className="w-40 h-40 bg-gray-100 flex items-center justify-center rounded-lg">
-                <QrCode className="w-24 h-24 text-gray-400" />
-              </div>
-            </div>
-            <p className="text-gray-600 mt-3 text-sm">
-              Present this QR code at the cinema entrance
-            </p>
-          </div>
-
-          {/* Important Information */}
-          <div className="bg-amber-50 border-t border-amber-200 p-4">
-            <h4 className="font-semibold text-amber-800 mb-2">Important Information:</h4>
-            <ul className="text-sm text-amber-700 space-y-1">
-              <li>• Please arrive at least 15 minutes before showtime</li>
-              <li>• Bring a valid photo ID for verification</li>
-              <li>• This ticket is non-refundable and non-transferable</li>
-              <li>• Outside food and beverages are not permitted</li>
-            </ul>
-          </div>
+          <button
+            onClick={() => window.print()}
+            className="mt-8 bg-blue-500/5 hover:bg-gray-100/5 border border-white/50 font-bold text-white text-sm py-2 rounded-lg w-full"
+          >
+            Print Ticket
+          </button>
         </div>
 
-        {/* Bottom Actions */}
-        <div className="flex justify-center gap-4 mt-8">
-          <button
-            onClick={() => navigate("/")}
-            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition"
-          >
-            Book Another Movie
-          </button>
-          <button
-            onClick={() => navigate("/bookings")}
-            className="px-6 py-3 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition"
-          >
-            View All Bookings
-          </button>
+        {/* Right */}
+        <div className="w-1/2 bg-[#0e012a] p-8 text-white">
+          <h3 className="text-xl font-semibold mb-4">Customer Information</h3>
+          <ul className="space-y-4 text-sm">
+            <li className="flex items-center justify-between">
+              <span className="text-white/60">Name:</span>
+              <span className="font-bold">{ticket.buyerName}</span>
+            </li>
+            <li className="flex items-center justify-between">
+              <span className="text-white/60">Phone number:</span>
+              <span className="font-bold">{ticket.buyerPhone}</span>
+            </li>
+            <li className="flex items-center justify-between">
+              <span className="text-white/60">Booking ID:</span>
+              <span className="font-bold truncate w-1/2 text-right">{bookingId}</span>
+            </li>
+          </ul>
+          <div className="mt-10 border-t border-dashed border-white/30 pt-6 text-sm text-white/60">
+            * Please arrive 15 minutes before showtime.
+          </div>
         </div>
       </div>
     </div>

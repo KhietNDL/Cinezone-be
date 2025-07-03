@@ -1,32 +1,31 @@
 import { Button, Tag } from 'antd';
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { FaAlignLeft } from "react-icons/fa6";
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { FaTicket, FaCouch, FaLocationDot, FaMoneyBillWave } from "react-icons/fa6";
 import { IoTime } from "react-icons/io5";
+import { toast } from 'react-toastify';
+import logo from '../../../assets/logoWhite.png'
 
 export default function PrintTicket() {
     const componentRef = useRef();
-    const location = useLocation();
+    const [bookingData, setBookingData] = useState(null);
+
     const {
-        bookingId,
-        memberInfo,
-        paymentMethod,
-        amountPaid,
-        promotionTitle,
-        discount,
-        isConfirmed,
-        movie,
-        day,
-        version,
-        time,
-        room,
+        movie = {},
+        day = "",
+        time = "",
+        room = "",
+        version = "Standard",
         selectedSeats = [],
-        seatData = [],
-        totalPrice = 0
-    } = location.state || {};
+        totalPrice = 0,
+        memberInfo = {},
+        paymentMethod = "",
+        discount = 0,
+        amountPaid = totalPrice
+    } = bookingData || {};
 
 
     // Format price function
@@ -34,19 +33,57 @@ export default function PrintTicket() {
         return price?.toLocaleString('vi-VN');
     };
 
-    const handleExportPdf = async () => {
-        const input = componentRef.current;
-        const canvas = await html2canvas(input, {
-            scale: 2,
-            useCORS: true,
-        });
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        pdf.addImage(imgData, 'PNG', 0, 10, pdfWidth, pdfHeight);
-        pdf.save("ticket.pdf");
+
+    useEffect(() => {
+        const dataResult = async () => {
+            try {
+                const savedData = localStorage.getItem('currentBooking');
+                if (!savedData) throw new Error("Ticket information not found");
+
+                const parsedData = JSON.parse(savedData);
+                if (!parsedData.bookingId) throw new Error("Invalid ticket data");
+
+                setBookingData(parsedData);
+                // console.log(parsedData);
+                toast.success("Data loaded successfully!");
+            } catch (error) {
+                toast.error(error.message);
+            }
+        };
+        dataResult();
+    }, []);
+
+     const handleCancel = () => {
+        localStorage.removeItem('currentBooking');
+        localStorage.removeItem('current_member');
+        localStorage.removeItem('selectedSeats');
+        navigate("/staff/ticket-selling");
     };
+
+
+    const handleExportPdf = async () => {
+        if (!componentRef.current) return;
+
+        try {
+            const input = componentRef.current;
+            const canvas = await html2canvas(input, {
+                scale: 2,
+                useCORS: true,
+            });
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            pdf.addImage(imgData, 'PNG', 0, 10, pdfWidth, pdfHeight);
+            pdf.save("ticket.pdf");
+        } catch (error) {
+            toast.error("Failed to generate PDF");
+        }
+    };
+
+    if (!bookingData) {
+        return <div>Loading ticket information...</div>;
+    }
 
     return (
         <div className='p-4 mx-auto w-full'>
@@ -58,13 +95,20 @@ export default function PrintTicket() {
                             <div className="relative flex h-[180px] w-[1000px] md:h-[200px] lg:h-[300px] p-5">
                                 <div className='w-[63%] h-full'>
                                     <div className="flex items-start gap-4 border-b border-white pb-2 w-[95%] text-white">
-                                        <img
-                                            src={movie?.PosterImage || "https://iguov8nhvyobj.vcdn.cloud/media/catalog/product/cache/1/image/1800x/71252117777b696995f01934522c402d/c/o/copy_of_250220_dr25_main_b1_localized_embbed_1_.jpg"}
+                                        {/* <img
+                                            src={movie.PosterImage}
                                             alt={`Poster ${movie?.NameOfEnglish}`}
                                             className="w-25 h-auto rounded shadow"
-                                        />
+                                        /> */}
                                         <div className="flex-1">
+
                                             <div className="flex items-center gap-2">
+                                                <img
+                                                    src={logo}
+                                                    alt="CineZone"
+                                                    className="w-[20%] h-[35px] object-cover"
+                                                    style={{ filter: "brightness(0) invert(1)" }}
+                                                />
                                                 <div
                                                     className=" p-1 rounded-full shadow-md w-[110px] h-[25px] flex items-center justify-center"
                                                     style={{
@@ -80,7 +124,8 @@ export default function PrintTicket() {
                                                         }}>Now Showing</p>
                                                 </div>
                                                 <div className="bg-white text-xs px-2 py-1 rounded-sm "
-                                                    style={{ color: "#86198F", border: "1px solid #86198F" }}>{version || "Standard"}</div>
+                                                    style={{ color: "#86198F", border: "1px solid #86198F" }}>{version || "Standard"}
+                                                </div>
                                             </div>
                                             <h2 className="text-xl font-bold mt-2 pt-2 pb-4">
                                                 {movie?.NameOfEnglish || "Movie Title"}
@@ -105,12 +150,12 @@ export default function PrintTicket() {
                                     <div className='flex flex-col items-start justify-center h-full text-white p-4 space-y-2 w-[100%]'>
                                         {/* <p className='flex w-full'><strong className='w-[40%]'>ID Ticket:</strong><span>{bookingId || "N/A"}</span></p> */}
                                         <p className='flex w-full'><strong className='w-[40%]'>Screen:</strong><span>{version || "Standard"}</span></p>
-                                        <p className='flex gap-16 w-full'><strong className='w-[20%]'>Showtime:</strong><span>{day} - {time || "N/A"}</span></p>
-                                        <p className='flex gap-16 w-full'><strong className='w-[20%]'>Room:</strong><span>{room || "N/A"}</span></p>
-                                        <p className='flex gap-16 w-full'><strong className='w-[20%]'>Seats:</strong><span>{selectedSeats.join(', ') || "N/A"}</span></p>
-                                         <p className='flex gap-16 w-full'><strong className='w-[20%]'>Discount:</strong><span>{discount}%</span></p>
-                                        <p className='flex gap-16 w-full'><strong className='w-[20%]'>Price:</strong><span>{formatPrice(totalPrice)} VNĐ</span></p>
-                                        <p className='flex gap-16 w-full'><strong className='w-[20%]'>Total:</strong><span>{formatPrice(amountPaid)} VNĐ</span></p>
+                                        <p className='flex w-full'><strong className='w-[40%]'>Showtime:</strong><span>{day} - {time || "N/A"}</span></p>
+                                        <p className='flex w-full'><strong className='w-[40%]'>Room:</strong><span>{room || "N/A"}</span></p>
+                                        <p className='flex w-full'><strong className='w-[40%]'>Seats:</strong><span>{selectedSeats.join(', ') || "N/A"}</span></p>
+                                        <p className='flex w-full'><strong className='w-[40%]'>Discount:</strong><span>{discount ? discount : 0}%</span></p>
+                                        <p className='flex w-full'><strong className='w-[40%]'>Price:</strong><span>{formatPrice(totalPrice)} VNĐ</span></p>
+                                        <p className='flex w-full'><strong className='w-[40%]'>Total Amount:</strong><span>{formatPrice(amountPaid)} VNĐ</span></p>
                                     </div>
                                 </div>
 
@@ -131,7 +176,12 @@ export default function PrintTicket() {
                         <i className="fa-solid fa-print "></i> Print Ticket
                     </Button>
                     <Link to="/staff/ticket-selling">
-                        <Button style={{ backgroundColor: 'white', color: 'red', border: '1px solid red', padding: '10px 20px', borderRadius: '5px' }}>
+                        <Button
+                            style={{
+                                backgroundColor: 'white', color: 'red', border: '1px solid red',
+                                padding: '10px 20px', borderRadius: '5px'
+                            }}
+                            onClick={handleCancel}>
                             <i className="fa-solid fa-xmark"></i> Cancel
                         </Button>
                     </Link>

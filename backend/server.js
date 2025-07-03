@@ -6,7 +6,8 @@ const session = require("express-session");
 const passport = require("./middlewares/passport");
 const cors = require("cors");
 const cleanupExpiredBookings = require("./jobs/bookingCleanup");
-const cleanupOldSeats = require('./jobs/seatCleanup');
+const cleanupOldSeats = require("./jobs/seatCleanup");
+const scoreHistoryRoutes = require("./routes/scorehistory");
 
 const app = express();
 
@@ -73,6 +74,7 @@ app.use('/api/booking-seats', bookingSeatRoutes);
 app.use('/api/showtimes', showtimeRoutes);
 app.use('/api/seatshowtimes', seatShowtimeRoutes);
 app.use('/api/products', productRoutes);
+app.use("/api/scorehistory", scoreHistoryRoutes);
 app.use('/api/combo-products', comboProductRoutes);
 app.use('/api/order-product-details', orderProductDetailRoutes);
 app.use('/api/order-products', orderProductRoutes);
