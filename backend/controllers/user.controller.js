@@ -4,6 +4,7 @@ const nodemailer = require("nodemailer");
 const bcrypt = require("bcryptjs");
 const { v4: uuidv4, validate: uuidValidate } = require("uuid");
 const bucket = require("../config/firebase");
+const ScoreHistory = require("../models/scorehistory.model");
 
 // Define error codes
 const ERROR_CODES = {
@@ -576,8 +577,9 @@ const getUserById = async (req, res) => {
   try {
     const { id } = req.params;
 
+
     // Check view permissions
-    if (req.user.Role !== "admin" && req.user.UserId !== id) {
+    if (req.user.Role !== "admin" && req.user.Role !== 1 && req.user.UserId !== id) {
       return res.status(403).json({
         error: "Forbidden: You can only view your own information",
         code: ERROR_CODES.FORBIDDEN,
@@ -650,6 +652,16 @@ const exchangeScore = async (req, res) => {
 
     await User.updateScoreBalance(userId, newScoreBalance);
 
+    // Tạo bản ghi score history cho việc exchange
+    await ScoreHistory.createScoreHistory({
+      MemberId: userId,
+      RelatedBookingId: null,
+      ScoreValue: -points,
+      ChangeType: '1',
+      ChangeDate: new Date(),
+      CreatedBy: userId
+    });
+
     res.json({
       message: "Score exchanged successfully",
       moneyGained,
@@ -672,4 +684,5 @@ module.exports = {
   logout,
   updateProfile,
   getUserById,
+  exchangeScore,
 };

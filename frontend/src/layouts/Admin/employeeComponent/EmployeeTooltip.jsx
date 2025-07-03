@@ -21,8 +21,9 @@ const EmployeeTooltip = ({ employee, onClose }) => {
           <div className="flex items-start space-x-4">
             <div className="relative">
               <img
-                src="https://www.w3schools.com/howto/img_avatar.png"
+                src={employee.avatar_url}
                 alt="Employee"
+                loading="lazy"
                 className="w-20 h-20 rounded-full object-cover border-4 border-blue-100 shadow-lg"
               />
               <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 border-2 border-white rounded-full"></div>
@@ -31,9 +32,7 @@ const EmployeeTooltip = ({ employee, onClose }) => {
               <h2 className="text-2xl font-bold text-gray-900 mb-1">
                 {employee.FullName}
               </h2>
-              <p className="text-blue-600 font-medium text-sm mb-1">
-                @{employee.UserName || "Unknown"}
-              </p>
+
               <span className="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">
                 Active Employee
               </span>

@@ -547,6 +547,16 @@ class Movie {
       );
     }
   }
+
+  static async getMovieIdAndRunningTimeByVersionId(versionId) {
+    const [rows] = await db.promise().query(
+      `SELECT m.MovieId, m.RunningTime FROM Movies m
+       JOIN Version v ON m.MovieId = v.MovieId
+       WHERE v.VersionId = ? AND m.IsDeleted = 0 AND v.IsDeleted = 0`,
+      [versionId]
+    );
+    return rows[0] || null;
+  }
 }
 
 module.exports = Movie;

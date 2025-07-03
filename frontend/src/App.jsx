@@ -47,15 +47,14 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 
 function App() {
   return (
-   
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<MovieTheaterLogin />} />
-          <Route path="/register" element={<RegistrationPage />} />
-          <Route path="/forgot" element={<ForgotPasswordPage />} />
-          <Route path="/login/google/callback" element={<GoogleCallback />} />
-          <Route path="/verification" element={<EmailVerification />} />
-          <Route path="/resetPassword" element={<ResetPassword />} />
+    <AuthProvider>
+      <Routes>
+        <Route path="/login" element={<MovieTheaterLogin />} />
+        <Route path="/register" element={<RegistrationPage />} />
+        <Route path="/forgot" element={<ForgotPasswordPage />} />
+        <Route path="/auth/google/callback" element={<GoogleCallback />} />
+        <Route path="/verification" element={<EmailVerification />} />
+        <Route path="/resetPassword" element={<ResetPassword />} />
 
           <Route element={<ProtectedRoute allowedRoles={[1]} />}>
             <Route element={<UserLayout />}>

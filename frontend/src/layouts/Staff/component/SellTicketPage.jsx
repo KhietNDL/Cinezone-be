@@ -27,7 +27,7 @@ import {
   setRoom,
   setShowtimeId,
   resetBooking
-} from '../../../redux/features/bookingSlice'
+} from '../../../redux/features/sellingSlice'
 
 // Helper functions for localStorage
 const saveToLocalStorage = (key, value) => {
@@ -65,7 +65,7 @@ const SellTicketPage = () => {
     selectedTime,
     room,
     showtimeId
-  } = useSelector((state) => state.booking);
+  } = useSelector((state) => state.selling);
 
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(false);

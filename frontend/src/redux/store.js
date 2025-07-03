@@ -7,7 +7,7 @@ import persistStore from "redux-persist/es/persistStore";
 const persistConfig = {
   key: "root",
   storage,
-  whitelist: ['user', 'booking', 'member'],
+  whitelist: ['user', 'booking', 'member', 'selling'],
 };
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 

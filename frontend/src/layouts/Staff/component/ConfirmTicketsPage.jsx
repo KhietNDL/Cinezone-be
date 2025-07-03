@@ -24,7 +24,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   setCompleteBooking,
   resetBooking
-} from '../../../redux/features/bookingSlice'
+} from '../../../redux/features/sellingSlice'
 import {
   setMember,
   setMemberChecked,
@@ -40,7 +40,7 @@ const ConfirmTicketsPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const bookingData = useSelector((state) => state.booking);
+  const bookingData = useSelector((state) => state.selling);
   const { member, memberChecked } = useSelector((state) => state.member);
 
   const [discount, setDiscount] = useState(null);

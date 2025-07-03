@@ -1,78 +1,70 @@
-
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  selectedMovie: null,
-  selectedDay: null,
-  selectedVersion: null,
-  selectedTime: null,
-  room: '',
-  showtimeId: '',
   selectedSeats: [],
-  seatData: [],
-  totalPrice: 0,
+  seatIds: [],
+  calculatedTotalPrice: 0,
+  selectedRoom: "",
+  selectedDate: "",
+  selectedTime: "",
+  selectedShowtimeId: "",
+  seatQuantity: 0,
+  seatsData: [],
   movie: null,
-  version: '',
-  time: '',
-  memberInfo: null,
-  paymentMethod: '',
-  amountPaid: 0,
-  promotionTitle: '',
-  isConfirmed: false,
-  discount: null,
-  usedPoints: 0,
-  bookingId: '',
 };
 
 const bookingSlice = createSlice({
-  name: 'booking',
+  name: "booking",
   initialState,
   reducers: {
-    setSelectedMovie: (state, action) => {
-      state.selectedMovie = action.payload;
-    },
-    setSelectedDay: (state, action) => {
-      state.selectedDay = action.payload;
-    },
-    setSelectedVersion: (state, action) => {
-      state.selectedVersion = action.payload;
-    },
-    setSelectedTime: (state, action) => {
-      state.selectedTime = action.payload;
-    },
-    setRoom: (state, action) => {
-      state.room = action.payload;
-    },
-    setShowtimeId: (state, action) => {
-      state.showtimeId = action.payload;
-    },
-    setSelectedSeats: (state, action) => {
+    setSelectedSeats(state, action) {
       state.selectedSeats = action.payload;
     },
-    setSeatData: (state, action) => {
-      state.seatData = action.payload;
+    setSeatIds(state, action) {
+      state.seatIds = action.payload;
     },
-    setTotalPrice: (state, action) => {
-      state.totalPrice = action.payload;
+    setCalculatedTotalPrice(state, action) {
+      state.calculatedTotalPrice = action.payload;
     },
-    setCompleteBooking: (state, action) => {
-      return { ...state, ...action.payload };
+    setSelectedRoom(state, action) {
+      state.selectedRoom = action.payload;
     },
-    resetBooking: () => initialState,
+    setSelectedDate(state, action) {
+      state.selectedDate = action.payload;
+    },
+    setSelectedTime(state, action) {
+      state.selectedTime = action.payload;
+    },
+    setSelectedShowtimeId(state, action) {
+      state.selectedShowtimeId = action.payload;
+    },
+    setSeatsData(state, action) {
+      state.seatsData = action.payload;
+    },
+    setSeatQuantity(state, action) {
+      state.seatQuantity = action.payload;
+    },
+    setMovie(state, action) {
+      state.movie = action.payload;
+    },
+    resetBooking(state) {
+      Object.assign(state, initialState);
+    },
+     
   },
 });
 
 export const {
-  setSelectedMovie,
-  setSelectedDay,
-  setSelectedVersion,
-  setSelectedTime,
-  setRoom,
-  setShowtimeId,
   setSelectedSeats,
-  setSeatData,
-  setTotalPrice,
-  setCompleteBooking,
+  setSeatIds,
+  setCalculatedTotalPrice,
+  setSelectedRoom,
+  setSelectedDate,
+  setSelectedTime,
+  setSelectedShowtimeId,
+  setSeatsData,
+  setSeatQuantity,
+  setMovie,
   resetBooking,
 } = bookingSlice.actions;
 

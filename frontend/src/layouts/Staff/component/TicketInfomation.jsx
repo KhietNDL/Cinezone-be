@@ -10,7 +10,7 @@ import { confirmBooking, checkInfoBookingById, cancelBookingById } from "../../.
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useDispatch, useSelector } from 'react-redux';
-import { resetBooking } from '../../../redux/features/bookingSlice'
+import { resetBooking } from '../../../redux/features/sellingSlice'
 import { resetMember } from '../../../redux/features/memberSlice'
 
 const statusMap = {
@@ -39,7 +39,7 @@ const formatPrice = (price) => {
 const TicketInfomation = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const bookingData = useSelector((state) => state.booking);
+  const bookingData = useSelector((state) => state.selling);
   const memberData = useSelector((state) => state.member);
   const [paymentStatus, setPaymentStatus] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
