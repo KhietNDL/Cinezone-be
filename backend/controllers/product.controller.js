@@ -1,4 +1,5 @@
 const Product = require("../models/product.model");
+const bucket = require('../config/firebase');
 
 const getAllProducts = async (req, res) => {
   try {
@@ -22,11 +23,40 @@ const getProductById = async (req, res) => {
 
 const createProduct = async (req, res) => {
   try {
-    const productId = await Product.createProduct({
-      ...req.body,
-      CreatedBy: req.user?.UserId || null,
+    const data = req.body;
+    data.CreatedBy = req.user.UserId;
+
+    if (req.files && req.files.image && req.files.image[0]) {
+      const imageFile = req.files.image[0];
+      const imageFileName = `products/${Date.now()}-${imageFile.originalname.replace(/\s+/g, '_')}`;
+      const imageBlob = bucket.file(imageFileName);
+
+      const imageStream = imageBlob.createWriteStream({
+        metadata: { contentType: imageFile.mimetype }
+      });
+
+      await new Promise((resolve, reject) => {
+        imageStream.on('error', reject);
+        imageStream.on('finish', resolve);
+        imageStream.end(imageFile.buffer);
+      });
+
+      const [url] = await imageBlob.getSignedUrl({
+        action: 'read',
+        expires: '03-01-2500',
+      });
+
+      data.ImageUrl = url;
+    }
+
+    const productId = await Product.createProduct(data);
+    const product = await Product.getProductById(productId);
+
+    res.status(201).json({
+      status: "success",
+      message: "Product created successfully",
+      data: product
     });
-    res.status(201).json({ status: "success", productId });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -35,10 +65,51 @@ const createProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const { productId } = req.params;
-    const updated = await Product.updateProduct(productId, {
+    const data = {
       ...req.body,
       UpdatedBy: req.user?.UserId || null,
-    });
+    };
+
+    // Lấy thông tin sản phẩm cũ để xóa ảnh cũ nếu cần
+    const oldProduct = await Product.getProductById(productId);
+
+    // Nếu có file ảnh mới thì upload lên Firebase và cập nhật ImageUrl
+    if (req.files && req.files.image && req.files.image[0]) {
+      // Xóa ảnh cũ trên Firebase nếu có
+      if (oldProduct && oldProduct.ImageUrl) {
+        try {
+          const match = oldProduct.ImageUrl.match(/products\/[^?]+/);
+          if (match && match[0]) {
+            await bucket.file(match[0]).delete();
+          }
+        } catch (err) {
+          // Không cần throw, chỉ log nếu muốn
+        }
+      }
+
+      const imageFile = req.files.image[0];
+      const imageFileName = `products/${Date.now()}-${imageFile.originalname.replace(/\s+/g, '_')}`;
+      const imageBlob = bucket.file(imageFileName);
+
+      const imageStream = imageBlob.createWriteStream({
+        metadata: { contentType: imageFile.mimetype }
+      });
+
+      await new Promise((resolve, reject) => {
+        imageStream.on('error', reject);
+        imageStream.on('finish', resolve);
+        imageStream.end(imageFile.buffer);
+      });
+
+      const [url] = await imageBlob.getSignedUrl({
+        action: 'read',
+        expires: '03-01-2500',
+      });
+
+      data.ImageUrl = url;
+    }
+
+    const updated = await Product.updateProduct(productId, data);
     if (!updated) return res.status(404).json({ error: "Product not found or not updated" });
     res.json({ status: "success", message: "Product updated successfully" });
   } catch (error) {

@@ -1,5 +1,6 @@
 const UserManagement = require("../models/user.management.model");
 const jwt = require("jsonwebtoken");
+const bucket = require("../config/firebase"); // Nếu dùng Firebase
 
 // Get all users
 const getAllUsers = async (req, res) => {
@@ -135,12 +136,35 @@ const getUserByEmail = async (req, res) => {
 
 // Create user
 const createUser = async (req, res) => {
-  const userData = req.body;
   try {
+    // Xử lý upload avatar nếu có file gửi lên
+    if (req.file) {
+      // Nếu dùng Firebase:
+      const avatarFile = req.file;
+      const avatarFileName = `avatars/${Date.now()}-${avatarFile.originalname.replace(/\s+/g, "_")}`;
+      const avatarBlob = bucket.file(avatarFileName);
+
+      const avatarStream = avatarBlob.createWriteStream({
+        metadata: { contentType: avatarFile.mimetype },
+      });
+
+      await new Promise((resolve, reject) => {
+        avatarStream.on("error", reject);
+        avatarStream.on("finish", resolve);
+        avatarStream.end(avatarFile.buffer);
+      });
+
+      const [avatarUrl] = await avatarBlob.getSignedUrl({
+        action: "read",
+        expires: "03-01-2500",
+      });
+
+      req.body.avatar_url = avatarUrl;
+    }
+
+    const userData = req.body;
     const newUserId = await UserManagement.createUser(userData);
-    // Lấy thông tin user vừa tạo
     const user = await UserManagement.getUserById(newUserId);
-    // Tạo JWT token cho user mới
     const token = jwt.sign({ userId: user.UserId }, process.env.JWT_SECRET, { expiresIn: '1d' });
     res.status(201).json({
       message: "User created successfully",
@@ -187,59 +211,47 @@ const updateUser = async (req, res) => {
   const userData = req.body;
 
   try {
-    // Lấy thông tin user hiện tại để xác định avatar cũ
     const existingUser = await UserManagement.getUserById(userId);
     if (!existingUser) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Xử lý upload avatar nếu có file gửi lên (giả sử dùng multer upload.fields([{ name: 'avatar', maxCount: 1 }]))
-    if (req.files && req.files.avatar && req.files.avatar[0]) {
-      // Nếu bạn dùng lưu file local:
-      // userData.avatar_url = req.files.avatar[0].path;
-
-      // Nếu bạn dùng Firebase như employee:
-      try {
-        // Xóa avatar cũ trên Firebase nếu có
-        if (existingUser.avatar_url) {
-          try {
-            const fileNameMatch = existingUser.avatar_url.match(/firebasestorage\.app\/([^?]+)/);
-            if (fileNameMatch && fileNameMatch[1]) {
-              const oldFilePath = fileNameMatch[1];
-              await bucket.file(oldFilePath).delete().catch(() => {});
-            }
-          } catch (error) {
-            console.log("Error deleting old avatar:", error);
+    // Xử lý upload avatar nếu có file gửi lên
+    if (req.file) {
+      // Xóa avatar cũ trên Firebase nếu có
+      if (existingUser.avatar_url) {
+        try {
+          const fileNameMatch = existingUser.avatar_url.match(/firebasestorage\.app\/([^?]+)/);
+          if (fileNameMatch && fileNameMatch[1]) {
+            const oldFilePath = fileNameMatch[1];
+            await bucket.file(oldFilePath).delete().catch(() => {});
           }
+        } catch (error) {
+          console.log("Error deleting old avatar:", error);
         }
-
-        // Upload avatar mới lên Firebase
-        const avatarFile = req.files.avatar[0];
-        const avatarFileName = `avatars/${Date.now()}-${avatarFile.originalname.replace(/\s+/g, "_")}`;
-        const avatarBlob = bucket.file(avatarFileName);
-
-        const avatarStream = avatarBlob.createWriteStream({
-          metadata: { contentType: avatarFile.mimetype },
-        });
-
-        await new Promise((resolve, reject) => {
-          avatarStream.on("error", reject);
-          avatarStream.on("finish", resolve);
-          avatarStream.end(avatarFile.buffer);
-        });
-
-        const [avatarUrl] = await avatarBlob.getSignedUrl({
-          action: "read",
-          expires: "03-01-2500",
-        });
-
-        userData.avatar_url = avatarUrl;
-      } catch (firebaseError) {
-        console.error("Firebase operation failed:", firebaseError);
-        return res.status(500).json({
-          error: "Firebase operation failed during profile update",
-        });
       }
+
+      // Upload avatar mới lên Firebase
+      const avatarFile = req.file;
+      const avatarFileName = `avatars/${Date.now()}-${avatarFile.originalname.replace(/\s+/g, "_")}`;
+      const avatarBlob = bucket.file(avatarFileName);
+
+      const avatarStream = avatarBlob.createWriteStream({
+        metadata: { contentType: avatarFile.mimetype },
+      });
+
+      await new Promise((resolve, reject) => {
+        avatarStream.on("error", reject);
+        avatarStream.on("finish", resolve);
+        avatarStream.end(avatarFile.buffer);
+      });
+
+      const [avatarUrl] = await avatarBlob.getSignedUrl({
+        action: "read",
+        expires: "03-01-2500",
+      });
+
+      userData.avatar_url = avatarUrl;
     }
 
     // Xóa trường avatar nếu có (tránh lưu buffer vào DB)
@@ -252,7 +264,6 @@ const updateUser = async (req, res) => {
       }
     });
 
-    // Cập nhật user
     const result = await UserManagement.updateUser(userId, userData);
     if (result) {
       res.status(200).json({ message: "User updated successfully" });

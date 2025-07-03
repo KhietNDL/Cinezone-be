@@ -113,8 +113,8 @@ class Booking {
     userId,
     showtimeId,
     seatIds,
-    productIds,
     promotionTitle,
+    CreatedBy
   }) {
     const connection = await db.promise().getConnection();
     try {
@@ -162,14 +162,6 @@ class Booking {
       );
       let totalAmount = Number(seatInfo[0].total) || 0;
 
-      if (Array.isArray(productIds) && productIds.length > 0) {
-        const [products] = await connection.query(
-          `SELECT SUM(Price) as total FROM Products WHERE ProductId IN (?)`,
-          [productIds]
-        );
-        totalAmount += Number(products[0].total) || 0;
-      }
-
       totalAmount -= (totalAmount * discount) / 100;
 
       // 4. Tạo booking
@@ -194,9 +186,9 @@ class Booking {
       // 5. Tạm giữ ghế
       for (const seatId of seatIds) {
         await connection.query(
-          `INSERT INTO SeatShowtime (SeatShowtimeId, SeatId, ShowtimeId, BookingId, Status, CreatedAt, IsDeleted)
-           VALUES (?, ?, ?, ?, 'holding', NOW(), 0)`,
-          [uuidv4(), seatId, showtimeId, bookingId]
+          `INSERT INTO SeatShowtime (SeatShowtimeId, SeatId, ShowtimeId, BookingId, Status, CreatedAt, CreatedBy, IsDeleted)
+           VALUES (?, ?, ?, ?, 'holding', NOW(), ?, 0)`,
+          [uuidv4(), seatId, showtimeId, bookingId, CreatedBy]
         );
       }
 
@@ -358,7 +350,7 @@ class Booking {
     // Lấy thông tin booking, showtime, movie, user
     const [rows] = await db.promise().query(
       `
-    SELECT 
+SELECT 
       b.BookingId,
       b.TotalAmount,
       b.BookingDate,
@@ -368,14 +360,18 @@ class Booking {
 	    mv.NameOfEnglish,
       s.Day,
       s.Time,
-      cr.Name
+      cr.Name,
+      v.VersionType,
+      p.Title,
+      b.Status
     FROM Bookings b
     JOIN Users u ON b.MemberId = u.UserId
     JOIN Showtimes s ON b.ShowtimeId = s.ShowtimeId
     JOIN Version v ON s.VersionId = v.VersionId
     JOIN Movies mv ON v.MovieId = mv.MovieId
     JOIN CinemaRooms cr ON s.CinemaRoomId = cr.CinemaRoomId
-    WHERE b.BookingId = ? AND b.IsDeleted = 0
+    JOIN Promotions p ON b.PromotionId = p.PromotionId
+    WHERE b.BookingId = ? AND b.IsDeleted = 0;
     `,
       [bookingId]
     );
@@ -384,10 +380,12 @@ class Booking {
     // Lấy danh sách ghế
     const [seats] = await db.promise().query(
       `
-    SELECT s.SeatNumber
+    SELECT s.SeatNumber, s.Price
     FROM SeatShowtime ss
-    JOIN Seats s ON ss.SeatId = s.SeatId
-    WHERE ss.BookingId = ?
+    JOIN Seats s ON s.SeatId = ss.SeatId
+    WHERE ss.ShowtimeId = (
+      SELECT ShowtimeId FROM Bookings WHERE BookingId = ?
+    ) AND ss.Status IN ('taken', 'holding')
       AND ss.IsDeleted = 0;
     `,
       [bookingId]
@@ -396,16 +394,25 @@ class Booking {
 
     return {
       bookingId: rows[0].BookingId,
+      bookingDate: rows[0].BookingDate,
       movieNameVN: rows[0].NameOfVietnamese,
       movieNameEnglish: rows[0].NameOfEnglish,
+      versionType: rows[0].VersionType,
       showDate: normalizeDate(rows[0].Day),
       showTime: rows[0].Time,
       startTime: rows[0].StartTime,
       room: rows[0].Name,
       seats: seats.map((s) => s.SeatNumber),
+      seatPrices: seats.reduce((acc, s) => {
+        acc[s.SeatNumber] = s.Price;
+        return acc;
+      }, {}),
+      totalPrice: seats.reduce((sum, s) => sum + Number(s.Price), 0),
+      promotionTitle: rows[0].Title,
       totalAmount: rows[0].TotalAmount,
-      buyerName: rows[0].buyerName,
+      buyerName: rows[0].buyerName, 
       buyerPhone: rows[0].buyerPhone,
+      status: rows[0].Status
     };
   }
 }
