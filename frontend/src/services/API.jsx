@@ -153,6 +153,7 @@ export const getPromotion = async (params) => {
     handleError(error);
   }
 };
+
 export const createPromotion = async (formData) => {
   try {
     const response = await api.post("/promotions/create", formData, {
