@@ -1,4 +1,5 @@
 const Booking = require('../models/booking.model');
+const { create } = require('../models/orderProduct.model');
 
 const getBookingById = async (req, res) => {
   const { bookingId } = req.params;
@@ -75,8 +76,9 @@ const getLatestBookingByMemberId = async (req, res) => {
 const holdBooking = async (req, res) => {
   try {
     //const userId = req.user.userId; // Lấy từ middleware xác thực
-    const { userId, showtimeId, seatIds, productIds, promotionTitle } = req.body;
-    const result = await Booking.holdBooking({ userId, showtimeId, seatIds, productIds, promotionTitle });
+    const { userId, showtimeId, seatIds, promotionTitle } = req.body;
+    const createdBy = req.user.UserId; // Assuming user ID is available in req.user
+    const result = await Booking.holdBooking({ userId, showtimeId, seatIds, promotionTitle, createdBy });
     res.json(result);
   } catch (err) {
     res.status(400).json({ error: err.message });
