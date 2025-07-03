@@ -206,6 +206,41 @@ class OrderProduct {
       connection.release();
     }
   }
+
+  static async getOrderProductDetail(orderProductId) {
+    // Lấy thông tin đơn hàng và người mua
+    const [orderRows] = await db.promise().query(
+      `SELECT o.OrderProductId, o.MemberId, u.FullName AS buyerName, u.PhoneNumber AS buyerPhone, o.Status
+       FROM OrderProduct o
+       JOIN Users u ON o.MemberId = u.UserId
+       WHERE o.OrderProductId = ? AND o.IsDeleted = 0`,
+      [orderProductId]
+    );
+    if (!orderRows[0]) return null;
+
+    // Lấy chi tiết sản phẩm trong đơn hàng
+    const [details] = await db.promise().query(
+      `SELECT d.ProductId, p.ProductName, p.Unit, p.Price, d.Quantity, d.TotalPrice
+       FROM OrderProductDetail d
+       JOIN Products p ON d.ProductId = p.ProductId
+       WHERE d.OrderProductId = ? AND d.IsDeleted = 0`,
+      [orderProductId]
+    );
+    return {
+      orderProductId: orderRows[0].OrderProductId,
+      buyerName: orderRows[0].buyerName,
+      buyerPhone: orderRows[0].buyerPhone,
+      status: orderRows[0].Status,
+      products: details.map(d => ({
+        productId: d.ProductId,
+        productName: d.ProductName,
+        unit: d.Unit,
+        price: d.Price,
+        quantity: d.Quantity,
+        totalPrice: d.TotalPrice
+      }))
+    };
+  }
 }
 
 module.exports = OrderProduct;

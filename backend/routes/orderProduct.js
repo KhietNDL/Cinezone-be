@@ -231,5 +231,60 @@ router.post('/checkin/:id', auth, controller.checkinOrder);
  *         description: Order product cancelled successfully
  */
 router.post('/cancel/:id', auth, controller.cancelOrder);
+/**
+ * @swagger
+ * /api/order-products/{orderProductId}/detail:
+ *   get:
+ *     summary: Get order product detail by ID
+ *     tags: [OrderProduct]
+ *     parameters:
+ *       - in: path
+ *         name: orderProductId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the order product
+ *     responses:
+ *       200:
+ *         description: Order product detail
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     orderProductId:
+ *                       type: string
+ *                     buyerName:
+ *                       type: string
+ *                     buyerPhone:
+ *                       type: string
+ *                     products:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           productId:
+ *                             type: string
+ *                           productName:
+ *                             type: string
+ *                           unit:
+ *                             type: string
+ *                           price:
+ *                             type: number
+ *                           quantity:
+ *                             type: integer
+ *                           totalPrice:
+ *                             type: number
+ *       404:
+ *         description: OrderProduct not found
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/:orderProductId/detail', controller.getOrderProductDetail);
 
 module.exports = router;
