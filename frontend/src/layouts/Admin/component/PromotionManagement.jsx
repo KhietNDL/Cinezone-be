@@ -553,7 +553,7 @@ const PromotionManagement = () => {
                   className="p-1 sm:p-2 hover:bg-white/10 rounded-full transition-colors"
                   aria-label="Close"
                 >
-                  <MdOutlineClose size={20} className="sm:size-24" />
+                  <MdOutlineClose size={30} />
                 </button>
               </div>
             </div>

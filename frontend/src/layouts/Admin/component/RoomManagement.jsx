@@ -221,7 +221,7 @@ const RoomManagement = () => {
   };
   return (
     <>
-      <div className="p-4 lg:p-6">
+      <div>
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div className="w-full lg:w-[90%] space-y-4">
             {/* Stats Cards */}
