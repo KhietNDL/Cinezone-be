@@ -43,6 +43,8 @@ import TicketDetails from "./layouts/User/component/TicketDetails";
 import GoogleCallback from "./auth/login/GoogleCallback";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
+
+
 function App() {
   return (
     <AuthProvider>
@@ -54,61 +56,64 @@ function App() {
         <Route path="/verification" element={<EmailVerification />} />
         <Route path="/resetPassword" element={<ResetPassword />} />
 
-        <Route element={<ProtectedRoute allowedRoles={[1]} />}>
-          <Route element={<UserLayout />}>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/:slug" element={<BookingPage />} />
-            <Route path="/:idMovie" element={<BookingPage />} />
-            <Route path="/ticket" element={<TicketDetails />} />
-            <Route path="/confirmPayment" element={<ConfirmPayment />} />
-            <Route path="/promotions" element={<MoviePromotions />} />
-            <Route path="/waiting" element={<WaitingPayment />} />
-            <Route path="/account" element={<AccountImformation />}>
-              <Route path="*" element={<AccountImformation />} />
-              <Route path="personal" element={<EditAccount />} />
-              <Route path="history" element={<HistoryActivity />} />
+          <Route element={<ProtectedRoute allowedRoles={[1]} />}>
+            <Route element={<UserLayout />}>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/:slug" element={<BookingPage />} />
+              <Route path="/:idMovie" element={<BookingPage />} />
+              <Route path="/ticket" element={<TicketDetails />} />
+              <Route path="/confirmPayment" element={<ConfirmPayment />} />
+              <Route path="/promotions" element={<MoviePromotions />} />
+              <Route path="/waiting" element={<WaitingPayment />} />
+              <Route path="/account" element={<AccountImformation />}>
+                <Route path="*" element={<AccountImformation />} />
+                <Route path="personal" element={<EditAccount />} />
+                <Route path="history" element={<HistoryActivity />} />
+              </Route>
             </Route>
           </Route>
-        </Route>
-        <Route element={<ProtectedRoute allowedRoles={[3]} />}>
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route path="dashboard" element={<DashboardAdmin />} />
-            <Route path="employees" element={<EmployeeManagement />} />
-            <Route path="movies" element={<MovieManagement />} />
-            <Route path="rooms" element={<RoomManagement />} />
-            <Route path="bookings" element={<TicketBookingManagement />} />
-            <Route path="promotions" element={<PromotionManagement />} />
-            <Route path="users" element={<UserManagement />} />
+          <Route element={<ProtectedRoute allowedRoles={[3]} />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route path="dashboard" element={<DashboardAdmin />} />
+              <Route path="employees" element={<EmployeeManagement />} />
+              <Route path="movies" element={<MovieManagement />} />
+              <Route path="rooms" element={<RoomManagement />} />
+              <Route path="bookings" element={<TicketBookingManagement />} />
+              <Route path="promotions" element={<PromotionManagement />} />
+              <Route path="users" element={<UserManagement />} />
+            </Route>
           </Route>
-        </Route>
-        <Route element={<ProtectedRoute allowedRoles={[2]} />}>
-          <Route path="/staff" element={<StaffLayout />}>
-            <Route index element={<SellTicketPage />} />
-            <Route path="/staff/ticket-selling" element={<SellTicketPage />} />
-            <Route path="/staff/movie" element={<MoviePage />} />
-            <Route path="/staff/movie/:slug" element={<MovieDetail />} />
-            <Route
-              path="/staff/ticket-selling/select-seats"
-              element={<SelectSeatsPage />}
-            />
-            <Route
-              path="/staff/ticket-selling/confirm-ticket"
-              element={<ConfirmTicketsPage />}
-            />
-            <Route
-              path="/staff/ticket-selling/ticket-infomation"
-              element={<TicketInfomation />}
-            />
-            <Route path="/staff/combo-selling" element={<ComboPage />} />
-            <Route
-              path="/staff/ticket-selling/view-ticket/:id"
-              element={<PrintTicket />}
-            />
+
+          <Route element={<ProtectedRoute allowedRoles={[2]} />}>
+            <Route path="/staff" element={<StaffLayout />}>
+              <Route index element={<SellTicketPage />} />
+              <Route path="/staff/ticket-selling" element={<SellTicketPage />} />
+              <Route path="/staff/movie" element={<MoviePage />} />
+              <Route path="/staff/movie/:slug" element={<MovieDetail />} />
+              <Route
+                path="/staff/ticket-selling/select-seats"
+                element={<SelectSeatsPage />}
+              />
+              <Route
+                path="/staff/ticket-selling/confirm-ticket"
+                element={<ConfirmTicketsPage />}
+              />
+              <Route
+                path="/staff/ticket-selling/ticket-infomation"
+                element={<TicketInfomation />}
+              />
+              <Route path="/staff/combo-selling" element={<ComboPage />} />
+              <Route
+                path="/staff/ticket-selling/view-ticket/:id"
+                element={<PrintTicket />}
+              />
+            </Route>
           </Route>
-        </Route>
-      </Routes>
-      <ToastContainer />
-    </AuthProvider>
+
+        </Routes>
+        <ToastContainer />
+      </AuthProvider>
+    
   );
 }
 

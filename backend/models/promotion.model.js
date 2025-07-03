@@ -10,7 +10,19 @@ class Promotion {
   static formatDateTimeString(date) {
     if (!date) return null;
     const d = new Date(date);
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ':' + String(d.getSeconds()).padStart(2, '0');
+    return (
+      d.getFullYear() +
+      "-" +
+      String(d.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(d.getDate()).padStart(2, "0") +
+      " " +
+      String(d.getHours()).padStart(2, "0") +
+      ":" +
+      String(d.getMinutes()).padStart(2, "0") +
+      ":" +
+      String(d.getSeconds()).padStart(2, "0")
+    );
   }
 
   static formatPromotionRow(row) {
@@ -26,7 +38,8 @@ class Promotion {
   }
 
   static async getAllPromotions(page = 1, limit = 0) {
-    let sql = "SELECT * FROM Promotions WHERE IsDeleted = 0 ORDER BY CreatedAt DESC";
+    let sql =
+      "SELECT p.*, u.FullName as CreatedByName FROM Promotions p LEFT JOIN Users u ON p.CreatedBy = u.UserId WHERE p.IsDeleted = 0 ORDER BY p.CreatedAt DESC";
     let values = [];
     if (limit > 0) {
       const offset = (page - 1) * limit;
@@ -35,7 +48,9 @@ class Promotion {
     }
     const [rows] = await db.promise().query(sql, values);
     // Lấy tổng số lượng
-    const [countRows] = await db.promise().query("SELECT COUNT(*) as total FROM Promotions WHERE IsDeleted = 0");
+    const [countRows] = await db
+      .promise()
+      .query("SELECT COUNT(*) as total FROM Promotions WHERE IsDeleted = 0");
     const total = countRows[0].total;
     return {
       promotions: rows.map(this.formatPromotionRow),
@@ -43,8 +58,8 @@ class Promotion {
         total,
         currentPage: page,
         totalPages: limit > 0 ? Math.ceil(total / limit) : 1,
-        limit: limit > 0 ? limit : total
-      }
+        limit: limit > 0 ? limit : total,
+      },
     };
   }
 
@@ -80,7 +95,7 @@ class Promotion {
       Image,
       CreatedBy,
       Status,
-      Code
+      Code,
     } = data;
     const formattedStartTime = formatDateTime(new Date(StartTime));
     const formattedEndTime = formatDateTime(new Date(EndTime));
@@ -113,18 +128,20 @@ class Promotion {
     const fields = [];
     const values = [];
     for (const [key, value] of Object.entries(data)) {
-      if (value !== undefined && key !== 'UpdatedBy' && key !== 'UpdatedAt') {
+      if (value !== undefined && key !== "UpdatedBy" && key !== "UpdatedAt") {
         let formattedValue = value;
-        if ((key === 'StartTime' || key === 'EndTime') && value) {
+        if ((key === "StartTime" || key === "EndTime") && value) {
           formattedValue = formatDateTime(new Date(value));
         }
         fields.push(`${key} = ?`);
         values.push(formattedValue);
       }
     }
-    fields.push('UpdatedAt = ?', 'UpdatedBy = ?');
+    fields.push("UpdatedAt = ?", "UpdatedBy = ?");
     values.push(data.UpdatedAt, data.UpdatedBy, id);
-    const sql = `UPDATE Promotions SET ${fields.join(', ')} WHERE PromotionId = ? AND IsDeleted = 0`;
+    const sql = `UPDATE Promotions SET ${fields.join(
+      ", "
+    )} WHERE PromotionId = ? AND IsDeleted = 0`;
     const [result] = await db.promise().query(sql, values);
     return result.affectedRows > 0;
   }

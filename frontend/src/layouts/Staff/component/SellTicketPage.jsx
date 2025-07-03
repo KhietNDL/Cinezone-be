@@ -18,6 +18,17 @@ import {
 import ItemCard from "./ItemCard";
 import ShowtimeButton from "./ShowtimeButton";
 
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  setSelectedMovie,
+  setSelectedDay,
+  setSelectedVersion,
+  setSelectedTime,
+  setRoom,
+  setShowtimeId,
+  resetBooking
+} from '../../../redux/features/sellingSlice'
+
 // Helper functions for localStorage
 const saveToLocalStorage = (key, value) => {
   try {
@@ -46,54 +57,21 @@ const clearLocalStorageByKey = (key) => {
 };
 
 const SellTicketPage = () => {
-  const [selectedMovie, setSelectedMovie] = useState(() =>
-    loadFromLocalStorage('selectedMovie', null)
-  );
+  const dispatch = useDispatch();
+  const {
+    selectedMovie,
+    selectedDay,
+    selectedVersion,
+    selectedTime,
+    room,
+    showtimeId
+  } = useSelector((state) => state.selling);
+
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedDay, setSelectedDay] = useState(() =>
-    loadFromLocalStorage('selectedDay', null)
-  );
   const [days, setDays] = useState([]);
   const [versionsAndTimes, setVersionsAndTimes] = useState([]);
-  const [selectedVersion, setSelectedVersion] = useState(() =>
-    loadFromLocalStorage('selectedVersion', null)
-  );
-  const [selectedTime, setSelectedTime] = useState(() =>
-    loadFromLocalStorage('selectedTime', null)
-  );
-  const [room, setRoom] = useState(() =>
-    loadFromLocalStorage('room', '')
-  );
-  const [showtimeId, setShowtimeId] = useState(() =>
-    loadFromLocalStorage('showtimeId', '')
-  );
   const [search, setSearch] = useState("");
-
-  // Save selections to localStorage
-  useEffect(() => {
-    saveToLocalStorage('selectedMovie', selectedMovie);
-  }, [selectedMovie]);
-
-  useEffect(() => {
-    saveToLocalStorage('selectedDay', selectedDay);
-  }, [selectedDay]);
-
-  useEffect(() => {
-    saveToLocalStorage('selectedVersion', selectedVersion);
-  }, [selectedVersion]);
-
-  useEffect(() => {
-    saveToLocalStorage('selectedTime', selectedTime);
-  }, [selectedTime]);
-
-  useEffect(() => {
-    saveToLocalStorage('room', room);
-  }, [room]);
-
-  useEffect(() => {
-    saveToLocalStorage('showtimeId', showtimeId);
-  }, [showtimeId]);
 
   useEffect(() => {
     setSelectedDay(null);
@@ -101,8 +79,8 @@ const SellTicketPage = () => {
     setSelectedTime(null);
     setDays([]);
     setVersionsAndTimes([]);
-    setRoom("");
-    setShowtimeId("");
+    dispatch(setRoom(""));
+    dispatch(setShowtimeId(""));
 
     if (selectedMovie) {
       getShowtimesByMovieId(selectedMovie.MovieId).then(res => {
@@ -122,14 +100,14 @@ const SellTicketPage = () => {
         }
       });
     }
-  }, [selectedMovie]);
+  }, [selectedMovie, dispatch]);
 
   useEffect(() => {
-    setSelectedVersion(null);
-    setSelectedTime(null);
+    dispatch(setSelectedVersion(null));
+    dispatch(setSelectedTime(null));
     setVersionsAndTimes([]);
-    setRoom("");
-    setShowtimeId("");
+    dispatch(setRoom(""));
+    dispatch(setShowtimeId(""));
 
     if (selectedMovie && selectedDay) {
       const [day, month, year] = selectedDay.split('/');
@@ -140,7 +118,7 @@ const SellTicketPage = () => {
         }
       });
     }
-  }, [selectedDay, selectedMovie]);
+  }, [selectedDay, selectedMovie, dispatch]);
 
   useEffect(() => {
     if (selectedVersion && selectedTime && versionsAndTimes.length > 0) {
@@ -148,18 +126,18 @@ const SellTicketPage = () => {
       if (verObj) {
         const showtime = verObj.showtimes.find(t => t.time === selectedTime);
         if (showtime) {
-          setRoom(showtime.roomName);
-          setShowtimeId(showtime.showtimeId);
+          dispatch(setRoom(showtime.roomName));
+          dispatch(setShowtimeId(showtime.showtimeId));
         } else {
-          setRoom("");
-          setShowtimeId("");
+          dispatch(setRoom(""));
+          dispatch(setShowtimeId(""));
         }
       }
     } else {
-      setRoom("");
-      setShowtimeId("");
+      dispatch(setRoom(""));
+      dispatch(setShowtimeId(""));
     }
-  }, [selectedVersion, selectedTime, versionsAndTimes]);
+  }, [selectedVersion, selectedTime, versionsAndTimes, dispatch]);
 
   const getCurrentMovie = async () => {
     try {
@@ -192,21 +170,7 @@ const SellTicketPage = () => {
   };
 
   const handleCancel = () => {
-    setSelectedMovie(null);
-    setSelectedDay(null);
-    setSelectedVersion(null);
-    setSelectedTime(null);
-    setRoom("");
-    setShowtimeId("");
-
-    // Clear localStorage
-    localStorage.removeItem('selectedMovie');
-    localStorage.removeItem('selectedDay');
-    localStorage.removeItem('selectedVersion');
-    localStorage.removeItem('selectedTime');
-    localStorage.removeItem('room');
-    localStorage.removeItem('showtimeId');
-    localStorage.removeItem('currentBooking');
+    dispatch(resetBooking());
   };
 
   useEffect(() => {
@@ -218,21 +182,6 @@ const SellTicketPage = () => {
     640: { slidesPerView: 2, spaceBetween: 30 },
     768: { slidesPerView: 3, spaceBetween: 40 },
     1024: { slidesPerView: 4, spaceBetween: 50 },
-  };
-
-  const saveBookingData = () => {
-     const bookingData = {
-      movie: selectedMovie,
-      day: selectedDay,
-      version: selectedVersion,
-      time: selectedTime,
-      room: room,
-      showtimeId: showtimeId,
-      selectedSeats: [], // Will be filled in next page
-      seatData: [], // Will be filled in next page
-      totalPrice: 0 // Will be calculated in next page
-    };
-    localStorage.setItem('currentBooking', JSON.stringify(bookingData));
   };
 
   return (
@@ -269,9 +218,9 @@ const SellTicketPage = () => {
                     item={movie}
                     type="movie"
                     onSelect={() =>
-                      setSelectedMovie(
+                      dispatch(setSelectedMovie(
                         selectedMovie?.MovieId === movie.MovieId ? null : movie
-                      )
+                      ))
                     }
                     selected={selectedMovie?.MovieId === movie.MovieId}
                   />
@@ -288,10 +237,11 @@ const SellTicketPage = () => {
           <ShowtimeButton
             selectedDay={selectedDay}
             onSelectDay={(day) => {
-              setSelectedDay(day);
-              setSelectedVersion(null);
-              setSelectedTime(null);
+              dispatch(setSelectedDay(day));
+              dispatch(setSelectedVersion(null));
+              dispatch(setSelectedTime(null));
             }}
+
             days={days}
             showDay
           />
@@ -325,8 +275,8 @@ const SellTicketPage = () => {
                     parentVersion={ver.version}
                     selectedTime={selectedTime}
                     onSelectTime={(ver, time) => {
-                      setSelectedVersion(ver);
-                      setSelectedTime(time);
+                      dispatch(setSelectedVersion(ver));
+                      dispatch(setSelectedTime(time));
                     }}
                     times={ver.showtimes}
                     showTime
@@ -348,7 +298,6 @@ const SellTicketPage = () => {
       <div className="flex items-center justify-center gap-4">
         <Link
           to="/staff/ticket-selling/select-seats"
-          onClick={saveBookingData}
         >
           <button
             className="font-semibold px-4 py-2 bg-[#8A2BE2] rounded-md text-white cursor-pointer hover:bg-white 
