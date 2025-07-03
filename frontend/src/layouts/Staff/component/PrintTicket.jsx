@@ -44,7 +44,7 @@ export default function PrintTicket() {
                 if (!parsedData.bookingId) throw new Error("Invalid ticket data");
 
                 setBookingData(parsedData);
-                console.log(parsedData);
+                // console.log(parsedData);
                 toast.success("Data loaded successfully!");
             } catch (error) {
                 toast.error(error.message);

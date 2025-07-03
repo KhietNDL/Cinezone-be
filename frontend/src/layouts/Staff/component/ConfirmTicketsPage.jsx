@@ -20,70 +20,99 @@ import {
   checkPromotion, createBookingHold, createMomoPayment, createCashPayment, confirmBooking
 } from "../../../services/APIForStaff/API";
 import { useAuth } from "../../../context/AuthContext";
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  setCompleteBooking,
+  resetBooking
+} from '../../../redux/features/sellingSlice'
+import {
+  setMember,
+  setMemberChecked,
+  resetMember
+} from '../../../redux/features/memberSlice'
+
 
 const formatPrice = (price) => {
   return price?.toLocaleString('vi-VN');
 };
 
 const ConfirmTicketsPage = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const bookingData = useSelector((state) => state.selling);
+  const { member, memberChecked } = useSelector((state) => state.member);
+
   const [discount, setDiscount] = useState(null);
-  const [memberChecked, setMemberChecked] = useState(false);
-  const [member, setMember] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [movieInfo, setMovieInfo] = useState(null);
   const [isBookingConfirmed, setIsBookingConfirmed] = useState(false);
-  const [bookingData, setBookingData] = useState(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
-  
 
-
-  // Load booking data from localStorage
-  // Modified useEffect to load data
   useEffect(() => {
-    const loadBookingData = () => {
-      const savedData = localStorage.getItem('currentBooking');
-      if (!savedData) {
-        // MOVED navigate INSIDE useEffect
-        navigate("/staff/ticket-selling");
-        return;
-      }
+    if (!bookingData?.selectedMovie) {
+      navigate("/staff/ticket-selling");
+      return;
+    }
 
-      try {
-        const parsedData = JSON.parse(savedData);
-        setBookingData(parsedData);
-      } catch (err) {
-        // MOVED navigate INSIDE useEffect
-        navigate("/staff/ticket-selling");
-      }
-    };
-
-    loadBookingData();
-  }, [navigate]); // Ensure navigate is in dependencies
-
-  // Load movie info
-  useEffect(() => {
-    if (!bookingData?.movie) return;
     const loadMovie = async () => {
       try {
-        const res = await getMovieById(bookingData.movie.MovieId);
-        setMovieInfo(res.data || bookingData.movie);
+        const res = await getMovieById(bookingData.selectedMovie.MovieId);
+        setMovieInfo(res.data || bookingData.selectedMovie);
       } catch {
-        setMovieInfo(bookingData.movie);
+        setMovieInfo(bookingData.selectedMovie);
       }
     };
     loadMovie();
-  }, [bookingData]);
+  }, [bookingData, navigate]);
 
-  // Load member data from localStorage
-  useEffect(() => {
-    const savedMember = localStorage.getItem('current_member');
-    if (savedMember) {
-      setMember(JSON.parse(savedMember));
-      setMemberChecked(true);
+  const handleMemberSearch = async (searchValue) => {
+    try {
+      if (!searchValue.trim()) {
+        dispatch(resetMember());
+        setDiscount(null);
+        return toast.error("Please enter information");
+      }
+
+      setIsSearching(true);
+      let res = null;
+
+      // Determine search type
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(searchValue)) {
+        res = await getUserByEmail(searchValue);
+      }
+      else if (/^0\d{9,10}$/.test(searchValue)) {
+        res = await getUserByPhone(searchValue);
+      }
+      else if (/^\d{9,12}$/.test(searchValue)) {
+        res = await getUserByCCCD(searchValue);
+      }
+      else {
+        throw new Error("Invalid Email/Phone/ID");
+      }
+
+      const user = res.data?.user || res.user || res.data;
+      if (!user?.UserId) throw new Error("Member not found");
+
+      const memberData = {
+        id: user.UserId,
+        fullName: user.FullName || "Not updated",
+        phone: user.PhoneNumber || user.Phone || "Not updated",
+        identityCard: user.CCCD || user.IdentityCard || "Not updated",
+        score: user.score || 0,
+        email: user.Email || searchValue
+      };
+
+      dispatch(setMember(memberData));
+      dispatch(setMemberChecked(true));
+      toast.success("Member found!");
+    } catch (error) {
+      dispatch(resetMember());
+      toast.error(error.message || "Search error");
+    } finally {
+      setIsSearching(false);
     }
-  }, []);
+  };
 
   const handleAddPromotion = async (promotionCode, setFieldValue) => {
     try {
@@ -118,16 +147,14 @@ const ConfirmTicketsPage = () => {
     }
   };
 
-  const handleSubmit = async (values, { setSubmitting }) => {
+   const handleSubmit = async (values, { setSubmitting }) => {
     console.log("=== SUBMIT STARTED ===");
     console.log("Form values:", values);
     console.log("Booking data:", bookingData);
 
     try {
       // 1. Validate form before processing
-      console.log("Validating form...");
       await validationSchema.validate(values, { abortEarly: false });
-      console.log("Form validation passed");
 
       // 2. Check booking data
       if (!bookingData?.selectedSeats?.length || !bookingData.showtimeId) {
@@ -137,7 +164,6 @@ const ConfirmTicketsPage = () => {
         });
         throw new Error("Invalid ticket data, please select again");
       }
-      console.log("Booking data validation passed");
 
       // 3. Prepare data
       const userId = memberChecked ? member?.id : user?.userId || user?.id;
@@ -150,17 +176,14 @@ const ConfirmTicketsPage = () => {
       const promotionTitle = values.promotionCode && values.convertToTicket === "Disagree"
         ? values.promotionCode
         : "";
-      console.log("Promotion title:", promotionTitle);
 
       // 4. Calculate final amount
       let finalAmount = bookingData.totalPrice;
       let usedPoints = 0;
 
       if (memberChecked) {
-        
         if (values.convertToTicket === "Agree") {
           usedPoints = bookingData.selectedSeats.length * 10000;
-          console.log("Used points:", usedPoints, "Member score:", member.score);
 
           if (member.score < usedPoints) {
             throw new Error(`Not enough points. Need ${usedPoints} points, you have ${member.score} points`);
@@ -197,7 +220,7 @@ const ConfirmTicketsPage = () => {
         throw new Error("Failed to create booking");
       }
 
-      // 6. Save complete booking data
+      // 6. Prepare complete booking data
       const completeBooking = {
         ...bookingData,
         bookingId: bookingRes.bookingId,
@@ -209,10 +232,12 @@ const ConfirmTicketsPage = () => {
         discount,
         usedPoints
       };
-      localStorage.setItem('currentBooking', JSON.stringify(completeBooking));
-      console.log("Complete booking saved:", completeBooking);
 
-      // 7. Process payment based on method
+      // 7. Update Redux state immediately
+      dispatch(setCompleteBooking(completeBooking));
+      console.log("Complete booking dispatched to Redux:", completeBooking);
+
+      // 8. Process payment based on method
       console.log("Processing payment method:", values.paymentMethod);
 
       if (values.paymentMethod === "Cash") {
@@ -225,12 +250,17 @@ const ConfirmTicketsPage = () => {
         );
 
         console.log("Cash payment response:", cashRes);
+        
         const confirmRes = await confirmBooking(bookingRes.bookingId);
         console.log("Confirm booking response:", confirmRes);
-        // Don't throw error if cashRes.success doesn't exist
-        // Because API might not return success field
+        
+        // Update booking as confirmed in Redux
+        dispatch(setCompleteBooking({
+          ...completeBooking,
+          isConfirmed: true
+        }));
+        
         setIsBookingConfirmed(true);
-        await confirmBooking(bookingRes.bookingId);
         toast.success("Cash payment successful!");
 
         setTimeout(() => {
@@ -270,11 +300,9 @@ const ConfirmTicketsPage = () => {
         }
 
       } else if (values.paymentMethod === "VNPay") {
-        console.log("VNPay not implemented yet");
         throw new Error("VNPay payment method not yet supported");
 
       } else if (values.paymentMethod === "ZaloPay") {
-        console.log("ZaloPay not implemented yet");
         throw new Error("ZaloPay payment method not yet supported");
 
       } else {
@@ -284,8 +312,6 @@ const ConfirmTicketsPage = () => {
     } catch (error) {
       console.error("=== PAYMENT ERROR ===");
       console.error("Error details:", error);
-      console.error("Error message:", error.message);
-      console.error("Error stack:", error.stack);
 
       // Show detailed validation errors
       if (error.inner && Array.isArray(error.inner)) {
@@ -299,69 +325,13 @@ const ConfirmTicketsPage = () => {
       }
 
     } finally {
-      console.log("=== SUBMIT FINISHED ===");
       setSubmitting(false);
     }
   };
 
-  const handleMemberSearch = async (searchValue) => {
-    try {
-      if (!searchValue.trim()) {
-        setMember(null);
-        setMemberChecked(false);
-        localStorage.removeItem('current_member');
-        setFieldValue("convertToTicket", "");
-        setDiscount(null);
-        return toast.error("Please enter information");
-      }
-
-      setIsSearching(true);
-      let res = null;
-
-      // Determine search type
-      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(searchValue)) {
-        res = await getUserByEmail(searchValue);
-      }
-      else if (/^0\d{9,10}$/.test(searchValue)) {
-        res = await getUserByPhone(searchValue);
-      }
-      else if (/^\d{9,12}$/.test(searchValue)) {
-        res = await getUserByCCCD(searchValue);
-      }
-      else {
-        throw new Error("Invalid Email/Phone/ID");
-      }
-
-      const user = res.data?.user || res.user || res.data;
-      if (!user?.UserId) throw new Error("Member not found");
-
-      const memberData = {
-        id: user.UserId,
-        fullName: user.FullName || "Not updated",
-        phone: user.PhoneNumber || user.Phone || "Not updated",
-        identityCard: user.CCCD || user.IdentityCard || "Not updated",
-        score: user.score || 0,
-        email: user.Email || searchValue
-      };
-
-      setMember(memberData);
-      setMemberChecked(true);
-      localStorage.setItem('current_member', JSON.stringify(memberData));
-      toast.success("Member found!");
-    } catch (error) {
-      setMember(null);
-      setMemberChecked(false);
-      localStorage.removeItem('current_member');
-      toast.error(error.message || "Search error");
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleCancel = () => {
-    localStorage.removeItem('currentBooking');
-    localStorage.removeItem('current_member');
-    localStorage.removeItem('selectedSeats');
+    const handleCancel = () => {
+    dispatch(resetBooking());
+    dispatch(resetMember());
     navigate("/staff/ticket-selling");
   };
 
@@ -399,7 +369,7 @@ const ConfirmTicketsPage = () => {
 
     try {
       await validationSchema.validate(values, { abortEarly: false });
-      console.log("✅ Validation passed");
+      // console.log("✅ Validation passed");
       return true;
     } catch (error) {
       console.log("❌ Validation failed");
@@ -432,7 +402,9 @@ const ConfirmTicketsPage = () => {
   return (
     <div className="p-4 mx-auto w-full bg-white">
       <ToastContainer position="top-right" autoClose={3000} />
-      <h1 className="text-3xl font-bold mb-6 text-purple-700">Confirm Tickets</h1>
+      <h1 className="text-3xl font-bold mb-4 text-[#9810FA] justify-between items-center flex flex-col sm:flex-row">
+        Confirm Tickets
+      </h1>
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Movie Info Section */}
@@ -442,16 +414,16 @@ const ConfirmTicketsPage = () => {
               <RiFilmAiFill /> Ticket Information
             </h2>
 
-            <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex flex-col md:flex-row gap-6 items-center justify-center sm:items-start sm:justify-center">
               <img
                 src={movieInfo.PosterImage}
                 alt={movieInfo.NameOfEnglish}
-                className="h-[300px] object-cover rounded-lg shadow w-[30%]"
+                className="sm:h-[300px] object-cover rounded-lg shadow sm:w-[30%] w-[90%] h-auto"
                 onError={(e) => e.target.src = '/placeholder-poster.jpg'}
               />
 
               <div className="flex-1">
-                <div className="flex items-center gap-3 mb-3">
+                <div className="flex items-center justify-center sm:justify-start gap-3 mb-3">
                   <div
                     className=" p-1 rounded-full shadow-md w-[110px] h-[25px] flex items-center justify-center"
                     style={{
@@ -467,17 +439,17 @@ const ConfirmTicketsPage = () => {
                       }}>Now Showing</p>
                   </div>
                   <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-md border border-purple-800 text-xs font-medium">
-                    {bookingData.version}
+                    {bookingData.selectedVersion}
                   </span>
                 </div>
 
-                <div className="flex flex-col items-start w-full py-4">
+                <div className="flex flex-col sm:items-start w-full py-4 items-center justify-center">
                   <h3 className="text-2xl font-bold">
                     {movieInfo.NameOfEnglish}
                   </h3>
-                  <span className="text-xl text-gray-600 font-semibold">
+                  <p className="text-xl text-gray-600 font-semibold text-center">
                     ({movieInfo.NameOfVietnamese})
-                  </span>
+                  </p>
                 </div>
 
 
@@ -486,13 +458,13 @@ const ConfirmTicketsPage = () => {
                     <div className="flex items-center gap-1 font-semibold w-[30%]">
                       <FaCalendarDays className="text-xl" /> Day:
                     </div>
-                    <span className="text-gray-700">{bookingData.day}</span>
+                    <span className="text-gray-700">{bookingData.selectedDay}</span>
                   </div>
                   <div className="flex items-center">
                     <div className="flex items-center gap-1 font-semibold w-[30%]">
                       <IoTime className="text-xl" /> Time:
                     </div>
-                    <span className="text-gray-700">{bookingData.time}</span>
+                    <span className="text-gray-700">{bookingData.selectedTime}</span>
                   </div>
                   <div className="flex items-center">
                     <div className="flex items-center gap-1 font-semibold w-[30%]">
@@ -575,7 +547,7 @@ const ConfirmTicketsPage = () => {
                       <h3 className="font-semibold mb-3 flex items-center gap-2">
                         <FaUser /> Member
                       </h3>
-                      <div className="flex gap-3">
+                      <div className="flex gap-3 items-center justify-center">
                         <Field
                           name="memberSearch"
                           type="text"
@@ -603,7 +575,7 @@ const ConfirmTicketsPage = () => {
                       {/* Member Info */}
                       {memberChecked && member && (
                         <div className="mt-4 p-4 bg-white rounded-lg border border-gray-300">
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4">
                             <div>
                               <p className="text-gray-600 flex items-center gap-2">
                                 <FaIdCard /> Identity card:
@@ -632,8 +604,8 @@ const ConfirmTicketsPage = () => {
 
                           {/* Convert Points */}
                           {memberChecked && (
-                            <div className="mt-4 flex items-center gap-5">
-                              <label className="text-gray-700 mb-2 flex items-center gap-2">
+                            <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center gap-5">
+                              <label className="text-gray-700 flex items-center gap-2 sm:w-[30%] w-full ">
                                 <FaExchangeAlt /> Convert points to tickets:
                                 <span className="text-red-500">*</span>
                               </label>
@@ -657,7 +629,7 @@ const ConfirmTicketsPage = () => {
                             <label className="block text-gray-700 mb-2">
                               Promotion code:
                             </label>
-                            <div className="flex gap-3">
+                            <div className="flex gap-3 items-center justify-center">
                               <Field
                                 name="promotionCode"
                                 type="text"
@@ -786,7 +758,7 @@ const ConfirmTicketsPage = () => {
                       <button
                         type="button"
                         onClick={handleCancel}
-                        className="px-4 py-2 border-2 border-red-500 text-red-500 rounded-lg hover:bg-red-500 transition flex items-center gap-2 cursor-pointer
+                        className="px-2 py-1 sm:px-4 sm:py-2 border-2 border-red-500 text-red-500 rounded-lg hover:bg-red-500 transition flex items-center gap-2 cursor-pointer
                         hover:text-white "
                       >
                         <FaX /> Cancel
@@ -833,7 +805,7 @@ const ConfirmTicketsPage = () => {
               <div className="text-gray-600 flex flex-col gap-2">
                 <p className="flex justify-between">
                   <span>Showtime:</span>
-                  <span className="text-black">{bookingData.day} - {bookingData.time}</span>
+                  <span className="text-black">{bookingData.selectedDay} - {bookingData.selectedTime}</span>
                 </p>
                 <p className="flex justify-between">
                   <span>Room:</span>
