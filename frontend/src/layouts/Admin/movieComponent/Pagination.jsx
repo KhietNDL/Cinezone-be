@@ -2,7 +2,6 @@ import React from "react";
 
 const Pagination = ({ currentPage, totalPages, handlePageChange }) => {
   const renderPaginationButtons = () => {
-    // Adjust max visible buttons based on screen size
     const maxVisibleButtons = window.innerWidth < 640 ? 3 : 5; // 3 buttons on mobile, 5 on larger screens
     const halfVisible = Math.floor(maxVisibleButtons / 2);
     let startPage = Math.max(1, currentPage - halfVisible);

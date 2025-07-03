@@ -287,7 +287,7 @@ const RoomManagement = () => {
                   <table className="w-full table-auto border-collapse">
                     <thead>
                       <tr className="text-left text-slate-500 text-xs sm:text-sm border-b border-gray-200">
-                        <th className="py-2 px-2 sm:px-4 w-[150px] sm:w-[180px] md:w-[200px] shrink-0">
+                        <th className="py-2 text-center px-2 sm:px-4 w-[150px] sm:w-[180px] md:w-[200px] shrink-0">
                           Room Name
                         </th>
                         <th
