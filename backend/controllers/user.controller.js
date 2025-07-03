@@ -31,6 +31,7 @@ const removeSensitiveData = (user) => {
     cccd: user.CCCD,
     address: user.Address,
     avatar_url: user.avatar_url,
+    scoreBalance: user.ScoreBalance,
   };
 };
 
@@ -619,7 +620,7 @@ const getUserById = async (req, res) => {
 const exchangeScore = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { pointsToExchange } = req.body;
+    const { pointsToExchange, bookingId } = req.body;
 
     if (!uuidValidate(userId)) {
       return res.status(400).json({
@@ -653,11 +654,11 @@ const exchangeScore = async (req, res) => {
     await User.updateScoreBalance(userId, newScoreBalance);
 
     // Tạo bản ghi score history cho việc exchange
-    await ScoreHistory.createScoreHistory({
+    const scoreHistoryId = await ScoreHistory.createScoreHistory({
       MemberId: userId,
-      RelatedBookingId: null,
+      RelatedBookingId: bookingId || null,
       ScoreValue: -points,
-      ChangeType: '1',
+      ChangeType: '2',
       ChangeDate: new Date(),
       CreatedBy: userId
     });
@@ -666,6 +667,7 @@ const exchangeScore = async (req, res) => {
       message: "Score exchanged successfully",
       moneyGained,
       newScoreBalance,
+      scoreHistoryId
     });
   } catch (error) {
     console.error("Exchange score error:", error);
