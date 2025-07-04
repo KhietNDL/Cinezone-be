@@ -126,20 +126,26 @@ export const getUserByEmail = async (email) => {
 };
 
 // Tạo booking hold (giữ chỗ)
-export const createBookingHold = async (userId, showtimeId, seatIds, productIds = [], promotionTitle = "") => {
+export const createBookingHold = async (
+  userId,
+  showtimeId,
+  seatIds,
+  promotionTitle = ""
+) => {
   try {
     const response = await api.post("/bookings/hold", {
       userId,
       showtimeId,
       seatIds,
-      productIds,
-      promotionTitle
+      promotionTitle,
     });
     return response.data;
   } catch (error) {
     handleError(error);
   }
 };
+
+
 
 // Xác nhận booking
 export const confirmBooking = async (bookingId) => {
@@ -204,6 +210,44 @@ export const checkInfoBookingById = async (bookingId) => {
 export const cancelBookingById = async (bookingId) => {
   try {
     const response = await api.post(`/bookings/cancel/${encodeURIComponent(bookingId)}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+// Lấy tất cả product
+export const getAllProduct = async () => {
+  try {
+    const response = await api.get(`/products`)
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+// Tạo product hold (giữ slot product)
+export const createProductHold = async (MemberId, products, Notes = "") => {
+  try {
+    const response = await api.post("/order-products/hold", {
+      MemberId,
+      products,
+      Notes
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+
+//Đổi điểm sang tiền
+export const convertScoreToMoney = async (userId, pointsToExchange, bookingId) => {
+  try {
+    const response = await api.post(`/user/${userId}/exchange-score`, {
+      pointsToExchange,
+      bookingId
+    });
     return response.data;
   } catch (error) {
     handleError(error);

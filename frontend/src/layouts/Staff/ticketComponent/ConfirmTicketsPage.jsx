@@ -16,7 +16,7 @@ import vnpay from "../../../assets/vnpay-seeklogo.png";
 import momo from "../../../assets/momo-seeklogo.png";
 import zalopay from '../../../assets/zalopay-seeklogo.svg';
 import {
-  getMovieById, getUserByEmail, getUserByCCCD, getUserByPhone,
+  getMovieById, getUserByEmail, getUserByCCCD, getUserByPhone, convertScoreToMoney, cancelBookingById,
   checkPromotion, createBookingHold, createMomoPayment, createCashPayment, confirmBooking
 } from "../../../services/APIForStaff/API";
 import { useAuth } from "../../../context/AuthContext";
@@ -147,7 +147,7 @@ const ConfirmTicketsPage = () => {
     }
   };
 
-   const handleSubmit = async (values, { setSubmitting }) => {
+  const handleSubmit = async (values, { setSubmitting }) => {
     console.log("=== SUBMIT STARTED ===");
     console.log("Form values:", values);
     console.log("Booking data:", bookingData);
@@ -183,12 +183,34 @@ const ConfirmTicketsPage = () => {
 
       if (memberChecked) {
         if (values.convertToTicket === "Agree") {
-          usedPoints = bookingData.selectedSeats.length * 10000;
+          // usedPoints = bookingData.selectedSeats.length * 10000;
 
-          if (member.score < usedPoints) {
-            throw new Error(`Not enough points. Need ${usedPoints} points, you have ${member.score} points`);
+          // Calculate points needed (10000 VND = 1 point)
+          usedPoints = bookingData.totalPrice / 10000;
+
+          // if (member.score < usedPoints) {
+          //   throw new Error(`Not enough points. Need ${usedPoints} points, you have ${member.score} points`);
+          // }
+          // finalAmount = 0;
+
+          // Convert points to money
+          try {
+            const conversionResponse = await convertScoreToMoney(
+              userId,
+              usedPoints,
+              bookingData.bookingId
+            );
+
+            if (!conversionResponse.success) {
+              throw new Error("Failed to convert points to money");
+            }
+
+            finalAmount = 0;
+            toast.success(`Successfully converted ${usedPoints} points to cover the ticket cost`);
+          } catch (error) {
+            console.error("Point conversion error:", error);
+            throw new Error("Error converting points to money. Please try again.");
           }
-          finalAmount = 0;
         } else if (values.convertToTicket === "Disagree" && discount) {
           finalAmount = Math.round(bookingData.totalPrice * (1 - discount / 100));
         }
@@ -209,7 +231,6 @@ const ConfirmTicketsPage = () => {
         userId,
         bookingData.showtimeId,
         seatIds,
-        [], // combo items - empty array
         promotionTitle
       );
 
@@ -250,16 +271,16 @@ const ConfirmTicketsPage = () => {
         );
 
         console.log("Cash payment response:", cashRes);
-        
+
         const confirmRes = await confirmBooking(bookingRes.bookingId);
         console.log("Confirm booking response:", confirmRes);
-        
+
         // Update booking as confirmed in Redux
         dispatch(setCompleteBooking({
           ...completeBooking,
           isConfirmed: true
         }));
-        
+
         setIsBookingConfirmed(true);
         toast.success("Cash payment successful!");
 
@@ -329,16 +350,24 @@ const ConfirmTicketsPage = () => {
     }
   };
 
-    const handleCancel = () => {
-    dispatch(resetBooking());
-    dispatch(resetMember());
-    navigate("/staff/ticket-selling");
-  };
+const handleCancel = async () => {
+  try {
+    // Use bookingId from Redux state if available
+    if (bookingData?.bookingId) {
+      await cancelBookingById(bookingData.bookingId);
+    }
+  } catch (error) {
+    console.error("Failed to cancel booking:", error);
+    toast.error("Failed to cancel booking");
+  }
+  dispatch(resetBooking());
+  dispatch(resetMember());
+  navigate("/staff/ticket-selling");
+};
 
-  // Modified validation schema for easier debugging
   const validationSchema = Yup.object().shape({
     convertToTicket: Yup.string().when([], {
-      is: () => memberChecked, // Only validate when memberChecked = true
+      is: () => memberChecked,
       then: (schema) => schema
         .required("Please select point usage method")
         .oneOf(["Agree", "Disagree"], "Invalid method"),
@@ -359,29 +388,6 @@ const ConfirmTicketsPage = () => {
       .required("Please select payment method")
       .oneOf(["Cash", "Momo", "VNPay", "ZaloPay"], "Invalid payment method"),
   });
-
-  // Added debug function to test validation
-  const debugFormValidation = async (values) => {
-    console.log("=== DEBUGGING FORM VALIDATION ===");
-    console.log("Form values:", values);
-    console.log("Member checked:", memberChecked);
-    console.log("Member data:", member);
-
-    try {
-      await validationSchema.validate(values, { abortEarly: false });
-      // console.log("✅ Validation passed");
-      return true;
-    } catch (error) {
-      console.log("❌ Validation failed");
-      console.log("Validation errors:", error.errors);
-      if (error.inner) {
-        error.inner.forEach(err => {
-          console.log(`Field: ${err.path}, Error: ${err.message}`);
-        });
-      }
-      return false;
-    }
-  };
 
   if (isRedirecting) {
     return (
@@ -604,8 +610,8 @@ const ConfirmTicketsPage = () => {
 
                           {/* Convert Points */}
                           {memberChecked && (
-                            <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center gap-5">
-                              <label className="text-gray-700 flex items-center gap-2 sm:w-[30%] w-full ">
+                            <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center">
+                              <label className="text-gray-700 flex items-center gap-2 sm:w-[50%] w-full ">
                                 <FaExchangeAlt /> Convert points to tickets:
                                 <span className="text-red-500">*</span>
                               </label>
@@ -666,25 +672,25 @@ const ConfirmTicketsPage = () => {
                             value: "Cash",
                             label: "Cash",
                             icon: <IoMdCash className="text-3xl mx-auto mb-2" />,
-                            color: "bg-pink-100 border border-pink-300 ring-4 ring-pink-400 focus:ring-4"
+                            color: "bg-[#F3E8FF] border border-pink-300 ring-4 ring-pink-400 focus:ring-4"
                           },
                           {
                             value: "Momo",
                             label: "Momo Wallet",
                             icon: <img src={momo} alt="Momo" className="h-8 mx-auto mb-2" />,
-                            color: "bg-pink-100 border border-pink-300 ring-4 ring-pink-400 focus:ring-4"
+                            color: "bg-[#F3E8FF] border border-pink-300 ring-4 ring-pink-400 focus:ring-4"
                           },
                           {
                             value: "VNPay",
                             label: "VNPay",
                             icon: <img src={vnpay} alt="VNPay" className="h-8 mx-auto mb-2" />,
-                            color: "bg-pink-100 border border-pink-300 ring-4 ring-pink-400 focus:ring-4"
+                            color: "bg-[#F3E8FF] border border-pink-300 ring-4 ring-pink-400 focus:ring-4"
                           },
                           {
                             value: "ZaloPay",
                             label: "ZaloPay",
                             icon: <img src={zalopay} alt="ZaloPay" className="h-8 mx-auto mb-2" />,
-                            color: "bg-pink-100 border border-pink-300 ring-4 ring-pink-400 focus:ring-4"
+                            color: "bg-[#F3E8FF] border border-pink-300 ring-4 ring-pink-400 focus:ring-4"
                           }
                         ].map((method) => (
                           <label
@@ -738,7 +744,7 @@ const ConfirmTicketsPage = () => {
                           </span>
                         </div>
 
-                        {memberChecked && values.convertToTicket === "Agree" && (
+                        {/* {memberChecked && values.convertToTicket === "Agree" && (
                           <div className="pt-2 mt-2 flex flex-col gap-2 text-md">
                             <div className="flex justify-between">
                               <span>Points used:</span>
@@ -747,6 +753,27 @@ const ConfirmTicketsPage = () => {
                             <div className="flex justify-between">
                               <span>Points remaining:</span>
                               <span className="text-green-600 flex items-center gap-1"><FaFire /> {remainingPoints}</span>
+                            </div>
+                          </div>
+                        )} */}
+
+                        {memberChecked && values.convertToTicket === "Agree" && (
+                          <div className="pt-2 mt-2 flex flex-col gap-2 text-md">
+                            <div className="flex justify-between">
+                              <span>Conversion rate:</span>
+                              <span className="text-gray-600">10,000 VND = 1 point</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Points used:</span>
+                              <span className="text-orange-500 flex items-center gap-1">
+                                <FaFire /> {usedPoints.toFixed(2)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Points remaining:</span>
+                              <span className="text-green-600 flex items-center gap-1">
+                                <FaFire /> {(member.score - usedPoints).toFixed(2)}
+                              </span>
                             </div>
                           </div>
                         )}

@@ -6,8 +6,8 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { Pagination, Navigation } from "swiper/modules";
-import "./SwiperButton.css";
-import ItemCard from "./ItemCard";
+import "../component/SwiperButton.css";
+import ItemCard from "../component/ItemCard";
 import {
   getCurrentMovies,
   searchMovies,

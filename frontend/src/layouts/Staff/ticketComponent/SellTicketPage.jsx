@@ -6,7 +6,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { Pagination, Navigation } from "swiper/modules";
-import './SwiperButton.css';
+import '../component/SwiperButton.css';
 import { IoTime } from "react-icons/io5";
 import {
   getCurrentMovies,
@@ -15,7 +15,7 @@ import {
   getShowtimesByMovieIdAndDay
 } from "../../../services/APIForStaff/API";
 
-import ItemCard from "./ItemCard";
+import ItemCard from "../component/ItemCard";
 import ShowtimeButton from "./ShowtimeButton";
 
 import { useDispatch, useSelector } from 'react-redux';
@@ -27,34 +27,7 @@ import {
   setRoom,
   setShowtimeId,
   resetBooking
-} from '../../../redux/features/sellingSlice'
-
-// Helper functions for localStorage
-const saveToLocalStorage = (key, value) => {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch (error) {
-    console.error("Error saving to localStorage:", error);
-  }
-};
-
-const loadFromLocalStorage = (key, defaultValue) => {
-  try {
-    const value = localStorage.getItem(key);
-    return value ? JSON.parse(value) : defaultValue;
-  } catch (error) {
-    console.error("Error loading from localStorage:", error);
-    return defaultValue;
-  }
-};
-
-const clearLocalStorageByKey = (key) => {
-  try {
-    localStorage.removeItem(key);
-  } catch (error) {
-    console.error("Error clearing localStorage:", error);
-  }
-};
+} from '../../../redux/features/sellingSlice';
 
 const SellTicketPage = () => {
   const dispatch = useDispatch();
@@ -74,51 +47,50 @@ const SellTicketPage = () => {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    setSelectedDay(null);
-    setSelectedVersion(null);
-    setSelectedTime(null);
-    setDays([]);
-    setVersionsAndTimes([]);
-    dispatch(setRoom(""));
-    dispatch(setShowtimeId(""));
+    if (!selectedMovie) return;
 
-    if (selectedMovie) {
-      getShowtimesByMovieId(selectedMovie.MovieId).then(res => {
-        if (res?.showtimes) {
-          const uniqueDays = Array.from(
-            new Set(
-              res.showtimes
-                .map(st => st.Day)
-                .filter(Boolean)
-                .map(day => {
-                  const d = new Date(day);
-                  return d.toLocaleDateString('en-GB');
-                })
-            )
-          );
-          setDays(uniqueDays);
-        }
-      });
-    }
-  }, [selectedMovie, dispatch]);
+    getShowtimesByMovieId(selectedMovie.MovieId).then(res => {
+      if (res?.showtimes) {
+        const uniqueDays = Array.from(
+          new Set(
+            res.showtimes
+              .map(st => st.Day)
+              .filter(Boolean)
+              .map(day => {
+                const d = new Date(day);
+                return d.toLocaleDateString('en-GB');
+              })
+          )
+        );
+        setDays(uniqueDays);
+      }
+    });
+  }, [selectedMovie]);
 
   useEffect(() => {
-    dispatch(setSelectedVersion(null));
-    dispatch(setSelectedTime(null));
-    setVersionsAndTimes([]);
-    dispatch(setRoom(""));
-    dispatch(setShowtimeId(""));
+    if (!selectedMovie || !selectedDay) return;
 
-    if (selectedMovie && selectedDay) {
-      const [day, month, year] = selectedDay.split('/');
-      const formattedDay = `${year}-${month}-${day}`;
-      getShowtimesByMovieIdAndDay(selectedMovie.MovieId, formattedDay).then(res => {
-        if (res?.versions) {
-          setVersionsAndTimes(res.versions);
+    const [day, month, year] = selectedDay.split('/');
+    const formattedDay = `${year}-${month}-${day}`;
+
+    getShowtimesByMovieIdAndDay(selectedMovie.MovieId, formattedDay).then(res => {
+      if (res?.versions) {
+        setVersionsAndTimes(res.versions);
+
+        // Giữ lại room/showtime nếu version + time vẫn còn trong dữ liệu mới
+        const ver = res.versions.find(v => v.version === selectedVersion);
+        const timeObj = ver?.showtimes.find(t => t.time === selectedTime);
+
+        if (ver && timeObj) {
+          dispatch(setRoom(timeObj.roomName));
+          dispatch(setShowtimeId(timeObj.showtimeId));
+        } else {
+          dispatch(setRoom(""));
+          dispatch(setShowtimeId(""));
         }
-      });
-    }
-  }, [selectedDay, selectedMovie, dispatch]);
+      }
+    });
+  }, [selectedDay, selectedMovie]);
 
   useEffect(() => {
     if (selectedVersion && selectedTime && versionsAndTimes.length > 0) {
@@ -133,11 +105,8 @@ const SellTicketPage = () => {
           dispatch(setShowtimeId(""));
         }
       }
-    } else {
-      dispatch(setRoom(""));
-      dispatch(setShowtimeId(""));
     }
-  }, [selectedVersion, selectedTime, versionsAndTimes, dispatch]);
+  }, [selectedVersion, selectedTime, versionsAndTimes]);
 
   const getCurrentMovie = async () => {
     try {
@@ -171,18 +140,20 @@ const SellTicketPage = () => {
 
   const handleCancel = () => {
     dispatch(resetBooking());
+    setVersionsAndTimes([]);
+    setDays([]);
   };
 
   useEffect(() => {
     getCurrentMovie();
   }, []);
 
-  const swiperBreakpoints = {
-    320: { slidesPerView: 1, spaceBetween: 50 },
-    640: { slidesPerView: 2, spaceBetween: 30 },
-    768: { slidesPerView: 3, spaceBetween: 40 },
-    1024: { slidesPerView: 4, spaceBetween: 50 },
-  };
+const swiperBreakpoints = {
+  320: { slidesPerView: 1, spaceBetween: 50, slidesPerGroup: 1 },
+  640: { slidesPerView: 2, spaceBetween: 30, slidesPerGroup: 1 },
+  768: { slidesPerView: 3, spaceBetween: 40, slidesPerGroup: 1 },
+  1024: { slidesPerView: 4, spaceBetween: 50, slidesPerGroup: 1 },
+};
 
   return (
     <div className="w-full bg-[#fafbfc] p-[20px]">
@@ -208,7 +179,7 @@ const SellTicketPage = () => {
             navigation
             pagination={{ clickable: true }}
             slidesPerView={4}
-            slidesPerGroup={2}
+            // slidesPerGroup={2}
             loop={movies.length > 4}
           >
             {movies.map((movie) => (
@@ -217,11 +188,19 @@ const SellTicketPage = () => {
                   <ItemCard
                     item={movie}
                     type="movie"
-                    onSelect={() =>
-                      dispatch(setSelectedMovie(
-                        selectedMovie?.MovieId === movie.MovieId ? null : movie
-                      ))
-                    }
+                    onSelect={() => {
+                      const isSame = selectedMovie?.MovieId === movie.MovieId;
+                      dispatch(setSelectedMovie(isSame ? null : movie));
+                      if (!isSame) {
+                        dispatch(setSelectedDay(null));
+                        dispatch(setSelectedVersion(null));
+                        dispatch(setSelectedTime(null));
+                        dispatch(setRoom(""));
+                        dispatch(setShowtimeId(""));
+                        setVersionsAndTimes([]);
+                        setDays([]);
+                      }
+                    }}
                     selected={selectedMovie?.MovieId === movie.MovieId}
                   />
                 </div>
@@ -238,10 +217,7 @@ const SellTicketPage = () => {
             selectedDay={selectedDay}
             onSelectDay={(day) => {
               dispatch(setSelectedDay(day));
-              dispatch(setSelectedVersion(null));
-              dispatch(setSelectedTime(null));
             }}
-
             days={days}
             showDay
           />
@@ -253,9 +229,9 @@ const SellTicketPage = () => {
           <p className="flex items-center gap-1 font-semibold">
             <IoTime /> Select Time
           </p>
-          <div className="flex flex-wrap gap-6 p-4 ml-7">
+          <div className="flex flex-wrap gap-6 p-4 ml-7 items-center">
             {versionsAndTimes.map(ver => (
-              <div key={ver.version} className="flex flex-col items-start">
+              <div key={ver.version} className="flex flex-col items-center justify-center">
                 <div
                   className={`font-bold px-5 py-2 rounded-lg mb-2
                     ${selectedVersion === ver.version ? "scale-107 shadow-lg shadow-gray-400" : ""}
@@ -267,7 +243,7 @@ const SellTicketPage = () => {
                     }`}
                   role="button"
                   title={ver.version}
-                  onClick={() => setSelectedVersion(ver.version)}
+                  onClick={() => dispatch(setSelectedVersion(ver.version))}
                 >
                   {ver.version}
 
@@ -295,7 +271,7 @@ const SellTicketPage = () => {
         </div>
       )}
 
-      <div className="flex items-center justify-center gap-4">
+      <div className="flex items-center justify-center gap-4 mt-6">
         <Link
           to="/staff/ticket-selling/select-seats"
         >

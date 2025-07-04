@@ -139,11 +139,11 @@ export const LayoutSelectSeat = ({
     // Màu theo loại ghế - purple theme
     switch (type) {
       case 'VIP':
-        return "text-purple-200";
+        return seatColors.vip;
       case 'Normal':
-        return "text-purple-300";
+        return seatColors.normal;
       case 'Couple':
-        return "text-purple-400";
+        return seatColors.couple;
       default:
         return "text-purple-300";
     }
