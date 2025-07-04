@@ -23,11 +23,43 @@ class Booking {
     return bookingDetails;
   }
 
-  static async getAllBookings() {
-    const sql = `SELECT * FROM Bookings WHERE IsDeleted = 0`;
-    const [rows] = await db.promise().query(sql);
-    return rows;
+static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrder = 'desc' } = {}) {
+  let sql = `SELECT * FROM Bookings WHERE IsDeleted = 0`;
+  let countSql = `SELECT COUNT(*) as total FROM Bookings WHERE IsDeleted = 0`;
+  const params = [];
+
+  // Sorting
+  const allowedSort = ['CreatedAt', 'BookingDate', 'TotalAmount', 'Status'];
+  if (!allowedSort.includes(sortBy)) sortBy = 'CreatedAt';
+  if (!['asc', 'desc'].includes(sortOrder.toLowerCase())) sortOrder = 'desc';
+
+  sql += ` ORDER BY ${sortBy} ${sortOrder.toUpperCase()}`;
+
+  // Pagination
+  let total = 0;
+  if (limit > 0) {
+    const [[countRow]] = await db.promise().query(countSql);
+    total = countRow.total;
+    const offset = (page - 1) * limit;
+    sql += ` LIMIT ? OFFSET ?`;
+    params.push(Number(limit), Number(offset));
   }
+
+  const [rows] = await db.promise().query(sql, params);
+
+  if (limit > 0) {
+    return {
+      data: rows,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  }
+  return { data: rows };
+}
 
   static async createBooking(data) {
     const {
@@ -540,12 +572,13 @@ class Booking {
     // Lấy thông tin booking, showtime, movie, user
     const [rows] = await db.promise().query(
       `
-SELECT 
+    SELECT 
       b.BookingId,
       b.TotalAmount,
       b.BookingDate,
       u.FullName AS buyerName,
       u.PhoneNumber AS buyerPhone,
+      u.CCCD AS buyerCCCD,
       mv.NameOfVietnamese,
 	    mv.NameOfEnglish,
       s.Day,
@@ -553,14 +586,15 @@ SELECT
       cr.Name,
       v.VersionType,
       p.Title,
-      b.Status
+      b.Status,
+      s.Duration
     FROM Bookings b
     JOIN Users u ON b.MemberId = u.UserId
     JOIN Showtimes s ON b.ShowtimeId = s.ShowtimeId
     JOIN Version v ON s.VersionId = v.VersionId
     JOIN Movies mv ON v.MovieId = mv.MovieId
     JOIN CinemaRooms cr ON s.CinemaRoomId = cr.CinemaRoomId
-    JOIN Promotions p ON b.PromotionId = p.PromotionId
+    LEFT JOIN Promotions p ON b.PromotionId = p.PromotionId
     WHERE b.BookingId = ? AND b.IsDeleted = 0;
     `,
       [bookingId]
@@ -573,9 +607,8 @@ SELECT
     SELECT s.SeatNumber, s.Price
     FROM SeatShowtime ss
     JOIN Seats s ON s.SeatId = ss.SeatId
-    WHERE ss.ShowtimeId = (
-      SELECT ShowtimeId FROM Bookings WHERE BookingId = ?
-    ) AND ss.Status IN ('taken', 'holding')
+    WHERE ss.BookingId = ?
+    AND ss.Status IN ('taken', 'holding')
       AND ss.IsDeleted = 0;
     `,
       [bookingId]
@@ -588,17 +621,60 @@ SELECT
       movieNameVN: rows[0].NameOfVietnamese,
       movieNameEnglish: rows[0].NameOfEnglish,
       versionType: rows[0].VersionType,
+
       showDate: normalizeDate(rows[0].Day),
       showTime: rows[0].Time,
-      startTime: rows[0].StartTime,
+      duration: rows[0].Duration,
       room: rows[0].Name,
-      seats: seats[0].SeatNumber,
+      seats: seats.map((s) => s.SeatNumber),
+      seatPrices: seats.reduce((acc, s) => {
+        acc[s.SeatNumber] = s.Price;
+        return acc;
+      }, {}),
+      totalPrice: seats.reduce((sum, s) => sum + Number(s.Price), 0),
+      promotionTitle: rows[0].Title,
+
       totalAmount: rows[0].TotalAmount,
       buyerName: rows[0].buyerName, 
       buyerPhone: rows[0].buyerPhone,
+      buyerCCCD: rows[0].buyerCCCD,
       status: rows[0].Status
     };
   }
+  static async findBookingsByUserInfo({ email, cccd, phone }) {
+  let where = [];
+  let params = [];
+  if (email) {
+    where.push("u.Email = ?");
+    params.push(email);
+  }
+  if (cccd) {
+    where.push("u.CCCD = ?");
+    params.push(cccd);
+  }
+  if (phone) {
+    where.push("u.PhoneNumber = ?");
+    params.push(phone);
+  }
+  if (where.length === 0) return [];
+
+  const [rows] = await db.promise().query(
+    `
+    SELECT b.BookingId
+    FROM Bookings b
+    JOIN Users u ON b.MemberId = u.UserId
+    WHERE (${where.join(" OR ")}) AND b.IsDeleted = 0
+    `,
+    params
+  );
+  // Lấy chi tiết từng booking
+  const bookingDetails = [];
+  for (const row of rows) {
+    const detail = await Booking.getBookingDetail(row.BookingId);
+    if (detail) bookingDetails.push(detail);
+  }
+  return bookingDetails;
+}
 }
 
 module.exports = Booking;
