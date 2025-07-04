@@ -146,7 +146,7 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
     showtimeId,
     seatIds,
     promotionTitle,
-    CreatedBy
+    CreatedBy,
   }) {
     const connection = await db.promise().getConnection();
     try {
@@ -246,7 +246,7 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
 
       // 2. Đổi trạng thái các ghế từ "holding" sang "taken"
       await connection.query(
-       `UPDATE SeatShowtime
+        `UPDATE SeatShowtime
         SET Status = 'taken'
         WHERE BookingId = ? AND Status = 'holding'`,
         [bookingId]
@@ -549,23 +549,28 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
 
   static async checkinBooking(bookingId) {
     // Chỉ cho phép checkin nếu status hiện tại là 2 (PAID)
-    const [rows] = await db.promise().query(
-      "SELECT Status FROM Bookings WHERE BookingId = ? AND IsDeleted = 0",
-      [bookingId]
-    );
+    const [rows] = await db
+      .promise()
+      .query(
+        "SELECT Status FROM Bookings WHERE BookingId = ? AND IsDeleted = 0",
+        [bookingId]
+      );
     if (!rows[0]) {
       return { success: false, message: "Booking not found" };
     }
     if (rows[0].Status !== 2) {
       return { success: false, message: "Booking is not in PAID status" };
     }
-    const [result] = await db.promise().query(
-      "UPDATE Bookings SET Status = 3, UpdatedAt = NOW() WHERE BookingId = ? AND Status = 2 AND IsDeleted = 0",
-      [bookingId]
-    );
+    const [result] = await db
+      .promise()
+      .query(
+        "UPDATE Bookings SET Status = 3, UpdatedAt = NOW() WHERE BookingId = ? AND Status = 2 AND IsDeleted = 0",
+        [bookingId]
+      );
     return {
       success: result.affectedRows > 0,
-      message: result.affectedRows > 0 ? "Check-in successful" : "Check-in failed"
+      message:
+        result.affectedRows > 0 ? "Check-in successful" : "Check-in failed",
     };
   }
   static async getBookingDetail(bookingId) {
@@ -614,7 +619,6 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
       [bookingId]
     );
 
-
     return {
       bookingId: rows[0].BookingId,
       bookingDate: rows[0].BookingDate,
@@ -635,9 +639,8 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
       promotionTitle: rows[0].Title,
 
       totalAmount: rows[0].TotalAmount,
-      buyerName: rows[0].buyerName, 
+      buyerName: rows[0].buyerName,
       buyerPhone: rows[0].buyerPhone,
-      buyerCCCD: rows[0].buyerCCCD,
       status: rows[0].Status
     };
   }

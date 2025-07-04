@@ -75,15 +75,15 @@ const RoomManagement = () => {
   useEffect(() => {
     if (!searchTerm) {
       (async () => {
-        const data = await getCinemaRooms({
+        const response = await getCinemaRooms({
           page: currentPage,
           limit: itemsPerPage,
           sortBy: "SeatQuantity",
           sortOrder: sortOrder,
         });
-        setRooms(data.rooms);
-        setTotalPages(data.pagination?.totalPages || 1);
-        setTotalRooms(data.total);
+        setRooms(response.data);
+        setTotalPages(response.pagination.totalPages);
+        setTotalRooms(response.pagination.total);
       })();
       return;
     }
@@ -221,9 +221,9 @@ const RoomManagement = () => {
   };
   return (
     <>
-      <div className="p-4 lg:p-6">
+      <div>
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-          <div className="w-full lg:w-[90%] space-y-4">
+          <div className="w-[90%] md:w-[95%] lg:w-[95%] max-w-7xl space-y-4">
             {/* Stats Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 lg:gap-4 w-full">
               {statsData.map((stat, index) => (
@@ -287,7 +287,7 @@ const RoomManagement = () => {
                   <table className="w-full table-auto border-collapse">
                     <thead>
                       <tr className="text-left text-slate-500 text-xs sm:text-sm border-b border-gray-200">
-                        <th className="py-2 px-2 sm:px-4 w-[150px] sm:w-[180px] md:w-[200px] shrink-0">
+                        <th className="py-2 text-center px-2 sm:px-4 w-[150px] sm:w-[180px] md:w-[200px] shrink-0">
                           Room Name
                         </th>
                         <th

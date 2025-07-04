@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import logo from "../../../assets/logoWeb.png";
 import { FaSearch, FaUser } from "react-icons/fa";
 import { useAuth } from "../../../context/AuthContext";
-import { MdAccountCircle } from "react-icons/md";
 import { searchMovies } from "../../../services/API";
 import { slugify } from "./Slug";
 

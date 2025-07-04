@@ -237,6 +237,9 @@ router.get('/member/:memberId/latest', bookingController.getLatestBookingByMembe
  *               promotionTitle:
  *                 type: string
  *                 description: Promotion ID (optional)
+ *               PointsToUse:
+ *                 type: integer
+ *                 description: Số điểm user muốn sử dụng để giảm giá khi giữ vé (optional)
  *     responses:
  *       201:
  *         description: Booking held
