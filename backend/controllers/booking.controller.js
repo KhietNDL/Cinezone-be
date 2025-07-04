@@ -59,8 +59,14 @@ const deleteBooking = async (req, res) => {
 
 const getAllBookings = async (req, res) => {
   try {
-    const bookings = await Booking.getAllBookings();
-    res.json(bookings);
+    const { page = 1, limit = 0, sortBy = 'CreatedAt', sortOrder = 'desc' } = req.query;
+    const result = await Booking.getAllBookings({
+      page: Number(page),
+      limit: Number(limit),
+      sortBy,
+      sortOrder
+    });
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -231,6 +237,16 @@ const cancelBooking = async (req, res) => {
   }
 };
 
+const findBookingsByUserInfo = async (req, res) => {
+  try {
+    const { email, cccd, phone } = req.query;
+    const bookings = await Booking.findBookingsByUserInfo({ email, cccd, phone });
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getAllBookings,
   getBookingById,
@@ -243,5 +259,6 @@ module.exports = {
   confirmBooking,
   checkinBooking,
   getBookingDetail,
-  cancelBooking
+  cancelBooking,
+  findBookingsByUserInfo,
 };

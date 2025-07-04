@@ -17,6 +17,7 @@ const getAllUsers = async (req, res) => {
       Address: user.Address,
       CCCD: user.CCCD,
       avatar_url: user.avatar_url,
+      ScoreBalance: user.ScoreBalance,
       CreatedAt: user.CreatedAt,
     }));
     res.status(200).json({
@@ -45,6 +46,7 @@ const getUsersbyName = async (req, res) => {
       Address: user.Address,
       CCCD: user.CCCD,
       avatar_url: user.avatar_url,
+      ScoreBalance: user.ScoreBalance,
       CreatedAt: user.CreatedAt,
     }));
     res.status(200).json({
@@ -80,6 +82,7 @@ const getUserById = async (req, res) => {
       Address: user.Address,
       CCCD: user.CCCD,
       avatar_url: user.avatar_url,
+      ScoreBalance: user.ScoreBalance,
       CreatedAt: user.CreatedAt,
     };
     res.status(200).json({
@@ -122,6 +125,7 @@ const getUserByEmail = async (req, res) => {
       Address: user.Address,
       CCCD: user.CCCD,
       avatar_url: user.avatar_url,
+      ScoreBalance: user.ScoreBalance,
       CreatedAt: user.CreatedAt,
     };
     res.status(200).json({
@@ -294,6 +298,7 @@ const getUserByCCCD = async (req, res) => {
       Address: user.Address,
       CCCD: user.CCCD,
       avatar_url: user.avatar_url,
+      ScoreBalance: user.ScoreBalance,
       CreatedAt: user.CreatedAt,
     };
     res.status(200).json({
@@ -323,6 +328,7 @@ const getUserByPhoneNumber = async (req, res) => {
       Address: user.Address,
       CCCD: user.CCCD,
       avatar_url: user.avatar_url,
+      ScoreBalance: user.ScoreBalance,
       CreatedAt: user.CreatedAt,
     };
     res.status(200).json({
