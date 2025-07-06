@@ -6,10 +6,10 @@ import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { RiFilmAiFill, RiMovie2AiFill, RiDiscountPercentFill } from "react-icons/ri";
+import { RiFilmAiFill } from "react-icons/ri";
 import { FaMoneyBillWave, FaIdCard, FaUser, FaPhone, FaExchangeAlt } from "react-icons/fa";
 import { FaCalendarDays, FaLocationDot, FaCouch, FaFire, FaStar, FaX } from "react-icons/fa6";
-import { IoTime, IoSearch } from "react-icons/io5";
+import { IoTime, IoSearch, IoAddOutline } from "react-icons/io5";
 import { IoMdCash } from "react-icons/io";
 import { FiLoader } from "react-icons/fi";
 import vnpay from "../../../assets/vnpay-seeklogo.png";
@@ -31,9 +31,16 @@ import {
   resetMember
 } from '../../../redux/features/memberSlice'
 
-
 const formatPrice = (price) => {
   return price?.toLocaleString('vi-VN');
+};
+
+const getPointsForSeat = (seatType) => {
+  switch (seatType) {
+    case 'vip': return 150;
+    case 'couple': return 250;
+    default: return 90; // normal
+  }
 };
 
 const ConfirmTicketsPage = () => {
@@ -46,7 +53,6 @@ const ConfirmTicketsPage = () => {
   const [discount, setDiscount] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [movieInfo, setMovieInfo] = useState(null);
-  const [isBookingConfirmed, setIsBookingConfirmed] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
@@ -77,7 +83,6 @@ const ConfirmTicketsPage = () => {
       setIsSearching(true);
       let res = null;
 
-      // Determine search type
       if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(searchValue)) {
         res = await getUserByEmail(searchValue);
       }
@@ -99,7 +104,7 @@ const ConfirmTicketsPage = () => {
         fullName: user.FullName || "Not updated",
         phone: user.PhoneNumber || user.Phone || "Not updated",
         identityCard: user.CCCD || user.IdentityCard || "Not updated",
-        score: user.score || 0,
+        score: user.ScoreBalance || user.Score,
         email: user.Email || searchValue
       };
 
@@ -148,100 +153,78 @@ const ConfirmTicketsPage = () => {
   };
 
   const handleSubmit = async (values, { setSubmitting }) => {
-    console.log("=== SUBMIT STARTED ===");
-    console.log("Form values:", values);
-    console.log("Booking data:", bookingData);
-
     try {
-      // 1. Validate form before processing
+      setSubmitting(true);
+
+      // Validate form
       await validationSchema.validate(values, { abortEarly: false });
 
-      // 2. Check booking data
+      // Check booking data
       if (!bookingData?.selectedSeats?.length || !bookingData.showtimeId) {
-        console.error("Invalid booking data:", {
-          selectedSeats: bookingData?.selectedSeats,
-          showtimeId: bookingData?.showtimeId
-        });
         throw new Error("Invalid ticket data, please select again");
       }
 
-      // 3. Prepare data
+      // Prepare data
       const userId = memberChecked ? member?.id : user?.userId || user?.id;
-      console.log("User ID:", userId);
-
-      if (!userId) {
-        throw new Error("Could not determine user ID");
-      }
+      if (!userId) throw new Error("Could not determine user ID");
 
       const promotionTitle = values.promotionCode && values.convertToTicket === "Disagree"
         ? values.promotionCode
         : "";
 
-      // 4. Calculate final amount
-      let finalAmount = bookingData.totalPrice;
-      let usedPoints = 0;
+      // Calculate points needed (1k = 1 point)
+      let PointsToUse = 0;
+      if (memberChecked && values.convertToTicket === "Agree") {
+        PointsToUse = bookingData.selectedSeats.reduce((total, seatNumber) => {
+          const seat = bookingData.seatData.find(s => s.seatNumber === seatNumber);
+          if (!seat) return total;
+          return total + getPointsForSeat(seat.type);
+        }, 0);
 
-      if (memberChecked) {
-        if (values.convertToTicket === "Agree") {
-          // usedPoints = bookingData.selectedSeats.length * 10000;
-
-          // Calculate points needed (10000 VND = 1 point)
-          usedPoints = bookingData.totalPrice / 10000;
-
-          // if (member.score < usedPoints) {
-          //   throw new Error(`Not enough points. Need ${usedPoints} points, you have ${member.score} points`);
-          // }
-          // finalAmount = 0;
-
-          // Convert points to money
-          try {
-            const conversionResponse = await convertScoreToMoney(
-              userId,
-              usedPoints,
-              bookingData.bookingId
-            );
-
-            if (!conversionResponse.success) {
-              throw new Error("Failed to convert points to money");
-            }
-
-            finalAmount = 0;
-            toast.success(`Successfully converted ${usedPoints} points to cover the ticket cost`);
-          } catch (error) {
-            console.error("Point conversion error:", error);
-            throw new Error("Error converting points to money. Please try again.");
-          }
-        } else if (values.convertToTicket === "Disagree" && discount) {
-          finalAmount = Math.round(bookingData.totalPrice * (1 - discount / 100));
+        // Check if member has enough points
+        if (member.score < PointsToUse) {
+          throw new Error(`Not enough points. Needed: ${PointsToUse}, Available: ${member.score}`);
         }
       }
 
-      console.log("Final amount:", finalAmount);
+      // const PointsToUse = memberChecked && values.convertToTicket === "Agree"
+      //   ? bookingData.selectedSeats.reduce((total, seatNumber) => {
+      //     const seat = bookingData.seatData.find(s => s.seatNumber === seatNumber);
+      //     return seat ? total + getPointsForSeat(seat.type) : total;
+      //   }, 0)
+      //   : 0;
 
-      // 5. Create booking hold
-      console.log("Creating booking hold...");
+      // Get seat IDs
       const seatIds = bookingData.selectedSeats.map(seat => {
         const seatData = bookingData.seatData.find(s => s.seatNumber === seat);
-        return seatData?.seatId || seat;
+        if (!seatData?.seatId) {
+          throw new Error(`Missing seat ID for seat ${seat}`);
+        }
+        return seatData.seatId;
       });
 
-      console.log("Seat IDs:", seatIds);
-
+      // Create booking hold
       const bookingRes = await createBookingHold(
         userId,
         bookingData.showtimeId,
         seatIds,
-        promotionTitle
+        promotionTitle,
+        PointsToUse
       );
 
-      console.log("Booking hold response:", bookingRes);
-
       if (!bookingRes?.bookingId) {
-        console.error("Booking creation failed:", bookingRes);
         throw new Error("Failed to create booking");
       }
 
-      // 6. Prepare complete booking data
+      // Calculate final amount
+      let finalAmount = bookingData.totalPrice;
+      if (memberChecked && values.convertToTicket === "Disagree" && discount) {
+        finalAmount = Math.round(bookingData.totalPrice * (1 - discount / 100));
+      } else if (memberChecked && values.convertToTicket === "Agree") {
+        finalAmount = bookingData.totalPrice; // Fully covered by points
+      }
+
+      // Prepare complete booking data
       const completeBooking = {
         ...bookingData,
         bookingId: bookingRes.bookingId,
@@ -251,45 +234,29 @@ const ConfirmTicketsPage = () => {
         promotionTitle,
         isConfirmed: values.paymentMethod === "Cash",
         discount,
-        usedPoints
+        pointsUsed: PointsToUse,
+        seatDetails: bookingData.selectedSeats.map(seat => {
+          const seatData = bookingData.seatData.find(s => s.seatNumber === seat);
+          return {
+            seatNumber: seat,
+            type: seatData?.type || 'normal',
+            price: seatData?.price || 90000,
+            points: getPointsForSeat(seatData?.type)
+          }
+        })
       };
 
-      // 7. Update Redux state immediately
+      // Update Redux state
       dispatch(setCompleteBooking(completeBooking));
-      console.log("Complete booking dispatched to Redux:", completeBooking);
 
-      // 8. Process payment based on method
-      console.log("Processing payment method:", values.paymentMethod);
-
+      // Process payment
       if (values.paymentMethod === "Cash") {
-        console.log("Processing cash payment...");
-
-        const cashRes = await createCashPayment(
-          bookingRes.bookingId,
-          finalAmount,
-          `CASH-${Date.now()}`
-        );
-
-        console.log("Cash payment response:", cashRes);
-
-        const confirmRes = await confirmBooking(bookingRes.bookingId);
-        console.log("Confirm booking response:", confirmRes);
-
-        // Update booking as confirmed in Redux
-        dispatch(setCompleteBooking({
-          ...completeBooking,
-          isConfirmed: true
-        }));
-
-        setIsBookingConfirmed(true);
+        await createCashPayment(bookingRes.bookingId, finalAmount, `CASH-${Date.now()}`);
+        await confirmBooking(bookingRes.bookingId);
         toast.success("Cash payment successful!");
-
-        setTimeout(() => {
-          console.log("Redirecting to ticket information...");
-          navigate("/staff/ticket-selling/ticket-infomation");
-        }, 1000);
-
-      } else if (values.paymentMethod === "Momo") {
+        navigate("/staff/ticket-selling/ticket-infomation");
+      }
+      else if (values.paymentMethod === "Momo") {
         console.log("Processing Momo payment...");
         setIsRedirecting(true);
 
@@ -298,7 +265,6 @@ const ConfirmTicketsPage = () => {
             bookingRes.bookingId,
             finalAmount,
             `${window.location.origin}/staff/ticket-selling/ticket-infomation`,
-            userId
           );
 
           console.log("Momo payment response:", momoRes);
@@ -313,7 +279,6 @@ const ConfirmTicketsPage = () => {
 
           console.log("Redirecting to:", payUrl);
           window.location.href = payUrl;
-
         } catch (error) {
           console.error("Momo payment error:", error);
           setIsRedirecting(false);
@@ -331,39 +296,30 @@ const ConfirmTicketsPage = () => {
       }
 
     } catch (error) {
-      console.error("=== PAYMENT ERROR ===");
-      console.error("Error details:", error);
-
-      // Show detailed validation errors
-      if (error.inner && Array.isArray(error.inner)) {
-        console.error("Validation errors:", error.inner);
-        error.inner.forEach(e => {
-          console.error("Field error:", e.path, e.message);
-          toast.error(`${e.path}: ${e.message}`);
-        });
+      console.error("Booking error:", error);
+      if (error.inner) {
+        error.inner.forEach(e => toast.error(`${e.path}: ${e.message}`));
       } else {
-        toast.error(error.message || "Error processing ticket booking");
+        toast.error(error.message || "Error processing booking");
       }
-
     } finally {
       setSubmitting(false);
     }
   };
 
-const handleCancel = async () => {
-  try {
-    // Use bookingId from Redux state if available
-    if (bookingData?.bookingId) {
-      await cancelBookingById(bookingData.bookingId);
+  const handleCancel = async () => {
+    try {
+      if (bookingData?.bookingId) {
+        await cancelBookingById(bookingData.bookingId);
+      }
+    } catch (error) {
+      console.error("Failed to cancel booking:", error);
+      toast.error("Failed to cancel booking");
     }
-  } catch (error) {
-    console.error("Failed to cancel booking:", error);
-    toast.error("Failed to cancel booking");
-  }
-  dispatch(resetBooking());
-  dispatch(resetMember());
-  navigate("/staff/ticket-selling");
-};
+    dispatch(resetBooking());
+    dispatch(resetMember());
+    navigate("/staff/ticket-selling");
+  };
 
   const validationSchema = Yup.object().shape({
     convertToTicket: Yup.string().when([], {
@@ -412,255 +368,141 @@ const handleCancel = async () => {
         Confirm Tickets
       </h1>
 
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Movie Info Section */}
-        <div className="lg:w-2/3">
-          <div className="bg-white border border-gray-300 rounded-lg shadow-md p-6 mb-6">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <RiFilmAiFill /> Ticket Information
-            </h2>
+      <Formik
+        initialValues={{
+          memberSearch: "",
+          convertToTicket: "Disagree",
+          promotionCode: "",
+          paymentMethod: "",
+        }}
+        validationSchema={validationSchema}
+        onSubmit={handleSubmit}
+      >
+        {({ values, setFieldValue, isSubmitting }) => {
+          // Calculate points needed and final price
+          let PointsToUse = 0;
+          let finalPrice = bookingData.totalPrice;
 
-            <div className="flex flex-col md:flex-row gap-6 items-center justify-center sm:items-start sm:justify-center">
-              <img
-                src={movieInfo.PosterImage}
-                alt={movieInfo.NameOfEnglish}
-                className="sm:h-[300px] object-cover rounded-lg shadow sm:w-[30%] w-[90%] h-auto"
-                onError={(e) => e.target.src = '/placeholder-poster.jpg'}
-              />
+          if (memberChecked && values.convertToTicket === "Agree") {
+            PointsToUse = bookingData.selectedSeats.reduce((total, seatNumber) => {
+              const seat = bookingData.seatData.find(s => s.seatNumber === seatNumber);
+              if (!seat) return total;
+              return total + getPointsForSeat(seat.type);
+            }, 0);
 
-              <div className="flex-1">
-                <div className="flex items-center justify-center sm:justify-start gap-3 mb-3">
-                  <div
-                    className=" p-1 rounded-full shadow-md w-[110px] h-[25px] flex items-center justify-center"
-                    style={{
-                      background: "linear-gradient(90deg, #FACC15, #DDB61A, #DBBB3B, #CDB03D, #B1900C)",
-                      color: "#FFF8A7"
-                    }}
-                  >
-                    <p className="font-bold p-2 text-xs"
-                      style={{
-                        fontSize: "0.75rem",
-                        lineHeight: "1rem",
-                        textShadow: "0 1px 2px Orange"
-                      }}>Now Showing</p>
-                  </div>
-                  <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-md border border-purple-800 text-xs font-medium">
-                    {bookingData.selectedVersion}
-                  </span>
-                </div>
+            finalPrice = 0;
+          }
+          else if (memberChecked && values.convertToTicket === "Disagree" && discount) {
+            finalPrice = Math.round(bookingData.totalPrice * (1 - discount / 100));
+          }
 
-                <div className="flex flex-col sm:items-start w-full py-4 items-center justify-center">
-                  <h3 className="text-2xl font-bold">
-                    {movieInfo.NameOfEnglish}
-                  </h3>
-                  <p className="text-xl text-gray-600 font-semibold text-center">
-                    ({movieInfo.NameOfVietnamese})
-                  </p>
-                </div>
+          return (
+            <Form>
+              <div className="flex flex-col lg:flex-row gap-6">
+                {/* Movie Info Section */}
+                <div className="lg:w-2/3">
+                  <div className="bg-white border border-gray-300 rounded-lg shadow-md p-6 mb-6">
+                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                      <RiFilmAiFill /> Ticket Information
+                    </h2>
 
+                    <div className="flex flex-col md:flex-row gap-6 items-center justify-center sm:items-start sm:justify-center">
+                      <img
+                        src={movieInfo.PosterImage}
+                        alt={movieInfo.NameOfEnglish}
+                        className="sm:h-[300px] object-cover rounded-lg shadow sm:w-[30%] w-[90%] h-auto"
+                        onError={(e) => e.target.src = '/placeholder-poster.jpg'}
+                      />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                  <div className="flex items-center">
-                    <div className="flex items-center gap-1 font-semibold w-[30%]">
-                      <FaCalendarDays className="text-xl" /> Day:
-                    </div>
-                    <span className="text-gray-700">{bookingData.selectedDay}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="flex items-center gap-1 font-semibold w-[30%]">
-                      <IoTime className="text-xl" /> Time:
-                    </div>
-                    <span className="text-gray-700">{bookingData.selectedTime}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="flex items-center gap-1 font-semibold w-[30%]">
-                      <FaLocationDot className="text-xl" /> Room:
-                    </div>
-                    <span className="text-gray-700">{bookingData.room}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="flex items-center gap-1 font-semibold w-[30%]">
-                      <FaCouch className="text-xl" /> Seats:
-                    </div>
-                    <span className="text-gray-700">
-                      {bookingData.selectedSeats.join(", ")} - ({bookingData.selectedSeats.length} tickets)
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-6">
-                  <h4 className="font-semibold mb-2">Price Details:</h4>
-                  <div className="space-y-2">
-                    {bookingData.selectedSeats.map((seat, index) => {
-                      const seatInfo = bookingData.seatData.find(s => s.seatNumber === seat);
-                      return (
-                        <div key={index} className="flex justify-between">
-                          <span>Seat {seat}:</span>
-                          <span>{formatPrice(seatInfo?.price || 0)} VNĐ</span>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-center sm:justify-start gap-3 mb-3">
+                          <div
+                            className=" p-1 rounded-full shadow-md w-[110px] h-[25px] flex items-center justify-center"
+                            style={{
+                              background: "linear-gradient(90deg, #FACC15, #DDB61A, #DBBB3B, #CDB03D, #B1900C)",
+                              color: "#FFF8A7"
+                            }}
+                          >
+                            <p className="font-bold p-2 text-xs"
+                              style={{
+                                fontSize: "0.75rem",
+                                lineHeight: "1rem",
+                                textShadow: "0 1px 2px Orange"
+                              }}>Now Showing</p>
+                          </div>
+                          <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-md border border-purple-800 text-xs font-medium">
+                            {bookingData.selectedVersion}
+                          </span>
                         </div>
-                      );
-                    })}
-                  </div>
 
-                  <div className="mt-4 pt-4 border-t flex justify-between items-center">
-                    <span className="font-bold text-lg">Total:</span>
-                    <span className="text-green-600 font-bold text-xl">
-                      {formatPrice(bookingData.totalPrice)} VNĐ
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+                        <div className="flex flex-col sm:items-start w-full py-4 items-center justify-center">
+                          <h3 className="text-2xl font-bold">
+                            {movieInfo.NameOfEnglish}
+                          </h3>
+                          <p className="text-xl text-gray-600 font-semibold text-center">
+                            ({movieInfo.NameOfVietnamese})
+                          </p>
+                        </div>
 
-          {/* Payment Method Section */}
-          <div className="bg-white rounded-lg shadow-md p-6 border border-gray-300">
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-              <FaMoneyBillWave /> Payment Method
-            </h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                          <div className="flex items-center">
+                            <div className="flex items-center gap-1 font-semibold w-[30%]">
+                              <FaCalendarDays className="text-xl" /> Day:
+                            </div>
+                            <span className="text-gray-700">{bookingData.selectedDay}</span>
+                          </div>
+                          <div className="flex items-center">
+                            <div className="flex items-center gap-1 font-semibold w-[30%]">
+                              <IoTime className="text-xl" /> Time:
+                            </div>
+                            <span className="text-gray-700">{bookingData.selectedTime}</span>
+                          </div>
+                          <div className="flex items-center">
+                            <div className="flex items-center gap-1 font-semibold w-[30%]">
+                              <FaLocationDot className="text-xl" /> Room:
+                            </div>
+                            <span className="text-gray-700">{bookingData.room}</span>
+                          </div>
+                          <div className="flex items-center">
+                            <div className="flex items-center gap-1 font-semibold w-[30%]">
+                              <FaCouch className="text-xl" /> Seats:
+                            </div>
+                            <span className="text-gray-700">
+                              {bookingData.selectedSeats.join(", ")} - ({bookingData.selectedSeats.length} tickets)
+                            </span>
+                          </div>
+                        </div>
 
-            <Formik
-              initialValues={{
-                memberSearch: "",
-                convertToTicket: "Disagree",
-                promotionCode: "",
-                paymentMethod: "",
-              }}
-              validationSchema={validationSchema}
-              onSubmit={handleSubmit}
-            >
-              {({ values, setFieldValue, isSubmitting }) => {
-                // Calculate final price
-                let finalPrice = bookingData.totalPrice;
-                let usedPoints = 0;
-                let remainingPoints = member?.score || 0;
+                        <div className="mt-6">
+                          <h4 className="font-semibold mb-2">Price Details:</h4>
+                          <div className="space-y-2">
+                            {bookingData.selectedSeats.map((seat, index) => {
+                              const seatInfo = bookingData.seatData.find(s => s.seatNumber === seat);
+                              return (
+                                <div key={index} className="flex justify-between">
+                                  <span>Seat {seat}:</span>
+                                  <span>{formatPrice(seatInfo?.price || 0)} VNĐ</span>
+                                </div>
+                              );
+                            })}
+                          </div>
 
-                if (memberChecked && values.convertToTicket === "Disagree" && discount) {
-                  finalPrice = bookingData.totalPrice * (1 - discount / 100);
-                }
-                else if (memberChecked && values.convertToTicket === "Agree") {
-                  usedPoints = bookingData.selectedSeats.length * 10000;
-                  if (member.score >= usedPoints) {
-                    finalPrice = 0;
-                    remainingPoints = member.score - usedPoints;
-                  }
-                }
-
-                return (
-                  <Form>
-                    {/* Member Search Section */}
-                    <div className="mb-6">
-                      <h3 className="font-semibold mb-3 flex items-center gap-2">
-                        <FaUser /> Member
-                      </h3>
-                      <div className="flex gap-3 items-center justify-center">
-                        <Field
-                          name="memberSearch"
-                          type="text"
-                          placeholder="Email / Phone / ID"
-                          className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleMemberSearch(values.memberSearch)}
-                          disabled={isSearching}
-                          className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 flex items-center gap-2 cursor-pointer"
-                        >
-                          {isSearching ? (
-                            <>
-                              <FiLoader className="animate-spin h-4 w-4 text-white" /> Checking...
-                            </>
-                          ) : (
-                            <>
-                              <IoSearch className="text-xl" /> Check
-                            </>
-                          )}
-                        </button>
+                          <div className="mt-4 pt-4 border-t flex justify-between items-center">
+                            <span className="font-bold text-lg">Total:</span>
+                            <span className="text-green-600 font-bold text-xl">
+                              {formatPrice(bookingData.totalPrice)} VNĐ
+                            </span>
+                          </div>
+                        </div>
                       </div>
-
-                      {/* Member Info */}
-                      {memberChecked && member && (
-                        <div className="mt-4 p-4 bg-white rounded-lg border border-gray-300">
-                          <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4">
-                            <div>
-                              <p className="text-gray-600 flex items-center gap-2">
-                                <FaIdCard /> Identity card:
-                              </p>
-                              <p className="font-medium">{member.identityCard}</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-600 flex items-center gap-2">
-                                <FaUser /> Full Name:
-                              </p>
-                              <p className="font-medium">{member.fullName}</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-600 flex items-center gap-2">
-                                <FaPhone /> Phone:
-                              </p>
-                              <p className="font-medium">{member.phone}</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-600 flex items-center gap-2">
-                                <FaStar /> Points:
-                              </p>
-                              <p className="font-medium flex items-center gap-1 text-green-600"><FaFire /> {member.score}</p>
-                            </div>
-                          </div>
-
-                          {/* Convert Points */}
-                          {memberChecked && (
-                            <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center">
-                              <label className="text-gray-700 flex items-center gap-2 sm:w-[50%] w-full ">
-                                <FaExchangeAlt /> Convert points to tickets:
-                                <span className="text-red-500">*</span>
-                              </label>
-                              <Field name="convertToTicket">
-                                {({ field }) => (
-                                  <Switch
-                                    checked={field.value === "Agree"}
-                                    onChange={(checked) => {
-                                      setFieldValue('convertToTicket', checked ? "Agree" : "Disagree");
-                                    }}
-                                    checkedChildren="Agree"
-                                    unCheckedChildren="Disagree"
-                                  />
-                                )}
-                              </Field>
-                            </div>
-                          )}
-
-                          {/* Promotion Code */}
-                          <div className="mt-4">
-                            <label className="block text-gray-700 mb-2">
-                              Promotion code:
-                            </label>
-                            <div className="flex gap-3 items-center justify-center">
-                              <Field
-                                name="promotionCode"
-                                type="text"
-                                disabled={values.convertToTicket === "Agree"}
-                                placeholder="Enter promotion code"
-                                className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => handleAddPromotion(values.promotionCode, setFieldValue)}
-                                disabled={values.convertToTicket === "Agree" || !values.promotionCode}
-                                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 cursor-pointer"
-                              >
-                                Add
-                              </button>
-                            </div>
-                            {discount && values.convertToTicket === "Disagree" && (
-                              <p className="mt-2 text-green-600">
-                                Applied {discount}% discount
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      )}
                     </div>
+                  </div>
+
+                  {/* Payment Method Section */}
+                  <div className="bg-white rounded-lg shadow-md p-6 border border-gray-300">
+                    <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                      <FaMoneyBillWave /> Payment Method
+                    </h2>
 
                     {/* Payment Options */}
                     <div className="mb-6">
@@ -732,7 +574,7 @@ const handleCancel = async () => {
                           <div className="flex justify-between">
                             <span>Points used:</span>
                             <span className="text-orange-500 flex items-center gap-1">
-                              -{formatPrice(usedPoints)} <FaFire />
+                              -{PointsToUse} <FaFire />
                             </span>
                           </div>
                         )}
@@ -744,37 +586,30 @@ const handleCancel = async () => {
                           </span>
                         </div>
 
-                        {/* {memberChecked && values.convertToTicket === "Agree" && (
-                          <div className="pt-2 mt-2 flex flex-col gap-2 text-md">
-                            <div className="flex justify-between">
-                              <span>Points used:</span>
-                              <span className="text-orange-500 flex items-center gap-1"><FaFire /> {usedPoints}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Points remaining:</span>
-                              <span className="text-green-600 flex items-center gap-1"><FaFire /> {remainingPoints}</span>
-                            </div>
-                          </div>
-                        )} */}
-
                         {memberChecked && values.convertToTicket === "Agree" && (
                           <div className="pt-2 mt-2 flex flex-col gap-2 text-md">
                             <div className="flex justify-between">
                               <span>Conversion rate:</span>
-                              <span className="text-gray-600">10,000 VND = 1 point</span>
+                              <span className="text-gray-600">1,000 VND = 1 point</span>
                             </div>
                             <div className="flex justify-between">
-                              <span>Points used:</span>
+                              <span>Points needed:</span>
                               <span className="text-orange-500 flex items-center gap-1">
-                                <FaFire /> {usedPoints.toFixed(2)}
+                                <FaFire /> {PointsToUse} points
                               </span>
                             </div>
                             <div className="flex justify-between">
-                              <span>Points remaining:</span>
+                              <span>Points available:</span>
                               <span className="text-green-600 flex items-center gap-1">
-                                <FaFire /> {(member.score - usedPoints).toFixed(2)}
+                                {/* <FaFire /> {member.score} points */}
+                                <FaFire /> {member.score - (values.convertToTicket === "Agree" ? PointsToUse : 0)} points
                               </span>
                             </div>
+                            {PointsToUse > member.score && (
+                              <div className="text-red-500 text-sm">
+                                Not enough points to complete this transaction
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -786,15 +621,16 @@ const handleCancel = async () => {
                         type="button"
                         onClick={handleCancel}
                         className="px-2 py-1 sm:px-4 sm:py-2 border-2 border-red-500 text-red-500 rounded-lg hover:bg-red-500 transition flex items-center gap-2 cursor-pointer
-                        hover:text-white "
+                      hover:text-white "
                       >
                         <FaX /> Cancel
                       </button>
                       <button
                         type="submit"
-                        disabled={isSubmitting || !values.paymentMethod}
+                        disabled={isSubmitting || !values.paymentMethod ||
+                          (memberChecked && values.convertToTicket === "Agree" && PointsToUse > member.score)}
                         className="px-6 py-2 border-2 border-purple-600 bg-purple-600 text-white rounded-lg hover:bg-white hover:text-purple-600
-                         disabled:bg-gray-400 disabled:border-gray-400 disabled:text-white  transition flex items-center gap-2 cursor-pointer"
+                       disabled:bg-gray-400 disabled:border-gray-400 disabled:text-white transition flex items-center gap-2 cursor-pointer"
                       >
                         {isSubmitting ? (
                           <>
@@ -812,65 +648,130 @@ const handleCancel = async () => {
                         )}
                       </button>
                     </div>
-                  </Form>
-                );
-              }}
-            </Formik>
-          </div>
-        </div>
+                  </div>
+                </div>
 
-        {/* Order Summary Section */}
-        <div className="lg:w-1/3">
-          <div className="bg-white rounded-lg shadow-md p-6 sticky top-4 border border-gray-300">
-            <h2 className="text-xl font-bold mb-4">Customer Order</h2>
-
-            <div className="mb-4">
-              <div className="flex items-center justify-between py-2">
-                <p className="text-gray-600">Movie:</p>
-                <h3 className="font-semibold">{movieInfo.NameOfEnglish}</h3>
-              </div>
-              <div className="text-gray-600 flex flex-col gap-2">
-                <p className="flex justify-between">
-                  <span>Showtime:</span>
-                  <span className="text-black">{bookingData.selectedDay} - {bookingData.selectedTime}</span>
-                </p>
-                <p className="flex justify-between">
-                  <span>Room:</span>
-                  <span className="text-black">{bookingData.room}</span>
-                </p>
-                <p className="flex justify-between">
-                  <span>Seats:</span>
-                  <span className="text-black">{bookingData.selectedSeats.join(", ")}</span>
-                </p>
-              </div>
-            </div>
-
-            <div className="border-t pt-4">
-              <h3 className="font-semibold mb-2">Price Details</h3>
-              <div className="space-y-2">
-                {bookingData.selectedSeats.map((seat, index) => {
-                  const seatInfo = bookingData.seatData.find(s => s.seatNumber === seat);
-                  return (
-                    <div key={index} className="flex justify-between">
-                      <span>Seat {seat}:</span>
-                      <span>{formatPrice(seatInfo?.price || 0)} VNĐ</span>
+                {/* Order Summary Section */}
+                <div className="lg:w-1/3">
+                  <div className="bg-white rounded-lg shadow-md p-6 sticky top-4 border border-gray-300">
+                    <h2 className="text-xl font-bold mb-4 flex items-center gap-1"><FaUser /> Member</h2>
+                    <div className="flex gap-3 items-center justify-center">
+                      <Field
+                        name="memberSearch"
+                        type="text"
+                        placeholder="Email / Phone / ID"
+                        className="flex-1 border border-gray-300 rounded-4xl px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleMemberSearch(values.memberSearch)}
+                        disabled={isSearching}
+                        className="bg-purple-600 text-white px-4 py-2 rounded-4xl hover:bg-purple-700 disabled:bg-gray-400 flex items-center gap-2 cursor-pointer"
+                      >
+                        {isSearching ? (
+                          <>
+                            <FiLoader className="animate-spin h-4 w-4 text-white" /> Checking...
+                          </>
+                        ) : (
+                          <>
+                            <IoSearch className="text-xl" /> Check
+                          </>
+                        )}
+                      </button>
                     </div>
-                  );
-                })}
-              </div>
 
-              <div className="border-t mt-4 pt-4">
-                <div className="flex justify-between font-bold text-lg">
-                  <span>Total:</span>
-                  <span className="text-purple-600">
-                    {formatPrice(bookingData.totalPrice)} VNĐ
-                  </span>
+                    {/* Member Info */}
+                    {memberChecked && member && (
+                      <div className="mt-4 p-4 bg-white rounded-lg border border-gray-300">
+                        <div className="flex flex-col gap-4">
+                          <div className="flex items-center justify-between">
+                            <p className="text-gray-600 flex items-center gap-2">
+                              <FaIdCard /> Identity card:
+                            </p>
+                            <p className="font-medium">{member.identityCard}</p>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <p className="text-gray-600 flex items-center gap-2">
+                              <FaUser /> Full Name:
+                            </p>
+                            <p className="font-medium">{member.fullName}</p>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <p className="text-gray-600 flex items-center gap-2">
+                              <FaPhone /> Phone:
+                            </p>
+                            <p className="font-medium">{member.phone}</p>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <p className="text-gray-600 flex items-center gap-2">
+                              <FaStar /> Points:
+                            </p>
+                            <p className="font-medium flex items-center gap-1 text-green-600"><FaFire /> {member.score}</p>
+                          </div>
+                        </div>
+
+                        {/* Convert Points */}
+                        {memberChecked && (
+                          <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                            <label className="text-gray-700 flex items-center gap-2 sm:w-[80%] w-full ">
+                              <FaExchangeAlt /> Convert points to tickets:
+                              <span className="text-red-500">*</span>
+                            </label>
+                            <Field name="convertToTicket">
+                              {({ field }) => (
+                                <Switch
+                                  style={{
+                                    width: "100px"
+                                  }}
+                                  checked={field.value === "Agree"}
+                                  onChange={(checked) => {
+                                    setFieldValue('convertToTicket', checked ? "Agree" : "Disagree");
+                                  }}
+                                  checkedChildren="Agree"
+                                  unCheckedChildren="Disagree"
+                                />
+                              )}
+                            </Field>
+                          </div>
+                        )}
+
+                        {/* Promotion Code */}
+                        <div className="mt-4">
+                          <label className="block text-gray-700 mb-2">
+                            Promotion code:
+                          </label>
+                          <div className="flex gap-3 items-center justify-center">
+                            <Field
+                              name="promotionCode"
+                              type="text"
+                              disabled={values.convertToTicket === "Agree"}
+                              placeholder="Enter promotion code"
+                              className="flex-1 border border-gray-300 rounded-4xl px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleAddPromotion(values.promotionCode, setFieldValue)}
+                              disabled={values.convertToTicket === "Agree" || !values.promotionCode}
+                              className="bg-purple-600 text-white px-4 py-2 rounded-4xl hover:bg-purple-700 disabled:bg-gray-400 cursor-pointer flex items-center gap-1"
+                            >
+                              <IoAddOutline className="text-xl" /> Add
+                            </button>
+                          </div>
+                          {discount && values.convertToTicket === "Disagree" && (
+                            <p className="mt-2 text-green-600">
+                              Applied {discount}% discount
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
+            </Form>
+          );
+        }}
+      </Formik>
     </div>
   );
 };

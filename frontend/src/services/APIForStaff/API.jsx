@@ -130,7 +130,8 @@ export const createBookingHold = async (
   userId,
   showtimeId,
   seatIds,
-  promotionTitle = ""
+  promotionTitle = "",
+  PointsToUse = 0
 ) => {
   try {
     const response = await api.post("/bookings/hold", {
@@ -138,6 +139,7 @@ export const createBookingHold = async (
       showtimeId,
       seatIds,
       promotionTitle,
+      PointsToUse
     });
     return response.data;
   } catch (error) {
@@ -172,13 +174,12 @@ export const createCashPayment = async (bookingId, amount, reference) => {
 };
 
 // Thanh toán bằng momo
-export const createMomoPayment = async (bookingId, amount, returnUrl, userId) => {
+export const createMomoPayment = async (bookingId, amount, returnUrl) => {
   try {
     const response = await api.post("/payment/momo", {
       bookingId,
       amount,
-      returnUrl,
-      userId
+      returnUrl
     });
     return response.data;
   } catch (error) {
