@@ -146,6 +146,7 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
     showtimeId,
     seatIds,
     promotionTitle,
+    discount = 0,
     CreatedBy,
   }) {
     const connection = await db.promise().getConnection();
@@ -171,8 +172,8 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
         throw new Error("Some seats are not available");
       }
 
-      // 2. Kiểm tra khuyến mãi (giả sử luôn hợp lệ hoặc bạn tự bổ sung)
-      let discount = 0;
+      // 2. Xử lý promotion hoặc discount (chỉ 1 trong 2)
+      let promotionDiscount = 0; // phần trăm
       let promotionId = null;
 
       if (promotionTitle) {
@@ -183,7 +184,7 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
         if (promotion.length === 0) {
           throw new Error("Promotion not found");
         }
-        discount = promotion[0].DiscountValue || 0;
+        promotionDiscount = promotion[0].DiscountValue || 0;
         promotionId = promotion[0].PromotionId;
       }
 
@@ -194,7 +195,15 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
       );
       let totalAmount = Number(seatInfo[0].total) || 0;
 
-      totalAmount -= (totalAmount * discount) / 100;
+      if (promotionDiscount > 0) {
+      // Nếu có promotion, giảm theo phần trăm
+      totalAmount -= (totalAmount * promotionDiscount) / 100;
+      } else if (discount > 0) {
+        // Nếu có discount từ điểm, giảm trực tiếp số tiền
+        totalAmount -= discount;
+      }
+      // Đảm bảo tổng tiền không âm
+      totalAmount = Math.max(0, totalAmount);
 
       // 4. Tạo booking
       const bookingId = uuidv4();
