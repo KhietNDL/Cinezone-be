@@ -563,3 +563,18 @@ export const getAllProducts = async () => {
     throw error;
   }
 }
+
+export const holdProducts = async (memberId, products, notes = "") => {
+  try {
+    const response = await api.post("/order-products/hold", {
+      MemberId: memberId,
+      products: products,
+      Notes: notes,
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("❌ Lỗi gọi holdOrderProducts:", error?.response?.data || error.message);
+    throw error;
+  }
+};

@@ -35,7 +35,7 @@ const ConfirmPayment = () => {
 
   // const {
   //   selectedSeats = [],
-  //   calculatedTotalPrice = 0,
+  //   finalTotalPrice = 0,
   //   selectedRoom = "",
   //   selectedDate = null,
   //   selectedTime = "",
@@ -52,16 +52,21 @@ const ConfirmPayment = () => {
     selectedRoom,
     selectedDate,
     selectedTime,
-    calculatedTotalPrice,
+    finalTotalPrice,
     selectedShowtimeId,
+    
 
   } = useSelector((state) => state.booking);
 
   // Initialize prices
-  useEffect(() => {
-    setOriginalPrice(calculatedTotalPrice);
-    setFinalPrice(calculatedTotalPrice);
-  }, [calculatedTotalPrice]);
+  useEffect(() => { 
+    console.log("Final total price from Redux:", finalTotalPrice);
+    setOriginalPrice(finalTotalPrice);
+    setFinalPrice(finalTotalPrice);
+    
+  }, [finalTotalPrice]);
+  console.log("Ori PRICE:", originalPrice);
+  console.log("FIANL PRICE:", finalPrice);
 
   // Handle payment method selection
   const handlePaymentMethod = (method) => setPaymentMethod(method);
@@ -80,7 +85,7 @@ const ConfirmPayment = () => {
 
     // Nếu đang sử dụng points, hỏi người dùng
     if (isUsingPoints) {
-      const confirm = window.confirm('Bạn đang sử dụng điểm. Áp dụng mã khuyến mãi sẽ hủy việc sử dụng điểm. Tiếp tục?');
+      const confirm = window.confirm('cancle points usage for apply promotion ?');
       if (!confirm) return;
       handleRemovePoints();
     }
@@ -126,7 +131,7 @@ const ConfirmPayment = () => {
 
   // Points handling
   const handlePointsChange = (event) => {
-    const value = event.target.value.replace(/\D/g, ''); // Chỉ cho phép số
+    const value = event.target.value.replace(/\D/g, ''); 
     setPointsToUse(value);
     if (pointsError) setPointsError('');
   };
@@ -138,7 +143,7 @@ const ConfirmPayment = () => {
     }
 
     const points = parseInt(pointsToUse);
-    const maxPoints = user?.points || 0; // Giả sử user có field points
+    const maxPoints = user?.points || 0; 
     
     if (points > maxPoints) {
       setPointsError(`Bạn chỉ có ${maxPoints} điểm`);
@@ -150,7 +155,7 @@ const ConfirmPayment = () => {
       return;
     }
 
-    // Nếu đang sử dụng promotion, hỏi người dùng
+    
     if (appliedPromotion) {
       const confirm = window.confirm('Bạn đang sử dụng mã khuyến mãi. Sử dụng điểm sẽ hủy mã khuyến mãi. Tiếp tục?');
       if (!confirm) return;
@@ -177,7 +182,7 @@ const ConfirmPayment = () => {
     setFinalPrice(originalPrice);
   };
 
-  // Confirm and payment handler
+  
   const handleConfirm = async (e) => {
     e.preventDefault();
     
@@ -189,7 +194,7 @@ const ConfirmPayment = () => {
     setIsConfirming(true);
 
     try {
-      // Gọi API holding seats
+     
       console.log("data gui di holding seats:", { 
         userId: user.userId,
         selectedShowtimeId, 
@@ -206,11 +211,11 @@ const ConfirmPayment = () => {
         appliedPromotion?.Title || '' // promotion title
       );
 
-      // Navigate to waiting page với data đầy đủ
+      
       navigate("/waiting", {
         state: {
           selectedSeats,
-          calculatedTotalPrice,
+          finalTotalPrice,
           paymentMethod,
           selectedRoom,
           selectedDate,
@@ -220,7 +225,7 @@ const ConfirmPayment = () => {
           seatIds,
           movie,
           
-          // Discount information
+         
           discountType,
           promotionTitle: appliedPromotion?.Title || null,
           promotionData: appliedPromotion,
@@ -229,7 +234,7 @@ const ConfirmPayment = () => {
           originalPrice,
           finalPrice,
           
-          // Booking information
+         
           bookingId: holdingResult.bookingId,
           holdingSeats: holdingResult,
         },
@@ -259,8 +264,8 @@ useEffect(() => {
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 h-[412px]">
               <div className="flex justify-center sm:justify-start">
                 <img
-                  src={movie.PosterImage}
-                  alt={movie.NameOfEnglish}
+                  src={movie?.PosterImage}
+                  alt={movie?.NameOfEnglish}
                   className="w-40 h-56 sm:w-48 sm:h-72 object-cover rounded-lg flex-shrink-0"
                 />
               </div>
@@ -269,23 +274,23 @@ useEffect(() => {
               <div className="flex flex-col justify-between flex-1">
                 <div>
                   <h2 className="text-xl sm:text-2xl font-bold mb-1 text-center sm:text-left">
-                    {movie.NameOfEnglish}
+                    {movie?.NameOfEnglish}
                   </h2>
                   <h3 className="text-md sm:text-xl font-semibod mb-4 text-center sm:text-left ">
-                    {movie.NameOfVietnamese}
+                    {movie?.NameOfVietnamese}
                   </h3>
                   <div className="flex flex-col items-start gap-2 text-xs sm:text-sm text-gray-400 mb-2">
                     <span className="flex items-center gap-1">
-                      <FaRegClock className="text-green-400" /> {movie.RunningTime} min
+                      <FaRegClock className="text-green-400" /> {movie?.RunningTime} min
                     </span>
                     <span className="flex items-center gap-1">
-                      <FaCalendarAlt className="text-blue-300" /> {new Date(movie.FromDate).toLocaleDateString("vi-VN")}
+                      <FaCalendarAlt className="text-blue-300" /> {new Date(movie?.FromDate).toLocaleDateString("vi-VN")}
                     </span>
-                    <span className="flex items-center gap-1"><RiMovie2AiLine className="text-red-600" />{movie.Genres}</span>
+                    <span className="flex items-center gap-1"><RiMovie2AiLine className="text-red-600" />{movie?.Genres}</span>
                   </div>
 
                   <p className="text-gray-300 text-xs sm:text-sm text-center sm:text-left leading-relaxed">
-                    {movie.ContentSynopsis}
+                    {movie?.ContentSynopsis}
                   </p>
                 </div>
               </div>
