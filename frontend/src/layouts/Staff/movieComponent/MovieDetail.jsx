@@ -5,13 +5,13 @@ import { FaStar, FaRegStar, FaStarHalfAlt } from 'react-icons/fa';
 import { LuChartBar } from "react-icons/lu";
 import { GiTrophyCup } from "react-icons/gi";
 import { getCurrentMovies } from '../../../services/APIForStaff/API';
-import ItemCard from "./ItemCard";
+import ItemCard from "../component/ItemCard";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { Navigation, Pagination } from "swiper/modules";
-import './SwiperButton.css'
+import '../component/SwiperButton.css'
 //import { getDaysByMovieName, getVersionsAndTimesByMovieAndDay } from '../../../services/APIForStaff/API';
 
 export default function MovieDetail() {

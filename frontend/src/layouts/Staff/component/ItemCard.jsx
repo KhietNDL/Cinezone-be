@@ -1,6 +1,11 @@
 import React from "react";
 
 const ItemCard = ({ item, type, onSelect, selected, small }) => {
+
+  const formatPrice = (price) => {
+    return price?.toLocaleString('vi-VN');
+  };
+
   if (!item) return null; // An toàn hơn
 
   const truncateText = (text, maxLength) => {
@@ -25,14 +30,13 @@ const ItemCard = ({ item, type, onSelect, selected, small }) => {
       onClick={() => onSelect && onSelect(item)}
       className={`cursor-pointer rounded-xl border border-gray-300 transition-transform
         ${selected ? "shadow-[0_10px_10px_gray]" : "none"}
-        ${
-          type === "movie"
-            ? small
-              ? "w-[170px] h-[270px] min-h-[220px]"
-              : "w-[250px] h-[420px] min-h-[350px]"
-            : small
+        ${type === "movie"
+          ? small
+            ? "w-[170px] h-[270px] min-h-[220px]"
+            : "w-[250px] h-[420px] min-h-[350px]"
+          : small
             ? "w-[140px] h-[180px]"
-            : "w-[250px] h-[350px]"
+            : "w-[250px] h-[380px]"
         }`}
       title={fullName}
     >
@@ -41,32 +45,34 @@ const ItemCard = ({ item, type, onSelect, selected, small }) => {
           alt={item?.NameOfEnglish}
           src={item?.PosterImage}
           loading="lazy"
-          className={`w-full ${
-            small ? "h-[230px]" : "h-[350px]"
-          } object-cover rounded-tl-md rounded-tr-md mx-auto`}
+          className={`w-full ${small ? "h-[230px]" : "h-[350px]"} 
+          object-cover rounded-tl-xl rounded-tr-xl mx-auto`}
         />
       ) : (
         <img
           alt={item?.name}
           src={item?.image}
-          className={`w-full ${
-            small ? "h-[100px]" : "h-[250px]"
-          } object-cover rounded-tl-md rounded-tr-md mx-auto`}
+          className={`w-full ${small ? "h-[100px]" : "h-[250px]"} 
+          object-cover rounded-tl-xl rounded-tr-xl mx-auto`}
         />
       )}
 
       <div
-        className={`p-1 font-semibold text-center uppercase flex flex-col text-gray-700 ${
-          small ? "text-[11px]" : "text-md"
-        }`}
+        className={`p-1 font-semibold text-center uppercase flex flex-col text-gray-700 ${small ? "text-[11px]" : "text-md"
+          }`}
       >
         <div>{displayNameEN}</div>
         <div>{displayNameVN}</div>
       </div>
 
       {type === "combo" && (
-        <div className="text-xl p-2 font-bold text-center uppercase text-green-700">
-          ${item?.price?.toFixed ? item.price.toFixed(2) : item.price}
+        <div className="flex flex-col items-center justify-center">
+          <div className="text-xl p-2 font-bold text-center uppercase text-green-700">
+            {formatPrice(item?.price?.toFixed ? item.price : item.price)} VNĐ
+          </div>
+          <div className="p-2">
+            Quantity: {item?.quantity}
+          </div>
         </div>
       )}
     </div>

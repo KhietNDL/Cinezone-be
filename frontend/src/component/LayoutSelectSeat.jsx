@@ -20,13 +20,6 @@ export const LayoutSelectSeat = ({
   seatSpacing = 12,
   seatSpacingCouple = 0,
   seatColors = {
-    // available: "text-green-600",
-    // selected: "text-[#5341DB]",
-    // taken: "text-red-600",
-    // holding: "text-black",
-    // vip: "text-yellow-600",
-    // normal: "text-gray-700",
-    // couple: "text-pink-600",
     available: "text-purple-300",
     selected: "text-purple-100",
     taken: "text-purple-600",
@@ -139,11 +132,11 @@ export const LayoutSelectSeat = ({
     // Màu theo loại ghế - purple theme
     switch (type) {
       case 'VIP':
-        return "text-purple-200";
+        return seatColors.vip;
       case 'Normal':
-        return "text-purple-300";
+        return seatColors.normal;
       case 'Couple':
-        return "text-purple-400";
+        return seatColors.couple;
       default:
         return "text-purple-300";
     }
