@@ -29,6 +29,8 @@ import {
   resetBooking
 } from '../../../redux/features/sellingSlice';
 
+import { resetMember } from '../../../redux/features/memberSlice';
+
 const SellTicketPage = () => {
   const dispatch = useDispatch();
   const {
@@ -140,6 +142,7 @@ const SellTicketPage = () => {
 
   const handleCancel = () => {
     dispatch(resetBooking());
+    dispatch(resetMember());
     setVersionsAndTimes([]);
     setDays([]);
   };

@@ -153,6 +153,7 @@ export const getPromotion = async (params) => {
     handleError(error);
   }
 };
+
 export const createPromotion = async (formData) => {
   try {
     const response = await api.post("/promotions/create", formData, {
@@ -481,7 +482,26 @@ export const ConfirmBooking = async (bookingId) => {
     throw error;
   }
 };
-
+export const getAllBookings = async () => {
+  try {
+    const response = await api.get("/bookings");
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy tất cả booking:", error);
+    handleError(error);
+    throw error;
+  }
+};
+export const getBookingInfoById = async (bookingId) => {
+  try {
+    const response = await api.get(`/bookings/${bookingId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy booking theo ID:", error);
+    handleError(error);
+    throw error;
+  }
+};
 export const getBookingById = async (bookingId) => {
   try {
     const response = await api.get(`/bookings/detail/${bookingId}`);

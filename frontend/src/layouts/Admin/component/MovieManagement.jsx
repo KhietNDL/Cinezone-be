@@ -541,7 +541,7 @@ const MovieManagement = () => {
           setShowAddForm={setShowAddForm}
           showEditForm={showEditForm}
         />
-        <div className="bg-white xl:p-2  rounded-md shadow-sm">
+        <div className="bg-white rounded-md shadow-sm">
           {/* Table Layout for sm and above */}
           <div className="hidden sm:block">
             <MovieTable

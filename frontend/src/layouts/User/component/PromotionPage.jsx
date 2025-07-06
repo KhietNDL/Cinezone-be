@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getPromotion } from "../../../services/API";
+import { getPromotion, searchPromotion } from "../../../services/API";
 
 const Copy = ({ className }) => (
   <svg
@@ -109,16 +109,13 @@ const MoviePromotions = () => {
   const [searchTerm, setSearchTerm] = useState("");
   // eslint-disable-next-line no-unused-vars
   const [sortBy] = useState("startDate");
-  // const [copiedCode, setCopiedCode] = useState("");
+
   const [showSearch, setShowSearch] = useState(false);
   const [promotions, setPromotions] = useState([]);
+  const [allPromotions, setAllPromotions] = useState([]); // Store all promotions for reset
   const [loading, setLoading] = useState(true);
+  const [searching, setSearching] = useState(false);
   const [copiedCode, setCopiedCode] = useState("");
-  // const handleCopy = (code) => {
-  //   navigator.clipboard.writeText(code);
-  //   setCopiedCode(code);
-  //   setTimeout(() => setCopiedCode(""), 2000);
-  // };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -128,12 +125,40 @@ const MoviePromotions = () => {
       day: "numeric",
     });
   };
+
+  const getPromotionStatus = (promo) => {
+    const now = new Date();
+    const start = new Date(promo.StartTime);
+    const end = new Date(promo.EndTime);
+
+    if (now < start) return "upcoming"; // Chưa bắt đầu
+    if (now > end) return "expired"; // Hết hạn
+    return "active"; // Đang diễn ra
+  };
+
+  // Hàm sắp xếp promotions theo trạng thái: upcoming -> active -> expired
+  const sortPromotions = (promos) => {
+    const statusOrder = { upcoming: 0, active: 1, expired: 2 };
+    return [...promos].sort((a, b) => {
+      const statusA = getPromotionStatus(a);
+      const statusB = getPromotionStatus(b);
+      if (statusOrder[statusA] !== statusOrder[statusB]) {
+        return statusOrder[statusA] - statusOrder[statusB];
+      }
+      // Nếu cùng trạng thái, có thể sắp xếp thêm theo ngày bắt đầu
+      return new Date(a.StartTime) - new Date(b.StartTime);
+    });
+  };
+
+  // Initial load of all promotions
   useEffect(() => {
     const fetchPromotions = async () => {
       try {
         const data = await getPromotion();
         console.log("Dữ liệu promotion: ", data);
-        setPromotions(data.data);
+        const sortedPromos = sortPromotions(data.data);
+        setPromotions(sortedPromos);
+        setAllPromotions(sortedPromos); // Store for reset
       } catch (error) {
         console.error("Failed to fetch promotions:", error);
       } finally {
@@ -143,16 +168,81 @@ const MoviePromotions = () => {
 
     fetchPromotions();
   }, []);
+
+  // Search functionality with debouncing
+  useEffect(() => {
+    const delayedSearch = setTimeout(() => {
+      if (searchTerm.trim() === "") {
+        // Reset to all promotions if search is empty
+        const sorted = sortPromotions(allPromotions);
+        setPromotions(sorted);
+        // Debug trạng thái
+        console.log(
+          "[RESET] Promotion status order:",
+          sorted.map((p) => ({
+            id: p.PromotionId,
+            status: getPromotionStatus(p),
+          }))
+        );
+        setSearching(false);
+      } else {
+        handleSearch(searchTerm);
+      }
+    }, 500); // 500ms delay for debouncing
+
+    return () => clearTimeout(delayedSearch);
+  }, [searchTerm, allPromotions]);
+
+  const handleSearch = async (title) => {
+    try {
+      setSearching(true);
+      const data = await searchPromotion(title);
+      console.log("Search results: ", data);
+      const sorted = sortPromotions(data.promotions || []);
+      setPromotions(sorted);
+      // Debug trạng thái
+      console.log(
+        "[SEARCH] Promotion status order:",
+        sorted.map((p) => ({
+          id: p.PromotionId,
+          status: getPromotionStatus(p),
+        }))
+      );
+    } catch (error) {
+      console.error("Failed to search promotions:", error);
+      // On error, show all promotions
+      const sorted = sortPromotions(allPromotions);
+      setPromotions(sorted);
+      // Debug trạng thái
+      console.log(
+        "[ERROR] Promotion status order:",
+        sorted.map((p) => ({
+          id: p.PromotionId,
+          status: getPromotionStatus(p),
+        }))
+      );
+    } finally {
+      setSearching(false);
+    }
+  };
+
   const handleCopy = (code) => {
     navigator.clipboard.writeText(code);
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(""), 2000);
   };
-  const filteredPromotions = promotions
-    .filter((promo) =>
-      promo.Title.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => new Date(a.StartTime) - new Date(b.StartTime));
+
+  const handleSearchClose = () => {
+    setShowSearch(false);
+    setSearchTerm("");
+    const sorted = sortPromotions(allPromotions);
+    setPromotions(sorted); // Reset to all promotions
+    // Debug trạng thái
+    console.log(
+      "[CLOSE] Promotion status order:",
+      sorted.map((p) => ({ id: p.PromotionId, status: getPromotionStatus(p) }))
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] relative overflow-hidden">
@@ -222,10 +312,7 @@ const MoviePromotions = () => {
                 autoFocus
               />
               <button
-                onClick={() => {
-                  setShowSearch(false);
-                  setSearchTerm("");
-                }}
+                onClick={handleSearchClose}
                 className="absolute right-4 top-1/2 transform -translate-y-1/2 w-8 h-8 rounded-full text-purple-200 hover:text-white transition-all duration-200 flex items-center justify-center hover:bg-opacity-40"
                 style={{ backgroundColor: "rgba(105, 87, 245, 0.2)" }}
                 aria-label="Close search"
@@ -234,6 +321,12 @@ const MoviePromotions = () => {
               </button>
               <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-violet-600/20 rounded-2xl blur-xl -z-10"></div>
             </div>
+            {/* Search Status Indicator */}
+            {searching && (
+              <div className="absolute -bottom-8 left-0 text-purple-300 text-sm animate-pulse">
+                Searching...
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -267,6 +360,19 @@ const MoviePromotions = () => {
             </p>
           </div>
 
+          {/* Search Results Status */}
+          {searchTerm && !searching && (
+            <div className="text-center mb-8">
+              <p className="text-purple-200 text-lg">
+                {promotions.length > 0
+                  ? `Found ${promotions.length} promotion${
+                      promotions.length === 1 ? "" : "s"
+                    } for "${searchTerm}"`
+                  : `No promotions found for "${searchTerm}"`}
+              </p>
+            </div>
+          )}
+
           {/* Enhanced Promotions Grid */}
           {loading ? (
             <div className="text-white text-center text-2xl font-bold py-12">
@@ -275,35 +381,70 @@ const MoviePromotions = () => {
           ) : promotions?.length === 0 ? (
             <div className="text-center py-24 bg-gradient-to-br from-black/40 to-purple-900/20 backdrop-blur-xl rounded-3xl border border-purple-500/20 shadow-2xl">
               <div className="text-3xl font-bold text-white mb-4">
-                No promotions found
+                {searchTerm ? "No promotions found" : "No promotions available"}
               </div>
               <p className="text-xl text-gray-300">
-                Try searching for something else
+                {searchTerm
+                  ? "Try searching for something else"
+                  : "Check back later for new deals"}
               </p>
+              {searchTerm && (
+                <button
+                  onClick={() => {
+                    setSearchTerm("");
+                    const sorted = sortPromotions(allPromotions);
+                    setPromotions(sorted);
+                    // Debug trạng thái
+                    console.log(
+                      "[SHOW ALL] Promotion status order:",
+                      sorted.map((p) => ({
+                        id: p.PromotionId,
+                        status: getPromotionStatus(p),
+                      }))
+                    );
+                  }}
+                  className="mt-4 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-300"
+                >
+                  Show All Promotions
+                </button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
               {promotions?.map((promo, index) => (
                 <div
                   key={promo.PromotionId}
-                  className={`group relative bg-gradient-to-br from-black/60 via-purple-900/20 to-black/60 backdrop-blur-xl rounded-3xl overflow-hidden border border-purple-500/30 hover:border-purple-400/60 transition-all duration-700 transform hover:scale-105 hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-500/30 ${
-                    promo.featured
-                      ? "ring-2 ring-purple-400/50 shadow-2xl shadow-purple-500/20"
-                      : ""
-                  }`}
+                  className={`group relative bg-gradient-to-br from-black/60 via-purple-900/20 to-black/60 backdrop-blur-xl rounded-3xl overflow-hidden border border-purple-500/30 hover:border-purple-400/60 transition-all duration-700 transform hover:scale-105 hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-500/30
+                    ${
+                      promo.featured
+                        ? "ring-2 ring-purple-400/50 shadow-2xl shadow-purple-500/20"
+                        : ""
+                    }
+                    ${
+                      getPromotionStatus(promo) === "expired"
+                        ? " grayscale opacity-50 pointer-events-none"
+                        : ""
+                    }
+                  `}
                   style={{
                     animationDelay: `${index * 150}ms`,
                   }}
                 >
                   {/* Enhanced Discount Badge */}
-                  <div className="absolute top-6 left-6 z-20 ...">
-                    {promo.DiscountValue}%
+                  <div className="absolute top-6 left-6 z-20 px-4 py-2 rounded-full bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-500 text-white font-extrabold text-lg shadow-lg border-2 border-white/30 animate-pulse">
+                    {promo.DiscountValue
+                      ? Number(promo.DiscountValue) % 1 === 0
+                        ? Number(promo.DiscountValue) + "%"
+                        : Number(promo.DiscountValue)
+                            .toFixed(2)
+                            .replace(/\.00$/, "") + "%"
+                      : ""}
                   </div>
 
                   {/* Enhanced Image with Overlay */}
                   <div className="relative h-72 overflow-hidden">
                     <img
-                      src={promo.Image || "/default-promo.jpg"} // fallback nếu Image = null
+                      src={promo.Image || "/default-promo.jpg"}
                       alt={promo.Title}
                       className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-125 group-hover:rotate-2"
                       loading="lazy"
@@ -321,17 +462,25 @@ const MoviePromotions = () => {
 
                     <div className="relative p-8 z-10">
                       {/* Title */}
-                      <div className="mb-6">
-                        <h2 className="text-2xl font-black text-white mb-2 leading-tight">
-                          {promo.Title}
-                        </h2>
-                        <p className="text-gray-300 text-sm leading-relaxed">
-                          {promo.Detail}
-                        </p>
+                      <div className="w-full mb-6 flex items-center gap-2 relative">
+                        {/* Hiệu ứng lấp lánh */}
+                        <span className="absolute -left-8 top-1/2 -translate-y-1/2 animate-ping">
+                          <Sparkles className="w-8 h-8 text-pink-400 opacity-70" />
+                        </span>
+                        {promo.Detail.length > 17 ? (
+                          <h2 className="text-2xl font-extrabold mb-2 leading-tight bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 bg-clip-text text-transparent transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_20px_rgba(236,72,153,0.7)] animate-fade-in">
+                            {promo.Detail.slice(0, 17) + "..."}
+                          </h2>
+                        ) : (
+                          <h2 className="text-2xl font-extrabold mb-2 leading-tight bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 bg-clip-text text-transparent transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_20px_rgba(236,72,153,0.7)] animate-fade-in">
+                            {promo.Detail}
+                          </h2>
+                        )}
 
-                        <p className="text-gray-400 text-xs mt-2">
-                          Created by: {promo.CreatedByName || "N/A"}
-                        </p>
+                        {/* Icon động bên phải */}
+                        <span className="ml-2 animate-bounce">
+                          <Gift className="w-6 h-6 text-yellow-300" />
+                        </span>
                       </div>
                       <div className="mb-6">
                         <div className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-400/30 rounded-xl p-4 backdrop-blur-sm">
@@ -343,23 +492,33 @@ const MoviePromotions = () => {
                                   Promo Code
                                 </p>
                                 <p className="text-white font-mono text-lg font-bold">
-                                  {promo.Code}
+                                  {promo.Title}
                                 </p>
                               </div>
                             </div>
-                            <button
-                              onClick={() => handleCopy(promo.Code)}
-                              className="flex items-center justify-center w-10 h-10 bg-purple-500/20 hover:bg-purple-500/40 rounded-lg transition-all duration-300 group/copy"
-                              title="Copy code"
-                            >
-                              {copiedCode === promo.Code ? (
-                                <span className="text-green-400 text-xs font-bold">
-                                  ✓
-                                </span>
-                              ) : (
-                                <Copy className="w-4 h-4 text-purple-300 group-hover/copy:text-white transition-colors duration-300" />
-                              )}
-                            </button>
+                            {getPromotionStatus(promo) === "active" ? (
+                              <button
+                                onClick={() => handleCopy(promo.Title)}
+                                className="flex items-center justify-center w-10 h-10 bg-purple-500/20 hover:bg-purple-500/40 rounded-lg transition-all duration-300 group/copy"
+                                title="Copy code"
+                              >
+                                {copiedCode === promo.Title ? (
+                                  <span className="text-green-400 text-xs font-bold">
+                                    ✓
+                                  </span>
+                                ) : (
+                                  <Copy className="w-4 h-4 text-purple-300 group-hover/copy:text-white transition-colors duration-300" />
+                                )}
+                              </button>
+                            ) : getPromotionStatus(promo) === "upcoming" ? (
+                              <span className="text-yellow-400 text-xs font-bold">
+                                Sắp diễn ra
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 text-xs font-bold">
+                                Hết hạn
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>

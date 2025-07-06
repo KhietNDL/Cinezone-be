@@ -13,6 +13,8 @@ import {
     resetBooking
 } from '../../../redux/features/sellingSlice';
 
+import { resetMember } from '../../../redux/features/memberSlice';
+
 const formatPrice = (price) => {
     return price.toLocaleString('vi-VN');
 };
@@ -101,6 +103,7 @@ const SelectSeatsPage = () => {
 
     const handleCancel = useCallback(() => {
         dispatch(resetBooking());
+        dispatch(resetMember());
         navigate("/staff/ticket-selling");
     }, [dispatch, navigate]);
 
