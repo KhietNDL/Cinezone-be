@@ -96,7 +96,7 @@ const holdBooking = async (req, res) => {
     // Chỉ xử lý đổi điểm nếu PointsToUse > 0
     if (PointsToUse && PointsToUse > 0) {
       // Lấy thông tin loại ghế từ seatIds
-      const seatTypeToPoint = { normal: 90, vip: 150, double: 250, Normal: 90, Vip: 150, Double: 250 };
+      const seatTypeToPoint = { normal: 90, vip: 150, double: 250, Normal: 90, VIP: 150, Double: 250 };
       const seatTypes = [];
       for (const seatId of seatIds) {
         const seat = await Seat.getSeatById(seatId);
