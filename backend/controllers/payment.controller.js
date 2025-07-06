@@ -39,7 +39,7 @@ const processOfflinePayment = async (req, res) => {
     let booking, orderProduct;
     if (bookingId) {
       const Booking = require('../models/booking.model');
-      booking = await Booking.getById(bookingId);
+      booking = await Booking.getBookingById(bookingId);
       if (!booking) {
         return res.status(404).json({ error: "Booking not found" });
       }
