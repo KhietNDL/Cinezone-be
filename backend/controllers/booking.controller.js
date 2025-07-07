@@ -88,24 +88,28 @@ const holdBooking = async (req, res) => {
     const { userId, showtimeId, seatIds, productIds, promotionTitle, PointsToUse } = req.body;
     // Lấy user
     const user = await User.findById(userId);
-    // Lấy thông tin loại ghế từ seatIds
-    const seatTypeToPoint = { normal: 90, vip: 150, double: 250, Normal: 90, Vip: 150, Double: 250 };
-    const seatTypes = [];
-    for (const seatId of seatIds) {
-      const seat = await Seat.getSeatById(seatId);
-      if (!seat || !seatTypeToPoint[seat.Type]) {
-        return res.status(400).json({ error: 'Chỉ cho phép đổi điểm cho các loại ghế: normal, vip, double!' });
-      }
-      seatTypes.push(seat.Type);
-    }
-    const totalRequiredPoints = seatTypes.reduce((sum, type) => sum + seatTypeToPoint[type], 0);
-    if (PointsToUse !== totalRequiredPoints) {
-      return res.status(400).json({ error: 'Số điểm phải đúng bằng tổng số điểm quy định cho từng loại ghế!' });
-    }
+    
     let pointsUsed = 0;
     let newScoreBalance = null;
     let discount = 0;
+    
+    // Chỉ xử lý đổi điểm nếu PointsToUse > 0
     if (PointsToUse && PointsToUse > 0) {
+      // Lấy thông tin loại ghế từ seatIds
+      const seatTypeToPoint = { normal: 90, vip: 150, double: 250, Normal: 90, VIP: 150, Double: 250 };
+      const seatTypes = [];
+      for (const seatId of seatIds) {
+        const seat = await Seat.getSeatById(seatId);
+        if (!seat || !seatTypeToPoint[seat.Type]) {
+          return res.status(400).json({ error: 'Chỉ cho phép đổi điểm cho các loại ghế: normal, vip, double!' });
+        }
+        seatTypes.push(seat.Type);
+      }
+      const totalRequiredPoints = seatTypes.reduce((sum, type) => sum + seatTypeToPoint[type], 0);
+      if (PointsToUse !== totalRequiredPoints) {
+        return res.status(400).json({ error: 'Số điểm phải đúng bằng tổng số điểm quy định cho từng loại ghế!' });
+      }
+      
       if (!user || user.ScoreBalance < PointsToUse) {
         return res.status(400).json({ error: 'Không đủ điểm để sử dụng!' });
       }
@@ -113,8 +117,10 @@ const holdBooking = async (req, res) => {
       pointsUsed = PointsToUse;
       newScoreBalance = user.ScoreBalance - PointsToUse;
     }
+    
     // Gọi holdBooking ở model, truyền thêm discount để trừ vào tổng tiền
     const result = await Booking.holdBooking({ userId, showtimeId, seatIds, productIds, promotionTitle, discount });
+    
     // Nếu dùng điểm, trừ điểm và ghi lịch sử
     if (pointsUsed > 0) {
       await User.updateScoreBalance(userId, newScoreBalance);
@@ -127,6 +133,7 @@ const holdBooking = async (req, res) => {
         CreatedBy: userId
       });
     }
+    
     res.json({
       ...result,
       pointsUsed,

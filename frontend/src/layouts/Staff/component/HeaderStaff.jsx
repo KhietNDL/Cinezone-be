@@ -89,16 +89,6 @@ const HeaderStaff = () => {
             {isDropdownOpen && (
               <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-300 rounded-2xl shadow-lg z-10">
                 <div className="">
-                  {/* <button
-                    onClick={() => {
-                      navigate("/account");
-                      setIsDropdownOpen(false);
-                    }}
-                    className="flex items-center font-semibold gap-1 cursor-pointer rounded-2xl w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-[#604CE9] hover:text-white"
-                  >
-                    <FaRegIdCard className="text-xl"/>
-                    Profile Staff
-                  </button> */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();

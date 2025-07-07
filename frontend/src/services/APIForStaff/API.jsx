@@ -131,22 +131,24 @@ export const createBookingHold = async (
   userId,
   showtimeId,
   seatIds,
-  productIds = [],
-  promotionTitle = ""
+  promotionTitle = "",
+  PointsToUse = 0
 ) => {
   try {
     const response = await api.post("/bookings/hold", {
       userId,
       showtimeId,
       seatIds,
-      productIds,
       promotionTitle,
+      PointsToUse
     });
     return response.data;
   } catch (error) {
     handleError(error);
   }
 };
+
+
 
 // Xác nhận booking
 export const confirmBooking = async (bookingId) => {
@@ -173,18 +175,12 @@ export const createCashPayment = async (bookingId, amount, reference) => {
 };
 
 // Thanh toán bằng momo
-export const createMomoPayment = async (
-  bookingId,
-  amount,
-  returnUrl,
-  userId
-) => {
+export const createMomoPayment = async (bookingId, amount, returnUrl) => {
   try {
     const response = await api.post("/payment/momo", {
       bookingId,
       amount,
-      returnUrl,
-      userId,
+      returnUrl
     });
     return response.data;
   } catch (error) {
@@ -220,6 +216,44 @@ export const checkInfoBookingById = async (bookingId) => {
 export const cancelBookingById = async (bookingId) => {
   try {
     const response = await api.post(`/bookings/cancel/${encodeURIComponent(bookingId)}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+// Lấy tất cả product
+export const getAllProduct = async () => {
+  try {
+    const response = await api.get(`/products`)
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+// Tạo product hold (giữ slot product)
+export const createProductHold = async (MemberId, products, Notes = "") => {
+  try {
+    const response = await api.post("/order-products/hold", {
+      MemberId,
+      products,
+      Notes
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+
+//Đổi điểm sang tiền
+export const convertScoreToMoney = async (userId, pointsToExchange, bookingId) => {
+  try {
+    const response = await api.post(`/user/${userId}/exchange-score`, {
+      pointsToExchange,
+      bookingId
+    });
     return response.data;
   } catch (error) {
     handleError(error);

@@ -3,29 +3,34 @@ import React, { useEffect, useRef, useState } from 'react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { FaAlignLeft } from "react-icons/fa6";
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaTicket, FaCouch, FaLocationDot, FaMoneyBillWave } from "react-icons/fa6";
 import { IoTime } from "react-icons/io5";
 import { toast } from 'react-toastify';
 import logo from '../../../assets/logoWhite.png'
+import { resetBooking } from '../../../redux/features/sellingSlice';
+import { useDispatch, useSelector } from 'react-redux';
 
 export default function PrintTicket() {
     const componentRef = useRef();
-    const [bookingData, setBookingData] = useState(null);
+    const navigate = useNavigate();
+    const bookingData = useSelector((state) => state.selling);
+    const dispatch = useDispatch();
+    const [movieInfo, setMovieInfo] = useState(null);
 
     const {
-        movie = {},
-        day = "",
-        time = "",
+        selectedMovie = {},
+        selectedDay: day = "",
+        selectedTime: time = "",
         room = "",
-        version = "Standard",
+        selectedVersion: version = "Standard",
         selectedSeats = [],
         totalPrice = 0,
         memberInfo = {},
         paymentMethod = "",
         discount = 0,
         amountPaid = totalPrice
-    } = bookingData || {};
+    } = bookingData;
 
 
     // Format price function
@@ -34,32 +39,46 @@ export default function PrintTicket() {
     };
 
 
-    useEffect(() => {
-        const dataResult = async () => {
-            try {
-                const savedData = localStorage.getItem('currentBooking');
-                if (!savedData) throw new Error("Ticket information not found");
+    // useEffect(() => {
+    //     const dataResult = async () => {
+    //         try {
+    //             const savedData = localStorage.getItem('currentBooking');
+    //             if (!savedData) throw new Error("Ticket information not found");
 
-                const parsedData = JSON.parse(savedData);
-                if (!parsedData.bookingId) throw new Error("Invalid ticket data");
+    //             const parsedData = JSON.parse(savedData);
+    //             if (!parsedData.bookingId) throw new Error("Invalid ticket data");
 
-                setBookingData(parsedData);
-                // console.log(parsedData);
-                toast.success("Data loaded successfully!");
-            } catch (error) {
-                toast.error(error.message);
-            }
-        };
-        dataResult();
-    }, []);
+    //             setBookingData(parsedData);
+    //             // console.log(parsedData);
+    //             toast.success("Data loaded successfully!");
+    //         } catch (error) {
+    //             toast.error(error.message);
+    //         }
+    //     };
+    //     dataResult();
+    // }, []);
 
-     const handleCancel = () => {
-        localStorage.removeItem('currentBooking');
-        localStorage.removeItem('current_member');
-        localStorage.removeItem('selectedSeats');
+    const handleCancel = () => {
+        dispatch(resetBooking());
         navigate("/staff/ticket-selling");
     };
 
+    useEffect(() => {
+        if (!selectedMovie?.MovieId) {
+            navigate("/staff/ticket-selling");
+            return;
+        }
+
+        const loadMovie = async () => {
+            try {
+                const res = await getMovieById(selectedMovie.MovieId);
+                setMovieInfo(res.data || selectedMovie);
+            } catch {
+                setMovieInfo(selectedMovie);
+            }
+        };
+        loadMovie();
+    }, [selectedMovie, navigate]);
 
     const handleExportPdf = async () => {
         if (!componentRef.current) return;
@@ -81,10 +100,11 @@ export default function PrintTicket() {
         }
     };
 
-    if (!bookingData) {
+    console.log("Data:", bookingData);
+
+    if (!movieInfo?.NameOfEnglish) {
         return <div>Loading ticket information...</div>;
     }
-
     return (
         <div className='p-4 mx-auto w-full'>
             <h1 className="text-3xl font-bold mb-4 text-fuchsia-700">Tickets</h1>
@@ -97,7 +117,7 @@ export default function PrintTicket() {
                                     <div className="flex items-start gap-4 border-b border-white pb-2 w-[95%] text-white">
                                         {/* <img
                                             src={movie.PosterImage}
-                                            alt={`Poster ${movie?.NameOfEnglish}`}
+                                            alt={`Poster ${bookingData?.NameOfEnglish}`}
                                             className="w-25 h-auto rounded shadow"
                                         /> */}
                                         <div className="flex-1">
@@ -128,7 +148,7 @@ export default function PrintTicket() {
                                                 </div>
                                             </div>
                                             <h2 className="text-xl font-bold mt-2 pt-2 pb-4">
-                                                {movie?.NameOfEnglish || "Movie Title"}
+                                                  {movieInfo?.NameOfEnglish || "Movie Title"}
                                             </h2>
                                             <p className="text-xs flex gap-3">
                                                 <span className="py-2"><i className="fa-solid fa-clock"></i> {day} - {time || "N/A"}</span>
@@ -142,7 +162,7 @@ export default function PrintTicket() {
                                             <FaAlignLeft /> Synopsis:
                                         </h5>
                                         <p className='p-2 text-sm'>
-                                            {movie?.Description || "Movie description not available"}
+                                           {movieInfo?.Description || "Movie description not available"}
                                         </p>
                                     </div>
                                 </div>
@@ -160,9 +180,16 @@ export default function PrintTicket() {
                                 </div>
 
                                 {/* Decorative circles and dashed line */}
-                                <div className="absolute w-[40px] md:w-[60px] h-[40px] md:h-[60px] lg:w-[50px] lg:h-[50px] rounded-full bg-white top-[-20px] md:top-[-30px] md:right-[10%] lg:right-[35%] right-[20%] transform translate-x-1/2 md:translate-x-0"></div>
-                                <div className="absolute w-[40px] md:w-[60px] h-[40px] md:h-[60px] lg:w-[50px] lg:h-[50px] rounded-full bg-white bottom-[-20px] md:bottom-[-30px] lg:right-[35%] md:right-[10%] right-[20%] transform translate-x-1/2 md:translate-x-0"></div>
-                                <div className="absolute h-[90%] top-[5%] border-dashed border-white border-2 md:right-[45px] right-[70px] lg:right-[10%] xl:right-[37.5%]"></div>
+                                <div className="absolute w-[40px] md:w-[60px] h-[40px] md:h-[60px] lg:w-[50px] 
+                                lg:h-[50px] rounded-full bg-white top-[-20px] md:top-[-30px] md:right-[10%] 
+                                lg:right-[35%] right-[20%] transform translate-x-1/2 md:translate-x-0"></div>
+
+                                <div className="absolute w-[40px] md:w-[60px] h-[40px] md:h-[60px] lg:w-[50px] 
+                                lg:h-[50px] rounded-full bg-white bottom-[-20px] md:bottom-[-30px] lg:right-[35%]
+                                 md:right-[10%] right-[20%] transform translate-x-1/2 md:translate-x-0"></div>
+
+                                <div className="absolute h-[90%] top-[5%] border-dashed border-white border-2 
+                                md:right-[45px] right-[70px] lg:right-[10%] xl:right-[37.5%]"></div>
                             </div>
                         </div>
                     </div>
