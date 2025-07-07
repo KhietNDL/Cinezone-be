@@ -141,6 +141,8 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
     return rows[0];
   }
 
+
+
   static async holdBooking({
     userId,
     showtimeId,
@@ -148,6 +150,7 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
     promotionTitle,
     CreatedBy,
   }) {
+
     const connection = await db.promise().getConnection();
     try {
       await connection.beginTransaction();
@@ -355,60 +358,6 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
         result.affectedRows > 0 ? "Check-in successful" : "Check-in failed",
     };
   }
-  static async getBookingDetail(bookingId) {
-    // Lấy thông tin booking, showtime, movie, user
-    const [rows] = await db.promise().query(
-      `
-    SELECT 
-      b.BookingId,
-      b.TotalAmount,
-      b.BookingDate,
-      u.FullName AS buyerName,
-      u.PhoneNumber AS buyerPhone,
-      mv.NameOfVietnamese,
-      mv.NameOfEnglish,
-      s.Day,
-      s.Time,
-      cr.Name
-    FROM Bookings b
-    JOIN Users u ON b.MemberId = u.UserId
-    JOIN Showtimes s ON b.ShowtimeId = s.ShowtimeId
-    JOIN Version v ON s.VersionId = v.VersionId
-    JOIN Movies mv ON v.MovieId = mv.MovieId
-    JOIN CinemaRooms cr ON s.CinemaRoomId = cr.CinemaRoomId
-    WHERE b.BookingId = ? AND b.IsDeleted = 0
-    `,
-      [bookingId]
-    );
-    if (!rows[0]) return null;
-
-    // Lấy danh sách ghế chỉ của booking này
-    const [seats] = await db.promise().query(
-      `
-    SELECT s.SeatNumber
-    FROM SeatShowtime ss
-    JOIN Seats s ON ss.SeatId = s.SeatId
-    WHERE ss.BookingId = ?
-      AND ss.Status IN ('taken', 'holding')
-      AND ss.IsDeleted = 0
-    `,
-      [bookingId]
-    );
-
-    return {
-      bookingId: rows[0].BookingId,
-      movieNameVN: rows[0].NameOfVietnamese,
-      movieNameEnglish: rows[0].NameOfEnglish,
-      showDate: normalizeDate(rows[0].Day),
-      showTime: rows[0].Time,
-      startTime: rows[0].StartTime,
-      room: rows[0].Name,
-      seats: seats.map((s) => s.SeatNumber),
-      totalAmount: rows[0].TotalAmount,
-      buyerName: rows[0].buyerName,
-      buyerPhone: rows[0].buyerPhone,
-    };
-  }
 
   static async cancelBooking(bookingId) {
     const connection = await db.promise().getConnection();
@@ -462,60 +411,6 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
       success: result.affectedRows > 0,
       message:
         result.affectedRows > 0 ? "Check-in successful" : "Check-in failed",
-    };
-  }
-  static async getBookingDetail(bookingId) {
-    // Lấy thông tin booking, showtime, movie, user
-    const [rows] = await db.promise().query(
-      `
-    SELECT 
-      b.BookingId,
-      b.TotalAmount,
-      b.BookingDate,
-      u.FullName AS buyerName,
-      u.PhoneNumber AS buyerPhone,
-      mv.NameOfVietnamese,
-      mv.NameOfEnglish,
-      s.Day,
-      s.Time,
-      cr.Name
-    FROM Bookings b
-    JOIN Users u ON b.MemberId = u.UserId
-    JOIN Showtimes s ON b.ShowtimeId = s.ShowtimeId
-    JOIN Version v ON s.VersionId = v.VersionId
-    JOIN Movies mv ON v.MovieId = mv.MovieId
-    JOIN CinemaRooms cr ON s.CinemaRoomId = cr.CinemaRoomId
-    WHERE b.BookingId = ? AND b.IsDeleted = 0
-    `,
-      [bookingId]
-    );
-    if (!rows[0]) return null;
-
-    // Lấy danh sách ghế chỉ của booking này
-    const [seats] = await db.promise().query(
-      `
-    SELECT s.SeatNumber
-    FROM SeatShowtime ss
-    JOIN Seats s ON ss.SeatId = s.SeatId
-    WHERE ss.BookingId = ?
-      AND ss.Status IN ('taken', 'holding')
-      AND ss.IsDeleted = 0
-    `,
-      [bookingId]
-    );
-
-    return {
-      bookingId: rows[0].BookingId,
-      movieNameVN: rows[0].NameOfVietnamese,
-      movieNameEnglish: rows[0].NameOfEnglish,
-      showDate: normalizeDate(rows[0].Day),
-      showTime: rows[0].Time,
-      startTime: rows[0].StartTime,
-      room: rows[0].Name,
-      seats: seats.map((s) => s.SeatNumber),
-      totalAmount: rows[0].TotalAmount,
-      buyerName: rows[0].buyerName,
-      buyerPhone: rows[0].buyerPhone,
     };
   }
 
@@ -592,7 +487,8 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
       v.VersionType,
       p.Title,
       b.Status,
-      s.Duration
+      s.Duration,
+      sh.ScoreValue
     FROM Bookings b
     JOIN Users u ON b.MemberId = u.UserId
     JOIN Showtimes s ON b.ShowtimeId = s.ShowtimeId
@@ -600,6 +496,7 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
     JOIN Movies mv ON v.MovieId = mv.MovieId
     JOIN CinemaRooms cr ON s.CinemaRoomId = cr.CinemaRoomId
     LEFT JOIN Promotions p ON b.PromotionId = p.PromotionId
+    LEFT JOIN ScoreHistory sh ON b.BookingId = sh.RelatedBookingId
     WHERE b.BookingId = ? AND b.IsDeleted = 0;
     `,
       [bookingId]
@@ -641,6 +538,9 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
       totalAmount: rows[0].TotalAmount,
       buyerName: rows[0].buyerName,
       buyerPhone: rows[0].buyerPhone,
+      buyerCCCD: rows[0].buyerCCCD,
+      pointEarn: rows[0].ScoreValue > 0 ? rows[0].ScoreValue : undefined,
+      pointUse: rows[0].ScoreValue < 0 ? Math.abs(rows[0].ScoreValue) : undefined,
       status: rows[0].Status
     };
   }
@@ -648,16 +548,16 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
   let where = [];
   let params = [];
   if (email) {
-    where.push("u.Email = ?");
-    params.push(email);
+    where.push("u.Email LIKE ?");
+    params.push(`%${email}%`);
   }
   if (cccd) {
-    where.push("u.CCCD = ?");
-    params.push(cccd);
+    where.push("u.CCCD LIKE ?");
+    params.push(`%${cccd}%`);
   }
   if (phone) {
-    where.push("u.PhoneNumber = ?");
-    params.push(phone);
+    where.push("u.PhoneNumber LIKE ?");
+    params.push(`%${phone}%`);
   }
   if (where.length === 0) return [];
 

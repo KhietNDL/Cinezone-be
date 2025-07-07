@@ -3,11 +3,35 @@ const bcrypt = require("bcrypt");
 const { v4: uuidv4 } = require("uuid");
 
 class UserManagement {
-  static async getAllUsers() {
-    const [rows] = await db
-      .promise()
-      .query("SELECT * FROM Users WHERE Role = 1 AND IsDeleted = 0");
-    return rows;
+  static async getAllUsers(page = 1, limit = 0, sortBy = 'FullName', sortOrder = 'asc') {
+    const allowedSortFields = ['FullName', 'DateOfBirth', 'Email', 'PhoneNumber', 'CreatedAt'];
+    if (!allowedSortFields.includes(sortBy)) sortBy = 'FullName';
+    sortOrder = sortOrder.toLowerCase() === 'desc' ? 'DESC' : 'ASC';
+
+    let usersQuery = `SELECT * FROM Users WHERE Role = 1 AND IsDeleted = 0 ORDER BY ${sortBy} ${sortOrder}`;
+    let usersParams = [];
+    if (limit > 0) {
+      const offset = (page - 1) * limit;
+      usersQuery += " LIMIT ? OFFSET ?";
+      usersParams = [limit, offset];
+    }
+    const [users] = await db.promise().query(usersQuery, usersParams);
+
+    let totalUsers = users.length;
+    if (limit > 0) {
+      const [countResult] = await db.promise().query("SELECT COUNT(*) as total FROM Users WHERE Role = 1 AND IsDeleted = 0");
+      totalUsers = countResult[0].total;
+    }
+
+    return {
+      users,
+      pagination: {
+        total: totalUsers,
+        currentPage: page,
+        totalPages: limit > 0 ? Math.ceil(totalUsers / limit) : 1,
+        limit: limit > 0 ? limit : users.length,
+      },
+    };
   }
 
   static async getUsersbyName(name) {
