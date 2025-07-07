@@ -59,6 +59,8 @@ const comboProductRoutes = require('./routes/comboProduct');
 const orderProductDetailRoutes = require('./routes/orderProductDetail');
 const orderProductRoutes = require('./routes/orderProduct');
 const ratingRoutes = require('./routes/rating');
+const analyticsRoutes = require("./routes/analytics");
+
 
 // Use routes
 app.use("/api/payment", paymentRoutes);
@@ -86,6 +88,7 @@ app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
   next();
 });
+app.use("/api/analytics", analyticsRoutes);
 
 //port
 const PORT = process.env.PORT || 4458;
