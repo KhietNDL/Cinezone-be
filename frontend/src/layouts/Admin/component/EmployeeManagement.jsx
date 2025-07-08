@@ -11,17 +11,19 @@ import "react-toastify/dist/ReactToastify.css";
 import HeaderStats from "../employeeComponent/HeaderStats";
 import SearchAndAdd from "../employeeComponent/SearchAndAdd";
 import EmployeeTable from "../employeeComponent/EmployeeTable";
-import Pagination from "../employeeComponent/Pagination";
 import EmployeeForm from "../employeeComponent/EmployeeForm";
 import DeletePopup from "../employeeComponent/DeletePopup";
 import EmployeeTooltip from "../employeeComponent/EmployeeTooltip";
 import { IoEyeOutline } from "react-icons/io5";
 import { FaRegEdit } from "react-icons/fa";
 import { RiDeleteBin5Line } from "react-icons/ri";
+import Pagination from "../movieComponent/Pagination";
 
 const EmployeeManagement = () => {
   const [employees, setEmployees] = useState([]);
   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalEmployees, setTotalEmployees] = useState(0);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
@@ -30,7 +32,7 @@ const EmployeeManagement = () => {
     useState(null);
   // eslint-disable-next-line no-unused-vars
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-  const itemsPerPage = 7;
+  const itemsPerPage = 5;
   const [searchEmployee, setSearchEmployee] = useState("");
   const [avatarFile, setAvatarFile] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -47,11 +49,20 @@ const EmployeeManagement = () => {
 
   const getEmployees = async () => {
     try {
-      const response = await getEmployee({ page, limit: itemsPerPage });
-      if (response.data) setEmployees(response.data);
+      setLoading(true);
+      const response = await getEmployee({ page: page, limit: itemsPerPage });
+      if (response.data) {
+        setEmployees(response.data);
+        if (response.pagination) {
+          setTotalPages(response.pagination.totalPages);
+          setTotalEmployees(response.pagination.total);
+        }
+      }
     } catch (error) {
       console.error("Failed to fetch employees:", error);
       toast.error("Failed to fetch employees!");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -59,23 +70,30 @@ const EmployeeManagement = () => {
     getEmployees();
   }, [itemsPerPage, page]);
 
-  const handleAvatarChange = (e) => {
-    const file = e.target.files[0];
-    setAvatarFile(file);
-    if (file) setAvatarPreview(URL.createObjectURL(file));
-    else setAvatarPreview(null);
-  };
-
   const handleSearchEmployees = async (searchTerm) => {
     try {
-      if (searchTerm.trim() === "") getEmployees();
-      else {
+      setLoading(true);
+      if (searchTerm.trim() === "") {
+        getEmployees();
+      } else {
         const response = await searchEmployees(searchTerm);
-        if (response.employees) setEmployees(response.employees);
+        if (response.employees) {
+          setEmployees(response.employees);
+          // Calculate total pages based on search results
+          const total = response.employees.length;
+          setTotalEmployees(total);
+          setTotalPages(Math.ceil(total / itemsPerPage));
+          setPage(1); // Reset to first page on search
+        }
       }
     } catch (error) {
       console.error("Failed to search employees:", error);
       toast.error("Failed to search employees!");
+      setEmployees([]);
+      setTotalPages(0);
+      setTotalEmployees(0);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -97,7 +115,12 @@ const EmployeeManagement = () => {
     );
   }, [employees, searchEmployee]);
 
-  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
+  // Paginate filtered employees
+  const paginatedEmployees = useMemo(() => {
+    const startIndex = (page - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredEmployees.slice(startIndex, endIndex);
+  }, [filteredEmployees, page, itemsPerPage]);
 
   const validateForm = () => {
     if (!fullName || fullName.length < 6 || fullName.length > 100) {
@@ -180,6 +203,7 @@ const EmployeeManagement = () => {
       resetForm();
       setShowAddForm(false);
       toast.success("Employee added successfully!");
+      getEmployees(); // Refresh the list to update pagination
     } catch (error) {
       console.error("Failed to add employee:", error);
     } finally {
@@ -244,6 +268,7 @@ const EmployeeManagement = () => {
       setSelectedEmployee(null);
       resetForm();
       toast.success("Employee updated successfully!");
+      getEmployees(); // Refresh the list to update pagination
     } catch (error) {
       console.error("Failed to update employee:", error);
     } finally {
@@ -266,6 +291,7 @@ const EmployeeManagement = () => {
       setShowDeletePopup(false);
       setSelectedEmployee(null);
       toast.success("Employee deleted successfully!");
+      getEmployees(); // Refresh the list to update pagination
     } catch (error) {
       console.error("Failed to delete employee:", error);
       toast.error(
@@ -299,69 +325,80 @@ const EmployeeManagement = () => {
     setAddress("");
   };
 
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setPage(page);
+    }
+  };
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    setAvatarFile(file);
+    if (file) setAvatarPreview(URL.createObjectURL(file));
+    else setAvatarPreview(null);
+  };
+
   return (
-    <div
-      className="flex flex-col items-center lg:items-start h-auto min-h-screen justify-between w-full max-w-full overflow-x-hidden"
-      onClick={handleOutsideClick}
-    >
-      {loading && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999]">
-          <div className="bg-white rounded-lg p-4 sm:p-6 flex flex-col items-center shadow-xl">
-            <svg
-              className="animate-spin h-6 sm:h-8 w-6 sm:w-8 text-indigo-600 mb-3 sm:mb-4"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-                fill="none"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v8z"
-              />
-            </svg>
-            <div className="font-semibold text-base sm:text-lg text-indigo-700">
-              {showEditForm
-                ? "Đang cập nhật nhân viên, vui lòng chờ..."
-                : "Đang thêm nhân viên, vui lòng chờ..."}
+    <div className="h-full">
+      <div
+        className="flex flex-col lg:flex-row items-center justify-between gap-6"
+        onClick={handleOutsideClick}
+      >
+        {loading && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999]">
+            <div className="bg-white rounded-lg p-4 sm:p-6 flex flex-col items-center shadow-xl">
+              <svg
+                className="animate-spin h-6 sm:h-8 w-6 sm:w-8 text-indigo-600 mb-3 sm:mb-4"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8z"
+                />
+              </svg>
+              <div className="font-semibold text-base sm:text-lg text-indigo-700">
+                {showEditForm
+                  ? "Updating employee, please wait..."
+                  : "Adding employee, please wait..."}
+              </div>
             </div>
           </div>
-        </div>
-      )}
-      <div className="w-[90%] md:w-[95%] lg:w-[95%] max-w-7xl space-y-4">
-        <HeaderStats employees={employees} />
-        <SearchAndAdd
-          searchEmployee={searchEmployee}
-          setSearchEmployee={setSearchEmployee}
-          setPage={setPage}
-          resetForm={resetForm}
-          setShowAddForm={setShowAddForm}
-          showEditForm={showEditForm}
-        />
-        <div className="bg-white rounded-md shadow-sm">
-          {/* Table Layout for sm and above */}
-          <div className="hidden sm:block">
-            <EmployeeTable
-              employees={filteredEmployees}
-              page={page}
-              itemsPerPage={itemsPerPage}
-              handleEdit={handleEdit}
-              handleDelete={handleDelete}
-              handleRowClick={handleRowClick}
-              formatDate={formatDate}
-            />
-          </div>
-          {/* Card Layout for Mobile */}
-          <div className="block sm:hidden space-y-4">
-            {filteredEmployees
-              .slice((page - 1) * itemsPerPage, page * itemsPerPage)
-              .map((emp) => (
+        )}
+        <div className="w-[90%] md:w-[95%] lg:w-[95%] max-w-7xl space-y-4">
+          <HeaderStats totalEmployees={totalEmployees} />
+          <SearchAndAdd
+            searchEmployee={searchEmployee}
+            setSearchEmployee={setSearchEmployee}
+            setPage={setPage}
+            resetForm={resetForm}
+            setShowAddForm={setShowAddForm}
+            showEditForm={showEditForm}
+          />
+          <div className="bg-white rounded-md shadow-sm">
+            {/* Table Layout for sm and above */}
+            <div className="hidden sm:block">
+              <EmployeeTable
+                employees={paginatedEmployees} // Use paginated data
+                page={page}
+                itemsPerPage={itemsPerPage}
+                handleEdit={handleEdit}
+                handleDelete={handleDelete}
+                handleRowClick={handleRowClick}
+                formatDate={formatDate}
+              />
+            </div>
+            {/* Card Layout for Mobile */}
+            <div className="block sm:hidden space-y-4">
+              {paginatedEmployees.map((emp) => (
                 <article
                   key={emp.UserId}
                   className="bg-white p-4 rounded-lg shadow-sm border border-slate-200"
@@ -435,66 +472,71 @@ const EmployeeManagement = () => {
                   </div>
                 </article>
               ))}
+            </div>
           </div>
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            handlePageChange={handlePageChange}
+          />
         </div>
-        <Pagination page={page} totalPages={totalPages} setPage={setPage} />
+        {(showAddForm || showEditForm) && (
+          <EmployeeForm
+            showEditForm={showEditForm}
+            fullName={fullName}
+            dateOfBirth={dateOfBirth}
+            password={password}
+            sex={sex}
+            cccd={cccd}
+            email={email}
+            phoneNumber={phoneNumber}
+            address={address}
+            avatarPreview={avatarPreview}
+            avatarUploadRef={avatarUploadRef}
+            setFullName={setFullName}
+            setDateOfBirth={setDateOfBirth}
+            setPassword={setPassword}
+            setSex={setSex}
+            setCccd={setCccd}
+            setEmail={setEmail}
+            setPhoneNumber={setPhoneNumber}
+            setAddress={setAddress}
+            handleAvatarChange={handleAvatarChange}
+            handleAdd={handleAdd}
+            handleUpdate={handleUpdate}
+            setShowAddForm={setShowAddForm}
+            setShowEditForm={setShowEditForm}
+            setSelectedEmployee={setSelectedEmployee}
+            resetForm={resetForm}
+            setAvatarFile={setAvatarFile}
+            setAvatarPreview={setAvatarPreview}
+          />
+        )}
+        {showDeletePopup && (
+          <DeletePopup
+            confirmDelete={confirmDelete}
+            setShowDeletePopup={setShowDeletePopup}
+            selectedEmployee={selectedEmployee}
+          />
+        )}
+        {selectedEmployeeForTooltip && (
+          <EmployeeTooltip
+            employee={selectedEmployeeForTooltip}
+            position={tooltipPosition}
+            onClose={() => setSelectedEmployeeForTooltip(null)}
+          />
+        )}
+        <ToastContainer
+          position="top-right"
+          autoClose={2000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+        />
       </div>
-      {(showAddForm || showEditForm) && (
-        <EmployeeForm
-          showEditForm={showEditForm}
-          fullName={fullName}
-          dateOfBirth={dateOfBirth}
-          password={password}
-          sex={sex}
-          cccd={cccd}
-          email={email}
-          phoneNumber={phoneNumber}
-          address={address}
-          avatarPreview={avatarPreview}
-          avatarUploadRef={avatarUploadRef}
-          setFullName={setFullName}
-          setDateOfBirth={setDateOfBirth}
-          setPassword={setPassword}
-          setSex={setSex}
-          setCccd={setCccd}
-          setEmail={setEmail}
-          setPhoneNumber={setPhoneNumber}
-          setAddress={setAddress}
-          handleAvatarChange={handleAvatarChange}
-          handleAdd={handleAdd}
-          handleUpdate={handleUpdate}
-          setShowAddForm={setShowAddForm}
-          setShowEditForm={setShowEditForm}
-          setSelectedEmployee={setSelectedEmployee}
-          resetForm={resetForm}
-          setAvatarFile={setAvatarFile}
-          setAvatarPreview={setAvatarPreview}
-        />
-      )}
-      {showDeletePopup && (
-        <DeletePopup
-          confirmDelete={confirmDelete}
-          setShowDeletePopup={setShowDeletePopup}
-          selectedEmployee={selectedEmployee}
-        />
-      )}
-      {selectedEmployeeForTooltip && (
-        <EmployeeTooltip
-          employee={selectedEmployeeForTooltip}
-          position={tooltipPosition}
-          onClose={() => setSelectedEmployeeForTooltip(null)}
-        />
-      )}
-      <ToastContainer
-        position="top-right"
-        autoClose={2000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-      />
     </div>
   );
 };

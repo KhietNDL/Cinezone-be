@@ -11,7 +11,7 @@ import debounce from "lodash/debounce";
 
 const TicketBookingManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 7;
+  const itemsPerPage = 5;
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
@@ -200,7 +200,6 @@ const TicketBookingManagement = () => {
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
-      console.log("Page changed to:", page);
     }
   };
 
@@ -396,7 +395,9 @@ const TicketBookingManagement = () => {
                     <div className="flex justify-between items-center py-2">
                       <span className="text-gray-600 font-medium">Seats:</span>
                       <span className="font-bold text-indigo-600 bg-indigo-100 px-3 py-1 rounded-full">
-                        {booking.seats}
+                        {booking.seats && booking.seats.length > 0
+                          ? booking.seats.join(", ")
+                          : "N/A"}
                       </span>
                     </div>
                   </div>
@@ -524,8 +525,8 @@ const TicketBookingManagement = () => {
   };
 
   return (
-    <div>
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+    <div className="h-full">
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
         <div className="w-[90%] md:w-[95%] lg:w-[95%] max-w-7xl space-y-4">
           {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 lg:gap-4 w-full">
@@ -569,7 +570,7 @@ const TicketBookingManagement = () => {
                   />
                 </div>
               </div>
-              <div className="w-full sm:w-auto">
+              <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
                 <select className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                   <option>All</option>
                   <option>Successful</option>
@@ -579,14 +580,11 @@ const TicketBookingManagement = () => {
             </div>
 
             {/* Table */}
-            <div className="bg-white min-h-[340px] max-h-[340px] p-2 lg:p-4 rounded-md shadow-sm overflow-x-auto">
-              <div className="min-w-[800px]">
+            <div className="bg-white p-2 lg:p-4 rounded-lg shadow-sm">
+              <div className="hidden sm:block">
                 <table className="w-full table-auto border-collapse">
                   <thead>
-                    <tr className="text-left text-slate-500 text-xs sm:text-sm border-b border-slate-200">
-                      <th className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] text-center">
-                        Booking ID
-                      </th>
+                    <tr className="text-left text-slate-500 text-xs sm:text-sm border-b border-gray-200">
                       <th className="py-2 px-2 sm:px-4 w-[120px] sm:w-[150px] text-center">
                         Full Name
                       </th>
@@ -617,9 +615,6 @@ const TicketBookingManagement = () => {
                         onClick={() => openModal(booking)}
                         className="border-b border-slate-200 hover:bg-slate-100 text-xs sm:text-sm cursor-pointer"
                       >
-                        <td className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] text-center">
-                          {booking.BookingId}
-                        </td>
                         <td className="py-2 px-2 sm:px-4 w-[120px] sm:w-[150px] text-center">
                           {bookingDetails[booking.BookingId]?.buyerName ||
                             "N/A"}

@@ -266,9 +266,9 @@ export const searchMovies = async (params) => {
 
 // API cho Employee
 
-export const getEmployee = async () => {
+export const getEmployee = async (params) => {
   try {
-    const response = await api.get("/employee");
+    const response = await api.get("/employee", { params });
     return response.data;
   } catch (error) {
     handleError(error);
@@ -561,5 +561,16 @@ export const getAllProducts = async () => {
     console.error("Lỗi khi lấy danh sách sản phẩm owr API:", error);
     handleError(error);
     throw error;
+  }
+};
+
+export const createShowtime = async (showtimeData) => {
+  try {
+    const response = await api.post("/showtimes/create", showtimeData, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
   }
 };
