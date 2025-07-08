@@ -19,7 +19,7 @@ const upload = multer();
  * @swagger
  * /api/employee:
  *   get:
- *     summary: Get all employees with pagination
+ *     summary: Get all employees with pagination and sorting
  *     tags: [Employee Management]
  *     security:
  *       - bearerAuth: []
@@ -35,53 +35,24 @@ const upload = multer();
  *         schema:
  *           type: integer
  *           default: 0
- *         description: Number of employees per page (0 = all employees)
+ *         description: Number of employees per page (0 = all)
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [FullName, DateOfBirth, Email, PhoneNumber, CreatedAt]
+ *           default: FullName
+ *         description: Field to sort by
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: asc
+ *         description: Sort order (asc or desc)
  *     responses:
  *       200:
- *         description: Successfully retrieved all employees
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                 data:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       UserId:
- *                         type: string
- *                       FullName:
- *                         type: string
- *                       DateOfBirth:
- *                         type: string
- *                       Sex:
- *                         type: integer
- *                       Email:
- *                         type: string
- *                       CCCD:
- *                         type: string
- *                       Address:
- *                         type: string
- *                       PhoneNumber:
- *                         type: string
- *                       CreatedAt:
- *                         type: string
- *                       avatar_url:
- *                         type: string
- *                 pagination:
- *                   type: object
- *                   properties:
- *                     total:
- *                       type: integer
- *                     currentPage:
- *                       type: integer
- *                     totalPages:
- *                       type: integer
- *                     limit:
- *                       type: integer
+ *         description: Employees retrieved successfully
  *       500:
  *         description: Internal server error
  */

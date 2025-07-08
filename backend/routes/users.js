@@ -22,13 +22,40 @@ const { exchangeScore } = require("../controllers/user.controller");
  * @swagger
  * /api/user:
  *   get:
- *     summary: Get all users
+ *     summary: Get all users with pagination and sorting
  *     tags: [User Management]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of users per page (0 = all)
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [FullName, DateOfBirth, Email, PhoneNumber, CreatedAt]
+ *           default: FullName
+ *         description: Field to sort by
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: asc
+ *         description: Sort order (asc or desc)
  *     responses:
  *       200:
- *         description: Successfully retrieved all users
+ *         description: Users retrieved successfully
  *       500:
  *         description: Internal server error
  */

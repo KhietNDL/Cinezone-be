@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bookingController = require('../controllers/booking.controller');
 const { auth } = require('../middlewares/auth.middleware');
+const { bookingSeatsValidator } = require('../middlewares/booking.validator');
 
 /**
  * @swagger
@@ -248,7 +249,11 @@ router.get('/member/:memberId/latest', bookingController.getLatestBookingByMembe
  *       500:
  *         description: Internal server error
  */
-router.post('/hold', bookingController.holdBooking);
+router.post(
+  '/hold',
+  bookingSeatsValidator, 
+  bookingController.holdBooking
+);
 
 /**
  * @swagger
