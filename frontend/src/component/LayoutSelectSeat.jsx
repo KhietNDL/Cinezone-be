@@ -28,6 +28,7 @@ export const LayoutSelectSeat = ({
     normal: "text-purple-300",
     couple: "text-purple-400",
   },
+  showInfo = true,
 }) => {
   const [selectedSeats, setSelectedSeats] = useState(new Set(initialSelectedSeats));
   const [seatLayout, setSeatLayout] = useState([]);
@@ -436,7 +437,7 @@ export const LayoutSelectSeat = ({
 
 
       {/* Selected Seats Info */}
-      {selectedSeats.size > 0 && (
+     {showInfo && selectedSeats.size > 0 && (
         <div className="mt-6 p-4 bg-white/5 rounded-lg backdrop-blur-sm animate-fade-in">
           <div className="text-center">
             <p className="text-sm text-gray-300 mb-2">

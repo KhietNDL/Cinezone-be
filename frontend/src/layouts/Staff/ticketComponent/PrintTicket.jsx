@@ -10,6 +10,7 @@ import { toast } from 'react-toastify';
 import logo from '../../../assets/logoWhite.png'
 import { resetBooking } from '../../../redux/features/sellingSlice';
 import { useDispatch, useSelector } from 'react-redux';
+import VersionCard from '../component/VersionCard';
 
 export default function PrintTicket() {
     const componentRef = useRef();
@@ -37,26 +38,6 @@ export default function PrintTicket() {
     const formatPrice = (price) => {
         return price?.toLocaleString('vi-VN');
     };
-
-
-    // useEffect(() => {
-    //     const dataResult = async () => {
-    //         try {
-    //             const savedData = localStorage.getItem('currentBooking');
-    //             if (!savedData) throw new Error("Ticket information not found");
-
-    //             const parsedData = JSON.parse(savedData);
-    //             if (!parsedData.bookingId) throw new Error("Invalid ticket data");
-
-    //             setBookingData(parsedData);
-    //             // console.log(parsedData);
-    //             toast.success("Data loaded successfully!");
-    //         } catch (error) {
-    //             toast.error(error.message);
-    //         }
-    //     };
-    //     dataResult();
-    // }, []);
 
     const handleCancel = () => {
         dispatch(resetBooking());
@@ -130,25 +111,28 @@ export default function PrintTicket() {
                                                     style={{ filter: "brightness(0) invert(1)" }}
                                                 />
                                                 <div
-                                                    className=" p-1 rounded-full shadow-md w-[110px] h-[25px] flex items-center justify-center"
+                                                    className="px-3 rounded-full shadow-md flex items-center justify-center"
                                                     style={{
                                                         background: "linear-gradient(90deg, #FACC15, #DDB61A, #DBBB3B, #CDB03D, #B1900C)",
                                                         color: "#FFF8A7"
                                                     }}
                                                 >
-                                                    <p className="font-bold p-2 text-xs"
+                                                    <p className="font-bold p-2 text-sm"
                                                         style={{
-                                                            fontSize: "0.75rem",
+                                                           
                                                             lineHeight: "1rem",
                                                             textShadow: "0 1px 2px Orange"
                                                         }}>Now Showing</p>
                                                 </div>
-                                                <div className="bg-white text-xs px-2 py-1 rounded-sm "
-                                                    style={{ color: "#86198F", border: "1px solid #86198F" }}>{version || "Standard"}
-                                                </div>
+                                                
+                                                <VersionCard
+                                                    version={version}
+                                                    readonly={true}
+                                                    className="text-sm ring-2 ring-white text-shadow-2xs"
+                                                />
                                             </div>
                                             <h2 className="text-xl font-bold mt-2 pt-2 pb-4">
-                                                  {movieInfo?.NameOfEnglish || "Movie Title"}
+                                                {movieInfo?.NameOfEnglish || "Movie Title"}
                                             </h2>
                                             <p className="text-xs flex gap-3">
                                                 <span className="py-2"><i className="fa-solid fa-clock"></i> {day} - {time || "N/A"}</span>
@@ -162,7 +146,7 @@ export default function PrintTicket() {
                                             <FaAlignLeft /> Synopsis:
                                         </h5>
                                         <p className='p-2 text-sm'>
-                                           {movieInfo?.Description || "Movie description not available"}
+                                            {movieInfo?.Description || "Movie description not available"}
                                         </p>
                                     </div>
                                 </div>

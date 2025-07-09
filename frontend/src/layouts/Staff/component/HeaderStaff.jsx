@@ -68,8 +68,10 @@ const HeaderStaff = () => {
               className="flex items-center bg-transparent rounded-4xl cursor-pointer group"
               onClick={toggleDropdown}
             >
-              <div className="flex items-center bg-white rounded-4xl group-hover:bg-gray-100 transition-colors duration-500 overflow-hidden">
-                <div className="text-3xl flex items-center justify-end transform transition-transform duration-500 group-hover:-translate-x-0 p-[1px]">
+              {/* <div className="flex items-center bg-white rounded-4xl group-hover:bg-gray-100 transition-colors duration-500 overflow-hidden">
+              <div className="text-3xl flex items-center justify-end transform transition-transform duration-500 group-hover:-translate-x-0 p-[1px]"> */}
+              <div className="flex items-center bg-white rounded-4xl ">
+                <div className="text-3xl flex items-center justify-end p-[1px]">
                   {user.avatar_url ? (
                     <img
                       src={user.avatar_url}
@@ -80,28 +82,29 @@ const HeaderStaff = () => {
                     <MdAccountCircle className="text-[#604CE9] group-hover:text-[#5038E9]" />
                   )}
                 </div>
-                <p className="opacity-0 max-w-0 group-hover:opacity-100 group-hover:max-w-full hover:px-2 font-semibold transition-all duration-700 whitespace-nowrap bg-white text-[#604CE9] py-2 rounded-2xl">
+                {/* <p className="opacity-0 max-w-0 group-hover:opacity-100 group-hover:max-w-full hover:px-2 font-semibold transition-all duration-700 whitespace-nowrap bg-white text-[#604CE9] py-2 rounded-2xl"> */}
+                <p className="max-w-full px-2 font-semibold text-[#604CE9] rounded-2xl">
                   {user.fullName || user.FullName || "Staff"}
                 </p>
               </div>
             </div>
 
             {isDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-300 rounded-2xl shadow-lg z-10">
-                <div className="">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsOpen(true);
-                      setIsDropdownOpen(false);
-                    }}
-                    className="cursor-pointer rounded-2xl w-full text-left px-4 py-2 text-sm text-gray-700
-                     hover:bg-[#604CE9] hover:text-white flex items-center gap-1 font-semibold"
-                  >
-                    <MdOutlineLogout className="text-xl" />
-                    Sign Out
-                  </button>
-                </div>
+              <div className="absolute right-0 mt-2 w-30 bg-white border border-gray-300 rounded-full shadow-lg z-10">
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsOpen(true);
+                    setIsDropdownOpen(false);
+                  }}
+                  className="cursor-pointer rounded-full w-full text-left px-4 py-2 text-sm text-red-500
+                     hover:bg-red-500 hover:text-white flex items-center gap-1 font-semibold ring-2 ring-red-500"
+                >
+                  <MdOutlineLogout className="text-xl" />
+                  Sign Out
+                </button>
+
               </div>
             )}
           </div>
@@ -164,7 +167,7 @@ const HeaderStaff = () => {
                 className="px-4 py-2 border-2 border-red-600 text-red-600 bg-white rounded-md hover:bg-red-600 hover:text-white
                  transition w-1/2  disabled:opacity-50 disabled:cursor-not-allowed font-semibold flex items-center justify-center gap-1"
               >
-                <FaXmark className="text-xl"/> Cancel
+                <FaXmark className="text-xl" /> Cancel
               </button>
             </div>
           </div>

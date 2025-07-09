@@ -30,6 +30,7 @@ import {
 } from '../../../redux/features/sellingSlice';
 
 import { resetMember } from '../../../redux/features/memberSlice';
+import VersionCard from "../component/VersionCard";
 
 const SellTicketPage = () => {
   const dispatch = useDispatch();
@@ -151,16 +152,16 @@ const SellTicketPage = () => {
     getCurrentMovie();
   }, []);
 
-const swiperBreakpoints = {
-  320: { slidesPerView: 1, spaceBetween: 50, slidesPerGroup: 1 },
-  640: { slidesPerView: 2, spaceBetween: 30, slidesPerGroup: 1 },
-  768: { slidesPerView: 3, spaceBetween: 40, slidesPerGroup: 1 },
-  1024: { slidesPerView: 4, spaceBetween: 50, slidesPerGroup: 1 },
-};
+  const swiperBreakpoints = {
+    320: { slidesPerView: 1, spaceBetween: 50, slidesPerGroup: 1 },
+    640: { slidesPerView: 2, spaceBetween: 30, slidesPerGroup: 1 },
+    768: { slidesPerView: 2, spaceBetween: 50, slidesPerGroup: 2 },
+    1024: { slidesPerView: 4, spaceBetween: 50, slidesPerGroup: 2 },
+  };
 
   return (
     <div className="w-full bg-[#fafbfc] p-[20px]">
-      <div className="flex flex-col justify-between items-center sm:flex-row">
+      <div className="flex flex-col justify-between items-center sm:flex-row gap-4">
         <h1 className="text-3xl font-bold text-[#9810FA]">Sell Movie Ticket</h1>
         <Input.Search
           placeholder="Search movie..."
@@ -170,7 +171,7 @@ const swiperBreakpoints = {
         />
       </div>
 
-      <p className=" font-semibold mt-5"><i className="fa-solid fa-film"></i> Select Movie</p>
+      <p className="font-semibold mt-5"><i className="fa-solid fa-film"></i> Select Movie</p>
 
       <div className="staff-swiper">
         {loading ? (
@@ -205,6 +206,7 @@ const swiperBreakpoints = {
                       }
                     }}
                     selected={selectedMovie?.MovieId === movie.MovieId}
+
                   />
                 </div>
               </SwiperSlide>
@@ -232,36 +234,25 @@ const swiperBreakpoints = {
           <p className="flex items-center gap-1 font-semibold">
             <IoTime /> Select Time
           </p>
-          <div className="flex flex-wrap gap-6 p-4 ml-7 items-center">
+          <div className="flex flex-wrap gap-6 p-4 ml-1 items-center">
             {versionsAndTimes.map(ver => (
-              <div key={ver.version} className="flex flex-col items-center justify-center">
-                <div
-                  className={`font-bold px-5 py-2 rounded-lg mb-2
-                    ${selectedVersion === ver.version ? "scale-107 shadow-lg shadow-gray-400" : ""}
-                    ${ver.version === "IMAX" ? "bg-gradient-to-r from-[#004897] to-[#0AF7FB] text-white" :
-                      ver.version === "4DX" ? "bg-gradient-to-r from-[#680000] to-[#F26969] text-white" :
-                        ver.version === "3D" ? "bg-gradient-to-r from-[#C88200] to-[#FFE606] text-white" :
-                          ver.version === "2D" ? "bg-gradient-to-r from-[#147800] to-[#5EFF41] text-white" :
-                            "bg-gradient-to-r from-gray-700 to-gray-400 text-white"
-                    }`}
-                  role="button"
-                  title={ver.version}
-                  onClick={() => dispatch(setSelectedVersion(ver.version))}
-                >
-                  {ver.version}
+              <VersionCard
+                key={ver.version}
+                version={ver.version}
+                selectedVersion={selectedVersion}
+              >
+                <ShowtimeButton
+                  parentVersion={ver.version}
+                  selectedTime={selectedTime}
+                  onSelectTime={(ver, time) => {
+                    dispatch(setSelectedVersion(ver));
+                    dispatch(setSelectedTime(time));
+                  }}
+                  times={ver.showtimes}
+                  showTime
+                />
+              </VersionCard>
 
-                  <ShowtimeButton
-                    parentVersion={ver.version}
-                    selectedTime={selectedTime}
-                    onSelectTime={(ver, time) => {
-                      dispatch(setSelectedVersion(ver));
-                      dispatch(setSelectedTime(time));
-                    }}
-                    times={ver.showtimes}
-                    showTime
-                  />
-                </div>
-              </div>
             ))}
           </div>
         </>
@@ -275,25 +266,28 @@ const swiperBreakpoints = {
       )}
 
       <div className="flex items-center justify-center gap-4 mt-6">
-        <Link
-          to="/staff/ticket-selling/select-seats"
-        >
-          <button
-            className="font-semibold px-4 py-2 bg-[#8A2BE2] rounded-md text-white cursor-pointer hover:bg-white 
-            hover:text-[#8A2BE2] border-2 border-[#8A2BE2]"
+        <Link to="/staff/ticket-selling/select-seats">
+          <Button
+            type="primary"
             disabled={!selectedMovie || !selectedDay || !selectedVersion || !selectedTime}
+            icon={<i className="fa-solid fa-couch" />}
+            className="font-semibold px-4 py-2"
           >
-            <i className="fa-solid fa-couch"></i> Select seats
-          </button>
+            Select seats
+          </Button>
         </Link>
-        <button
-          className="font-semibold px-4 py-2 border-2 border-red-500 text-red-500 rounded-md cursor-pointer 
-          hover:text-white hover:bg-red-500"
+
+        <Button
+          danger
+          type="default"
           onClick={handleCancel}
+          icon={<i className="fa-solid fa-xmark" />}
+          className="font-semibold px-4 py-2"
         >
-          <i className="fa-solid fa-xmark"></i> Cancel
-        </button>
+          Cancel
+        </Button>
       </div>
+
     </div>
   );
 };

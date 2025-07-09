@@ -11,22 +11,17 @@ const ShowtimeButton = ({
   showTime,
   parentVersion
 }) => (
-  <Space direction="vertical">
+  <Space direction="vertical" className="w-full">
     {showDay && (
-      <div className='px-4 flex items-center justify-start'>
-        <Space wrap style={{ padding: "20px" }}>
+      <div className="px-4 flex items-center justify-start">
+        <Space wrap className="py-2 w-full">
           {days.map((day) => (
             <Button
               key={day}
-              type="default"
+              type={selectedDay === day ? "primary" : "default"}
               onClick={() => {
                 onSelectDay(day);
                 onSelectTime && onSelectTime(null);
-              }}
-              style={{
-                border: selectedDay === day ? "3px solid #8A2BE2" : "1px solid #d9d9d9",
-                color: selectedDay === day ? "#8A2BE2" : "black",
-                margin: '0 5px',
               }}
             >
               {day}
@@ -35,9 +30,10 @@ const ShowtimeButton = ({
         </Space>
       </div>
     )}
+
     {showTime && (
-      <div className='px-4 flex items-center justify-start'>
-        <Space wrap style={{ paddingLeft: "40px" }}>
+      <div className="px-4 flex items-center justify-start">
+        <Space wrap className="pl-2 w-full">
           {times.length === 0 ? (
             <span>No showtimes</span>
           ) : (
@@ -48,24 +44,25 @@ const ShowtimeButton = ({
                 const [hb, mb] = b.time.split(':').map(Number);
                 return ha * 60 + ma - (hb * 60 + mb);
               })
-              .map((timeObj) => (
-                <Button
-                  key={timeObj.showtimeId}
-                  type="default"
-                  onClick={() => onSelectTime(parentVersion, timeObj.time)}
-                  style={{
-                    border: selectedTime === timeObj.time ? "3px solid #8A2BE2" : "1px solid #d9d9d9",
-                    color: selectedTime === timeObj.time ? "#8A2BE2" : "black",
-                    margin: '0 5px',
-                  }}
-                >
-                  {timeObj.time}
-                </Button>
-              ))
+              .map((timeObj) => {
+                const isSelected = selectedTime === timeObj.time;
+
+                return (
+                  <Button
+                    key={timeObj.showtimeId}
+                    type={isSelected ? "primary" : "default"}
+                    onClick={() => onSelectTime(parentVersion, timeObj.time)}
+                    style={isSelected ? { border: "2px solid white" } : {}}
+                  >
+                    {timeObj.time}
+                  </Button>
+                );
+              })
           )}
         </Space>
       </div>
     )}
+
   </Space>
 );
 
