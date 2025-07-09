@@ -3,42 +3,35 @@ const bcrypt = require("bcrypt");
 const { v4: uuidv4 } = require("uuid");
 
 class Employee {
-  static async getAllEmployees(page = 1, limit = 0) {
-    if (limit <= 0) {
-      const [rows] = await db
-        .promise()
-        .query("SELECT * FROM Users WHERE Role = 2 AND IsDeleted = 0");
-      return {
-        employees: rows,
-        pagination: {
-          total: rows.length,
-          currentPage: 1,
-          totalPages: 1,
-          limit: rows.length,
-        },
-      };
-    } else {
+  static async getAllEmployees(page = 1, limit = 0, sortBy = 'FullName', sortOrder = 'asc') {
+    const allowedSortFields = ['FullName', 'DateOfBirth', 'Email', 'PhoneNumber', 'CreatedAt'];
+    if (!allowedSortFields.includes(sortBy)) sortBy = 'FullName';
+    sortOrder = sortOrder.toLowerCase() === 'desc' ? 'DESC' : 'ASC';
+
+    let employeesQuery = `SELECT * FROM Users WHERE Role = 2 AND IsDeleted = 0 ORDER BY ${sortBy} ${sortOrder}`;
+    let employeesParams = [];
+    if (limit > 0) {
       const offset = (page - 1) * limit;
-      const [rows] = await db
-        .promise()
-        .query(
-          "SELECT * FROM Users WHERE Role = 2 AND IsDeleted = 0 LIMIT ? OFFSET ?",
-          [limit, offset]
-        );
-      const [countResult] = await db
-        .promise()
-        .query("SELECT COUNT(*) as total FROM Users WHERE Role = 2 AND IsDeleted = 0");
-      const totalEmployees = countResult[0].total;
-      return {
-        employees: rows,
-        pagination: {
-          total: totalEmployees,
-          currentPage: page,
-          totalPages: Math.ceil(totalEmployees / limit),
-          limit,
-        },
-      };
+      employeesQuery += " LIMIT ? OFFSET ?";
+      employeesParams = [limit, offset];
     }
+    const [employees] = await db.promise().query(employeesQuery, employeesParams);
+
+    let totalEmployees = employees.length;
+    if (limit > 0) {
+      const [countResult] = await db.promise().query("SELECT COUNT(*) as total FROM Users WHERE Role = 2 AND IsDeleted = 0");
+      totalEmployees = countResult[0].total;
+    }
+
+    return {
+      employees,
+      pagination: {
+        total: totalEmployees,
+        currentPage: page,
+        totalPages: limit > 0 ? Math.ceil(totalEmployees / limit) : 1,
+        limit: limit > 0 ? limit : employees.length,
+      },
+    };
   }
   static async getEmployeesbyName(name) {
     const [rows] = await db

@@ -557,6 +557,12 @@ class Movie {
     );
     return rows[0] || null;
   }
+
+  static async updateMovieRatingStats(movieId, averageRating, totalRatings) {
+    const sql = 'UPDATE Movies SET AverageRating = ?, TotalRatings = ? WHERE MovieId = ?';
+    await db.promise().query(sql, [averageRating, totalRatings, movieId]);
+    return true;
+  }
 }
 
 module.exports = Movie;

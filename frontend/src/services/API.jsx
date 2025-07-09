@@ -482,9 +482,9 @@ export const ConfirmBooking = async (bookingId) => {
     throw error;
   }
 };
-export const getAllBookings = async () => {
+export const getAllBookings = async (params = {}) => {
   try {
-    const response = await api.get("/bookings");
+    const response = await api.get("/bookings", { params });
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy tất cả booking:", error);
@@ -512,7 +512,24 @@ export const getBookingById = async (bookingId) => {
     throw error;
   }
 };
-
+export const searchBookingsByUser = async (searchTerm) => {
+  try {
+    const response = await api.get("/bookings/search/user", {
+      params: {
+        [searchTerm.includes("@")
+          ? "email"
+          : searchTerm.length === 12
+          ? "cccd"
+          : "phone"]: searchTerm,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi tìm kiếm booking theo người dùng:", error);
+    handleError(error);
+    throw error;
+  }
+};
 export const cancelBooking = async (bookingId) => {
   try {
     const response = await api.post(`/bookings/cancel/${bookingId}`);

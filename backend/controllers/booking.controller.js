@@ -88,28 +88,24 @@ const holdBooking = async (req, res) => {
     const { userId, showtimeId, seatIds, productIds, promotionTitle, PointsToUse } = req.body;
     // Lấy user
     const user = await User.findById(userId);
-    
+    // Lấy thông tin loại ghế từ seatIds
+    const seatTypeToPoint = { normal: 90, vip: 150, double: 250, Normal: 90, Vip: 150, Double: 250 };
+    const seatTypes = [];
+    for (const seatId of seatIds) {
+      const seat = await Seat.getSeatById(seatId);
+      if (!seat || !seatTypeToPoint[seat.Type]) {
+        return res.status(400).json({ error: 'Chỉ cho phép đổi điểm cho các loại ghế: normal, vip, double!' });
+      }
+      seatTypes.push(seat.Type);
+    }
+    const totalRequiredPoints = seatTypes.reduce((sum, type) => sum + seatTypeToPoint[type], 0);
+    if (PointsToUse !== totalRequiredPoints) {
+      return res.status(400).json({ error: 'Số điểm phải đúng bằng tổng số điểm quy định cho từng loại ghế!' });
+    }
     let pointsUsed = 0;
     let newScoreBalance = null;
     let discount = 0;
-    
-    // Chỉ xử lý đổi điểm nếu PointsToUse > 0
     if (PointsToUse && PointsToUse > 0) {
-      // Lấy thông tin loại ghế từ seatIds
-      const seatTypeToPoint = { normal: 90, vip: 150, double: 250, Normal: 90, Vip: 150, Double: 250 };
-      const seatTypes = [];
-      for (const seatId of seatIds) {
-        const seat = await Seat.getSeatById(seatId);
-        if (!seat || !seatTypeToPoint[seat.Type]) {
-          return res.status(400).json({ error: 'Chỉ cho phép đổi điểm cho các loại ghế: normal, vip, double!' });
-        }
-        seatTypes.push(seat.Type);
-      }
-      const totalRequiredPoints = seatTypes.reduce((sum, type) => sum + seatTypeToPoint[type], 0);
-      if (PointsToUse !== totalRequiredPoints) {
-        return res.status(400).json({ error: 'Số điểm phải đúng bằng tổng số điểm quy định cho từng loại ghế!' });
-      }
-      
       if (!user || user.ScoreBalance < PointsToUse) {
         return res.status(400).json({ error: 'Không đủ điểm để sử dụng!' });
       }
@@ -227,7 +223,7 @@ const cancelBooking = async (req, res) => {
           MemberId: booking.MemberId,
           RelatedBookingId: bookingId,
           ScoreValue: pointsRefunded,
-          ChangeType: 4, // 4 = hoàn điểm do huỷ booking
+          ChangeType: 4,
           ChangeDate: new Date(),
           CreatedBy: booking.MemberId
         });
