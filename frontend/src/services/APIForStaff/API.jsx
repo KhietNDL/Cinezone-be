@@ -246,7 +246,6 @@ export const createProductHold = async (MemberId, products, Notes = "") => {
   }
 };
 
-
 //Đổi điểm sang tiền
 export const convertScoreToMoney = async (userId, pointsToExchange, bookingId) => {
   try {
