@@ -14,6 +14,7 @@ import {
 } from '../../../redux/features/sellingSlice';
 
 import { resetMember } from '../../../redux/features/memberSlice';
+import VersionCard from "../component/VersionCard";
 
 const formatPrice = (price) => {
     return price.toLocaleString('vi-VN');
@@ -28,19 +29,19 @@ const SelectSeatsPage = () => {
     const [movieInfo, setMovieInfo] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [isMobile, setIsMobile] = useState(window.innerWidth <= 640);
-    
+    // const [isMobile, setIsMobile] = useState(window.innerWidth <= 640);
+
     // Sử dụng ref để track xem đã fetch data chưa
     const hasFetchedData = useRef(false);
 
-    useEffect(() => {
-        const handleResize = () => {
-            setIsMobile(window.innerWidth <= 640);
-        };
+    // useEffect(() => {
+    //     const handleResize = () => {
+    //         setIsMobile(window.innerWidth <= 640);
+    //     };
 
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
+    //     window.addEventListener('resize', handleResize);
+    //     return () => window.removeEventListener('resize', handleResize);
+    // }, []);
 
     // FIX: Tách riêng các dependencies và chỉ fetch khi cần thiết
     useEffect(() => {
@@ -129,7 +130,7 @@ const SelectSeatsPage = () => {
         const lockedSeats = seatData.filter(seat => seat.status === "taken").length;
         const selectableSeats = totalSeats - lockedSeats;
         const selectedCount = selectedSeats.length;
-        
+
         const totalPrice = selectedSeats.reduce((total, seatNumber) => {
             const seat = seatData.find(s => s.seatNumber === seatNumber);
             return total + (seat ? seat.price : 0);
@@ -158,7 +159,7 @@ const SelectSeatsPage = () => {
     }
 
     return (
-        <div className="p-4 mx-auto w-full bg-white">
+        <div className="p-4 mx-auto w-full bg-[#fafbfc]">
             <h1 className="text-3xl font-bold mb-4 text-[#9810FA] justify-between items-center flex flex-col sm:flex-row">
                 Select Seats
             </h1>
@@ -172,18 +173,21 @@ const SelectSeatsPage = () => {
                 />
                 <div className="flex flex-col items-center sm:items-start">
                     <div className="flex items-center gap-2">
-                        <div className="text-[#FFF8A7] text-shadow-2xs text-shadow-amber-500 -1 rounded-full 
-                        bg-[linear-gradient(90deg,_#FACC15,_#DDB61A,_#DBBB3B,_#CDB03D,_#B1900C)] shadow-md w-[125px] h-[30px] flex items-center justify-center">
-                            <p className="font-bold p-2 text-sm">Now Showing</p>
+                        <div className="px-3 py-2 rounded-full shadow-md  flex items-center justify-center 
+                                        bg-[linear-gradient(to_right,_#FACC15,_#DDB61A,_#DBBB3B,_#CDB03D,_#B1900C)] text-[#FFF8A7]">
+                            <p className="font-bold text-sm leading-4 text-[#FFF8A7] [text-shadow:_0_1px_2px_orange]">
+                                Now Showing
+                            </p>
                         </div>
                         {bookingData.selectedVersion && (
-                            <div className="py-0.5 px-4 border-2 border-purple-700 bg-purple-300 rounded-lg text-purple-700 font-semibold"
-                                title={bookingData.selectedVersion}>
-                                {bookingData.selectedVersion}
-                            </div>
+                            <VersionCard
+                                version={bookingData.selectedVersion}
+                                readonly={true}
+                                className="text-sm"
+                            />
                         )}
                     </div>
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mt-2 py-4">
+                    <div className="flex flex-col lg:flex-row items-center justify-center gap-2 mt-2 py-4">
                         <h2 className="text-3xl font-bold">
                             {movieInfo.NameOfEnglish}
                         </h2>
@@ -210,33 +214,38 @@ const SelectSeatsPage = () => {
             </div>
 
             {/* Main content */}
-            <div className="flex flex-col sm:flex-row gap-10 justify-center bg-white mt-4">
-                <div className="w-full sm:w-[70%] flex justify-center">
-                    <LayoutSelectSeat
-                        seatDataFromAPI={seatData}
-                        initialSelectedSeats={selectedSeats}
-                        onSeatSelect={handleSeatSelect}
-                        textColor="text-[#6A57F5]"
-                        width={isMobile ? 15 : 30}
-                        height={isMobile ? 15 : 30}
-                        widthDouble={isMobile ? 20 : 42}
-                        heightDouble={isMobile ? 15 : 24}
-                        containerWidth={isMobile ? "100%" : "750px"}
-                        seatColors={{
-                            available: "text-gray-500",
-                            selected: "text-[#5341DB]",
-                            taken: "text-[#6A7282]",
-                            holding: "text-green-800",
-                            vip: "text-yellow-500",
-                            normal: "text-gray-700",
-                            couple: "text-pink-500",
-                        }}
-                        className={`w-full px-2 ${isMobile ? 'scale-[0.9]' : ''}`}
-                    />
+            <div className="flex flex-col lg:flex-row gap-10 justify-center bg-white mt-4">
+                <div className="w-full flex justify-center">
+                    <div className="w-full max-w-[750px] overflow-x-auto">
+                        <div className="min-w-[300px] mx-auto">
+                            <LayoutSelectSeat
+                                seatDataFromAPI={seatData}
+                                initialSelectedSeats={selectedSeats}
+                                onSeatSelect={handleSeatSelect}
+                                textColor="text-[#6A57F5]"
+                                width={30}
+                                height={30}
+                                widthDouble={42}
+                                heightDouble={24}
+                                seatColors={{
+                                    available: "text-gray-500",
+                                    selected: "text-[#5341DB]",
+                                    taken: "text-[#6A7282]",
+                                    holding: "text-green-800",
+                                    vip: "text-yellow-500",
+                                    normal: "text-gray-700",
+                                    couple: "text-pink-500",
+                                }}
+                                showInfo={false}
+                                className="w-full px-2"
+                            />
+                        </div>
+                    </div>
                 </div>
 
+
                 {/* Seat information */}
-                <div className="w-full sm:w-[30%] h-[50%] rounded-2xl border border-gray-300 bg-white shadow-md p-4">
+                <div className="w-full lg:w-[30%] h-[50%] rounded-2xl border border-gray-300 bg-white shadow-md p-4">
                     <div className="flex flex-col gap-2">
                         <h5 className="font-bold">
                             <i className="fa-solid fa-couch"></i> Seat Information
@@ -283,23 +292,26 @@ const SelectSeatsPage = () => {
 
                         <div className="mt-4 flex justify-center gap-2 py-5">
                             <Button
-                                style={{ backgroundColor: "#8A2BE2", color: "white" }}
                                 type="primary"
                                 icon={<CheckOutlined />}
                                 onClick={handleContinue}
                                 disabled={seatStats.selectedCount === 0}
+                                className="font-semibold px-4 py-2"
                             >
                                 Continue
                             </Button>
 
                             <Button
                                 danger
+                                type="default"
                                 icon={<CloseOutlined />}
                                 onClick={handleCancel}
+                                className="font-semibold px-4 py-2"
                             >
                                 Cancel
                             </Button>
                         </div>
+
                     </div>
                 </div>
             </div>
