@@ -266,9 +266,9 @@ export const searchMovies = async (params) => {
 
 // API cho Employee
 
-export const getEmployee = async () => {
+export const getEmployee = async (params) => {
   try {
-    const response = await api.get("/employee");
+    const response = await api.get("/employee", { params });
     return response.data;
   } catch (error) {
     handleError(error);
@@ -561,5 +561,66 @@ export const getAllProducts = async () => {
     console.error("Lỗi khi lấy danh sách sản phẩm owr API:", error);
     handleError(error);
     throw error;
+  }
+};
+
+export const createShowtime = async (showtimeData) => {
+  try {
+    const response = await api.post("/showtimes/create", showtimeData, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+// API Analytics
+export const getRevenueByMonth = async (year) => {
+  try {
+    const response = await api.get("/analytics/revenue/month", {
+      params: { year },
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const getRevenueByQuarter = async (year) => {
+  try {
+    const response = await api.get("/analytics/revenue/quarter", {
+      params: { year },
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const getRevenueThisMonth = async () => {
+  try {
+    const response = await api.get("/analytics/revenue/this-month");
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const getRevenueThisWeek = async () => {
+  try {
+    const response = await api.get("/analytics/revenue/this-week");
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const getRevenueThisQuarter = async () => {
+  try {
+    const response = await api.get("/analytics/revenue/this-quarter");
+    return response.data;
+  } catch (error) {
+    handleError(error);
   }
 };

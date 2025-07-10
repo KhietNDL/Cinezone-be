@@ -3,7 +3,7 @@ import { MdPeopleAlt } from "react-icons/md";
 import { IoTime, IoCloseSharp } from "react-icons/io5";
 import { IoMdPersonAdd } from "react-icons/io";
 
-const HeaderStats = ({ employees }) => {
+const HeaderStats = ({ totalEmployees }) => {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4 w-full">
       <div className="bg-white rounded-lg p-2 sm:p-3 flex-1 shadow-sm">
@@ -13,7 +13,7 @@ const HeaderStats = ({ employees }) => {
             <MdPeopleAlt size={20} className="text-blue-500" />
           </div>
         </div>
-        <p className="font-bold text-base sm:text-[19px]">{employees.length}</p>
+        <p className="font-bold text-base sm:text-[19px]">{totalEmployees}</p>
       </div>
       <div className="bg-white rounded-lg p-2 sm:p-3 flex-1 shadow-sm">
         <div className="flex items-center justify-between">

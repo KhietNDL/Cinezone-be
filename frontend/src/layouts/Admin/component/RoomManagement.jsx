@@ -1,7 +1,6 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { Trash2, Building, Users, TrendingUp, X } from "lucide-react";
 import { FaSortAmountDownAlt, FaSortAmountUpAlt } from "react-icons/fa";
-
 import { FaRegEdit } from "react-icons/fa";
 import { RiDeleteBin5Line } from "react-icons/ri";
 import { IoSearchOutline } from "react-icons/io5";
@@ -20,9 +19,8 @@ import Pagination from "../movieComponent/Pagination";
 
 const RoomManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
-  // eslint-disable-next-line no-unused-vars
-  const [itemsPerPage, setItemsPerPage] = useState(5);
-  const [sortOrder, setSortOrder] = useState("desc"); // hoặc "asc"
+  const [itemsPerPage] = useState(5);
+  const [sortOrder, setSortOrder] = useState("desc");
   const [totalPages, setTotalPages] = useState(1);
   const [totalRooms, setTotalRooms] = useState(0);
 
@@ -36,11 +34,9 @@ const RoomManagement = () => {
   const [roomId, setRoomId] = useState("");
   const [roomName, setRoomName] = useState("");
   const [seatQuantity, setSeatQuantity] = useState("");
+  const [roomType, setRoomType] = useState("Normal");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const searchTimeout = useRef();
-
-  // Sample data matching your image
   const statsData = [
     {
       icon: Building,
@@ -63,45 +59,43 @@ const RoomManagement = () => {
       color: "text-orange-600",
       bgColor: "bg-orange-100",
     },
-    {
-      icon: TrendingUp,
-      label: "Avg Rate",
-      value: "75%",
-      color: "text-orange-600",
-      bgColor: "bg-orange-100",
-    },
   ];
 
   useEffect(() => {
-    if (!searchTerm) {
-      (async () => {
-        const response = await getCinemaRooms({
-          page: currentPage,
-          limit: itemsPerPage,
-          sortBy: "SeatQuantity",
-          sortOrder: sortOrder,
-        });
-        setRooms(response.data);
-        setTotalPages(response.pagination.totalPages);
-        setTotalRooms(response.pagination.total);
-      })();
-      return;
-    }
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    searchTimeout.current = setTimeout(async () => {
+    const fetchData = async () => {
       try {
-        const data = await searchCinemaRooms(searchTerm);
-        setRooms(data.rooms || []);
-        setTotalPages(1);
-        setTotalRooms(data?.rooms?.length || 0);
+        if (!searchTerm) {
+          const response = await getCinemaRooms({
+            page: currentPage,
+            limit: itemsPerPage,
+            sortBy: "SeatQuantity",
+            sortOrder: sortOrder,
+          });
+          setRooms(Array.isArray(response.data) ? response.data : []);
+          setTotalPages(response.pagination?.totalPages || 1);
+          setTotalRooms(response.pagination?.total || 0);
+        } else {
+          const data = await searchCinemaRooms({
+            searchTerm,
+            page: currentPage,
+            limit: itemsPerPage,
+            sortBy: "SeatQuantity",
+            sortOrder: sortOrder,
+          });
+          setRooms(Array.isArray(data.data) ? data.data : []);
+          setTotalPages(data.pagination?.totalPages || 1);
+          setTotalRooms(data.pagination?.total || 0);
+        }
       } catch (error) {
-        console.error("Error searching rooms:", error);
+        console.error("Error fetching/searching rooms:", error);
         setRooms([]);
         setTotalPages(1);
         setTotalRooms(0);
       }
-    }, 400);
-    // eslint-disable-next-line
+    };
+
+    const timeoutId = setTimeout(fetchData, 500);
+    return () => clearTimeout(timeoutId);
   }, [searchTerm, currentPage, itemsPerPage, sortOrder]);
 
   const handleView = (room) => {
@@ -114,6 +108,7 @@ const RoomManagement = () => {
     setRoomId(room.CinemaRoomId || "");
     setRoomName(room.Name || "");
     setSeatQuantity(room.SeatQuantity?.toString() || "");
+    setRoomType(room.Type || "Normal");
     setShowEditModal(true);
   };
 
@@ -126,6 +121,7 @@ const RoomManagement = () => {
     setRoomId("");
     setRoomName("");
     setSeatQuantity("");
+    setRoomType("Normal");
     setShowAddModal(true);
   };
 
@@ -150,6 +146,7 @@ const RoomManagement = () => {
       const payload = {
         Name: roomName.trim(),
         SeatQuantity: seatNum,
+        Type: roomType,
       };
       if (showEditModal && roomId) {
         await updateCinemaRoom(roomId, payload);
@@ -163,14 +160,14 @@ const RoomManagement = () => {
       setRoomId("");
       setRoomName("");
       setSeatQuantity("");
-      // Lấy lại rooms đúng trang hiện tại
+      setRoomType("Normal");
       const data = await getCinemaRooms({
         page: currentPage,
         limit: itemsPerPage,
         sortBy: "SeatQuantity",
         sortOrder: sortOrder,
       });
-      setRooms(data.rooms);
+      setRooms(data.data || []);
       setTotalPages(data.pagination?.totalPages || 1);
       setTotalRooms(data.pagination?.total || 0);
     } catch (error) {
@@ -186,14 +183,13 @@ const RoomManagement = () => {
       await deleteCinemaRoom(selectedRoom.CinemaRoomId);
       setShowDeleteModal(false);
       setSelectedRoom(null);
-      // Lấy lại rooms đúng trang hiện tại
       const data = await getCinemaRooms({
         page: currentPage,
         limit: itemsPerPage,
         sortBy: "SeatQuantity",
         sortOrder: sortOrder,
       });
-      setRooms(data.rooms);
+      setRooms(data.data || []);
       setTotalPages(data.pagination?.totalPages || 1);
       setTotalRooms(data.pagination?.total || 0);
       toast.success("Room deleted successfully!");
@@ -213,108 +209,110 @@ const RoomManagement = () => {
     setRoomId("");
     setRoomName("");
     setSeatQuantity("");
+    setRoomType("Normal");
   };
+
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
   };
-  return (
-    <>
-      <div>
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-          <div className="w-[90%] md:w-[95%] lg:w-[95%] max-w-7xl space-y-4">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 lg:gap-4 w-full">
-              {statsData.map((stat, index) => (
-                <div key={index} className="bg-white rounded-md shadow-sm">
-                  <div className="bg-white rounded-md p-2 lg:p-3 w-full">
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between">
-                      <p className="text-xs lg:text-sm text-gray-600 mb-1 lg:mb-0">
-                        {stat.label}
-                      </p>
-                      <div
-                        className={`p-1.5 lg:p-2 rounded-full ${stat.bgColor} w-fit`}
-                      >
-                        <stat.icon
-                          className={`w-4 h-4 lg:w-6 lg:h-6 ${stat.color}`}
-                        />
-                      </div>
-                    </div>
-                    <div className="font-bold text-base lg:text-[19px] mt-1">
-                      {stat.value}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
 
-            {/* Search and Add Section */}
-            <div className="w-full py-3 space-y-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center mb-4 justify-between gap-3">
-                <div className="w-full sm:w-auto">
-                  <div className="flex items-center p-2 px-3 w-full sm:w-80 rounded-xl bg-white shadow-sm">
-                    <div className="shrink-0">
-                      <IoSearchOutline size={20} />
+  return (
+    <div className="h-full">
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+        <div className="w-[90%] md:w-[95%] lg:w-[95%] max-w-7xl space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 lg:gap-4 w-full">
+            {statsData.map((stat, index) => (
+              <div key={index} className="bg-white rounded-md shadow-sm">
+                <div className="bg-white rounded-md p-2 lg:p-3 w-full">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between">
+                    <p className="text-xs lg:text-sm text-gray-600 mb-1 lg:mb-0">
+                      {stat.label}
+                    </p>
+                    <div
+                      className={`p-1.5 lg:p-2 rounded-full ${stat.bgColor} w-fit`}
+                    >
+                      <stat.icon
+                        className={`w-4 h-4 lg:w-6 lg:h-6 ${stat.color}`}
+                      />
                     </div>
-                    <input
-                      type="text"
-                      value={searchTerm}
-                      onChange={(e) => {
-                        setSearchTerm(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      className="p-2 focus:outline-none w-full text-sm"
-                      placeholder="Search by room name or room id"
-                    />
                   </div>
-                </div>
-                <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
-                  <button
-                    onClick={handleAddRoom}
-                    className="flex items-center text-[#6051F3] hover:bg-slate-50 p-2 rounded-md active:bg-slate-100 bg-white shadow-sm text-sm"
-                  >
-                    <GoPlus size={20} className="mr-2" />
-                    Room
-                  </button>
+                  <div className="font-bold text-base lg:text-[19px] mt-1">
+                    {stat.value}
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
 
-              {/* Table and Card Layout */}
-              <div className="bg-white p-2 lg:p-4 rounded-lg shadow-sm">
-                {/* Table Layout for sm and above */}
-                <div className="hidden sm:block">
-                  <table className="w-full table-auto border-collapse">
-                    <thead>
-                      <tr className="text-left text-slate-500 text-xs sm:text-sm border-b border-gray-200">
-                        <th className="py-2 text-center px-2 sm:px-4 w-[150px] sm:w-[180px] md:w-[200px] shrink-0">
-                          Room Name
-                        </th>
-                        <th
-                          onClick={() =>
-                            setSortOrder(sortOrder === "asc" ? "desc" : "asc")
-                          }
-                          className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] shrink-0 text-center cursor-pointer select-none"
-                        >
-                          Seat Quantity
-                          <span className="inline-block ml-1 align-middle">
-                            {sortOrder === "asc" ? (
-                              <FaSortAmountUpAlt className="inline text-blue-500" />
-                            ) : (
-                              <FaSortAmountDownAlt className="inline text-blue-500" />
-                            )}
-                          </span>
-                        </th>
-                        <th className="py-2 px-2 sm:px-4 w-[80px] shrink-0 text-center hidden md:table-cell">
-                          Set Detail
-                        </th>
-                        <th className="py-2 px-2 sm:px-4 w-[80px] shrink-0 text-center">
-                          Action
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rooms.map((room) => (
+          <div className="w-full py-3 space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="w-full sm:w-auto">
+                <div className="flex items-center p-2 px-3 w-full sm:w-80 rounded-xl bg-white shadow-sm">
+                  <div className="shrink-0">
+                    <IoSearchOutline size={20} />
+                  </div>
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="p-2 focus:outline-none w-full text-sm"
+                    placeholder="Search by room name or room id"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
+                <button
+                  onClick={handleAddRoom}
+                  className="flex items-center text-[#6051F3] hover:bg-slate-50 p-2 rounded-md active:bg-slate-100 bg-white shadow-sm text-sm"
+                >
+                  <GoPlus size={20} className="mr-2" />
+                  Room
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white p-2 lg:p-4 rounded-lg shadow-sm">
+              <div className="hidden sm:block">
+                <table className="w-full table-auto border-collapse">
+                  <thead>
+                    <tr className="text-left text-slate-500 text-xs sm:text-sm border-b border-gray-200">
+                      <th className="py-2 text-center px-2 sm:px-4 w-[150px] sm:w-[180px] md:w-[200px] shrink-0">
+                        Room Name
+                      </th>
+                      <th
+                        onClick={() =>
+                          setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                        }
+                        className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] shrink-0 text-center cursor-pointer select-none"
+                      >
+                        Seat Quantity
+                        <span className="inline-block ml-1 align-middle">
+                          {sortOrder === "asc" ? (
+                            <FaSortAmountUpAlt className="inline text-blue-500" />
+                          ) : (
+                            <FaSortAmountDownAlt className="inline text-blue-500" />
+                          )}
+                        </span>
+                      </th>
+                      <th className="py-2 px-2 sm:px-4 w-[80px] shrink-0 text-center hidden md:table-cell">
+                        Type
+                      </th>
+                      <th className="py-2 px-2 sm:px-4 w-[80px] shrink-0 text-center hidden md:table-cell">
+                        Set Detail
+                      </th>
+                      <th className="py-2 px-2 sm:px-4 w-[80px] shrink-0 text-center">
+                        Action
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.isArray(rooms) && rooms.length > 0 ? (
+                      rooms.map((room) => (
                         <tr
                           key={room.CinemaRoomId}
                           onClick={() => handleEdit(room)}
@@ -322,17 +320,16 @@ const RoomManagement = () => {
                         >
                           <td className="py-2 px-2 sm:px-4 w-[150px] sm:w-[180px] md:w-[200px] shrink-0">
                             <span className="block text-center">
-                              {room.Name?.length > 20 ? (
-                                <span title={room.Name}>
-                                  {room.Name.slice(0, 20) + "..."}
-                                </span>
-                              ) : (
-                                room.Name || "N/A"
-                              )}
+                              {room.Name?.length > 20
+                                ? `${room.Name.slice(0, 20)}...`
+                                : room.Name || "N/A"}
                             </span>
                           </td>
                           <td className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] shrink-0 text-center">
                             {room.SeatQuantity || "N/A"}
+                          </td>
+                          <td className="py-2 px-2 sm:px-4 w-[80px] shrink-0 text-center hidden md:table-cell">
+                            {room.Type || "Normal"}
                           </td>
                           <td className="py-2 px-2 sm:px-4 w-[80px] shrink-0 text-center hidden md:table-cell">
                             <button
@@ -372,13 +369,23 @@ const RoomManagement = () => {
                             </div>
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                {/* Card Layout for Mobile */}
-                <div className="block sm:hidden space-y-4">
-                  {rooms.map((room) => (
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan="5"
+                          className="py-4 text-center text-gray-500"
+                        >
+                          No rooms available
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <div className="block sm:hidden space-y-4">
+                {Array.isArray(rooms) && rooms.length > 0 ? (
+                  rooms.map((room) => (
                     <article
                       key={room.CinemaRoomId}
                       className="bg-white p-4 rounded-lg shadow-sm border border-slate-200"
@@ -387,16 +394,15 @@ const RoomManagement = () => {
                       <div className="flex items-center gap-4">
                         <div className="flex-1">
                           <h3 className="text-sm font-medium text-gray-900 truncate">
-                            {room.Name?.length > 20 ? (
-                              <span title={room.Name}>
-                                {room.Name.slice(0, 20) + "..."}
-                              </span>
-                            ) : (
-                              room.Name || "N/A"
-                            )}
+                            {room.Name?.length > 20
+                              ? `${room.Name.slice(0, 20)}...`
+                              : room.Name || "N/A"}
                           </h3>
                           <p className="text-xs text-gray-500 truncate">
                             Seats: {room.SeatQuantity || "N/A"}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">
+                            Type: {room.Type || "Normal"}
                           </p>
                         </div>
                       </div>
@@ -437,215 +443,247 @@ const RoomManagement = () => {
                         </button>
                       </div>
                     </article>
-                  ))}
-                </div>
+                  ))
+                ) : (
+                  <div className="text-center text-gray-500 py-4">
+                    No rooms available
+                  </div>
+                )}
               </div>
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                handlePageChange={handlePageChange}
-              />
+            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              handlePageChange={handlePageChange}
+            />
+          </div>
+        </div>
+      </div>
+
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-lg p-4 lg:p-6 w-full max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Building className="w-5 h-5 text-blue-600" />
+              </div>
+              <h2 className="text-lg font-semibold text-gray-800">
+                Add New Room
+              </h2>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Room Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter room name"
+                  value={roomName}
+                  onChange={(e) => setRoomName(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Seat Quantity (60 - 150)
+                </label>
+                <input
+                  type="number"
+                  min={60}
+                  max={150}
+                  placeholder="Enter seat quantity"
+                  value={seatQuantity}
+                  onChange={(e) => setSeatQuantity(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Room Type
+                </label>
+                <select
+                  value={roomType}
+                  onChange={(e) => setRoomType(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                >
+                  <option value="Normal">Normal</option>
+                  <option value="IMAX">IMAX</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6 pt-4 border-t">
+              <button
+                onClick={handleCloseModals}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md text-center text-sm w-full sm:w-auto"
+              >
+                ← Back
+              </button>
+              <button
+                onClick={handleSaveRoom}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium text-center text-sm w-full sm:w-auto"
+              >
+                + Add
+              </button>
             </div>
           </div>
         </div>
+      )}
 
-        {/* Modals */}
-        {showAddModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
-            <div className="bg-white rounded-lg p-4 lg:p-6 w-full max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center gap-3 mb-6">
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-lg p-4 lg:p-6 w-full max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Building className="w-5 h-5 text-blue-600" />
+              </div>
+              <h2 className="text-lg font-semibold text-gray-800">Edit Room</h2>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Room Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter room name"
+                  value={roomName}
+                  onChange={(e) => setRoomName(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Seat Quantity (60 - 150)
+                </label>
+                <input
+                  type="number"
+                  min={60}
+                  max={150}
+                  placeholder="Enter seat quantity"
+                  value={seatQuantity}
+                  onChange={(e) => setSeatQuantity(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Room Type
+                </label>
+                <select
+                  value={roomType}
+                  onChange={(e) => setRoomType(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                >
+                  <option value="Normal">Normal</option>
+                  <option value="IMAX">IMAX</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+              <button
+                onClick={handleCloseModals}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md text-sm w-full sm:w-auto"
+              >
+                ← Back
+              </button>
+              <button
+                onClick={handleSaveRoom}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium text-sm w-full sm:w-auto"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteModal && selectedRoom && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-lg p-4 lg:p-6 w-full max-w-md sm:max-w-lg">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <Trash2 className="h-6 w-6 text-red-600" />
+              </div>
+
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Delete room?
+              </h3>
+
+              <p className="text-sm text-gray-500 mb-6">
+                Are you sure you want to delete this room?
+                <br />
+                This action cannot be undone.
+              </p>
+
+              <div className="flex flex-col sm:flex-row justify-center gap-3">
+                <button
+                  onClick={handleCloseModals}
+                  className="px-6 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md text-sm w-full sm:w-auto"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium text-sm w-full sm:w-auto"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDetailsModal && selectedRoom && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-lg p-4 lg:p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
                   <Building className="w-5 h-5 text-blue-600" />
                 </div>
-                <h2 className="text-lg font-semibold text-gray-800">
-                  Add New Room
-                </h2>
-              </div>
-
-              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Room Name
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Enter room name"
-                    value={roomName}
-                    onChange={(e) => setRoomName(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Seat Quantity (60 - 150)
-                  </label>
-                  <input
-                    type="number"
-                    min={60}
-                    max={150}
-                    placeholder="Enter seat quantity"
-                    value={seatQuantity}
-                    onChange={(e) => setSeatQuantity(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  />
+                  <h2 className="text-lg font-semibold text-gray-800">
+                    {selectedRoom.Name} Details
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    Room ID: {selectedRoom.CinemaRoomId} • Total Seats:{" "}
+                    {selectedRoom.SeatQuantity} • Type:{" "}
+                    {selectedRoom.Type || "Normal"}
+                  </p>
                 </div>
               </div>
-
-              <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6 pt-4 border-t">
-                <button
-                  onClick={handleCloseModals}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md text-center text-sm w-full sm:w-auto"
-                >
-                  ← Back
-                </button>
-                <button
-                  onClick={handleSaveRoom}
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium text-center text-sm w-full sm:w-auto"
-                >
-                  + Add
-                </button>
-              </div>
+              <button
+                onClick={handleCloseModals}
+                className="text-gray-400 hover:text-gray-600 hover:bg-slate-200 p-2 rounded-lg"
+              >
+                <X size={30} />
+              </button>
             </div>
+
+            <LayoutSelectSeat />
           </div>
-        )}
+        </div>
+      )}
 
-        {showEditModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
-            <div className="bg-white rounded-lg p-4 lg:p-6 w-full max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Building className="w-5 h-5 text-blue-600" />
-                </div>
-                <h2 className="text-lg font-semibold text-gray-800">
-                  Edit Room
-                </h2>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Room Name
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Enter room name"
-                    value={roomName}
-                    onChange={(e) => setRoomName(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Seat Quantity (60 - 150)
-                  </label>
-                  <input
-                    type="number"
-                    min={60}
-                    max={150}
-                    placeholder="Enter seat quantity"
-                    value={seatQuantity}
-                    onChange={(e) => setSeatQuantity(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-                <button
-                  onClick={handleCloseModals}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md text-sm w-full sm:w-auto"
-                >
-                  ← Back
-                </button>
-                <button
-                  onClick={handleSaveRoom}
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium text-sm w-full sm:w-auto"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-        {showDeleteModal && selectedRoom && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
-            <div className="bg-white rounded-lg p-4 lg:p-6 w-full max-w-md sm:max-w-lg">
-              <div className="text-center">
-                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-                  <Trash2 className="h-6 w-6 text-red-600" />
-                </div>
-
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Delete room?
-                </h3>
-
-                <p className="text-sm text-gray-500 mb-6">
-                  Are you sure you want to delete this room?
-                  <br />
-                  This action cannot be undone.
-                </p>
-
-                <div className="flex flex-col sm:flex-row justify-center gap-3">
-                  <button
-                    onClick={handleCloseModals}
-                    className="px-6 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md text-sm w-full sm:w-auto"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleConfirmDelete}
-                    className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium text-sm w-full sm:w-auto"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        {showDetailsModal && selectedRoom && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
-            <div className="bg-white rounded-lg p-4 lg:p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Building className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-800">
-                      {selectedRoom.Name} Details
-                    </h2>
-                    <p className="text-sm text-gray-500">
-                      Room ID: {selectedRoom.CinemaRoomId} • Total Seats:{" "}
-                      {selectedRoom.SeatQuantity}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={handleCloseModals}
-                  className="text-gray-400 hover:text-gray-600 hover:bg-slate-200 p-2 rounded-lg"
-                >
-                  <X size={30} />
-                </button>
-              </div>
-
-              <LayoutSelectSeat />
-            </div>
-          </div>
-        )}
-
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          draggable
-        />
-      </div>
-    </>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick={true}
+        rtl={false}
+        draggable={true}
+      />
+    </div>
   );
 };
 
