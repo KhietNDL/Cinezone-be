@@ -68,16 +68,16 @@ export default function MoviePage() {
   }, []);
 
   const swiperBreakpoints = {
-    320: { slidesPerView: 1, spaceBetween: 50 },
-    640: { slidesPerView: 2, spaceBetween: 30 },
-    768: { slidesPerView: 3, spaceBetween: 40 },
-    1024: { slidesPerView: 4, spaceBetween: 50 },
+    320: { slidesPerView: 1, spaceBetween: 50, slidesPerGroup: 1 },
+    640: { slidesPerView: 2, spaceBetween: 30, slidesPerGroup: 1 },
+    768: { slidesPerView: 3, spaceBetween: 40, slidesPerGroup: 2 },
+    1024: { slidesPerView: 4, spaceBetween: 50, slidesPerGroup: 2 },
   };
 
   return (
     <div className="w-full bg-[#fafbfc] p-[20px]">
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row justify-between items-center">
+        <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-4">
           <h1 className="text-3xl font-bold text-[#9810FA]">Movies</h1>
           <Input.Search
             placeholder="Search movie..."
@@ -103,7 +103,7 @@ export default function MoviePage() {
               navigation
               pagination={{ clickable: true }}
               slidesPerView={4}
-              slidesPerGroup={2}
+            
               loop={true}
             >
               {movies.map((movie) => (
@@ -119,6 +119,7 @@ export default function MoviePage() {
                             selectedMovie?.MovieId === movie.MovieId ? null : movie
                           )
                         }
+                        
                       />
                     </Link>
                   </div>

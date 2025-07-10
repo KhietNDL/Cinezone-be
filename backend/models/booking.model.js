@@ -142,6 +142,8 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
     return rows[0];
   }
 
+
+
   static async holdBooking({
     userId,
     showtimeId,
@@ -150,6 +152,7 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
     discount = 0,
     CreatedBy,
   }) {
+
     const connection = await db.promise().getConnection();
     try {
       await connection.beginTransaction();
@@ -176,7 +179,6 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
       // 2. Xử lý promotion hoặc discount (chỉ 1 trong 2)
       let promotionDiscount = 0; // phần trăm
       let promotionId = null;
-
       if (promotionTitle) {
         const [promotion] = await connection.query(
           `SELECT DiscountValue, PromotionId FROM Promotions WHERE Title = ? AND IsDeleted = 0`,
