@@ -541,7 +541,7 @@ const BookingPage = () => {
                   </div>
                 )}
 
-                {seatsData.length > 0 ? (
+                {seatsData?.length > 0 ? (
                   <div className="flex justify-center bg-white/2 rounded-2xl p-3 md:p-6 border border-white/10 overflow-x-auto">
                     <LayoutSelectSeat
                       key={`${selectedShowtimeId}-${lastRefreshTime}`}
