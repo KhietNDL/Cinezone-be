@@ -15,6 +15,7 @@ const initialState = {
   finalTotalPrice:0,
   movie: null,
   product: null, 
+  productDetail:null,
 };
 
 const bookingSlice = createSlice({
@@ -64,6 +65,9 @@ const bookingSlice = createSlice({
     setOrderProductsId(state, action) {
       state.orderProductsId = action.payload;
     } ,
+     setProductDetail(state, action) {
+      state.productDetail = action.payload;
+    },
 
     resetBooking(state) {
       Object.assign(state, initialState);
@@ -84,6 +88,7 @@ export const {
   setSeatQuantity,
   setMovie,
   setProduct,
+  setProductDetail,
   setOrderProductsId,
   setFinalTotalPrice,
   resetBooking,

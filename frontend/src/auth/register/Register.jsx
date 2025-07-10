@@ -9,6 +9,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
 import { register } from "../../services/API";
+import { auth } from "../../config/firebase";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 
 const RegistrationForm = () => {
   // eslint-disable-next-line no-unused-vars
@@ -137,19 +139,32 @@ const RegistrationForm = () => {
       });
     }
   };
-  const handleGoogleLogin = async () => {
-    // setIsGoogleLoading(true);
-    // try {
-    //   const response = await loginGoogle();
-    //   await signIn(response.token, response.user.userId);
-    //   toast.success("Google login successful!");
-    //   navigate("/");
-    // } catch (error) {
-    //   console.error("Google login error:", error);
-    //   toast.error("Google login failed. Please try again.");
-    // } finally {
-    //   setIsGoogleLoading(false);
-    // }
+  const handleLoginGoogle = () => {
+    console.log("login google...");
+
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(auth, provider)
+      .then((result) => {
+        // eslint-disable-next-line no-unused-vars
+        const token = result.user.accessToken;
+        const user = result.user;
+
+        console.log(user);
+      })
+      .catch((error) => {
+        // Handle Errors here.
+        // eslint-disable-next-line no-unused-vars
+        const errorCode = error.code;
+        // eslint-disable-next-line no-unused-vars
+        const errorMessage = error.message;
+        // The email of the user's account used.
+        // eslint-disable-next-line no-unused-vars
+        const email = error.customData.email;
+        // The AuthCredential type that was used.
+        // eslint-disable-next-line no-unused-vars
+        const credential = GoogleAuthProvider.credentialFromError(error);
+        // ...
+      });
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -579,7 +594,7 @@ const RegistrationForm = () => {
             <div className="mb-6">
               <button
                 type="button"
-                onClick={handleGoogleLogin}
+                onClick={handleLoginGoogle}
                 disabled={isGoogleLoading}
                 className="w-full py-3 px-6 rounded-xl font-semibold text-lg transition-all duration-200 transform hover:scale-[1.02] hover:shadow-lg
                        bg-white text-gray-700 border border-gray-300 flex items-center justify-center space-x-3

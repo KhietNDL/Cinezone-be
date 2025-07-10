@@ -15,13 +15,13 @@ const MovieTable = ({
   formatDate,
 }) => {
   return (
-    <div className="bg-white p-4 rounded-md shadow-sm">
+    <div className="bg-white md:p-2 lg:p-4 rounded-md shadow-sm">
       <table className="w-full table-auto border-collapse">
         <thead>
           <tr className="text-left text-slate-500 text-sm border-b border-slate-200">
             <th className="py-2 text-center pr-4 w-[100px] shrink-0">Poster</th>
             <th
-              className="py-2 cursor-pointer w-[200px] shrink-0 items-center gap-1"
+              className="py-2 cursor-pointer md:w-[150px] lg:w-[160px] xl:w-[200px] shrink-0 items-center gap-1"
               onClick={() => handleSort("NameOfEnglish")}
             >
               Name Movie (ENG)
@@ -39,7 +39,7 @@ const MovieTable = ({
               )}
             </th>
             <th
-              className="py-2 cursor-pointer w-[200px] shrink-0 items-center gap-1"
+              className="py-2 hidden xl:table-cell cursor-pointer w-[200px] shrink-0 items-center gap-1"
               onClick={() => handleSort("NameOfVietnamese")}
             >
               Name Movie (VN)
@@ -57,7 +57,7 @@ const MovieTable = ({
               )}
             </th>
             <th
-              className="py-2 text-center cursor-pointer w-[100px] shrink-0"
+              className="py-2 text-center cursor-pointer lg:w-[80px] w-[100px] shrink-0"
               onClick={() => handleSort("FromDate")}
             >
               From Date
@@ -75,7 +75,7 @@ const MovieTable = ({
               )}
             </th>
             <th
-              className="py-2 pl-4 text-center cursor-pointer w-[100px] shrink-0"
+              className="py-2 pl-4 text-center cursor-pointer lg:w-[80px] w-[100px] shrink-0"
               onClick={() => handleSort("ToDate")}
             >
               To Date
@@ -92,10 +92,12 @@ const MovieTable = ({
                 />
               )}
             </th>
-            <th className="py-2 text-center w-[100px] shrink-0 gap-1">
+            <th className="py-2 text-center w-[100px] lg:w-[80px] xl:w-[100px] shrink-0 gap-1">
               Duration
             </th>
-            <th className="py-2 text-center w-[100px] shrink-0">Version</th>
+            <th className="py-2 text-center w-[100px] shrink-0 hidden xl:table-cell">
+              Version
+            </th>
             <th className="py-2 text-center w-[80px] shrink-0">Action</th>
           </tr>
         </thead>
@@ -113,19 +115,21 @@ const MovieTable = ({
                   className="w-[80px] h-[100px] rounded-lg"
                 />
               </td>
-              {mov.NameOfEnglish?.length > 40 ? (
-                <td className="py-2 w-[200px] shrink-0">
-                  {mov.NameOfEnglish.slice(0, 40) + "..."}
+              {mov.NameOfEnglish?.length > 30 ? (
+                <td className="py-2 lg:w-[160px] xl:w-[200px] shrink-0 md:w-[150px]">
+                  {mov.NameOfEnglish.slice(0, 30) + "..."}
                 </td>
               ) : (
-                <td className="py-2 w-[200px] shrink-0">{mov.NameOfEnglish}</td>
+                <td className="py-2 lg:w-[160px] xl:w-[200px] shrink-0 md:w-[150px]">
+                  {mov.NameOfEnglish}
+                </td>
               )}
               {mov.NameOfVietnamese?.length > 25 ? (
-                <td className="py-2 w-[200px] shrink-0">
+                <td className="py-2 text-center hidden xl:table-cell pr-4 w-[100px] shrink-0">
                   {mov.NameOfVietnamese.slice(0, 25) + "..."}
                 </td>
               ) : (
-                <td className="py-2 w-[200px] shrink-0">
+                <td className="py-2 text-center pr-4 w-[100px] hidden  xl:table-cell shrink-0">
                   {mov.NameOfVietnamese}
                 </td>
               )}
@@ -135,10 +139,10 @@ const MovieTable = ({
               <td className="py-2 text-center w-[100px] shrink-0">
                 {formatDate(mov.ToDate)}
               </td>
-              <td className="py-2 text-center w-[100px] shrink-0">
+              <td className="py-2 text-center w-[100px] lg:w-[80px] xl:w-[100px] shrink-0">
                 {mov.RunningTime} mins
               </td>
-              <td className="p-2 text-center break-words w-[120px] shrink-0">
+              <td className="p-2 hidden xl:table-cell text-center break-words w-[120px] shrink-0">
                 {Array.isArray(mov.versions) && mov.versions?.length > 0
                   ? mov.versions.map((v, idx) => (
                       <span key={idx}>

@@ -6,9 +6,12 @@ import { FaTicket, FaCouch, FaLocationDot, FaUser, FaPhone, FaCalendarDays, FaEn
 import { IoReloadOutline, IoTicketSharp, IoTime } from "react-icons/io5";
 import { RiFilmAiFill, RiMovie2AiFill, RiDiscountPercentFill } from "react-icons/ri";
 import { FaMoneyBillWave, FaIdCard, FaRegEye } from "react-icons/fa";
-import { confirmBooking, checkInfoBookingById } from "../../../services/APIForStaff/API";
+import { confirmBooking, checkInfoBookingById, cancelBookingById } from "../../../services/APIForStaff/API";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useDispatch, useSelector } from 'react-redux';
+import { resetBooking } from '../../../redux/features/sellingSlice'
+import { resetMember } from '../../../redux/features/memberSlice'
 
 const statusMap = {
   success: {
@@ -35,73 +38,100 @@ const formatPrice = (price) => {
 
 const TicketInfomation = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const bookingData = useSelector((state) => state.selling);
+  const memberData = useSelector((state) => state.member);
   const [paymentStatus, setPaymentStatus] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [bookingData, setBookingData] = useState(null);
+  const [movieInfo, setMovieInfo] = useState(null);
+
+
+  const processPaymentResult = async () => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const resultCode = params.get('resultCode');
+      const bookingId = params.get('orderId')?.split('_')[1] || params.get('bookingId');
+
+      // If coming from payment gateway (Momo)
+      if (bookingId && resultCode) {
+        if (resultCode === '0') {
+          // Momo payment success - confirm with server but show local data
+          try {
+            await confirmBooking(bookingData.bookingId);
+            // setBookingData(bookingData); // Use local data instead of API response
+            dispatch(setCompleteBooking({
+              ...bookingData,
+              isConfirmed: true
+            }));
+            setPaymentStatus('success');
+            toast.success("Payment successful!");
+          } catch (apiError) {
+            console.error("Confirmation error:", apiError);
+            // Still show local data even if confirmation fails
+            setPaymentStatus('success');
+            toast.success("Payment successful (could not confirm with server)");
+          }
+        } else {
+          // Momo payment failed
+          setPaymentStatus('error');
+          toast.error("Payment failed");
+        }
+        return;
+      }
+
+      // For cash payment or direct access
+      setPaymentStatus(bookingData.isConfirmed ? 'success' : 'error');
+
+    } catch (error) {
+      console.error("Payment processing error:", error);
+      setPaymentStatus('error');
+      toast.error(error.message || "System error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const processPaymentResult = async () => {
-      try {
-        const params = new URLSearchParams(window.location.search);
-        const resultCode = params.get('resultCode');
-        const bookingId = params.get('orderId')?.split('_')[1] || params.get('bookingId');
-
-        // Always load from localStorage first
-        const savedData = localStorage.getItem('currentBooking');
-        if (!savedData) throw new Error("Ticket information not found");
-
-        const parsedData = JSON.parse(savedData);
-        if (!parsedData.bookingId) throw new Error("Invalid ticket data");
-
-        // If coming from payment gateway (Momo)
-        if (bookingId && resultCode) {
-          if (resultCode === '0') {
-            // Momo payment success - confirm with server but show local data
-            try {
-              await confirmBooking(parsedData.bookingId);
-              setBookingData(parsedData); // Use local data instead of API response
-              setPaymentStatus('success');
-              toast.success("Payment successful!");
-            } catch (apiError) {
-              console.error("Confirmation error:", apiError);
-              // Still show local data even if confirmation fails
-              setBookingData(parsedData);
-              setPaymentStatus('success');
-              toast.success("Payment successful (could not confirm with server)");
-            }
-          } else {
-            // Momo payment failed
-            setBookingData(parsedData);
-            setPaymentStatus('error');
-            toast.error("Payment failed");
-          }
-          return;
-        }
-
-        // For cash payment or direct access
-        setBookingData(parsedData);
-        setPaymentStatus(parsedData.isConfirmed ? 'success' : 'error');
-
-      } catch (error) {
-        console.error("Payment processing error:", error);
-        setPaymentStatus('error');
-        toast.error(error.message || "System error");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     processPaymentResult();
   }, []);
 
-zz
+  useEffect(() => {
+    if (!bookingData?.selectedMovie) {
+      navigate("/staff/ticket-selling");
+      return;
+    }
+
+    const loadMovie = async () => {
+      try {
+        const res = await getMovieById(bookingData.selectedMovie.MovieId);
+        setMovieInfo(res.data || bookingData.selectedMovie);
+      } catch {
+        setMovieInfo(bookingData.selectedMovie);
+      }
+    };
+    loadMovie();
+  }, [bookingData, navigate]);
+
+  const handleTryAgain = async () => {
+    try {
+      // Gọi API huỷ booking
+      await cancelBookingById(bookingData.bookingId);
+      toast.info("Previous booking cancelled. Please try again.");
+    } catch (err) {
+      toast.error("Failed to cancel previous booking");
+      console.error(err);
+    } finally {
+      navigate("/staff/ticket-selling/confirm-ticket");
+    }
+  };
 
   const handleNewTicket = () => {
-    localStorage.removeItem('currentBooking');
-    localStorage.removeItem('current_member');
-    localStorage.removeItem('selectedSeats');
+    dispatch(resetBooking());
+    dispatch(resetMember());
     navigate("/staff/ticket-selling", { replace: true });
   };
+
+
 
   if (isLoading) {
     return (
@@ -136,12 +166,15 @@ zz
     version,
     selectedSeats,
     totalPrice,
-    memberInfo,
+    // memberData,
     paymentMethod,
     discount
   } = bookingData;
 
   const finalAmount = totalPrice * (1 - (discount / 100));
+
+  console.log('Booking Data:', bookingData);
+  console.log('Member Data:', memberData);
 
   return (
     <div className="p-4 w-full mx-auto bg-white rounded-lg shadow-sm">
@@ -157,10 +190,10 @@ zz
         {/* Movie Details */}
         <div className="lg:col-span-2 rounded-xl  border border-gray-300 shadow-xl">
           <div className="bg-white p-6 rounded-xl">
-            <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex flex-col md:flex-row gap-6 items-center">
               <img
-                src={movie.PosterImage}
-                alt={`Poster ${movie.NameOfEnglish}`}
+                src={movieInfo?.PosterImage}
+                alt={`Poster ${movieInfo?.NameOfEnglish}`}
                 className="w-40 h-56 object-cover rounded-lg shadow border"
                 onError={(e) => {
                   e.target.src = '/placeholder-poster.jpg';
@@ -173,18 +206,18 @@ zz
                   <RiFilmAiFill className="mt-1" /> Movie:
                 </h2>
                 <span className="text-2xl font-bold flex flex-col items-start gap-2">
-                  {movie.NameOfEnglish}
-                  <span className="text-lg text-black block font-semibold">({movie.NameOfVietnamese})</span>
+                  {movieInfo?.NameOfEnglish}
+                  <span className="text-lg text-black block font-semibold">({movieInfo?.NameOfVietnamese})</span>
                 </span>
 
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                   {[
-                    { icon: <RiMovie2AiFill />, label: "Sceen", value: version },
-                    { icon: <FaLocationDot />, label: "Room", value: room },
-                    { icon: <FaCalendarDays />, label: "Date", value: day },
-                    { icon: <IoTime />, label: "Showtime", value: time },
-                    { icon: <FaCouch />, label: "Seats", value: selectedSeats.join(", ") },
+                    { icon: <RiMovie2AiFill />, label: "Sceen", value: bookingData.selectedVersion },
+                    { icon: <FaLocationDot />, label: "Room", value: bookingData.room },
+                    { icon: <FaCalendarDays />, label: "Date", value: bookingData.selectedDay },
+                    { icon: <IoTime />, label: "Showtime", value: bookingData.selectedTime },
+                    { icon: <FaCouch />, label: "Seats", value: bookingData.selectedSeats.join(", ") },
                     { icon: <RiDiscountPercentFill />, label: "Discount", value: discount > 0 ? `${discount}%` : "None" }
                   ].map((item, index) => (
                     <div key={index} className="flex items-center">
@@ -210,22 +243,22 @@ zz
               <div className="flex justify-between">
                 <span className="font-semibold">Method:</span>
                 <span className="font-medium capitalize">
-                  {paymentMethod === 'cash' ? 'Cash' : paymentMethod}
+                  {bookingData.paymentMethod === 'cash' ? 'Cash' : bookingData.paymentMethod}
                 </span>
               </div>
 
               {/* Thêm phần hiển thị giá từng ghế */}
               <div className="border-b pb-2">
                 <h3 className="font-semibold mb-2">Ticket Details:</h3>
-                {bookingData.seatData?.map((seat, index) => (
-                  <div key={index} className="flex justify-between text-sm">
-                    <span>
-                      Seat {seat.seatNumber}:
-                      {/* <span className="ml-1 text-gray-600">{seat.seatType || 'Standard'}</span> */}
-                    </span>
-                    <span>{formatPrice(seat.price)} VNĐ</span>
-                  </div>
-                ))}
+                {bookingData.selectedSeats.map((seat, index) => {
+                  const seatInfo = bookingData.seatData.find(s => s.seatNumber === seat);
+                  return (
+                    <div key={index} className="flex justify-between">
+                      <span>Seat {seat}:</span>
+                      <span>{formatPrice(seatInfo?.price || 0)} VNĐ</span>
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="flex justify-between">
@@ -257,62 +290,53 @@ zz
               <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                 <FaUser /> Customer Information
               </h2>
-              {!memberInfo && (
+              {!memberData?.member && (
                 <p className="text-gray-500 italic">No customer information</p>
               )}
-              {memberInfo && (
+              {memberData?.member && (
                 <div className="space-y-4">
-                  {memberInfo.memberId && (
-                    <div>
-                      <p className="text-gray-600 flex items-center gap-2">
-                        <FaIdCard /> Member ID:
-                      </p>
-                      <p className="font-medium">{memberInfo.memberId}</p>
-                    </div>
-                  )}
-
-                  {memberInfo.fullName && (
+                  {memberData?.member?.fullName && (
                     <div className="flex items-center justify-between">
-                      <p className="text-gray-600 w-[50%] flex items-center gap-2">
+                      <p className="text-gray-600 flex items-center gap-2">
                         <FaUser /> Full Name:
                       </p>
-                      <p className="font-medium">{memberInfo.fullName}</p>
+                      <p className="font-medium">{memberData?.member?.fullName}</p>
                     </div>
                   )}
 
-                  {memberInfo.identityCard && (
+                  {memberData?.member?.identityCard && (
                     <div className="flex items-center justify-between">
                       <p className="text-gray-600 flex items-center gap-2">
                         <FaIdCard /> ID Card:
                       </p>
-                      <p className="font-medium">{memberInfo.identityCard}</p>
+                      <p className="font-medium">{memberData?.member?.identityCard}</p>
                     </div>
                   )}
 
-                  {memberInfo.phone && (
+                  {memberData?.member?.phone && (
                     <div className="flex items-center justify-between">
                       <p className="text-gray-600 flex items-center gap-2">
                         <FaPhone /> Phone:
                       </p>
-                      <p className="font-medium">{memberInfo.phone}</p>
+                      <p className="font-medium">{memberData?.member?.phone}</p>
                     </div>
                   )}
 
-                  {memberInfo.email && (
+                  {memberData?.member?.email && (
                     <div className="flex items-center justify-between">
                       <p className="text-gray-600 flex items-center gap-2">
                         <FaEnvelope /> Email:
                       </p>
-                      <p className="font-medium">{memberInfo.email}</p>
+                      <p className="font-medium">{memberData?.member?.email}</p>
                     </div>
                   )}
 
-                  {memberInfo.score !== undefined && (
+                  {memberData?.member?.score !== undefined && (
                     <div className="flex items-center justify-between">
                       <p className="text-gray-600 flex items-center gap-2">
                         <FaStar /> Points:
                       </p>
-                      <p className="font-medium flex items-center gap-1 text-green-600"><FaFire /> {memberInfo.score}</p>
+                      <p className="font-medium flex items-center gap-1 text-green-600"><FaFire /> {memberData?.member?.score}</p>
                     </div>
                   )}
                 </div>
@@ -320,19 +344,31 @@ zz
             </div>
 
             <div className="flex items-center justify-center gap-2">
-              <Button
-                onClick={handleNewTicket}
-                className={`w-full ${status.btnColor} text-white`}
-                size="large"
-                icon={status.btnIcon}
-                style={{
-                  color: '#7c3aed',
-                  borderColor: '#7c3aed',
-                  backgroundColor: 'white'
-                }}
-              >
-                {status.btn}
-              </Button>
+              {paymentStatus === 'error' ? (
+                <Button
+                  onClick={handleTryAgain}
+                  className={`w-full ${status.btnColor} text-white`}
+                  size="large"
+                  icon={status.btnIcon}
+                >
+                  {status.btn}
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleNewTicket}
+                  className={`w-full ${status.btnColor} text-white`}
+                  size="large"
+                  icon={status.btnIcon}
+                  style={{
+                    color: '#7c3aed',
+                    borderColor: '#7c3aed',
+                    backgroundColor: 'white'
+                  }}
+                >
+                  {status.btn}
+                </Button>
+              )}
+
 
               {paymentStatus === 'success' && (
                 <Link to={`/staff/ticket-selling/view-ticket/${bookingData.bookingId}`}>

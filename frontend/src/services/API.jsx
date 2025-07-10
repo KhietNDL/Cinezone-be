@@ -133,57 +133,15 @@ export const getUser = async (id) => {
 
 export const updateAccount = async (id, formData) => {
   try {
-    console.log("User ID:", id);
-    console.log("FormData content:");
-
-    // Debug FormData contents
-    for (let [key, value] of formData.entries()) {
-      if (key === "avatar" && value instanceof File) {
-        console.log(
-          `${key}:`,
-          `File - ${value.name} (${value.size} bytes, ${value.type})`
-        );
-      } else {
-        console.log(`${key}:`, value);
-      }
-    }
-
     const response = await api.put(`/auth/profile/${id}`, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
-      timeout: 30000, // 30 second timeout for file uploads
+      timeout: 30000,
     });
-
-    console.log("API Response:", response.data);
     return response.data;
   } catch (error) {
     console.error("updateAccount API Error:", error);
-
-    // More detailed error handling
-    if (error.response) {
-      console.error("Error Response Status:", error.response.status);
-      console.error("Error Response Data:", error.response.data);
-      console.error("Error Response Headers:", error.response.headers);
-
-      // Check if it's a server error with specific code
-      if (error.response.data?.code) {
-        const serverError = new Error(
-          error.response.data.error || error.response.data.message
-        );
-        serverError.code = error.response.data.code;
-        throw serverError;
-      }
-    } else if (error.request) {
-      console.error("No response received:", error.request);
-      throw new Error("No response from server. Please check your connection.");
-    } else {
-      console.error("Request setup error:", error.message);
-      throw new Error("Failed to setup request: " + error.message);
-    }
-
-    // Re-throw the original error if no specific handling
-    throw error;
   }
 };
 // API Promotion
@@ -195,6 +153,7 @@ export const getPromotion = async (params) => {
     handleError(error);
   }
 };
+
 export const createPromotion = async (formData) => {
   try {
     const response = await api.post("/promotions/create", formData, {
@@ -449,8 +408,14 @@ export const getSeatsByShowtimeId = async (showtimeId) => {
   }
 };
 
-
-export const HoldingSeats = async (userId, showtimeId, seatIds ,productIds, promotionTitle) => {
+export const HoldingSeats = async (
+  userId,
+  showtimeId,
+  seatIds,
+  productIds,
+  promotionTitle,
+  PointsToUse
+) => {
   try {
     const response = await api.post("/bookings/hold", {
       userId: userId,
@@ -458,8 +423,9 @@ export const HoldingSeats = async (userId, showtimeId, seatIds ,productIds, prom
       seatIds: seatIds,
       productIds: productIds || [],
       promotionTitle: promotionTitle || "",
+      PointsToUse :PointsToUse
     });
-     console.log("HoldingSeats Response:", response.data);
+    console.log("HoldingSeats Response:", response.data);
     return response.data;
   } catch (error) {
     console.error("Lỗi khi HodingSeats :", error);
@@ -507,18 +473,37 @@ export const getPromotionByTitle = async (title) => {
   }
 };
 
-export const ConfirmBooking = async (bookingId) => {   
-  try {     
-    const response = await api.post(`/bookings/confirm/${bookingId}`);     
+export const ConfirmBooking = async (bookingId) => {
+  try {
+    const response = await api.post(`/bookings/confirm/${bookingId}`);
     console.log("Confirm Booking Response:", response.data);
-    return response.data;   
-  } catch (error) {     
-    console.error("Lỗi khi Confirm Booking :", error);     
-    handleError(error);     
-    throw error;   
-  } 
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi Confirm Booking :", error);
+    handleError(error);
+    throw error;
+  }
 };
-
+export const getAllBookings = async () => {
+  try {
+    const response = await api.get("/bookings");
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy tất cả booking:", error);
+    handleError(error);
+    throw error;
+  }
+};
+export const getBookingInfoById = async (bookingId) => {
+  try {
+    const response = await api.get(`/bookings/${bookingId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy booking theo ID:", error);
+    handleError(error);
+    throw error;
+  }
+};
 export const getBookingById = async (bookingId) => {
   try {
     const response = await api.get(`/bookings/detail/${bookingId}`);
@@ -539,7 +524,7 @@ export const cancelBooking = async (bookingId) => {
     handleError(error);
     throw error;
   }
-}
+};
 
 export const getBookingHistory = async (memberId) => {
   try {
@@ -551,7 +536,7 @@ export const getBookingHistory = async (memberId) => {
     handleError(error);
     throw error;
   }
-}
+};
 
 export const getAllProducts = async () => {
   try {
@@ -575,6 +560,41 @@ export const holdProducts = async (memberId, products, notes = "") => {
     return response.data;
   } catch (error) {
     console.error("❌ Lỗi gọi holdOrderProducts:", error?.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const confirmProduct = async (id) => {
+  try {
+    const response = await api.post(`/order-products/confirm/${id}`);
+    console.log("confirm product:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi confirm product:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const getProductByOderProductId = async (orderProductId) => {
+  try {
+    const response = await api.get(`/order-products/${orderProductId}/detail`);
+    return response.data.data.products;
+  } catch (error) {
+    console.error("Lỗi khi lấy thông tin product đã thanh toán", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const cancelProduct = async (id) => {
+  try {
+    const response = await api.post(`/order-products/cancel/${id}`);
+    console.log("cancal product:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi cancel product:", error);
+    handleError(error);
     throw error;
   }
 };

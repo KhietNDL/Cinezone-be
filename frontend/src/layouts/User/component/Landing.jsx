@@ -380,8 +380,16 @@ const LandingPage = () => {
                   )}
                 </div>
 
-                <div className="text-white text-center font-semibold text-sm md:text-base px-2">
-                  {item.NameOfEnglish}
+                <div className="text-white text-center font-semibold text-sm md:text-base px-1">
+                  {item.NameOfEnglish?.length > 10 ? (
+                    <h3 className="font-bold text-lg mb-3 text-white">
+                      {item.NameOfEnglish.slice(0, 10) + "..."}
+                    </h3>
+                  ) : (
+                    <h3 className="font-bold text-lg mb-3 text-white">
+                      {item.NameOfEnglish}
+                    </h3>
+                  )}
                 </div>
                 <div className="flex xl:flex-row md:flex-col sm:flex-row justify-evenly md:space-y-2 xl:space-y-0 sm:space-y-0 sm:space-x-1 items-center w-full px-2">
                   <div
@@ -492,8 +500,16 @@ const LandingPage = () => {
                   )}
                 </div>
 
-                <div className="text-white text-center font-semibold text-sm md:text-base px-2">
-                  {item.NameOfEnglish}
+                <div className="text-white text-center font-semibold text-sm md:text-base ">
+                  {item.NameOfEnglish?.length > 10 ? (
+                    <h3 className="font-bold text-lg mb-3 text-white">
+                      {item.NameOfEnglish.slice(0, 10) + "..."}
+                    </h3>
+                  ) : (
+                    <h3 className="font-bold text-lg mb-3 text-white">
+                      {item.NameOfEnglish}
+                    </h3>
+                  )}
                 </div>
                 <div className="flex md:flex-col lg:flex-row sm:flex-row justify-center md:space-y-2 sm:space-y-0 sm:space-x-1 items-center w-full px-2">
                   <div

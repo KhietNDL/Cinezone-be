@@ -10,6 +10,8 @@ import { login } from "../../services/API";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 import { jwtDecode } from "jwt-decode";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { auth } from "../../config/firebase";
 const MovieTheaterLogin = () => {
   const { signIn } = useAuth();
   const [formData, setFormData] = useState({
@@ -68,7 +70,6 @@ const MovieTheaterLogin = () => {
           email: formData.email,
           password: formData.password,
         });
-        console.log("Login API response:", response);
 
         if (response.token && response.user?.userId) {
           await signIn(response.token, response.user.userId);
@@ -94,9 +95,54 @@ const MovieTheaterLogin = () => {
     }
   };
 
-  const handleGoogleLogin = () => {
-    window.location.href = "http://localhost:4458/api/auth/login-google";
-    // window.location.href = "http://cinezone:4458/api/auth/login-google";
+  // const handleLoginGoogle = async () => {
+  //   setIsGoogleLoading(true);
+  //   const provider = new GoogleAuthProvider();
+  //   try {
+  //     const result = await signInWithPopup(auth, provider);
+  //     const user = result.user;
+  //     // Nếu bạn có backend xử lý Google login, gửi user info lên backend để lấy token và userId
+  //     // Ví dụ:
+  //     // const response = await loginWithGoogle({ email: user.email, ... });
+  //     // await signIn(response.token, response.user.userId);
+
+  //     // Nếu chỉ dùng firebase, bạn có thể lưu user vào context/localStorage
+  //     await signIn(user.accessToken, user.uid); // hoặc truyền các giá trị phù hợp với context của bạn
+
+  //     toast.success("Đăng nhập Google thành công!");
+  //     navigate("/"); // hoặc navigate("/user") nếu UserLayout ở đó
+  //   } catch (error) {
+  //     console.error("Đăng nhập Google thất bại:", error);
+  //     toast.error("Đăng nhập Google thất bại!");
+  //   } finally {
+  //     setIsGoogleLoading(false);
+  //   }
+  // };
+  const handleLoginGoogle = () => {
+    console.log("login google...");
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(auth, provider)
+      .then((result) => {
+        // eslint-disable-next-line no-unused-vars
+        const token = result.user.accessToken;
+        const user = result.user;
+
+        console.log(user);
+      })
+      .catch((error) => {
+        // Handle Errors here.
+        // eslint-disable-next-line no-unused-vars
+        const errorCode = error.code;
+        // eslint-disable-next-line no-unused-vars
+        const errorMessage = error.message;
+        // The email of the user's account used.
+        // eslint-disable-next-line no-unused-vars
+        const email = error.customData.email;
+        // The AuthCredential type that was used.
+        // eslint-disable-next-line no-unused-vars
+        const credential = GoogleAuthProvider.credentialFromError(error);
+        // ...
+      });
   };
 
   return (
@@ -168,7 +214,7 @@ const MovieTheaterLogin = () => {
             <div className="mb-6">
               <button
                 type="button"
-                onClick={handleGoogleLogin}
+                onClick={handleLoginGoogle}
                 disabled={isGoogleLoading}
                 className="w-full py-3 px-6 rounded-xl font-semibold text-lg transition-all duration-200 transform hover:scale-[1.02] hover:shadow-lg
                        bg-white text-gray-700 border border-gray-300 flex items-center justify-center space-x-3

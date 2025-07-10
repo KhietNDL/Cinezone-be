@@ -40,6 +40,7 @@ const BookingPage = () => {
     seatIds,
     selectedRoom,
     selectedDate,
+    selectedTime,
     selectedShowtimeId,
     seatQuantity,
     seatsData,
@@ -57,11 +58,79 @@ const BookingPage = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
 
-  // New states for products with Hold API
+  
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [totalProductPrice, setTotalProductPrice] = useState(0);
-  const [orderProductIds, setOrderProductIds] = useState([]); // Store OrderProductIds from Hold API
-  const [isHoldingProducts, setIsHoldingProducts] = useState(false);
+
+  // Simplified Product handling - NO API calls during selection
+  const handleProductSelect = (product, quantity) => {
+
+    if (!product || !product.ProductId) {
+      console.error(" Invalid product data:", product);
+      return;
+    }
+    
+    if (quantity === undefined || quantity === null) {
+      console.error("Quantity is undefined or null");
+      return;
+    }
+
+    // Check if user is logged in before processing
+    if (!user?.userId) {
+      Swal.fire({
+        icon: "info",
+        title: "Sign In Required",
+        text: "Please sign in to select products",
+        confirmButtonText: "Sign In",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate("/login");
+        }
+      });
+      return;
+    }
+
+    const existingIndex = selectedProducts.findIndex(p => p.ProductId === product.ProductId);
+
+    if (quantity === 0) {
+      // Remove product if quantity is 0
+      if (existingIndex >= 0) {
+        const newProducts = selectedProducts.filter(p => p.ProductId !== product.ProductId);
+        setSelectedProducts(newProducts);
+        updateTotalProductPrice(newProducts);
+      }
+    } else {
+      // Add or update product - NO API call here
+      const newProduct = { 
+        ...product, 
+        selectedQuantity: parseInt(quantity),
+        ProductId: product.ProductId,
+        Quantity: parseInt(quantity) 
+      };
+
+      let newProducts;
+      if (existingIndex >= 0) {
+        newProducts = [...selectedProducts];
+        newProducts[existingIndex] = newProduct;
+      } else {
+        newProducts = [...selectedProducts, newProduct];
+      }
+      
+      console.log("New products array (no API call):", newProducts);
+      
+      setSelectedProducts(newProducts);
+      updateTotalProductPrice(newProducts);
+    }
+  };
+
+  const updateTotalProductPrice = (products) => {
+    const total = products.reduce((sum, p) => {
+      const price = parseFloat(p.Price) || 0;
+      const quantity = p.selectedQuantity || p.Quantity || 0;
+      return sum + (price * quantity);
+    }, 0);
+    setTotalProductPrice(total);
+  };
 
   useEffect(() => {
     const fetchMovie = async () => {
@@ -69,9 +138,12 @@ const BookingPage = () => {
         const response = await getMovies();
         const movies = Array.isArray(response.data) ? response.data : response.data.movies || [];
         const matchedMovie = movies.find((m) => m.NameOfEnglish && slugify(m.NameOfEnglish) === slug);
-        if (matchedMovie) dispatch(setMovie(matchedMovie));
+        if (matchedMovie) {
+          dispatch(setMovie(matchedMovie));
+          console.log("Movie loaded:", matchedMovie.NameOfEnglish);
+        }
       } catch (err) {
-        console.error("Lỗi khi fetch movie:", err);
+        console.error("Error fetching movie:", err);
       } finally {
         setLoading(false);
       }
@@ -85,8 +157,9 @@ const BookingPage = () => {
       try {
         const response = await getShowtimeByMovieId(movie?.MovieId);
         setShowtimes(response.showtimes || []);
+        console.log("Showtimes loaded:", response.showtimes?.length || 0);
       } catch (error) {
-        console.error("Lỗi khi lấy showtimes:", error);
+        console.error("Error fetching showtimes:", error);
       }
     };
     fetchShowtimes();
@@ -98,8 +171,9 @@ const BookingPage = () => {
       try {
         const response = await getTimeByDay(movie?.MovieId, selectedDate);
         setTimeOptions(response.versions);
+        console.log(" Time options loaded for", selectedDate, ":", response.versions?.length || 0);
       } catch (error) {
-        console.error("Lỗi khi lấy giờ chiếu:", error);
+        console.error("Error fetching time options:", error);
       }
     };
     fetchTimeByDay();
@@ -110,7 +184,7 @@ const BookingPage = () => {
       if (!selectedShowtimeId) return;
       setIsRefreshing(true);
       try {
-        console.log("== SELECTED SHOWTIMEID:", selectedShowtimeId);
+        console.log("Fetching seats for showtime ID:", selectedShowtimeId);
         const response = await getSeatsByShowtimeId(selectedShowtimeId);
         dispatch(setSeatsData(response.seats));
         dispatch(setSeatQuantity(response.seatQuantity));
@@ -119,9 +193,9 @@ const BookingPage = () => {
         dispatch(setSeatIds([]));
         setLastRefreshTime(Date.now());
 
-        console.log("== SEATS DATA fetched successfully");
+        console.log(" Seats data fetched successfully:", response.seats?.length || 0, "seats");
       } catch (error) {
-        console.error("Lỗi khi lấy seats:", error);
+        console.error("Error fetching seats:", error);
       } finally {
         setIsRefreshing(false);
       }
@@ -141,8 +215,9 @@ const BookingPage = () => {
       dispatch(setCalculatedTotalPrice(0));
       dispatch(setSeatIds([]));
       setLastRefreshTime(Date.now());
+      console.log("Seats refreshed successfully");
     } catch (error) {
-      console.error("Lỗi khi refresh seats:", error);
+      console.error("Error refreshing seats:", error);
     } finally {
       setIsRefreshing(false);
     }
@@ -153,9 +228,9 @@ const BookingPage = () => {
       try {
         const response = await getAllProducts();
         dispatch(setProduct(response.Products || []));
-        console.log("Products fetched successfully:", response.Products);
+        console.log("Products fetched successfully:", response.Products?.length || 0, "products");
       } catch (err) {
-        console.error("Lỗi khi fetch product:", err);
+        console.error("Error fetching products:", err);
       } finally {
         setLoading(false);
       }
@@ -163,124 +238,13 @@ const BookingPage = () => {
     fetchProducts();
   }, [dispatch]);
 
-  useEffect(() => {
-    const handleFocus = () => {
-      if (selectedShowtimeId) {
-        console.log("Window focused, refreshing seats...");
-        refreshSeats();
-      }
-    };
-    window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
-  }, [selectedShowtimeId]);
-
-  // New function to handle Product Hold API
-  const handleProductHold = async (products) => {
-    console.log("=== HOLD PRODUCTS START ===");
-    console.log("User:", user);
-    console.log("User MemberId:", user?.MemberId);
-    console.log("User userId:", user?.userId); // Check if using userId instead
-    console.log("User ID field:", user?.id); // Check other possible ID fields
-    console.log("Products to hold:", products);
-    console.log("Products length:", products.length);
-    
-    // Try different possible user ID fields
-    const memberId = user?.MemberId || user?.userId || user?.id;
-    
-    if (!memberId) {
-      console.error("No user ID found");
-      return { success: false, message: "User not logged in or ID missing" };
-    }
-    
-    if (!products || products.length === 0) {
-      console.error("No products to hold");
-      return { success: false, message: "No products selected" };
-    }
-
-    setIsHoldingProducts(true);
-    try {
-      const productsPayload = products.map(p => {
-        console.log("Mapping product for hold:", p);
-        console.log("- ProductId:", p.ProductId);
-        console.log("- selectedQuantity:", p.selectedQuantity);
-        console.log("- Available Quantity:", p.Quantity);
-        
-        return {
-          ProductId: p.ProductId,
-          Quantity: p.selectedQuantity // Use selectedQuantity (user selected amount)
-        };
-      });
-
-      console.log("Final hold params:");
-      console.log("- MemberId:", memberId);
-      console.log("- Products:", productsPayload);
-      console.log("- Notes:", "");
-      
-      // Call API with separate parameters instead of single payload object
-      const response = await holdProducts(memberId, productsPayload, "");
-      
-      // Log full response to debug structure
-      console.log("Hold API Response:", response);
-      
-      // Handle the actual response structure: { OrderProductId: "...", totalAmount: 100000 }
-      if (response && response.OrderProductId) {
-        const orderProductId = response.OrderProductId;
-        const holdTotalAmount = response.totalAmount;
-        
-        // Store single OrderProductId (convert to array for consistency with existing code)
-        const orderIds = [orderProductId];
-        setOrderProductIds(orderIds);
-        dispatch(setOrderProductsId(orderIds));
-        
-        // Update total product price with actual amount from API
-        if (holdTotalAmount !== undefined) {
-          setTotalProductPrice(holdTotalAmount);
-        }
-        
-        console.log("Products held successfully:");
-        console.log("- OrderProductId:", orderProductId);
-        console.log("- Total Amount:", holdTotalAmount);
-        
-        return { 
-          success: true, 
-          orderIds: [orderProductId], // Return as array for compatibility
-          orderProductId: orderProductId, // Also return single ID
-          totalAmount: holdTotalAmount 
-        };
-      } else {
-        const errorMessage = response?.message || response?.error || "Invalid response format";
-        console.error("Failed to hold products:", errorMessage);
-        return { success: false, message: errorMessage };
-      }
-    } catch (error) {
-      console.error("Error holding products:", error);
-      console.error("Error details:", error.response?.data);
-      console.error("Error status:", error.response?.status);
-      
-      let errorMessage = "An error occurred while holding products";
-      
-      if (error.response?.status === 401) {
-        errorMessage = "Authentication failed. Please login again.";
-      } else if (error.response?.status === 400) {
-        errorMessage = error.response?.data?.message || "Invalid request data";
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      return { success: false, message: errorMessage };
-    } finally {
-      setIsHoldingProducts(false);
-    }
-  };
-
-  const handleProductSelect = (product, quantity) => {
+  // Modified handleContinue - prepare data for confirm page
+  const handleContinue = async () => {
     if (!user) {
       Swal.fire({
         icon: "info",
         title: "Sign In Required",
-        text: "Please sign in to select products",
+        text: "Please sign in to continue with payment",
         confirmButtonText: "Sign In",
       }).then((result) => {
         if (result.isConfirmed) {
@@ -290,98 +254,39 @@ const BookingPage = () => {
       return;
     }
 
-    console.log("Product being selected:", product); // Debug log
-    console.log("Quantity:", quantity); // Debug log
-
-    const existingIndex = selectedProducts.findIndex(p => p.ProductId === product.ProductId);
-
-    let newProducts;
-    if (quantity === 0) {
-      // Remove product if quantity is 0
-      if (existingIndex >= 0) {
-        newProducts = selectedProducts.filter(p => p.ProductId !== product.ProductId);
-      } else {
-        return; // No change needed
-      }
-    } else {
-      // Add or update product
-      const newProduct = { ...product, selectedQuantity: quantity };
-
-      if (existingIndex >= 0) {
-        newProducts = [...selectedProducts];
-        newProducts[existingIndex] = newProduct;
-      } else {
-        newProducts = [...selectedProducts, newProduct];
-      }
+    if (selectedSeats.length === 0) {
+      Swal.fire({
+        icon: "warning",
+        title: "No Seats Selected",
+        text: "Please select at least one seat to continue",
+        confirmButtonText: "OK"
+      });
+      return;
     }
 
-    console.log("Updated selectedProducts:", newProducts); // Debug log
-    setSelectedProducts(newProducts);
-    updateTotalProductPrice(newProducts);
-  };
+    // Prepare product data for confirm page - NO holdProducts API call yet
+    const productPayload = selectedProducts.map((p) => ({
+      ProductId: p.ProductId,
+      Quantity: p.selectedQuantity || p.Quantity,
+      Price: p.Price,
+      ProductName: p.ProductName || p.productName
+    }));
+     
+    
+    dispatch(setProduct(productPayload));
+    console.log("Proceeding to confirm with product data:", productPayload);
 
-  const totalAmount = useMemo(() => {
-    return (calculatedTotalPrice || 0) + totalProductPrice;
-  }, [calculatedTotalPrice, totalProductPrice]);
-
-  useEffect(() => {
-    dispatch(setFinalTotalPrice(totalAmount));
-    console.log("Total Amount updated:", totalAmount);
-  }, [totalAmount, dispatch]);
-
-  const updateTotalProductPrice = (products) => {
-    const total = products.reduce((sum, p) => sum + (parseFloat(p.Price) * p.selectedQuantity), 0);
-    setTotalProductPrice(total);
-  };
-
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(price);
-  };
-
-  const handleContinue = async () => {
-    // If user has selected products, hold them first
-    if (selectedProducts.length > 0) {
-      const holdResult = await handleProductHold(selectedProducts);
-      
-      if (!holdResult.success) {
-        Swal.fire({
-          icon: "error",
-          title: "Hold Failed",
-          text: holdResult.message || "Failed to hold products. Please try again.",
-        });
-        return;
-      }
-      
-      // Use the orderProductId from holdResult
-      const orderProductId = holdResult.orderProductId;
-      const orderIds = holdResult.orderIds || []; // For backward compatibility
-      
-      // Pass orderProductId to the next page
-      const navigationState = {
-        orderProductId: orderProductId, // Single OrderProductId
-        orderProductIds: orderIds, // Array format (for compatibility)
-        hasProducts: true,
-        selectedProducts: selectedProducts,
-        productTotalAmount: holdResult.totalAmount
-      };
-      
-      console.log("Navigating with OrderProductId:", orderProductId);
-      console.log("Navigation state:", navigationState);
-      navigate("/confirmPayment", { state: navigationState });
-    } else {
-      // No products selected, proceed normally
-      navigate("/confirmPayment");
-    }
+    
+    navigate("/confirmPayment");
   };
 
   const handleManualRefresh = () => {
+    console.log("Manual seat refresh triggered");
     refreshSeats();
   };
 
-  const visibleDates = showtimes.slice(dateIndex, dateIndex + 6);
+  
+  const visibleDates = showtimes.slice(dateIndex, dateIndex + 3);
 
   const handleOpenPopup = () => {
     setIsPopupOpen(true);
@@ -426,27 +331,67 @@ const BookingPage = () => {
 
     const newIndex = currentIdx + direction;
 
-    if (newIndex >= 0 && newIndex < showtimes.length) {
-      dispatch(setSelectedDate(showtimes[newIndex].Day));
-      if (direction === -1 && newIndex < dateIndex) {
-        setDateIndex(dateIndex - 1);
-      } else if (direction === 1 && newIndex >= dateIndex + 6) {
-        setDateIndex(dateIndex + 1);
-      }
+     if (newIndex >= 0 && newIndex < showtimes.length) {
+    dispatch(setSelectedDate(showtimes[newIndex].Day));
+    
+    // logic hien thi 3 ngayf
+    if (direction === -1 && newIndex < dateIndex) {
+      setDateIndex(Math.max(0, dateIndex - 1));
+    } else if (direction === 1 && newIndex >= dateIndex + 3) {
+      setDateIndex(Math.min(showtimes.length - 3, dateIndex + 1));
     }
+   
+    else if (newIndex < dateIndex) {
+      setDateIndex(newIndex);
+    } else if (newIndex >= dateIndex + 3) {
+      setDateIndex(Math.max(0, newIndex - 2));
+    }
+  }
   };
 
-  // // Clean up timer on unmount
-  // useEffect(() => {
-  //   return () => {
-  //     if (holdTimerRef.current) {
-  //       clearTimeout(holdTimerRef.current);
-  //     }
-  //   };
-  // }, []);
+  const totalAmount = useMemo(() => {
+    return (calculatedTotalPrice || 0) + totalProductPrice;
+  }, [calculatedTotalPrice, totalProductPrice]);
 
-  console.log("Product from REDUX:", product);
-  console.log("Order Product IDs:", orderProductIds);
+  useEffect(() => {
+    dispatch(setFinalTotalPrice(totalAmount));
+    console.log("Total Amount updated:", totalAmount);
+  }, [totalAmount, dispatch]);
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(price);
+  };
+
+  // Simplified Products Summary - no hold status
+  const renderProductsSummary = () => {
+    if (selectedProducts.length === 0) return null;
+
+    return (
+      <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-gray-300 font-medium">Snacks & Drinks</span>
+          <span className="text-white font-semibold">{formatPrice(totalProductPrice)}</span>
+        </div>
+        <div className="space-y-1 text-sm text-gray-400">
+          {selectedProducts.map((item, index) => (
+            <div key={index} className="flex justify-between">
+              <span>{item.ProductName || item.productName} x{item.selectedQuantity || item.Quantity}</span>
+              <span>{formatPrice((item.Price || 0) * (item.selectedQuantity || item.Quantity || 0))}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  console.log("Debug - Current state:", {
+    selectedProducts: selectedProducts.length,
+    totalProductPrice,
+    productFromRedux: product
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] text-white">
@@ -573,31 +518,31 @@ const BookingPage = () => {
                   <div className="mb-6 md:mb-8">
                     <div className="space-y-6 md:space-y-0 md:flex md:items-center md:gap-4 lg:gap-8 text-sm text-white/80">
 
-                      {/* Date Selection */}
+                      {/* Date Selection - Chỉ hiển thị 3 ngày */}
                       <div className="flex-1">
                         <label className="block mb-4 text-white font-bold text-lg md:text-xl text-center md:text-left">Date</label>
                         <div className="flex items-center gap-2 md:gap-3">
                           <button
                             className="p-2 text-purple-400 hover:text-purple-300 hover:bg-white/10 rounded-xl transition-all flex-shrink-0"
                             onClick={() => handleChangeDate(-1)}
+                            disabled={dateIndex === 0}
                           >
                             <FaChevronLeft />
                           </button>
 
-                          <div className="flex gap-1 md:gap-2 overflow-x-auto flex-1 scrollbar-hide">
+                          <div className="flex gap-2 md:gap-3 overflow-x-auto flex-1 scrollbar-hide justify-center">
                             {visibleDates.map((d, idx) => {
                               const isSelected = d.Day === selectedDate;
                               const dayObj = new Date(d.Day);
                               return (
                                 <div
                                   key={idx}
-                                  className={`flex flex-col items-center justify-center min-w-[48px] md:min-w-[64px] h-12 md:h-16 rounded-2xl md:rounded-4xl text-xs md:text-sm cursor-pointer transition-all duration-200
+                                  className={`flex flex-col items-center justify-center w-16 md:w-20 h-12 md:h-16 rounded-2xl md:rounded-4xl text-xs md:text-sm cursor-pointer transition-all duration-200
                                    ${isSelected
                                       ? "bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500  text-white shadow-lg"
                                       : "bg-white/10 hover:bg-white/20 text-white/80"
                                     }`}
                                   onClick={() => dispatch(setSelectedDate(d.Day))}
-
                                 >
                                   <span className="text-[8px] md:text-[10px] font-medium opacity-90">
                                     {dayObj.toLocaleDateString("en-US", { month: "short" }).toUpperCase()}
@@ -616,6 +561,7 @@ const BookingPage = () => {
                           <button
                             className="p-2 text-purple-400 hover:text-purple-300 hover:bg-white/10 rounded-xl transition-all flex-shrink-0"
                             onClick={() => handleChangeDate(+1)}
+                            disabled={dateIndex >= showtimes.length - 3}
                           >
                             <FaChevronRight />
                           </button>
@@ -747,7 +693,7 @@ const BookingPage = () => {
                           />
                         </div>
                       ) : (
-                        <div className="text-center py-8 md:py-12 bg-white/5 rounded-2xl text-gray-400">
+                        <div className="text-center h-full w-full py-8 md:py-12 bg-white/5 rounded-2xl text-gray-400">
                           <DNALoader />
                           <p className="font-semibold mt-2 text-sm md:text-base">
                             {isRefreshing ? 'Refreshing seats...' : 'Loading seats...'}
@@ -761,21 +707,35 @@ const BookingPage = () => {
             </div>
           </div>
 
-          {/* Products Section - nằm dưới và rộng bằng 2 div trên */}
+          {/* Products Section - Always show products, allow quantity changes */}
           {product && product.length > 0 && (
             <div className="bg-white/5 backdrop-blur-md rounded-3xl p-4 md:p-6 lg:p-8 border border-white/10 shadow-2xl">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg md:text-xl font-bold text-white">Snacks & Drinks</h3>
+                {selectedProducts.length > 0 && (
+                  <div className="flex items-center gap-2 text-blue-400">
+                    <div className="w-4 h-4 bg-blue-400 rounded-full"></div>
+                    <span className="text-sm">{selectedProducts.length} item{selectedProducts.length > 1 ? 's' : ''} selected</span>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-                {product.filter(p => !p.IsDeleted && p.Quantity > 0).map((prod) => (
-                  <ProductCard
-                    key={prod.ProductId}
-                    product={prod}
-                    onQuantityChange={handleProductSelect}
-                  />
-                ))}
+                {product.filter(p => !p.IsDeleted && p.Quantity > 0).map((prod) => {
+                  // Tìm quantity hiện tại của product này trong selectedProducts
+                  const currentQuantity = selectedProducts.find(sp => sp.ProductId === prod.ProductId)?.selectedQuantity || 0;
+                  
+                  return (
+                    <ProductCard
+                      key={prod.ProductId}
+                      product={prod}
+                      quantity={currentQuantity} 
+                      onQuantityChange={handleProductSelect} 
+                      disabled={false} 
+                      maxQuantity={prod.Quantity}
+                    />
+                  );
+                })}
               </div>
             </div>
           )}
@@ -796,26 +756,14 @@ const BookingPage = () => {
                     <div className="text-sm text-gray-400">
                       {selectedSeats.length} seat{selectedSeats.length > 1 ? 's' : ''}: {selectedSeats.join(', ')}
                     </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {movie?.NameOfEnglish} • {selectedDate ? new Date(selectedDate).toLocaleDateString("vi-VN") : ''} • {selectedTime}
+                    </div>
                   </div>
                 )}
 
                 {/* Products Summary */}
-                {selectedProducts.length > 0 && (
-                  <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-gray-300 font-medium">Snacks & Drinks</span>
-                      <span className="text-white font-semibold">{formatPrice(totalProductPrice)}</span>
-                    </div>
-                    <div className="space-y-1 text-sm text-gray-400">
-                      {selectedProducts.map((item, index) => (
-                        <div key={index} className="flex justify-between">
-                          <span>{item.ProductName} x{item.selectedQuantity}</span>
-                          <span>{formatPrice(item.Price * item.selectedQuantity)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                {renderProductsSummary()}
 
                 {/* Total */}
                 <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-2xl p-4 border border-purple-400/30">
@@ -823,24 +771,29 @@ const BookingPage = () => {
                     <span className="text-white font-bold text-lg">Total Amount</span>
                     <span className="text-purple-300 font-bold text-2xl">{formatPrice(totalAmount)}</span>
                   </div>
+                  {selectedProducts.length > 0 && (
+                    <div className="text-xs text-gray-400 mt-2">
+                      Products will be reserved when you confirm payment
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           )}
 
-          {/* Continue Payment Button - đặt trong trang thay vì fixed */}
-          {(selectedSeats.length > 0 || selectedProducts.length > 0) && (
+          {/* Continue Payment Button - only show when seats selected */}
+          {selectedSeats.length > 0 && (
             <div className="bg-white/5 backdrop-blur-md rounded-3xl p-4 md:p-6 lg:p-8 border border-white/10 shadow-2xl">
               <div className="flex justify-center">
                 <button
-                  disabled={isHoldingProducts}
+                  disabled={selectedSeats.length === 0}
                   onClick={handleContinue}
                   className="px-8 py-4 bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 hover:from-purple-700 hover:via-purple-600 hover:to-pink-600 shadow-xl hover:shadow-2xl hover:shadow-purple-500/20 
                            transform hover:scale-[1.02] transition-all duration-300 ease-out
                            border border-purple-400/20 text-white font-semibold rounded-4xl disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-lg"
                 >
                   <FaTicketAlt className="inline-block mr-2" />
-                  {isHoldingProducts ? 'Holding Products...' : 'Continue Payment'}
+                  Continue to Confirm
                 </button>
               </div>
             </div>

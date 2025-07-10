@@ -24,7 +24,7 @@ const ShowtimeButton = ({
                 onSelectTime && onSelectTime(null);
               }}
               style={{
-                border: selectedDay === day ? "2px solid #8A2BE2" : "1px solid #d9d9d9",
+                border: selectedDay === day ? "3px solid #8A2BE2" : "1px solid #d9d9d9",
                 color: selectedDay === day ? "#8A2BE2" : "black",
                 margin: '0 5px',
               }}
@@ -54,7 +54,7 @@ const ShowtimeButton = ({
                   type="default"
                   onClick={() => onSelectTime(parentVersion, timeObj.time)}
                   style={{
-                    border: selectedTime === timeObj.time ? "2px solid #8A2BE2" : "1px solid #d9d9d9",
+                    border: selectedTime === timeObj.time ? "3px solid #8A2BE2" : "1px solid #d9d9d9",
                     color: selectedTime === timeObj.time ? "#8A2BE2" : "black",
                     margin: '0 5px',
                   }}

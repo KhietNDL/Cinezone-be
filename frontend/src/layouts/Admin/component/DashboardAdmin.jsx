@@ -23,6 +23,7 @@ import TheEndPoster from "../../../assets/TheEndPoster.jpg";
 import DoctorStrangePoster from "../../../assets/DoctorStrangePoster.jpg";
 import SpiderManPoster from "../../../assets/SpiderManPoster.jpg";
 import imageMovie5 from "../../../assets/imageMovie5.jpg";
+
 const DashboardAdmin = () => {
   const topMovies = [
     {
@@ -51,7 +52,9 @@ const DashboardAdmin = () => {
       image: imageMovie5,
     },
   ];
+
   const MovieFillter = [...topMovies].sort((a, b) => b.tickets - a.tickets);
+
   const salesOverviewData = [
     { month: "Jan", revenue: 0 },
     { month: "Feb", revenue: 2500 },
@@ -82,60 +85,70 @@ const DashboardAdmin = () => {
   ];
 
   const COLORS = ["#0088FE", "#FFBB28", "#8884d8"];
+
   return (
-    <div className="flex items-center justify-between">
-      <div className="w-[70%] space-y-4">
-        <div className="flex items-center justify-between w-full">
-          <div className="bg-white rounded-md p-3 w-[23%] shadow-sm ">
+    <div className="flex flex-col items-center lg:items-start h-auto min-h-screen w-full max-w-full overflow-x-hidden">
+      <div className="w-[90%] md:w-[95%] lg:w-[95%] max-w-7xl space-y-4 sm:space-y-6">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4 w-full">
+          <div className="bg-white rounded-lg p-2 sm:p-3 flex-1 shadow-sm">
             <div className="flex items-center justify-between">
-              <p className="text-slate-500">Total Tickets Sold</p>
-
-              <div className="p-2 bg-am ber-50 rounded-full">
-                <FaTicket size={20} color="gold" />
+              <p className="text-slate-500 text-sm sm:text-base">
+                Total Tickets Sold
+              </p>
+              <div className="p-1 sm:p-2 bg-amber-100 rounded-lg flex items-center justify-center">
+                <FaTicket size={18} sm={20} className="text-yellow-500" />
               </div>
             </div>
-            <div className="font-bold text-[19px]">25,340</div>
+            <p className="font-bold text-base sm:text-[19px]">25,340</p>
           </div>
-          <div className="bg-white rounded-md p-3  w-[23%] shadow-sm">
+          <div className="bg-white rounded-lg p-2 sm:p-3 flex-1 shadow-sm">
             <div className="flex items-center justify-between">
-              <p className="text-slate-500">Revenue</p>
-
-              <div className="p-2 bg-rose-50 rounded-full">
-                <RiMoneyDollarCircleFill size={20} color="red" />
+              <p className="text-slate-500 text-sm sm:text-base">Revenue</p>
+              <div className="p-1 sm:p-2 bg-rose-50 rounded-lg flex items-center justify-center">
+                <RiMoneyDollarCircleFill
+                  size={18}
+                  sm={20}
+                  className="text-red-500"
+                />
               </div>
             </div>
-            <div className="font-bold text-[19px]">25,340</div>
+            <p className="font-bold text-base sm:text-[19px]">$25,340</p>
           </div>
-          <div className="bg-white rounded-md p-3  w-[23%] shadow-sm">
+          <div className="bg-white rounded-lg p-2 sm:p-3 flex-1 shadow-sm">
             <div className="flex items-center justify-between">
-              <p className="text-slate-500">Active Movies</p>
-
-              <div className="p-2 bg-amber-50 rounded-full">
-                <MdMovieFilter size={20} color="gold" />
+              <p className="text-slate-500 text-sm sm:text-base">
+                Active Movies
+              </p>
+              <div className="p-1 sm:p-2 bg-amber-100 rounded-lg flex items-center justify-center">
+                <MdMovieFilter size={18} sm={20} className="text-yellow-500" />
               </div>
             </div>
-            <div className="font-bold text-[19px]">25,340</div>
+            <p className="font-bold text-base sm:text-[19px]">25,340</p>
           </div>
-          <div className="bg-white rounded-md p-3  w-[23%] shadow-sm">
+          <div className="bg-white rounded-lg p-2 sm:p-3 flex-1 shadow-sm">
             <div className="flex items-center justify-between">
-              <p className="text-slate-500">Upcoming Shows</p>
-
-              <div className="p-2 bg-rose-50 rounded-full">
-                <IoCalendar size={20} color="red" />
+              <p className="text-slate-500 text-sm sm:text-base">
+                Upcoming Shows
+              </p>
+              <div className="p-1 sm:p-2 bg-rose-50 rounded-lg flex items-center justify-center">
+                <IoCalendar size={18} sm={20} className="text-red-500" />
               </div>
             </div>
-            <div className="font-bold text-[19px]">25,340</div>
+            <p className="font-bold text-base sm:text-[19px]">25,340</p>
           </div>
         </div>
-        <div className="flex items-center justify-between w-full">
-          <div className="w-full space-y-4">
-            <div className="bg-white w-full h-[300px] rounded-[10px] p-3 font-bold shadow-sm">
-              <p className="mb-2">Sales Overview</p>
+
+        {/* Charts Section */}
+        <div className="flex flex-col lg:flex-row items-start justify-between w-full gap-4 sm:gap-6">
+          <div className="w-full xl:w-[70%] space-y-4 sm:space-y-6">
+            <div className="bg-white w-full h-[250px] sm:h-[300px] rounded-lg p-3 sm:p-4 font-bold shadow-sm">
+              <p className="mb-2 text-sm sm:text-base">Sales Overview</p>
               <ResponsiveContainer width="100%" height="85%">
                 <AreaChart data={salesOverviewData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
+                  <XAxis dataKey="month" fontSize={12} sm={14} />
+                  <YAxis fontSize={12} sm={14} />
                   <Tooltip />
                   <Area
                     type="monotone"
@@ -147,15 +160,14 @@ const DashboardAdmin = () => {
                 </AreaChart>
               </ResponsiveContainer>
             </div>
-
-            <div className="w-full  flex items-center justify-between h-[300px]">
-              <div className="bg-white w-[48%] h-full rounded-[10px] p-3 font-bold shadow-sm">
-                <p className="mb-2">Daily Ticket Sales</p>
-                <ResponsiveContainer width="100%" height="100%">
+            <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-4 sm:gap-6">
+              <div className="bg-white w-full sm:w-[48%] h-[250px] sm:h-[300px] rounded-lg p-3 sm:p-4 font-bold shadow-sm">
+                <p className="mb-2 text-sm sm:text-base">Daily Ticket Sales</p>
+                <ResponsiveContainer width="100%" height="85%">
                   <LineChart data={lineChartData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
+                    <XAxis dataKey="date" fontSize={12} sm={14} />
+                    <YAxis fontSize={12} sm={14} />
                     <Tooltip />
                     <Line
                       type="monotone"
@@ -166,9 +178,9 @@ const DashboardAdmin = () => {
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-              <div className="bg-white h-[300px] w-[48%] rounded-[10px] p-3 font-bold shadow-sm">
-                <p className="mb-2">Genre Distribution</p>
-                <ResponsiveContainer width="100%" height="100%">
+              <div className="bg-white w-full sm:w-[48%] h-[250px] sm:h-[300px] rounded-lg p-3 sm:p-4 font-bold shadow-sm">
+                <p className="mb-2 text-sm sm:text-base">Genre Distribution</p>
+                <ResponsiveContainer width="100%" height="85%">
                   <PieChart>
                     <Pie
                       data={pieChartData}
@@ -176,7 +188,8 @@ const DashboardAdmin = () => {
                       cy="50%"
                       labelLine={false}
                       label={({ name }) => name}
-                      outerRadius={80}
+                      outerRadius={60}
+                      sm={80}
                       dataKey="value"
                     >
                       {pieChartData.map((entry, index) => (
@@ -186,40 +199,47 @@ const DashboardAdmin = () => {
                         />
                       ))}
                     </Pie>
-                    <Legend />
+                    <Legend
+                      wrapperStyle={{ fontSize: "12px" }}
+                      sm={{ fontSize: "14px" }}
+                    />
                     <Tooltip />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             </div>
           </div>
-        </div>
-      </div>
-      <div className="flex items-center fixed right-[-40px] top-[25%] justify-center w-[30%]">
-        <div className="bg-white p-5 px-5 rounded-[20px] space-y-4 shadow-sm">
-          <p className="font-bold">Top 5 Movies by Ticket Sales</p>
-          <div className="w-full space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-slate-500 text-[14px]">Poster title</p>
-              <p className="text-slate-500 text-[14px]">Tickets</p>
-            </div>
-            {MovieFillter.map((poster, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between text-[14px] font-bold"
-              >
-                <div className="flex items-center w-[75%]">
-                  <img
-                    src={poster.image}
-                    alt="avatar"
-                    loading="lazy"
-                    className="w-[50px] h-[50px] object-cover rounded-md mr-2"
-                  />
-                  <p className="truncate">{poster.title}</p>
-                </div>
-                <p>{poster.tickets.toLocaleString()}</p>
+
+          {/* Top 5 Movies */}
+          <div className="w-full xl:w-[30%] lg:hidden xl:block bg-white p-4 sm:p-5 rounded-lg shadow-sm">
+            <p className="font-bold text-sm sm:text-base mb-3 sm:mb-4">
+              Top 5 Movies by Ticket Sales
+            </p>
+            <div className="w-full space-y-3 sm:space-y-4">
+              <div className="flex items-center justify-between text-slate-500 text-xs sm:text-sm">
+                <p>Movie Title</p>
+                <p>Tickets</p>
               </div>
-            ))}
+              {MovieFillter.map((poster, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between text-xs sm:text-sm font-semibold"
+                >
+                  <div className="flex items-center w-[70%] sm:w-[75%]">
+                    <img
+                      src={poster.image}
+                      alt={poster.title}
+                      loading="lazy"
+                      className="w-10 sm:w-12 h-10 sm:h-12 object-cover rounded-md mr-2 sm:mr-3"
+                    />
+                    <p className="truncate" title={poster.title}>
+                      {poster.title}
+                    </p>
+                  </div>
+                  <p>{poster.tickets.toLocaleString()}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
