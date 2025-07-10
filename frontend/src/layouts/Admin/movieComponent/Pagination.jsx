@@ -20,10 +20,10 @@ const Pagination = ({ currentPage, totalPages, handlePageChange }) => {
         <button
           key={`page-${i}`}
           onClick={() => handlePageChange(i)}
-          className={`px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${
+          className={`px-2 sm:px-3 cursor-pointer py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${
             currentPage === i
-              ? "bg-indigo-600 text-white shadow-sm"
-              : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm"
+              ? "bg-indigo-600  text-white shadow-sm"
+              : "bg-white hover:bg-slate-100 active:bg-slate-200  text-gray-700 border border-gray-200  shadow-sm"
           }`}
           aria-label={`Page ${i}`}
           aria-current={currentPage === i ? "true" : undefined}
@@ -49,7 +49,7 @@ const Pagination = ({ currentPage, totalPages, handlePageChange }) => {
           className={`px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${
             currentPage === 1
               ? "bg-indigo-600 text-white shadow-sm"
-              : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm"
+              : "bg-white text-gray-700 border border-gray-200 hover:bg-slate-100 active:bg-slate-200  shadow-sm"
           }`}
           aria-label="Page 1"
         >
@@ -73,7 +73,7 @@ const Pagination = ({ currentPage, totalPages, handlePageChange }) => {
           className={`px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${
             currentPage === totalPages
               ? "bg-indigo-600 text-white shadow-sm"
-              : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm"
+              : "bg-white text-gray-700 border border-gray-200 hover:bg-slate-100 active:bg-slate-200  shadow-sm"
           }`}
           aria-label={`Page ${totalPages}`}
         >
@@ -90,12 +90,12 @@ const Pagination = ({ currentPage, totalPages, handlePageChange }) => {
   };
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-end space-y-2 sm:space-y-0 sm:space-x-2 py-4">
+    <div className="flex select-none flex-col sm:flex-row items-center justify-end space-y-2 sm:space-y-0 sm:space-x-2 py-4">
       <div className="flex items-center space-x-1 sm:space-x-2">
         <button
           onClick={() => handlePageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="px-3 sm:px-4 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-3 cursor-pointer sm:px-4 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium bg-white text-gray-700 border border-gray-200 hover:bg-slate-100 active:bg-slate-200  shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           aria-label="Previous page"
         >
           Previous
@@ -104,13 +104,13 @@ const Pagination = ({ currentPage, totalPages, handlePageChange }) => {
         <button
           onClick={() => handlePageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="px-3 sm:px-4 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-3 sm:px-4 cursor-pointer py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium bg-white text-gray-700 border border-gray-200 hover:bg-slate-100 active:bg-slate-200  shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           aria-label="Next page"
         >
           Next
         </button>
       </div>
-      <span className="text-gray-500 text-sm sm:text-base">
+      <span className="text-gray-500  text-sm sm:text-base">
         Page {currentPage} of {totalPages}
       </span>
     </div>

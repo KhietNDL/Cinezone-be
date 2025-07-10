@@ -266,9 +266,9 @@ export const searchMovies = async (params) => {
 
 // API cho Employee
 
-export const getEmployee = async () => {
+export const getEmployee = async (params) => {
   try {
-    const response = await api.get("/employee");
+    const response = await api.get("/employee", { params });
     return response.data;
   } catch (error) {
     handleError(error);
@@ -484,9 +484,9 @@ export const ConfirmBooking = async (bookingId) => {
     throw error;
   }
 };
-export const getAllBookings = async () => {
+export const getAllBookings = async (params = {}) => {
   try {
-    const response = await api.get("/bookings");
+    const response = await api.get("/bookings", { params });
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy tất cả booking:", error);
@@ -514,7 +514,24 @@ export const getBookingById = async (bookingId) => {
     throw error;
   }
 };
-
+export const searchBookingsByUser = async (searchTerm) => {
+  try {
+    const response = await api.get("/bookings/search/user", {
+      params: {
+        [searchTerm.includes("@")
+          ? "email"
+          : searchTerm.length === 12
+          ? "cccd"
+          : "phone"]: searchTerm,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi tìm kiếm booking theo người dùng:", error);
+    handleError(error);
+    throw error;
+  }
+};
 export const cancelBooking = async (bookingId) => {
   try {
     const response = await api.post(`/bookings/cancel/${bookingId}`);
@@ -538,9 +555,11 @@ export const getBookingHistory = async (memberId) => {
   }
 };
 
-export const getAllProducts = async () => {
+export const getAllProducts = async (params) => {
   try {
-    const response = await api.get("/products");
+    const response = await api.get("/products",
+      {params}
+    );
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy danh sách sản phẩm owr API:", error);
@@ -596,5 +615,66 @@ export const cancelProduct = async (id) => {
     console.error("Lỗi khi cancel product:", error);
     handleError(error);
     throw error;
+  }
+};
+
+export const createShowtime = async (showtimeData) => {
+  try {
+    const response = await api.post("/showtimes/create", showtimeData, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+// API Analytics
+export const getRevenueByMonth = async (year) => {
+  try {
+    const response = await api.get("/analytics/revenue/month", {
+      params: { year },
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const getRevenueByQuarter = async (year) => {
+  try {
+    const response = await api.get("/analytics/revenue/quarter", {
+      params: { year },
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const getRevenueThisMonth = async () => {
+  try {
+    const response = await api.get("/analytics/revenue/this-month");
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const getRevenueThisWeek = async () => {
+  try {
+    const response = await api.get("/analytics/revenue/this-week");
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const getRevenueThisQuarter = async () => {
+  try {
+    const response = await api.get("/analytics/revenue/this-quarter");
+    return response.data;
+  } catch (error) {
+    handleError(error);
   }
 };

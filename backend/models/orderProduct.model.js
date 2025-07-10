@@ -70,10 +70,11 @@ class OrderProduct {
 
       // 3. Tạo OrderProduct (Status = 1: holding)
       const OrderProductId = uuidv4();
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 phút
       await connection.query(
-        `INSERT INTO OrderProduct (OrderProductId, MemberId, TotalAmount, Status, Notes, IsDeleted, CreatedAt, CreatedBy)
-         VALUES (?, ?, ?, 1, ?, 0, NOW(), ?)`,
-        [OrderProductId, MemberId, totalAmount, Notes, CreatedBy]
+        `INSERT INTO OrderProduct (OrderProductId, MemberId, TotalAmount, Status, Notes, IsDeleted, CreatedAt, CreatedBy, ExpiresAt)
+         VALUES (?, ?, ?, 1, ?, 0, NOW(), ?, ?)`,
+        [OrderProductId, MemberId, totalAmount, Notes, CreatedBy, expiresAt]
       );
 
       // 4. Tạo OrderProductDetail và trừ tồn kho

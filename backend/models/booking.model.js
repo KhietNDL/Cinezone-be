@@ -1,6 +1,7 @@
 const db = require("../config/database");
 const { v4: uuidv4 } = require("uuid");
 const { normalizeDate } = require("../middlewares/showtime.validator");
+const Ticket = require("./ticket.model"); // Đảm bảo đã require ở đầu file
 class Booking {
   static async getBookingById(bookingId) {
     const sql = `SELECT * FROM Bookings WHERE BookingId = ? AND IsDeleted = 0`;
@@ -141,13 +142,17 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
     return rows[0];
   }
 
+
+
   static async holdBooking({
     userId,
     showtimeId,
     seatIds,
     promotionTitle,
+    discount = 0,
     CreatedBy,
   }) {
+
     const connection = await db.promise().getConnection();
     try {
       await connection.beginTransaction();
@@ -171,10 +176,9 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
         throw new Error("Some seats are not available");
       }
 
-      // 2. Kiểm tra khuyến mãi (giả sử luôn hợp lệ hoặc bạn tự bổ sung)
-      let discount = 0;
+      // 2. Xử lý promotion hoặc discount (chỉ 1 trong 2)
+      let promotionDiscount = 0; // phần trăm
       let promotionId = null;
-
       if (promotionTitle) {
         const [promotion] = await connection.query(
           `SELECT DiscountValue, PromotionId FROM Promotions WHERE Title = ? AND IsDeleted = 0`,
@@ -183,18 +187,26 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
         if (promotion.length === 0) {
           throw new Error("Promotion not found");
         }
-        discount = promotion[0].DiscountValue || 0;
+        promotionDiscount = promotion[0].DiscountValue || 0;
         promotionId = promotion[0].PromotionId;
       }
 
-      // 3. Tính tổng tiền
+      // 3. Tính tổng tiền & lấy thông tin từng ghế
       const [seatInfo] = await connection.query(
-        `SELECT SUM(Price) as total FROM Seats WHERE SeatId IN (?)`,
+        `SELECT SeatId, Price FROM Seats WHERE SeatId IN (?)`,
         [seatIds]
       );
-      let totalAmount = Number(seatInfo[0].total) || 0;
+      let totalAmount = seatInfo.reduce((sum, seat) => sum + Number(seat.Price), 0);
 
-      totalAmount -= (totalAmount * discount) / 100;
+      if (promotionDiscount > 0) {
+      // Nếu có promotion, giảm theo phần trăm
+      totalAmount -= (totalAmount * promotionDiscount) / 100;
+      } else if (discount > 0) {
+        // Nếu có discount từ điểm, giảm trực tiếp số tiền
+        totalAmount -= discount;
+      }
+      // Đảm bảo tổng tiền không âm
+      totalAmount = Math.max(0, totalAmount);
 
       // 4. Tạo booking
       const bookingId = uuidv4();
@@ -224,6 +236,16 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
         );
       }
 
+      // 6. Tạo vé cho từng ghế với đúng giá
+      for (const seat of seatInfo) {
+        await Ticket.createTicket({
+          BookingId: bookingId,
+          SeatId: seat.SeatId,
+          TotalPrice: seat.Price,
+          CreatedBy,
+        }, connection);
+      }
+
       await connection.commit();
       return { bookingId, totalAmount, expiresAt };
     } catch (err) {
@@ -233,7 +255,6 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
       connection.release();
     }
   }
-
   static async confirmBooking(bookingId) {
     const connection = await db.promise().getConnection();
     try {
@@ -260,7 +281,6 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
       connection.release();
     }
   }
-
   /**
    * @param {string} bookingId - ID của booking
    * @param {number} status - Trạng thái mới (ví dụ: PAID = 2)
@@ -328,88 +348,6 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
       };
     }
   }
-
-  static async checkinBooking(bookingId) {
-    // Chỉ cho phép checkin nếu status hiện tại là 2 (PAID)
-    const [rows] = await db
-      .promise()
-      .query(
-        "SELECT Status FROM Bookings WHERE BookingId = ? AND IsDeleted = 0",
-        [bookingId]
-      );
-    if (!rows[0]) {
-      return { success: false, message: "Booking not found" };
-    }
-    if (rows[0].Status !== 2) {
-      return { success: false, message: "Booking is not in PAID status" };
-    }
-    const [result] = await db
-      .promise()
-      .query(
-        "UPDATE Bookings SET Status = 3, UpdatedAt = NOW() WHERE BookingId = ? AND Status = 2 AND IsDeleted = 0",
-        [bookingId]
-      );
-    return {
-      success: result.affectedRows > 0,
-      message:
-        result.affectedRows > 0 ? "Check-in successful" : "Check-in failed",
-    };
-  }
-  static async getBookingDetail(bookingId) {
-    // Lấy thông tin booking, showtime, movie, user
-    const [rows] = await db.promise().query(
-      `
-    SELECT 
-      b.BookingId,
-      b.TotalAmount,
-      b.BookingDate,
-      u.FullName AS buyerName,
-      u.PhoneNumber AS buyerPhone,
-      mv.NameOfVietnamese,
-      mv.NameOfEnglish,
-      s.Day,
-      s.Time,
-      cr.Name
-    FROM Bookings b
-    JOIN Users u ON b.MemberId = u.UserId
-    JOIN Showtimes s ON b.ShowtimeId = s.ShowtimeId
-    JOIN Version v ON s.VersionId = v.VersionId
-    JOIN Movies mv ON v.MovieId = mv.MovieId
-    JOIN CinemaRooms cr ON s.CinemaRoomId = cr.CinemaRoomId
-    WHERE b.BookingId = ? AND b.IsDeleted = 0
-    `,
-      [bookingId]
-    );
-    if (!rows[0]) return null;
-
-    // Lấy danh sách ghế chỉ của booking này
-    const [seats] = await db.promise().query(
-      `
-    SELECT s.SeatNumber
-    FROM SeatShowtime ss
-    JOIN Seats s ON ss.SeatId = s.SeatId
-    WHERE ss.BookingId = ?
-      AND ss.Status IN ('taken', 'holding')
-      AND ss.IsDeleted = 0
-    `,
-      [bookingId]
-    );
-
-    return {
-      bookingId: rows[0].BookingId,
-      movieNameVN: rows[0].NameOfVietnamese,
-      movieNameEnglish: rows[0].NameOfEnglish,
-      showDate: normalizeDate(rows[0].Day),
-      showTime: rows[0].Time,
-      startTime: rows[0].StartTime,
-      room: rows[0].Name,
-      seats: seats.map((s) => s.SeatNumber),
-      totalAmount: rows[0].TotalAmount,
-      buyerName: rows[0].buyerName,
-      buyerPhone: rows[0].buyerPhone,
-    };
-  }
-
   static async cancelBooking(bookingId) {
     const connection = await db.promise().getConnection();
     try {
@@ -423,10 +361,20 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
 
       // 2. Đổi trạng thái các ghế từ "holding" hoặc "taken" sang "available"
       await connection.query(
-        `DELETE FROM SeatShowtime
+        `UPDATE SeatShowtime
+         SET Status = 'cancelled'
          WHERE BookingId = ? AND Status IN ('holding', 'taken')`,
         [bookingId]
+      );  
+
+      // 3. Xóa mềm tất cả ticket của booking này
+      const [tickets] = await connection.query(
+        `SELECT TicketId FROM Tickets WHERE BookingId = ? AND IsDeleted = 0`,
+        [bookingId]
       );
+      for (const ticket of tickets) {
+        await Ticket.deleteTicket(ticket.TicketId);
+      }
 
       await connection.commit();
       return true;
@@ -437,116 +385,6 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
       connection.release();
     }
   }
-
-  static async checkinBooking(bookingId) {
-    // Chỉ cho phép checkin nếu status hiện tại là 2 (PAID)
-    const [rows] = await db
-      .promise()
-      .query(
-        "SELECT Status FROM Bookings WHERE BookingId = ? AND IsDeleted = 0",
-        [bookingId]
-      );
-    if (!rows[0]) {
-      return { success: false, message: "Booking not found" };
-    }
-    if (rows[0].Status !== 2) {
-      return { success: false, message: "Booking is not in PAID status" };
-    }
-    const [result] = await db
-      .promise()
-      .query(
-        "UPDATE Bookings SET Status = 3, UpdatedAt = NOW() WHERE BookingId = ? AND Status = 2 AND IsDeleted = 0",
-        [bookingId]
-      );
-    return {
-      success: result.affectedRows > 0,
-      message:
-        result.affectedRows > 0 ? "Check-in successful" : "Check-in failed",
-    };
-  }
-  static async getBookingDetail(bookingId) {
-    // Lấy thông tin booking, showtime, movie, user
-    const [rows] = await db.promise().query(
-      `
-    SELECT 
-      b.BookingId,
-      b.TotalAmount,
-      b.BookingDate,
-      u.FullName AS buyerName,
-      u.PhoneNumber AS buyerPhone,
-      mv.NameOfVietnamese,
-      mv.NameOfEnglish,
-      s.Day,
-      s.Time,
-      cr.Name
-    FROM Bookings b
-    JOIN Users u ON b.MemberId = u.UserId
-    JOIN Showtimes s ON b.ShowtimeId = s.ShowtimeId
-    JOIN Version v ON s.VersionId = v.VersionId
-    JOIN Movies mv ON v.MovieId = mv.MovieId
-    JOIN CinemaRooms cr ON s.CinemaRoomId = cr.CinemaRoomId
-    WHERE b.BookingId = ? AND b.IsDeleted = 0
-    `,
-      [bookingId]
-    );
-    if (!rows[0]) return null;
-
-    // Lấy danh sách ghế chỉ của booking này
-    const [seats] = await db.promise().query(
-      `
-    SELECT s.SeatNumber
-    FROM SeatShowtime ss
-    JOIN Seats s ON ss.SeatId = s.SeatId
-    WHERE ss.BookingId = ?
-      AND ss.Status IN ('taken', 'holding')
-      AND ss.IsDeleted = 0
-    `,
-      [bookingId]
-    );
-
-    return {
-      bookingId: rows[0].BookingId,
-      movieNameVN: rows[0].NameOfVietnamese,
-      movieNameEnglish: rows[0].NameOfEnglish,
-      showDate: normalizeDate(rows[0].Day),
-      showTime: rows[0].Time,
-      startTime: rows[0].StartTime,
-      room: rows[0].Name,
-      seats: seats.map((s) => s.SeatNumber),
-      totalAmount: rows[0].TotalAmount,
-      buyerName: rows[0].buyerName,
-      buyerPhone: rows[0].buyerPhone,
-    };
-  }
-
-  static async cancelBooking(bookingId) {
-    const connection = await db.promise().getConnection();
-    try {
-      await connection.beginTransaction();
-
-      // 1. Đổi trạng thái booking sang CANCELLED (4)
-      await connection.query(
-        `UPDATE Bookings SET Status = 4 WHERE BookingId = ? AND Status IN (1,2)`,
-        [bookingId]
-      );
-
-      // 2. Đổi trạng thái các ghế từ "holding" hoặc "taken" sang "available"
-      await connection.query(
-        `DELETE FROM SeatShowtime
-         WHERE BookingId = ? AND Status IN ('holding', 'taken')`,
-        [bookingId]
-      );
-
-      await connection.commit();
-      return true;
-    } catch (err) {
-      await connection.rollback();
-      throw err;
-    } finally {
-      connection.release();
-    }
-  }
-
   static async checkinBooking(bookingId) {
     // Chỉ cho phép checkin nếu status hiện tại là 2 (PAID)
     const [rows] = await db
@@ -592,7 +430,8 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
       v.VersionType,
       p.Title,
       b.Status,
-      s.Duration
+      s.Duration,
+      sh.ScoreValue
     FROM Bookings b
     JOIN Users u ON b.MemberId = u.UserId
     JOIN Showtimes s ON b.ShowtimeId = s.ShowtimeId
@@ -600,6 +439,7 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
     JOIN Movies mv ON v.MovieId = mv.MovieId
     JOIN CinemaRooms cr ON s.CinemaRoomId = cr.CinemaRoomId
     LEFT JOIN Promotions p ON b.PromotionId = p.PromotionId
+    LEFT JOIN ScoreHistory sh ON b.BookingId = sh.RelatedBookingId
     WHERE b.BookingId = ? AND b.IsDeleted = 0;
     `,
       [bookingId]
@@ -641,6 +481,9 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
       totalAmount: rows[0].TotalAmount,
       buyerName: rows[0].buyerName,
       buyerPhone: rows[0].buyerPhone,
+      buyerCCCD: rows[0].buyerCCCD,
+      pointEarn: rows[0].ScoreValue > 0 ? rows[0].ScoreValue : undefined,
+      pointUse: rows[0].ScoreValue < 0 ? Math.abs(rows[0].ScoreValue) : undefined,
       status: rows[0].Status
     };
   }
@@ -648,16 +491,16 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
   let where = [];
   let params = [];
   if (email) {
-    where.push("u.Email = ?");
-    params.push(email);
+    where.push("u.Email LIKE ?");
+    params.push(`%${email}%`);
   }
   if (cccd) {
-    where.push("u.CCCD = ?");
-    params.push(cccd);
+    where.push("u.CCCD LIKE ?");
+    params.push(`%${cccd}%`);
   }
   if (phone) {
-    where.push("u.PhoneNumber = ?");
-    params.push(phone);
+    where.push("u.PhoneNumber LIKE ?");
+    params.push(`%${phone}%`);
   }
   if (where.length === 0) return [];
 

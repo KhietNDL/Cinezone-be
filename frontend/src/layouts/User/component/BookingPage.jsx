@@ -227,8 +227,8 @@ const BookingPage = () => {
     const fetchProducts = async () => {
       try {
         const response = await getAllProducts();
-        dispatch(setProduct(response.Products || []));
-        console.log("Products fetched successfully:", response.Products?.length || 0, "products");
+        dispatch(setProduct(response.products || []));
+        console.log("Products fetched successfully:", response.products?.length || 0, "products");
       } catch (err) {
         console.error("Error fetching products:", err);
       } finally {

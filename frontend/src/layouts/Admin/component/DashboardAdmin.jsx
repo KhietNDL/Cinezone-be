@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   LineChart,
   Line,
@@ -23,6 +23,7 @@ import TheEndPoster from "../../../assets/TheEndPoster.jpg";
 import DoctorStrangePoster from "../../../assets/DoctorStrangePoster.jpg";
 import SpiderManPoster from "../../../assets/SpiderManPoster.jpg";
 import imageMovie5 from "../../../assets/imageMovie5.jpg";
+import { getRevenueByMonth, getRevenueByQuarter, getRevenueThisMonth, getRevenueThisWeek, getRevenueThisQuarter } from '../../../services/API';
 
 const DashboardAdmin = () => {
   const topMovies = [
@@ -55,11 +56,11 @@ const DashboardAdmin = () => {
 
   const MovieFillter = [...topMovies].sort((a, b) => b.tickets - a.tickets);
 
-  const salesOverviewData = [
+  const [salesOverviewData, setSalesOverviewData] = useState([
     { month: "Jan", revenue: 0 },
-    { month: "Feb", revenue: 2500 },
-    { month: "Mar", revenue: 9000 },
-    { month: "Apr", revenue: 2000 },
+    { month: "Feb", revenue: 0 },
+    { month: "Mar", revenue: 0 },
+    { month: "Apr", revenue: 0 },
     { month: "May", revenue: 0 },
     { month: "Jun", revenue: 0 },
     { month: "Jul", revenue: 0 },
@@ -68,7 +69,126 @@ const DashboardAdmin = () => {
     { month: "Oct", revenue: 0 },
     { month: "Nov", revenue: 0 },
     { month: "Dec", revenue: 0 },
+  ]);
+
+  const [timeFilter, setTimeFilter] = useState("This Month");
+  const timeOptions = [
+    "This Month",
+    "Month",
+    "This Week",
+    "Quarter",
+    "This Quarter",
   ];
+
+  useEffect(() => {
+    const fetchRevenueByMonth = async () => {
+      try {
+        const year = new Date().getFullYear();
+        const res = await getRevenueByMonth(year);
+        if (res && res.data) {
+          const chartData = [
+            { month: "Jan", revenue: 0 },
+            { month: "Feb", revenue: 0 },
+            { month: "Mar", revenue: 0 },
+            { month: "Apr", revenue: 0 },
+            { month: "May", revenue: 0 },
+            { month: "Jun", revenue: 0 },
+            { month: "Jul", revenue: 0 },
+            { month: "Aug", revenue: 0 },
+            { month: "Sep", revenue: 0 },
+            { month: "Oct", revenue: 0 },
+            { month: "Nov", revenue: 0 },
+            { month: "Dec", revenue: 0 },
+          ];
+          const monthMap = {
+            January: "Jan",
+            February: "Feb",
+            March: "Mar",
+            April: "Apr",
+            May: "May",
+            June: "Jun",
+            July: "Jul",
+            August: "Aug",
+            September: "Sep",
+            October: "Oct",
+            November: "Nov",
+            December: "Dec",
+          };
+          res.data.forEach((item) => {
+            const shortMonth = monthMap[item.label];
+            const idx = chartData.findIndex((m) => m.month === shortMonth);
+            if (idx !== -1) chartData[idx].revenue = item.total;
+          });
+          setSalesOverviewData(chartData);
+        }
+      } catch (err) {}
+    };
+    const fetchRevenueByQuarter = async () => {
+      try {
+        const year = new Date().getFullYear();
+        const res = await getRevenueByQuarter(year);
+        if (res && res.data) {
+          // Map về 4 quý
+          const chartData = [
+            { month: "Q1", revenue: 0 },
+            { month: "Q2", revenue: 0 },
+            { month: "Q3", revenue: 0 },
+            { month: "Q4", revenue: 0 },
+          ];
+          res.data.forEach((item, idx) => {
+            if (chartData[idx]) chartData[idx].revenue = item.total;
+          });
+          setSalesOverviewData(chartData);
+        }
+      } catch (err) {}
+    };
+    const fetchRevenueThisMonth = async () => {
+      try {
+        const res = await getRevenueThisMonth();
+        if (res && res.total) {
+          setSalesOverviewData([{ month: 'This Month', revenue: Number(res.total) }]);
+        } else {
+          setSalesOverviewData([{ month: 'This Month', revenue: 0 }]);
+        }
+      } catch (err) {}
+    };
+    const fetchRevenueThisWeek = async () => {
+      try {
+        const res = await getRevenueThisWeek();
+        if (res && res.total) {
+          setSalesOverviewData([{ month: 'This Week', revenue: Number(res.total) }]);
+        } else {
+          setSalesOverviewData([{ month: 'This Week', revenue: 0 }]);
+        }
+      } catch (err) {}
+    };
+    const fetchRevenueThisQuarter = async () => {
+      try {
+        const res = await getRevenueThisQuarter();
+        if (res && res.total) {
+          setSalesOverviewData([{ month: 'This Quarter', revenue: Number(res.total) }]);
+        } else {
+          setSalesOverviewData([{ month: 'This Quarter', revenue: 0 }]);
+        }
+      } catch (err) {}
+    };
+    if (timeFilter === "Month") {
+      fetchRevenueByMonth();
+    } else if (timeFilter === "Quarter") {
+      fetchRevenueByQuarter();
+    } else if (timeFilter === "This Month") {
+      fetchRevenueThisMonth();
+    } else if (timeFilter === "This Week") {
+      fetchRevenueThisWeek();
+    } else if (timeFilter === "This Quarter") {
+      fetchRevenueThisQuarter();
+    }
+    // Có thể bổ sung API cho các filter khác ở đây
+  }, [timeFilter]);
+
+  const handleTimeFilterChange = (e) => {
+    setTimeFilter(e.target.value);
+  };
 
   const lineChartData = [
     { date: "02/03/2025", tickets: 7 },
@@ -142,13 +262,26 @@ const DashboardAdmin = () => {
         {/* Charts Section */}
         <div className="flex flex-col lg:flex-row items-start justify-between w-full gap-4 sm:gap-6">
           <div className="w-full xl:w-[70%] space-y-4 sm:space-y-6">
-            <div className="bg-white w-full h-[250px] sm:h-[300px] rounded-lg p-3 sm:p-4 font-bold shadow-sm">
-              <p className="mb-2 text-sm sm:text-base">Sales Overview</p>
+            <div className="bg-white w-full h-[250px] sm:h-[300px] rounded-lg p-3 sm:p-4 font-bold shadow-sm relative">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm sm:text-base">Sales Overview</p>
+                <select
+                  value={timeFilter}
+                  onChange={handleTimeFilterChange}
+                  className="border border-gray-300 rounded px-2 py-1 text-xs sm:text-sm focus:outline-none"
+                >
+                  {timeOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <ResponsiveContainer width="100%" height="85%">
                 <AreaChart data={salesOverviewData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" fontSize={12} sm={14} />
-                  <YAxis fontSize={12} sm={14} />
+                  <XAxis dataKey="month" fontSize={12} />
+                  <YAxis fontSize={12} />
                   <Tooltip />
                   <Area
                     type="monotone"

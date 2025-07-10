@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button, Spin, message } from "antd";
 import { CheckCircleTwoTone, CloseCircleTwoTone } from "@ant-design/icons";
@@ -6,7 +6,7 @@ import { FaTicket, FaCouch, FaLocationDot, FaUser, FaPhone, FaCalendarDays, FaEn
 import { IoReloadOutline, IoTicketSharp, IoTime } from "react-icons/io5";
 import { RiFilmAiFill, RiMovie2AiFill, RiDiscountPercentFill } from "react-icons/ri";
 import { FaMoneyBillWave, FaIdCard, FaRegEye } from "react-icons/fa";
-import { confirmBooking, checkInfoBookingById, cancelBookingById } from "../../../services/APIForStaff/API";
+import { confirmBooking, checkInfoBookingById, cancelBookingById, getUserByPhone } from "../../../services/APIForStaff/API";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useDispatch, useSelector } from 'react-redux';
@@ -37,6 +37,7 @@ const formatPrice = (price) => {
 };
 
 const TicketInfomation = () => {
+  const hasRun = useRef(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const bookingData = useSelector((state) => state.selling);
@@ -44,43 +45,50 @@ const TicketInfomation = () => {
   const [paymentStatus, setPaymentStatus] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [movieInfo, setMovieInfo] = useState(null);
-
+  const [apiBookingData, setApiBookingData] = useState(null);
+  const [apiCustomerData, setApiCustomerData] = useState(null);
 
   const processPaymentResult = async () => {
     try {
       const params = new URLSearchParams(window.location.search);
       const resultCode = params.get('resultCode');
-      const bookingId = params.get('orderId')?.split('_')[1] || params.get('bookingId');
+      const bookingId = bookingData?.bookingId || params.get('orderId')?.split('_')[1] || params.get('bookingId');
 
-      // If coming from payment gateway (Momo)
-      if (bookingId && resultCode) {
+      if (!bookingId) {
+        throw new Error("Missing booking ID");
+      }
+
+      //Bước 1: Luôn fetch thông tin booking trước
+      const res = await checkInfoBookingById(bookingId);
+      setApiBookingData(res);
+      console.log("Booking data from API:", res);
+
+      //Nếu có thông tin khách hàng, lấy thêm info
+      if (memberData?.member?.phone) {
+        const customerData = await getUserByPhone(memberData?.member?.phone);
+        setApiCustomerData(customerData);
+        console.log("Customer data from API:", customerData);
+      }
+
+      // Bước 2: Xác định trạng thái thanh toán
+      if (resultCode) {
         if (resultCode === '0') {
-          // Momo payment success - confirm with server but show local data
           try {
-            await confirmBooking(bookingData.bookingId);
-            // setBookingData(bookingData); // Use local data instead of API response
-            dispatch(setCompleteBooking({
-              ...bookingData,
-              isConfirmed: true
-            }));
+            await confirmBooking(bookingId);
             setPaymentStatus('success');
             toast.success("Payment successful!");
           } catch (apiError) {
-            console.error("Confirmation error:", apiError);
-            // Still show local data even if confirmation fails
-            setPaymentStatus('success');
-            toast.success("Payment successful (could not confirm with server)");
+            setPaymentStatus('success'); // vẫn success nếu confirm thất bại
+            toast.success("Payment successful (confirm failed)");
           }
         } else {
-          // Momo payment failed
-          setPaymentStatus('error');
+          setPaymentStatus('error'); //vẫn hiển thị vé nhưng báo thất bại
           toast.error("Payment failed");
         }
-        return;
+      } else {
+        // Thanh toán tiền mặt hoặc truy cập trực tiếp
+        setPaymentStatus(res?.status === 2 ? 'success' : 'error');
       }
-
-      // For cash payment or direct access
-      setPaymentStatus(bookingData.isConfirmed ? 'success' : 'error');
 
     } catch (error) {
       console.error("Payment processing error:", error);
@@ -92,7 +100,10 @@ const TicketInfomation = () => {
   };
 
   useEffect(() => {
-    processPaymentResult();
+    if (!hasRun.current) {
+      hasRun.current = true;
+      processPaymentResult();
+    }
   }, []);
 
   useEffect(() => {
@@ -103,10 +114,10 @@ const TicketInfomation = () => {
 
     const loadMovie = async () => {
       try {
-        const res = await getMovieById(bookingData.selectedMovie.MovieId);
-        setMovieInfo(res.data || bookingData.selectedMovie);
+        const res = await getMovieById(bookingData?.selectedMovie?.MovieId);
+        setMovieInfo(res?.data || bookingData?.selectedMovie);
       } catch {
-        setMovieInfo(bookingData.selectedMovie);
+        setMovieInfo(bookingData?.selectedMovie);
       }
     };
     loadMovie();
@@ -115,7 +126,7 @@ const TicketInfomation = () => {
   const handleTryAgain = async () => {
     try {
       // Gọi API huỷ booking
-      await cancelBookingById(bookingData.bookingId);
+      await cancelBookingById(bookingData?.bookingId);
       toast.info("Previous booking cancelled. Please try again.");
     } catch (err) {
       toast.error("Failed to cancel previous booking");
@@ -166,23 +177,20 @@ const TicketInfomation = () => {
     version,
     selectedSeats,
     totalPrice,
-    // memberData,
+    memberInfo,
     paymentMethod,
     discount
   } = bookingData;
 
   const finalAmount = totalPrice * (1 - (discount / 100));
 
-  console.log('Booking Data:', bookingData);
-  console.log('Member Data:', memberData);
-
   return (
     <div className="p-4 w-full mx-auto bg-white rounded-lg shadow-sm">
       {/* Header */}
-      <div className="text-center py-8 border-b">
+      <div className="text-center py-8">
         {status.icon}
         <h1 className={`text-3xl font-bold mt-4 ${status.color}`}>{status.title}</h1>
-        <p className="text-gray-600 mt-2">Booking ID: <span className="font-mono">{bookingData.bookingId}</span></p>
+        {/* <p className="text-gray-600 mt-2">Booking ID: <span className="font-mono">{bookingData?.bookingId}</span></p> */}
       </div>
 
       {/* Main Content */}
@@ -193,7 +201,7 @@ const TicketInfomation = () => {
             <div className="flex flex-col md:flex-row gap-6 items-center">
               <img
                 src={movieInfo?.PosterImage}
-                alt={`Poster ${movieInfo?.NameOfEnglish}`}
+                alt={`Poster ${apiBookingData?.movieNameEnglish}`}
                 className="w-40 h-56 object-cover rounded-lg shadow border"
                 onError={(e) => {
                   e.target.src = '/placeholder-poster.jpg';
@@ -206,21 +214,20 @@ const TicketInfomation = () => {
                   <RiFilmAiFill className="mt-1" /> Movie:
                 </h2>
                 <span className="text-2xl font-bold flex flex-col items-start gap-2">
-                  {movieInfo?.NameOfEnglish}
-                  <span className="text-lg text-black block font-semibold">({movieInfo?.NameOfVietnamese})</span>
+                  {apiBookingData?.movieNameEnglish}
+                  <span className="text-lg text-black block font-semibold">({apiBookingData?.movieNameVN})</span>
                 </span>
-
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                   {[
-                    { icon: <RiMovie2AiFill />, label: "Sceen", value: bookingData.selectedVersion },
-                    { icon: <FaLocationDot />, label: "Room", value: bookingData.room },
-                    { icon: <FaCalendarDays />, label: "Date", value: bookingData.selectedDay },
-                    { icon: <IoTime />, label: "Showtime", value: bookingData.selectedTime },
-                    { icon: <FaCouch />, label: "Seats", value: bookingData.selectedSeats.join(", ") },
+                    { icon: <RiMovie2AiFill />, label: "Sceen", value: apiBookingData?.versionType },
+                    { icon: <FaLocationDot />, label: "Room", value: apiBookingData?.room },
+                    { icon: <FaCalendarDays />, label: "Date", value: apiBookingData?.showDate },
+                    { icon: <IoTime />, label: "Showtime", value: apiBookingData?.showTime },
+                    { icon: <FaCouch />, label: "Seats", value: apiBookingData?.seats.join(", ") },
                     { icon: <RiDiscountPercentFill />, label: "Discount", value: discount > 0 ? `${discount}%` : "None" }
                   ].map((item, index) => (
-                    <div key={index} className="flex items-center">
+                    <div key={index} className="flex justify-between lg:justify-start items-start lg:items-center lg:flex-row sm:flex-col flex-row gap-2 md:gap-0">
                       <div className="flex items-center gap-2 w-[40%]">
                         <span className="text-gray-700">{item.icon}</span>
                         <span className="font-semibold text-gray-700">{item.label}:</span>
@@ -243,40 +250,44 @@ const TicketInfomation = () => {
               <div className="flex justify-between">
                 <span className="font-semibold">Method:</span>
                 <span className="font-medium capitalize">
-                  {bookingData.paymentMethod === 'cash' ? 'Cash' : bookingData.paymentMethod}
+                  {bookingData?.paymentMethod === bookingData?.paymentMethod ? bookingData?.paymentMethod : "Convert points to tickets"}
                 </span>
               </div>
+
+              {/* {apiBookingData && ( */}
 
               {/* Thêm phần hiển thị giá từng ghế */}
               <div className="border-b pb-2">
                 <h3 className="font-semibold mb-2">Ticket Details:</h3>
-                {bookingData.selectedSeats.map((seat, index) => {
-                  const seatInfo = bookingData.seatData.find(s => s.seatNumber === seat);
+                {apiBookingData?.seats.map((seat, index) => {
+                  const price = apiBookingData?.seatPrices[seat];
                   return (
                     <div key={index} className="flex justify-between">
                       <span>Seat {seat}:</span>
-                      <span>{formatPrice(seatInfo?.price || 0)} VNĐ</span>
+                      <span>{formatPrice(Number(price))} VNĐ</span>
                     </div>
                   );
                 })}
               </div>
+              {/* )} */}
+
 
               <div className="flex justify-between">
                 <span className="font-semibold">Total ticket price:</span>
-                <span>{formatPrice(totalPrice)} VNĐ</span>
+                <span>{formatPrice(apiBookingData?.totalPrice)} VNĐ</span>
               </div>
 
               {discount > 0 && (
                 <div className="flex justify-between text-green-600">
                   <span>Discount ({discount}%):</span>
-                  <span>-{formatPrice(totalPrice * discount / 100)} VNĐ</span>
+                  <span>-{formatPrice(apiBookingData?.totalPrice * discount / 100)} VNĐ</span>
                 </div>
               )}
 
               <div className="border-t pt-3 mt-3 flex justify-between font-bold text-lg">
                 <span>Total Amount:</span>
                 <span className="text-purple-600">
-                  {formatPrice(finalAmount)} VNĐ
+                  {formatPrice(apiBookingData?.totalAmount)} VNĐ
                 </span>
               </div>
             </div>
@@ -300,7 +311,7 @@ const TicketInfomation = () => {
                       <p className="text-gray-600 flex items-center gap-2">
                         <FaUser /> Full Name:
                       </p>
-                      <p className="font-medium">{memberData?.member?.fullName}</p>
+                      <p className="font-medium">{apiBookingData?.buyerName}</p>
                     </div>
                   )}
 
@@ -309,7 +320,7 @@ const TicketInfomation = () => {
                       <p className="text-gray-600 flex items-center gap-2">
                         <FaIdCard /> ID Card:
                       </p>
-                      <p className="font-medium">{memberData?.member?.identityCard}</p>
+                      <p className="font-medium">{apiCustomerData?.user?.CCCD}</p>
                     </div>
                   )}
 
@@ -318,7 +329,7 @@ const TicketInfomation = () => {
                       <p className="text-gray-600 flex items-center gap-2">
                         <FaPhone /> Phone:
                       </p>
-                      <p className="font-medium">{memberData?.member?.phone}</p>
+                      <p className="font-medium">{apiBookingData?.buyerPhone}</p>
                     </div>
                   )}
 
@@ -327,7 +338,7 @@ const TicketInfomation = () => {
                       <p className="text-gray-600 flex items-center gap-2">
                         <FaEnvelope /> Email:
                       </p>
-                      <p className="font-medium">{memberData?.member?.email}</p>
+                      <p className="font-medium">{apiCustomerData?.user?.Email}</p>
                     </div>
                   )}
 
@@ -336,7 +347,7 @@ const TicketInfomation = () => {
                       <p className="text-gray-600 flex items-center gap-2">
                         <FaStar /> Points:
                       </p>
-                      <p className="font-medium flex items-center gap-1 text-green-600"><FaFire /> {memberData?.member?.score}</p>
+                      <p className="font-medium flex items-center gap-1 text-green-600"><FaFire /> {apiCustomerData?.user?.ScoreBalance}</p>
                     </div>
                   )}
                 </div>
@@ -350,6 +361,8 @@ const TicketInfomation = () => {
                   className={`w-full ${status.btnColor} text-white`}
                   size="large"
                   icon={status.btnIcon}
+                  variant="solid"
+                  color="danger"
                 >
                   {status.btn}
                 </Button>
@@ -359,27 +372,18 @@ const TicketInfomation = () => {
                   className={`w-full ${status.btnColor} text-white`}
                   size="large"
                   icon={status.btnIcon}
-                  style={{
-                    color: '#7c3aed',
-                    borderColor: '#7c3aed',
-                    backgroundColor: 'white'
-                  }}
+                  color="primary"
+                  variant="outlined"
                 >
                   {status.btn}
                 </Button>
               )}
 
-
               {paymentStatus === 'success' && (
-                <Link to={`/staff/ticket-selling/view-ticket/${bookingData.bookingId}`}>
+                <Link to={`/staff/ticket-selling/view-ticket/${bookingData?.bookingId}`}>
                   <Button
                     className="view-btn hover:bg-white hover:text-purple-600"
-                    style={{
-                      width: '100%',
-                      color: 'white',
-                      borderColor: '#7c3aed',
-                      backgroundColor: '#7c3aed'
-                    }}
+                    type="primary"
                     size="large"
                     icon={<FaRegEye />}
                   >

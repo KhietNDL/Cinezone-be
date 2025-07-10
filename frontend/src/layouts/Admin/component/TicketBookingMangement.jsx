@@ -1,10 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { Users, CheckCircle, Clock, Film, Eye } from "lucide-react";
 import { IoSearchOutline } from "react-icons/io5";
-import { getAllBookings, getBookingById } from "../../../services/API";
+import {
+  getAllBookings,
+  getBookingById,
+  searchBookingsByUser,
+} from "../../../services/API";
+import Pagination from "../movieComponent/Pagination";
 
 const TicketBookingManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -40,10 +48,15 @@ const TicketBookingManagement = () => {
   };
 
   const statsData = [
-    { title: "Total Bookings", value: 5, icon: Users, color: "text-blue-600" },
+    {
+      title: "Total Bookings",
+      value: totalItems,
+      icon: Users,
+      color: "text-blue-600",
+    },
     {
       title: "Successful Bookings",
-      value: 4,
+      value: totalPages,
       icon: CheckCircle,
       color: "text-green-600",
     },
@@ -61,28 +74,157 @@ const TicketBookingManagement = () => {
     },
   ];
 
-  useEffect(() => {
-    const fetchBookings = async () => {
-      setLoading(true);
-      try {
-        const data = await getAllBookings();
-        setBookings(data);
-      } catch (error) {
-        console.log(error);
-      } finally {
-        setLoading(false);
+  const fetchBookings = async () => {
+    setLoading(true);
+    try {
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+        sortBy: "CreatedAt",
+        sortOrder: "desc",
+      };
+      const data = await getAllBookings(params);
+      setBookings(data.data);
+      if (data.pagination) {
+        setTotalItems(data.pagination.total);
+        setTotalPages(data.pagination.totalPages);
       }
-    };
-    fetchBookings();
-  }, []);
 
-  const itemsPerPage = 7;
-  const totalItems = bookings.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentBooking = bookings.slice(startIndex, endIndex);
-  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
+      const fetchDetails = async () => {
+        const detailsPromises = data.data.map(async (booking) => {
+          const bookingId = booking.BookingId;
+          if (!bookingDetails[bookingId]) {
+            try {
+              const detail = await getBookingById(bookingId);
+              return { [bookingId]: detail };
+            } catch (error) {
+              console.error(
+                `Error fetching detail for booking ${bookingId}:`,
+                error
+              );
+              return { [bookingId]: {} };
+            }
+          }
+          return null;
+        });
+        const details = await Promise.all(detailsPromises);
+        const updatedDetails = details.reduce(
+          (acc, curr) => ({ ...acc, ...curr }),
+          {}
+        );
+        setBookingDetails((prev) => ({ ...prev, ...updatedDetails }));
+      };
+      await fetchDetails();
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    fetchBookings();
+  }, [currentPage, itemsPerPage]);
+
+  const searchBookingData = async (searchTerm) => {
+    if (!searchTerm.trim()) {
+      fetchBookings();
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await searchBookingsByUser(searchTerm);
+      if (response) {
+        // Chuẩn hóa dữ liệu booking
+        const bookingsData = Array.isArray(response)
+          ? response.map(normalizeBookingData)
+          : (response.data || []).map(normalizeBookingData);
+
+        setBookings(bookingsData);
+
+        // Xử lý pagination
+        if (response.pagination) {
+          setTotalItems(response.pagination.total);
+          setTotalPages(response.pagination.totalPages);
+        } else {
+          const total = bookingsData.length;
+          setTotalItems(total);
+          setTotalPages(Math.ceil(total / itemsPerPage));
+        }
+
+        // Fetch chi tiết cho từng booking
+        const detailsPromises = bookingsData.map(async (booking) => {
+          const bookingId = booking.BookingId;
+          if (!bookingDetails[bookingId]) {
+            try {
+              const detail = await getBookingById(bookingId);
+              return { [bookingId]: detail };
+            } catch (error) {
+              console.error(
+                `Error fetching detail for booking ${bookingId}:`,
+                error
+              );
+              return { [bookingId]: booking }; // Sử dụng dữ liệu booking hiện có nếu không lấy được chi tiết
+            }
+          }
+          return { [bookingId]: bookingDetails[bookingId] };
+        });
+
+        const details = await Promise.all(detailsPromises);
+        const updatedDetails = details.reduce(
+          (acc, curr) => ({ ...acc, ...curr }),
+          {}
+        );
+        setBookingDetails((prev) => ({ ...prev, ...updatedDetails }));
+      }
+    } catch (error) {
+      console.error("Error searching bookings:", error);
+      setBookings([]);
+      setTotalPages(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const normalizeBookingData = (booking) => {
+    return {
+      BookingId: booking.BookingId || booking.bookingId,
+      status: booking.status,
+      BookingDate: booking.BookingDate || booking.bookingDate,
+      buyerName: booking.buyerName || booking.BuyerName,
+      buyerPhone: booking.buyerPhone || booking.BuyerPhone,
+      movieNameEnglish: booking.movieNameEnglish || booking.MovieNameEnglish,
+      showTime: booking.showTime || booking.ShowTime,
+      seats: booking.seats || booking.Seats,
+      room: booking.room || booking.Room,
+      duration: booking.duration || booking.Duration,
+      totalPrice: booking.totalPrice || booking.TotalPrice,
+      totalAmount: booking.totalAmount || booking.TotalAmount,
+      pointsUsed: booking.pointsUsed || booking.PointsUsed || 0,
+      pointsEarned: booking.pointsEarned || booking.PointsEarned || 0,
+      hasConcessions: booking.hasConcessions || booking.HasConcessions || false,
+      concessionItems: booking.concessionItems || booking.ConcessionItems || [],
+      promotionTitle: booking.promotionTitle || booking.PromotionTitle,
+      PromotionId: booking.PromotionId || booking.promotionId,
+    };
+  };
+
+  // Thêm useEffect mới với debounce
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchTerm) {
+        searchBookingData(searchTerm);
+      } else {
+        fetchBookings();
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
   const getStatusBadge = (status) => {
     const statusStyles = {
@@ -103,25 +245,6 @@ const TicketBookingManagement = () => {
       </span>
     );
   };
-
-  useEffect(() => {
-    const fetchDetailsForCurrentPage = async () => {
-      for (const booking of currentBooking) {
-        const bookingId = booking.BookingId;
-        if (!bookingDetails[bookingId]) {
-          try {
-            const detail = await getBookingById(bookingId);
-            setBookingDetails((prev) => ({ ...prev, [bookingId]: detail }));
-          } catch (e) {
-            console.log(e);
-          }
-        }
-      }
-    };
-    if (currentBooking.length > 0) {
-      fetchDetailsForCurrentPage();
-    }
-  }, [currentBooking]);
 
   const openModal = async (booking) => {
     setIsModalOpen(true);
@@ -230,7 +353,7 @@ const TicketBookingManagement = () => {
                         Member ID:
                       </span>
                       <span className="font-semibold text-gray-800 bg-gray-100 px-3 py-1 rounded-full text-sm">
-                        {booking.memberId}
+                        {booking.MemberId}
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-gray-100">
@@ -241,14 +364,11 @@ const TicketBookingManagement = () => {
                         {booking.buyerName}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                      <span className="text-gray-600 font-medium">
-                        ID Card:
-                      </span>
-                      <span className="font-semibold text-gray-800">
-                        {booking.identityCard}
-                      </span>
-                    </div>
+
+                    <span className="font-semibold text-gray-800">
+                      {booking.identityCard}
+                    </span>
+
                     <div className="flex justify-between items-center py-2">
                       <span className="text-gray-600 font-medium">Phone:</span>
                       <span className="font-semibold text-gray-800">
@@ -265,7 +385,7 @@ const TicketBookingManagement = () => {
                     Movie Information
                   </h4>
                   <div className="space-y-3">
-                    <div className="py-2 border-b border-gray-100">
+                    <div className="py-2 border-b border-gray-100 flex items-center justify-between">
                       <span className="text-gray-600 font-medium block mb-1">
                         Movie:
                       </span>
@@ -298,7 +418,9 @@ const TicketBookingManagement = () => {
                     <div className="flex justify-between items-center py-2">
                       <span className="text-gray-600 font-medium">Seats:</span>
                       <span className="font-bold text-indigo-600 bg-indigo-100 px-3 py-1 rounded-full">
-                        {booking.seats}
+                        {booking.seats && booking.seats.length > 0
+                          ? booking.seats.join(", ")
+                          : "N/A"}
                       </span>
                     </div>
                   </div>
@@ -426,8 +548,8 @@ const TicketBookingManagement = () => {
   };
 
   return (
-    <div>
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+    <div className="h-full">
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
         <div className="w-[90%] md:w-[95%] lg:w-[95%] max-w-7xl space-y-4">
           {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 lg:gap-4 w-full">
@@ -465,32 +587,21 @@ const TicketBookingManagement = () => {
                   <input
                     type="text"
                     value={searchTerm}
-                    onChange={(e) => {
-                      setSearchTerm(e.target.value);
-                    }}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                     className="p-2 focus:outline-none w-full text-sm"
                     placeholder="Search by name or movie"
                   />
                 </div>
               </div>
-              <div className="w-full sm:w-auto">
-                <select className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
-                  <option>All</option>
-                  <option>Successful</option>
-                  <option>Pending</option>
-                </select>
-              </div>
+              
             </div>
 
             {/* Table */}
-            <div className="bg-white min-h-[340px] max-h-[340px] p-2 lg:p-4 rounded-md shadow-sm overflow-x-auto">
-              <div className="min-w-[800px]">
+            <div className="bg-white p-2 lg:p-4 rounded-lg shadow-sm">
+              <div className="hidden sm:block">
                 <table className="w-full table-auto border-collapse">
                   <thead>
-                    <tr className="text-left text-slate-500 text-xs sm:text-sm border-b border-slate-200">
-                      <th className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] text-center">
-                        Booking ID
-                      </th>
+                    <tr className="text-left text-slate-500 text-xs sm:text-sm border-b border-gray-200">
                       <th className="py-2 px-2 sm:px-4 w-[120px] sm:w-[150px] text-center">
                         Full Name
                       </th>
@@ -515,15 +626,12 @@ const TicketBookingManagement = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {currentBooking.map((booking) => (
+                    {bookings.map((booking) => (
                       <tr
-                        key={booking.id}
+                        key={booking.BookingId}
                         onClick={() => openModal(booking)}
                         className="border-b border-slate-200 hover:bg-slate-100 text-xs sm:text-sm cursor-pointer"
                       >
-                        <td className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] text-center">
-                          {booking.BookingId}
-                        </td>
                         <td className="py-2 px-2 sm:px-4 w-[120px] sm:w-[150px] text-center">
                           {bookingDetails[booking.BookingId]?.buyerName ||
                             "N/A"}
@@ -556,9 +664,9 @@ const TicketBookingManagement = () => {
                               e.stopPropagation();
                               openModal(booking);
                             }}
-                            className="text-blue-600 hover:text-blue-800 p-1 sm:p-2 transition-colors"
+                            className="text-blue-600 cursor-pointer hover:text-blue-800 p-2 rounded-xl border-solid border-slate-100 sm:p-2 "
                           >
-                            <Eye size={16} className="sm:w-5 sm:h-5" />
+                            Successfully
                           </button>
                         </td>
                       </tr>
@@ -569,51 +677,11 @@ const TicketBookingManagement = () => {
             </div>
 
             {/* Pagination */}
-            <div className="px-2 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between border-t border-gray-200">
-              <div className="text-xs sm:text-sm text-gray-700 mb-2 sm:mb-0">
-                Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of{" "}
-                {totalItems} bookings
-              </div>
-              <div className="flex items-center justify-end space-x-2 pt-2 sm:pt-0">
-                <button
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                  className={`px-2 sm:px-3 py-1 text-xs sm:text-sm ${
-                    currentPage === 1
-                      ? "text-gray-300 cursor-not-allowed"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  Previous
-                </button>
-                {pageNumbers.map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`px-2 sm:px-3 py-1 text-xs sm:text-sm rounded ${
-                      currentPage === page
-                        ? "bg-blue-500 text-white"
-                        : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-                <button
-                  onClick={() =>
-                    setCurrentPage(Math.min(totalPages, currentPage + 1))
-                  }
-                  disabled={currentPage === totalPages}
-                  className={`px-2 sm:px-3 py-1 text-xs sm:text-sm ${
-                    currentPage === totalPages
-                      ? "text-gray-300 cursor-not-allowed"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  Next
-                </button>
-              </div>
-            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              handlePageChange={handlePageChange}
+            />
           </div>
         </div>
       </div>

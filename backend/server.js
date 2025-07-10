@@ -58,6 +58,10 @@ const productRoutes = require("./routes/products");
 const comboProductRoutes = require('./routes/comboProduct');
 const orderProductDetailRoutes = require('./routes/orderProductDetail');
 const orderProductRoutes = require('./routes/orderProduct');
+const cleanupExpiredOrderProducts = require("./jobs/orderProductCleanup");
+const ratingRoutes = require('./routes/rating');
+const analyticsRoutes = require("./routes/analytics");
+
 
 // Use routes
 app.use("/api/payment", paymentRoutes);
@@ -78,6 +82,14 @@ app.use("/api/scorehistory", scoreHistoryRoutes);
 app.use('/api/combo-products', comboProductRoutes);
 app.use('/api/order-product-details', orderProductDetailRoutes);
 app.use('/api/order-products', orderProductRoutes);
+app.use('/api/ratings', ratingRoutes);
+
+// Log all incoming requests for debugging
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  next();
+});
+app.use("/api/analytics", analyticsRoutes);
 
 //port
 const PORT = process.env.PORT || 4458;
@@ -96,4 +108,5 @@ app.listen(PORT, "0.0.0.0", () => {
 });
 
 setInterval(cleanupExpiredBookings, 60 * 1000); // Chạy mỗi phút
+setInterval(cleanupExpiredOrderProducts, 60 * 1000); // Chạy mỗi phút
 //cleanupOldSeats();

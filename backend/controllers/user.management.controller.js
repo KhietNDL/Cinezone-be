@@ -5,24 +5,17 @@ const bucket = require("../config/firebase"); // Nếu dùng Firebase
 // Get all users
 const getAllUsers = async (req, res) => {
   try {
-    const users = await UserManagement.getAllUsers();
-    // Chỉ lấy các trường cần thiết
-    const filteredUsers = users.map((user) => ({
-      UserId: user.UserId,
-      FullName: user.FullName,
-      DateOfBirth: user.DateOfBirth,
-      Sex: user.Sex,
-      Email: user.Email,
-      PhoneNumber: user.PhoneNumber,
-      Address: user.Address,
-      CCCD: user.CCCD,
-      avatar_url: user.avatar_url,
-      ScoreBalance: user.ScoreBalance,
-      CreatedAt: user.CreatedAt,
-    }));
+    const page = parseInt(req.query.page) || 1;
+    const limit = req.query.limit !== undefined ? parseInt(req.query.limit) : 0;
+    const sortBy = req.query.sortBy;
+    const sortOrder = req.query.sortOrder;
+
+    const result = await UserManagement.getAllUsers(page, limit, sortBy, sortOrder);
+
     res.status(200).json({
       message: "Users retrieved successfully",
-      users: filteredUsers,
+      users: result.users,
+      pagination: result.pagination,
     });
   } catch (error) {
     console.error("Get all users error:", error);
@@ -32,11 +25,12 @@ const getAllUsers = async (req, res) => {
 
 // Get users by name
 const getUsersbyName = async (req, res) => {
-  const { name } = req.query;
+  const { name, page = 1, limit = 0, sortBy = 'FullName', sortOrder = 'asc' } = req.query;
   try {
-    const users = await UserManagement.getUsersbyName(name);
+    const result = await UserManagement.getUsersbyName(name, parseInt(page), parseInt(limit), sortBy, sortOrder);
+    
     // Chỉ lấy các trường cần thiết
-    const filteredUsers = users.map((user) => ({
+    const filteredUsers = result.users.map((user) => ({
       UserId: user.UserId,
       FullName: user.FullName,
       DateOfBirth: user.DateOfBirth,
@@ -49,9 +43,11 @@ const getUsersbyName = async (req, res) => {
       ScoreBalance: user.ScoreBalance,
       CreatedAt: user.CreatedAt,
     }));
+    
     res.status(200).json({
       message: "Users retrieved successfully",
       users: filteredUsers,
+      pagination: result.pagination,
     });
   } catch (error) {
     console.error("Get users by name error:", error);
