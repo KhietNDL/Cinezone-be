@@ -13,6 +13,7 @@ const HistoryActivity = () => {
   const [itemsPerPage] = useState(7);
   const { user } = useAuth();
 
+
   useEffect(() => {
     const fetchBookingHistory = async () => {
       if (!user?.userId) {
@@ -38,14 +39,27 @@ const HistoryActivity = () => {
 
   const getStatusStyle = (status) => {
     switch (status) {
-      case 'Confirm':
+      case 2:
         return 'bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-medium';
-      case 'Cancelled':
+      case 4:
         return 'bg-red-100 text-red-700 px-4 py-2 rounded-full text-sm font-medium';
       case 'Waiting':
         return 'bg-yellow-100 text-yellow-700 px-4 py-2 rounded-full text-sm font-medium';
       default:
         return 'bg-gray-100 text-gray-700 px-4 py-2 rounded-full text-sm font-medium';
+    }
+  };
+
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 2:
+        return 'Success';
+      case 4:
+        return 'Canceled';
+      case 'Waiting':
+        return 'Waiting';
+      default:
+        return 'Unknown';
     }
   };
 
@@ -94,11 +108,10 @@ const HistoryActivity = () => {
         <button
           key={i}
           onClick={() => handlePageChange(i)}
-          className={`px-3 py-2 mx-1 text-sm font-medium rounded-lg transition-all duration-200 ${
-            i === currentPage
+          className={`px-3 py-2 mx-1 text-sm font-medium rounded-lg transition-all duration-200 ${i === currentPage
               ? "bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-lg"
               : "text-gray-700 bg-white border border-gray-300 hover:bg-purple-50 hover:border-purple-300"
-          }`}
+            }`}
         >
           {i}
         </button>
@@ -125,7 +138,7 @@ const HistoryActivity = () => {
     }
 
     return (
-      <div className="flex items-center justify-center mt-6 space-x-2">
+      <div className="flex items-center justify-center mt-6 space-x-2 mb-2">
         <button
           onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
@@ -169,8 +182,8 @@ const HistoryActivity = () => {
         <button
           onClick={() => setActiveTab("booking")}
           className={`flex-1 px-8 py-3 rounded-xl font-medium transition-all duration-300 ${activeTab === "booking"
-              ? "bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-lg"
-              : "text-gray-600 hover:text-gray-800 hover:bg-white/50"
+            ? "bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-lg"
+            : "text-gray-600 hover:text-gray-800 hover:bg-white/50"
             }`}
         >
           Booking History
@@ -178,8 +191,8 @@ const HistoryActivity = () => {
         <button
           onClick={() => setActiveTab("points")}
           className={`flex-1 px-8 py-3 rounded-xl font-medium transition-all duration-300 ${activeTab === "points"
-              ? "bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-lg"
-              : "text-gray-600 hover:text-gray-800 hover:bg-white/50"
+            ? "bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-lg"
+            : "text-gray-600 hover:text-gray-800 hover:bg-white/50"
             }`}
         >
           Points Activity
@@ -253,9 +266,10 @@ const HistoryActivity = () => {
                         <td className="py-4 px-6 text-gray-700 font-medium">{item.totalAmount || '0'}</td>
                         <td className="py-4 px-6 text-gray-700 flex justify-center">{item.addPoint || '0'}</td>
                         <td className="py-4 px-6">
-                          <span className={getStatusStyle(item.status || item.buyerName)}>
-                            {item.status || item.buyerName || 'Unknown'}
+                          <span className={`${getStatusStyle(item.status)} px-4 py-2 rounded-full text-sm font-medium`}>
+                            {getStatusLabel(item.status)}
                           </span>
+
                         </td>
                       </tr>
                     ))}
