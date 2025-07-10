@@ -2,11 +2,37 @@ const db = require("../config/database");
 const { v4: uuidv4 } = require("uuid");
 
 class Product {
-  static async getAllProducts() {
-    const [rows] = await db.promise().query(
-      "SELECT * FROM Products WHERE IsDeleted = 0"
-    );
-    return rows;
+  static async getAllProducts(page = 1, limit = 0, sortBy = "ProductName", sortOrder = "asc") {
+    const allowedSortFields = ["ProductName", "Price", "Quantity", "CreatedAt"];
+    if (!allowedSortFields.includes(sortBy)) sortBy = "ProductName";
+    sortOrder = sortOrder.toLowerCase() === "desc" ? "DESC" : "ASC";
+
+    let productsQuery = `SELECT * FROM Products WHERE IsDeleted = 0 ORDER BY ${sortBy} ${sortOrder}`;
+    let productsParams = [];
+    if (limit > 0) {
+      const offset = (page - 1) * limit;
+      productsQuery += " LIMIT ? OFFSET ?";
+      productsParams = [limit, offset];
+    }
+    const [products] = await db.promise().query(productsQuery, productsParams);
+
+    let totalProducts = products.length;
+    if (limit > 0) {
+      const [countResult] = await db.promise().query(
+        "SELECT COUNT(*) as total FROM Products WHERE IsDeleted = 0"
+      );
+      totalProducts = countResult[0].total;
+    }
+
+    return {
+      products,
+      pagination: {
+        total: totalProducts,
+        currentPage: page,
+        totalPages: limit > 0 ? Math.ceil(totalProducts / limit) : 1,
+        limit: limit > 0 ? limit : products.length,
+      },
+    };
   }
 
   static async getProductById(productId) {

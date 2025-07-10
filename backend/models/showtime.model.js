@@ -297,7 +297,11 @@ class Showtime {
         // Map trạng thái ghế
         const seatStatusMap = {};
         seatShowtimeRows.forEach(bs => {
-            seatStatusMap[bs.SeatId] = bs.Status; // Status: 'taken', 'holding'
+            // Chỉ lưu trạng thái nếu là 'taken' hoặc 'holding'
+            if (bs.Status === 'taken' || bs.Status === 'holding') {
+                seatStatusMap[bs.SeatId] = bs.Status;
+            }
+            // Nếu là 'cancelled' thì không lưu, sẽ mặc định là 'available'
         });
 
         // 4. Kết hợp dữ liệu và trả về
