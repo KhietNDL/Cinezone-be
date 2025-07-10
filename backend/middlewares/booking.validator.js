@@ -72,7 +72,37 @@ async function bookingSeatsValidator(req, res, next) {
   }
 }
 
+function bookingValidator(req, res, next) {
+  const { userId, showtimeId, seatIds, promotionTitle, discount, CreatedBy } = req.body;
+
+  if (!userId || typeof userId !== 'string') {
+    return res.status(400).json({ error: 'userId is required and must be a string' });
+  }
+  if (!showtimeId || typeof showtimeId !== 'string') {
+    return res.status(400).json({ error: 'showtimeId is required and must be a string' });
+  }
+  if (!Array.isArray(seatIds) || seatIds.length === 0) {
+    return res.status(400).json({ error: 'seatIds must be a non-empty array' });
+  }
+  for (const seatId of seatIds) {
+    if (typeof seatId !== 'string') {
+      return res.status(400).json({ error: 'Each seatId must be a string' });
+    }
+  }
+  if (promotionTitle && typeof promotionTitle !== 'string') {
+    return res.status(400).json({ error: 'promotionTitle must be a string' });
+  }
+  if (discount !== undefined && (typeof discount !== 'number' || discount < 0)) {
+    return res.status(400).json({ error: 'discount must be a non-negative number' });
+  }
+  if (CreatedBy && typeof CreatedBy !== 'string') {
+    return res.status(400).json({ error: 'CreatedBy must be a string' });
+  }
+  next();
+}
+
 module.exports = {
   validateSeatsAdjacent,
-  bookingSeatsValidator
+  bookingSeatsValidator,
+  bookingValidator
 };
