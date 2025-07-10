@@ -370,7 +370,7 @@ export const deleteCinemaRoom = async (id) => {
 export const getShowtimeByMovieId = async (movieId) => {
   try {
     const response = await api.get(`/showtimes/movie/${movieId}/day`);
-    console.log(response.data);
+
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy showtime theo movieId:", error);
@@ -390,7 +390,6 @@ export const getTimeByDay = async (movieId, day) => {
       }
     );
 
-    console.log(response.data);
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy showtime theo movieId va Day:", error);
@@ -423,7 +422,7 @@ export const HoldingSeats = async (
       seatIds: seatIds,
       productIds: productIds || [],
       promotionTitle: promotionTitle || "",
-      PointsToUse :PointsToUse
+      PointsToUse: PointsToUse,
     });
     console.log("HoldingSeats Response:", response.data);
     return response.data;
@@ -557,16 +556,14 @@ export const getBookingHistory = async (memberId) => {
 
 export const getAllProducts = async (params) => {
   try {
-    const response = await api.get("/products",
-      {params}
-    );
+    const response = await api.get("/products", { params });
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy danh sách sản phẩm owr API:", error);
     handleError(error);
     throw error;
   }
-}
+};
 
 export const holdProducts = async (memberId, products, notes = "") => {
   try {
@@ -578,7 +575,10 @@ export const holdProducts = async (memberId, products, notes = "") => {
 
     return response.data;
   } catch (error) {
-    console.error("❌ Lỗi gọi holdOrderProducts:", error?.response?.data || error.message);
+    console.error(
+      "❌ Lỗi gọi holdOrderProducts:",
+      error?.response?.data || error.message
+    );
     throw error;
   }
 };
@@ -676,5 +676,64 @@ export const getRevenueThisQuarter = async () => {
     return response.data;
   } catch (error) {
     handleError(error);
+  }
+};
+// API cho Rating
+export const createMovieRating = async ({ movieId, rating, comment }) => {
+  try {
+    const response = await api.post("/ratings", {
+      movieId,
+      rating,
+      comment,
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};
+
+export const getMovieRatingSummary = async (movieId) => {
+  try {
+    const response = await api.get(`/ratings/summary/${movieId}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};
+
+export const getMovieRatingsList = async (
+  movieId,
+  { page = 1, limit = 10, sortBy = "newest" } = {}
+) => {
+  try {
+    const response = await api.get(`/ratings/movie/${movieId}`, {
+      params: { page, limit, sortBy },
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};
+
+export const updateMovieRating = async (ratingId, { rating, comment }) => {
+  try {
+    const response = await api.put(`/ratings/${ratingId}`, { rating, comment });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};
+
+export const deleteMovieRating = async (ratingId) => {
+  try {
+    const response = await api.delete(`/ratings/${ratingId}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+    throw error;
   }
 };

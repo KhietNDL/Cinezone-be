@@ -1,22 +1,16 @@
 import { useState, useEffect } from "react";
 
-export const ProductCard = ({ 
-  product, 
-  onQuantityChange, 
+export const ProductCard = ({
+  product,
+  onQuantityChange,
   quantity: externalQuantity = 0, // Props từ parent
   disabled = false,
-  maxQuantity = null 
+  maxQuantity = null,
 }) => {
   const [quantity, setQuantity] = useState(externalQuantity);
 
   // Sync với props từ parent component
   useEffect(() => {
-    console.log("🔄 ProductCard useEffect - syncing quantity:", {
-      productId: product.ProductId,
-      productName: product.ProductName,
-      externalQuantity,
-      currentQuantity: quantity
-    });
     setQuantity(externalQuantity);
   }, [externalQuantity, product.ProductId, product.ProductName]);
 
@@ -24,42 +18,28 @@ export const ProductCard = ({
   const maxQty = maxQuantity || product.Quantity;
 
   const handleQuantityChange = (newQuantity) => {
-    console.log("ProductCard handleQuantityChange:", {
-      productId: product.ProductId,
-      productName: product.ProductName,
-      oldQuantity: quantity,
-      newQuantity: newQuantity,
-      maxQty: maxQty,
-      disabled: disabled
-    });
-
     if (newQuantity >= 0 && newQuantity <= maxQty && !disabled) {
       setQuantity(newQuantity);
       // Call parent callback với product và quantity
       if (onQuantityChange) {
         onQuantityChange(product, newQuantity);
       }
-    } else {
-      console.warn("🚫 Quantity change blocked:", {
-        newQuantity,
-        maxQty,
-        disabled,
-        reason: newQuantity < 0 ? "Negative quantity" : 
-                newQuantity > maxQty ? "Exceeds max quantity" : 
-                disabled ? "Component disabled" : "Unknown"
-      });
     }
   };
 
   const formatPrice = (price) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(price);
   };
 
   return (
-    <div className={`bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/10 hover:border-purple-400/30 transition-all duration-300 group ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
+    <div
+      className={`bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/10 hover:border-purple-400/30 transition-all duration-300 group ${
+        disabled ? "opacity-50 cursor-not-allowed" : ""
+      }`}
+    >
       <div className="relative overflow-hidden rounded-xl mb-4">
         {product.ImageUrl ? (
           <img
@@ -86,12 +66,19 @@ export const ProductCard = ({
 
       <div className="space-y-3">
         <div>
-          <h4 className="font-bold text-white text-base truncate">{product.ProductName}</h4>
-          <p className="text-gray-300 text-sm mt-1 overflow-hidden" style={{
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical'
-          }}>{product.Description}</p>
+          <h4 className="font-bold text-white text-base truncate">
+            {product.ProductName}
+          </h4>
+          <p
+            className="text-gray-300 text-sm mt-1 overflow-hidden"
+            style={{
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+            }}
+          >
+            {product.Description}
+          </p>
         </div>
 
         <div className="flex items-center justify-between">
@@ -101,7 +88,6 @@ export const ProductCard = ({
             </span>
             <span className="text-gray-400 text-sm ml-1">/{product.Unit}</span>
           </div>
-         
         </div>
 
         <div className="flex items-center justify-between pt-2">
@@ -113,7 +99,9 @@ export const ProductCard = ({
             >
               -
             </button>
-            <span className="w-8 text-center text-white font-semibold">{quantity}</span>
+            <span className="w-8 text-center text-white font-semibold">
+              {quantity}
+            </span>
             <button
               onClick={() => handleQuantityChange(quantity + 1)}
               disabled={quantity >= maxQty || disabled}
@@ -129,7 +117,7 @@ export const ProductCard = ({
                 {formatPrice(parseFloat(product.Price) * quantity)}
               </div>
               <div className="text-gray-400 text-xs">
-                Total: {quantity} item{quantity > 1 ? 's' : ''}
+                Total: {quantity} item{quantity > 1 ? "s" : ""}
               </div>
             </div>
           )}
