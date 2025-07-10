@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const productController = require('../controllers/product.controller');
 const { auth } = require('../middlewares/auth.middleware');
+const multer = require('multer');
+const upload = multer();
 /** 
  * @swagger
  * tags:
@@ -52,25 +54,30 @@ router.get('/:productId', productController.getProductById);
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
-*             properties:
-*               ProductName:
-*                 type: string
-*               Description:
-*                 type: string
-*               Unit:
-*                 type: string
-*               Price:
-*                 type: number
+ *             properties:
+ *               ProductName:
+ *                 type: string
+ *               Description:
+ *                 type: string
+ *               Unit:
+ *                 type: string
+ *               Price:
+ *                 type: number
+ *               Quantity:
+ *                 type: integer
+ *               image:
+ *                 type: string
+ *                 format: binary
  *     responses:
  *       201:
  *         description: Product created successfully
  *       500:
  *         description: Internal server error
  */
-router.post('/create', auth, productController.createProduct);
+router.post('/create', auth, upload.fields([{ name: 'image', maxCount: 1 }]), productController.createProduct);
 /** 
  * @swagger
  * /api/products/{productId}:
@@ -88,18 +95,23 @@ router.post('/create', auth, productController.createProduct);
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
-*             properties:
-*               ProductName:
-*                 type: string
-*               Description:
-*                 type: string
-*               Unit:
-*                 type: string
-*               Price:
-*                 type: number
+ *             properties:
+ *               ProductName:
+ *                 type: string
+ *               Description:
+ *                 type: string
+ *               Unit:
+ *                 type: string
+ *               Price:
+ *                 type: number
+ *               Quantity:
+ *                 type: integer
+ *               image:
+ *                 type: string
+ *                 format: binary
  *     responses:
  *       200:
  *         description: Product updated successfully
@@ -108,7 +120,7 @@ router.post('/create', auth, productController.createProduct);
  *       500:
  *         description: Internal server error
  */
-router.put('/:productId', auth, productController.updateProduct);
+router.put('/:productId', auth, upload.fields([{ name: 'image', maxCount: 1 }]), productController.updateProduct);
 /** 
  * @swagger
  * /api/products/{productId}:

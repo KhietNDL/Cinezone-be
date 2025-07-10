@@ -2,9 +2,7 @@ const Payment = require('../models/payment.model');
 const PaymentMethod = require('../models/paymentMethod.model');
 const axios = require('axios');
 const crypto = require('crypto');
-const db = require('../config/database');
 const { BOOKING_STATUS, PAYMENT_STATUS } = require('../utils/constants');
-const { v4: uuidv4 } = require("uuid");
 
 const getPaymentMethods = async (req, res) => {
   try {
@@ -21,57 +19,126 @@ const getPaymentMethods = async (req, res) => {
 
 const processOfflinePayment = async (req, res) => {
   try {
-    const { bookingId, amount, reference } = req.body;
+    const { bookingId, orderProductId, amount, reference } = req.body;
     const userId = req.user.UserId;
 
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    const cashMethod = await PaymentMethod.findByName('CASH');
+    if (!bookingId && !orderProductId) {
+      return res.status(400).json({ error: "At least one of bookingId or orderProductId is required" });
+    }
 
+    const cashMethod = await PaymentMethod.findByName('CASH');
     if (!cashMethod) {
       return res.status(404).json({ error: "Payment method not found" });
     }
 
+    // Lấy thông tin booking và orderProduct nếu có
+    let booking, orderProduct;
+    if (bookingId) {
+      const Booking = require('../models/booking.model');
+      booking = await Booking.getBookingById(bookingId);
+      if (!booking) {
+        return res.status(404).json({ error: "Booking not found" });
+      }
+    }
+    let orderTotal = 0;
+    if (orderProductId) {
+      const OrderProduct = require('../models/orderProduct.model');
+      orderProduct = await OrderProduct.getById(orderProductId);
+      if (!orderProduct) {
+        return res.status(404).json({ error: "Order product not found" });
+      }
+      orderTotal = Number(orderProduct.TotalAmount);
+    }
+
+    // Kiểm tra amount
+    let expectedAmount = 0;
+    if (booking && orderProduct) {
+      expectedAmount = Number(booking.TotalAmount) + orderTotal;
+    } else if (booking) {
+      expectedAmount = Number(booking.TotalAmount);
+    } else if (orderProduct) {
+      expectedAmount = orderTotal;
+    }
+    if (Number(amount) !== expectedAmount) {
+      return res.status(400).json({ error: "Amount does not match total of booking and/or order product" });
+    }
+
+    // Tạo payment
     const paymentId = await Payment.createPayment({
       Amount: amount,
       Provider: 'CASH',
       PaymentReference: reference || 'Cash payment',
       Status: PAYMENT_STATUS.PENDING,
-      BookingId: bookingId,
-      ProductId: null,
+      BookingId: bookingId || null,
+      OrderProductId: orderProductId || null,
       MethodId: cashMethod.MethodId,
       CreatedBy: userId
     });
 
-    const Booking = require('../models/booking.model');
-    const bookingCheck = await Booking.updateStatus(bookingId, BOOKING_STATUS.PAID, amount);
+    let bookingCheck = { success: true, updated: true };
+    let orderStatus = null;
+    let bookingStatus = null;
 
-    if (bookingCheck.success && bookingCheck.updated === false) {
-      await Payment.updatePaymentStatus(
-        paymentId,
-        PAYMENT_STATUS.CANCELLED,
-        userId,
-        { PaymentReference: "Booking already paid" }
-      );
+    // Xử lý booking nếu có
+    if (bookingId) {
+      const Booking = require('../models/booking.model');
+      bookingCheck = await Booking.updateStatus(bookingId, BOOKING_STATUS.PAID, booking.TotalAmount);
 
-      return res.status(400).json({
-        status: "error",
-        message: "This booking has already been paid",
-        code: "BOOKING_ALREADY_PAID"
-      });
+      if (bookingCheck.success && bookingCheck.updated === false) {
+        await Payment.updatePaymentStatus(
+          paymentId,
+          PAYMENT_STATUS.CANCELLED,
+          userId,
+          { PaymentReference: "Booking already paid" }
+        );
+        if (orderProductId) {
+          const OrderProduct = require('../models/orderProduct.model');
+          await OrderProduct.cancelOrder(orderProductId);
+        }
+        return res.status(400).json({
+          status: "error",
+          message: "This booking has already been paid",
+          code: "BOOKING_ALREADY_PAID"
+        });
+      }
+
+      if (!bookingCheck.success) {
+        await Payment.updatePaymentStatus(
+          paymentId,
+          PAYMENT_STATUS.FAILED,
+          userId,
+          { failReason: bookingCheck.message }
+        );
+        if (orderProductId) {
+          const OrderProduct = require('../models/orderProduct.model');
+          await OrderProduct.cancelOrder(orderProductId);
+        }
+        return res.status(400).json({ error: bookingCheck.message });
+      }
+
+      await Booking.confirmBooking(bookingId);
+      bookingStatus = BOOKING_STATUS.PAID;
     }
 
-    if (!bookingCheck.success) {
-      await Payment.updatePaymentStatus(
-        paymentId,
-        PAYMENT_STATUS.FAILED,
-        userId,
-        { failReason: bookingCheck.message }
-      );
-
-      return res.status(400).json({ error: bookingCheck.message });
+    // Xử lý orderProduct nếu có
+    if (orderProductId) {
+      const OrderProduct = require('../models/orderProduct.model');
+      try {
+        await OrderProduct.confirmOrder(orderProductId);
+        orderStatus = "PAID";
+      } catch (err) {
+        await Payment.updatePaymentStatus(
+          paymentId,
+          PAYMENT_STATUS.FAILED,
+          userId,
+          { failReason: err.message }
+        );
+        return res.status(400).json({ error: err.message });
+      }
     }
 
     await Payment.updatePaymentStatus(paymentId, PAYMENT_STATUS.COMPLETED, userId);
@@ -83,7 +150,8 @@ const processOfflinePayment = async (req, res) => {
       message: "Offline payment processed successfully",
       data: {
         payment: payment,
-        booking: { id: bookingId, status: BOOKING_STATUS.PAID },
+        booking: bookingId ? { id: bookingId, status: bookingStatus } : undefined,
+        orderProduct: orderProductId ? { id: orderProductId, status: orderStatus } : undefined,
       }
     });
   } catch (error) {
@@ -95,69 +163,94 @@ const processOfflinePayment = async (req, res) => {
 // Khởi tạo thanh toán Momo
 const initMomoPayment = async (req, res) => {
   try {
-    // Bước 1: Lấy thông tin từ request body
+    // Lấy thông tin từ request body
     const {
       bookingId,
+      orderProductId,
       amount,
       returnUrl, // URL để redirect sau khi thanh toán
       userId
     } = req.body;
 
-    // Bước 2: Kiểm tra và lấy PaymentMethod cho MoMo
+        if (!bookingId && !orderProductId) {
+      return res.status(400).json({ error: "At least one of bookingId or orderProductId is required" });
+    }
+
     const momoMethod = await PaymentMethod.findByName('Momo');
     if (!momoMethod) {
       return res.status(404).json({ error: "Payment method not found" });
     }
 
-    // Bước 3: Tạo các thông tin cần thiết cho giao dịch
+    let booking, orderProduct;
+    let orderTotal = 0;
+    if (bookingId) {
+      const Booking = require('../models/booking.model');
+      booking = await Booking.getBookingById(bookingId);
+      if (!booking) {
+        return res.status(404).json({ error: "Booking not found" });
+      }
+    }
+    if (orderProductId) {
+      const OrderProduct = require('../models/orderProduct.model');
+      orderProduct = await OrderProduct.getById(orderProductId);
+      if (!orderProduct) {
+        return res.status(404).json({ error: "Order product not found" });
+      }
+      orderTotal = Number(orderProduct.TotalAmount);
+    }
+
+    let expectedAmount = 0;
+    if (booking && orderProduct) {
+      expectedAmount = Number(booking.TotalAmount) + orderTotal;
+    } else if (booking) {
+      expectedAmount = Number(booking.TotalAmount);
+    } else if (orderProduct) {
+      expectedAmount = orderTotal;
+    }
+    if (Number(amount) !== expectedAmount) {
+      return res.status(400).json({ error: "Amount does not match total of booking and/or order product" });
+    }
+
     const requestId = process.env.MOMO_PARTNER_CODE + new Date().getTime();
-    const orderId = `ORDER_${bookingId}_${Date.now()}`;
-    const orderInfo = `Payment for Booking #${bookingId}`;
+    const orderId = `ORDER_${bookingId || orderProductId}_${Date.now()}`;
+    const orderInfo = bookingId
+      ? `Payment for Booking #${bookingId}`
+      : `Payment for OrderProduct #${orderProductId}`;
     const requestType = "captureWallet";
-    
-    // Bước 4: Tạo payment trong database TRƯỚC để có paymentId
+
     const paymentId = await Payment.createPayment({
       Amount: amount,
       Provider: 'MOMO',
       PaymentReference: orderId,
       Status: PAYMENT_STATUS.PENDING,
-      BookingId: bookingId,
-      ProductId: null,
+      BookingId: bookingId || null,
+      OrderProductId: orderProductId || null,
       MethodId: momoMethod.MethodId,
       CreatedBy: userId
     });
 
-    // Bước 5: Tạo extraData bao gồm cả paymentId
     const extraData = JSON.stringify({
       bookingId: bookingId,
-      paymentId: paymentId  // Thêm paymentId vào extraData
+      orderProductId: orderProductId,
+      paymentId: paymentId
     });
 
-    // Bước 6: Chuẩn bị dữ liệu để tạo chữ ký
-    const rawSignature = "accessKey=" + process.env.MOMO_ACCESS_KEY + 
-                        "&amount=" + amount + 
-                        "&extraData=" + extraData + 
-                        "&ipnUrl=" + process.env.IPN_URL + 
-                        "&orderId=" + orderId + 
-                        "&orderInfo=" + orderInfo + 
-                        "&partnerCode=" + process.env.MOMO_PARTNER_CODE + 
-                        "&redirectUrl=" + (returnUrl || process.env.REDIRECT_URL) + 
-                        "&requestId=" + requestId + 
-                        "&requestType=" + requestType;
-    
-    console.log("--------------------RAW SIGNATURE----------------");
-    console.log(rawSignature);
-    
-    // Bước 7: Tạo chữ ký
+    const rawSignature = "accessKey=" + process.env.MOMO_ACCESS_KEY +
+      "&amount=" + amount +
+      "&extraData=" + extraData +
+      "&ipnUrl=" + process.env.IPN_URL +
+      "&orderId=" + orderId +
+      "&orderInfo=" + orderInfo +
+      "&partnerCode=" + process.env.MOMO_PARTNER_CODE +
+      "&redirectUrl=" + (returnUrl || process.env.REDIRECT_URL) +
+      "&requestId=" + requestId +
+      "&requestType=" + requestType;
+
     const signature = crypto
       .createHmac('sha256', process.env.MOMO_SECRET_KEY)
       .update(rawSignature)
       .digest('hex');
-    
-    console.log("--------------------SIGNATURE----------------");
-    console.log(signature);
 
-    // Bước 8: Chuẩn bị dữ liệu gửi đến MoMo API
     const requestData = {
       partnerCode: process.env.MOMO_PARTNER_CODE,
       accessKey: process.env.MOMO_ACCESS_KEY,
@@ -173,10 +266,8 @@ const initMomoPayment = async (req, res) => {
       lang: 'en'
     };
 
-    // Bước 9: Gửi request đến MoMo API
     const response = await axios.post(process.env.MOMO_API_ENDPOINT, requestData);
 
-    // Bước 10: Trả về kết quả cho client
     res.status(200).json({
       status: "success",
       message: "Momo payment initialized",
@@ -197,7 +288,6 @@ const initMomoPayment = async (req, res) => {
   }
 };
 
-// Xử lý callback từ MoMo
 const handleMomoCallback = async (req, res) => {
   try {
     const {
@@ -313,7 +403,6 @@ const verifyMomoPayment = async (req, res) => {
       transId
     } = req.body;
 
-    // Tìm payment theo orderId
     const payment = await Payment.findByReference(orderId);
 
     if (!payment) {
@@ -323,8 +412,6 @@ const verifyMomoPayment = async (req, res) => {
       });
     }
 
-    // Kiểm tra xem payment đã cập nhật status chưa
-    // Nếu IPN đã xử lý, payment status sẽ là COMPLETED
     if (payment.Status === PAYMENT_STATUS.COMPLETED) {
       return res.status(200).json({
         status: "success",
@@ -340,8 +427,6 @@ const verifyMomoPayment = async (req, res) => {
       });
     }
 
-    // Nếu IPN chưa xử lý, cập nhật status dựa trên resultCode
-    // Thực tế, status nên được cập nhật qua IPN callback, đây chỉ là phương án dự phòng
     if (resultCode === '0') {
       await Payment.updatePaymentStatus(payment.PaymentId, PAYMENT_STATUS.COMPLETED, null, {
         momotransId: transId

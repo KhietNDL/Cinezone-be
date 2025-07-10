@@ -6,7 +6,7 @@ const session = require("express-session");
 const passport = require("./middlewares/passport");
 const cors = require("cors");
 const cleanupExpiredBookings = require("./jobs/bookingCleanup");
-const cleanupOldSeats = require('./jobs/seatCleanup');
+const cleanupOldSeats = require("./jobs/seatCleanup");
 const scoreHistoryRoutes = require("./routes/scorehistory");
 
 const app = express();
@@ -55,6 +55,10 @@ const showtimeRoutes = require("./routes/showtime");
 const seatShowtimeRoutes = require("./routes/seatshowtime");
 const paymentRoutes = require("./routes/payment");
 const productRoutes = require("./routes/products");
+const comboProductRoutes = require('./routes/comboProduct');
+const orderProductDetailRoutes = require('./routes/orderProductDetail');
+const orderProductRoutes = require('./routes/orderProduct');
+
 // Use routes
 app.use("/api/payment", paymentRoutes);
 app.use("/api/auth", authRoutes);
@@ -63,14 +67,17 @@ app.use("/api/employee", employeeRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/promotions", promotionRoutes);
 app.use("/api/movie", movieRoutes);
-app.use("/api/seats", seatRoutes);
-app.use("/api/bookings", bookingRoutes);
-app.use("/api/tickets", ticketRoutes);
-app.use("/api/booking-seats", bookingSeatRoutes);
-app.use("/api/showtimes", showtimeRoutes);
-app.use("/api/seatshowtimes", seatShowtimeRoutes);
-app.use("/api/products", productRoutes);
+app.use('/api/seats', seatRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/tickets', ticketRoutes);
+app.use('/api/booking-seats', bookingSeatRoutes);
+app.use('/api/showtimes', showtimeRoutes);
+app.use('/api/seatshowtimes', seatShowtimeRoutes);
+app.use('/api/products', productRoutes);
 app.use("/api/scorehistory", scoreHistoryRoutes);
+app.use('/api/combo-products', comboProductRoutes);
+app.use('/api/order-product-details', orderProductDetailRoutes);
+app.use('/api/order-products', orderProductRoutes);
 
 //port
 const PORT = process.env.PORT || 4458;

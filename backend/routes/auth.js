@@ -92,7 +92,7 @@ const upload = multer({
  *                 description: Citizen ID (exactly 12 digits, optional)
  *     responses:
  *       201:
-*         description: User registered successfully
+ *         description: User registered successfully
  *         content:
  *           application/json:
  *             schema:
@@ -196,7 +196,6 @@ router.post("/login", loginValidation, login);
  *       500:
  *         description: Server error
  */
-
 router.post("/forgot-password", forgotPasswordValidation, forgotPassword);
 
 /**
@@ -302,7 +301,7 @@ router.post("/reset-password", resetPasswordValidation, resetPassword);
  *           application/json:
  *             schema:
  *               type: object
-*               properties:
+ *               properties:
  *                 error:
  *                   type: string
  *                   example: Please authenticate.
@@ -408,7 +407,7 @@ router.get("/user/:id", auth, getUserById);
  *               dateOfBirth:
  *                 type: string
  *                 format: date
-*               phoneNumber:
+ *               phoneNumber:
  *                 type: string
  *               sex:
  *                 type: integer
@@ -447,7 +446,7 @@ router.put(
 
 /**
  * @swagger
- * /api/auth/login-google:
+ * /api/auth/google:
  *   get:
  *     summary: Login with Google OAuth2
  *     description: Redirect to Google for authentication, then return token.
@@ -457,7 +456,7 @@ router.put(
  *         description: Redirect to Google OAuth2
  */
 router.get(
-  "/login-google",
+  "/google",
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
@@ -496,28 +495,22 @@ router.get(
   "/google/callback",
   passport.authenticate("google", {
     session: false,
-    failureRedirect: `${process.env.FRONTEND_URL}/login?error=google_login_failed`,
+    failureRedirect: "/login",
+    failureMessage: true,
   }),
   (req, res) => {
     if (!req.user) {
-      return res.redirect(`${process.env.FRONTEND_URL}/login?error=authentication_failed`);
+      return res.status(401).json({
+        error: req.authInfo?.message || "Đăng nhập Google thất bại",
+      });
     }
 
     const token = jwt.sign(
-      { id: req.user.UserId, email: req.user.Email, role: req.user.Role },
+      { id: req.user.UserId, email: req.user.Email },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
-
-    // Redirect về frontend với token và user data
-    const userString = encodeURIComponent(JSON.stringify({
-      UserId: req.user.UserId,
-      Email: req.user.Email,
-      FullName: req.user.FullName,
-      Role: req.user.Role
-    }));
-
-    res.redirect(`${process.env.FRONTEND_URL}/auth/google/callback?token=${token}&user=${userString}`);
+    res.json({ token, user: req.user });
   }
 );
 
