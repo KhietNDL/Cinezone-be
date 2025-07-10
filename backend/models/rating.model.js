@@ -17,7 +17,8 @@ class Rating {
     if (sortBy === 'rating_high') orderBy = 'Rating DESC';
     if (sortBy === 'rating_low') orderBy = 'Rating ASC';
     const offset = (page - 1) * limit;
-    const sql = `SELECT * FROM Ratings WHERE MovieId = ? AND IsDeleted = 0 ORDER BY ${orderBy} LIMIT ? OFFSET ?`;
+    // Join với Users để lấy tên và hình ảnh
+    const sql = `SELECT r.*, u.FullName, u.avatar_url FROM Ratings r JOIN Users u ON r.UserId = u.UserId WHERE r.MovieId = ? AND r.IsDeleted = 0 AND u.IsDeleted = 0 ORDER BY r.${orderBy} LIMIT ? OFFSET ?`;
     const [rows] = await db.promise().query(sql, [movieId, limit, offset]);
     const [countRows] = await db.promise().query('SELECT COUNT(*) as total FROM Ratings WHERE MovieId = ? AND IsDeleted = 0', [movieId]);
     const total = countRows[0].total;

@@ -183,22 +183,6 @@ router.delete('/:ratingId', auth, ratingController.deleteRating);
  */
 router.get('/summary/:movieId', ratingController.getMovieRatingSummary);
 
-// Debug route để test checkUserWatchedMovie
-router.get('/debug/watched/:userId/:movieId', auth, async (req, res) => {
-  try {
-    const { userId, movieId } = req.params;
-    const Rating = require('../models/rating.model');
-    const result = await Rating.checkUserWatchedMovie(userId, movieId);
-    res.json({ 
-      userId, 
-      movieId, 
-      hasWatched: result,
-      message: result ? 'User has watched this movie' : 'User has not watched this movie'
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Lỗi server' });
-  }
-});
+
 
 module.exports = router; 

@@ -86,6 +86,10 @@ const getLatestBookingByMemberId = async (req, res) => {
 const holdBooking = async (req, res) => {
   try {
     const { userId, showtimeId, seatIds, productIds, promotionTitle, PointsToUse } = req.body;
+    // Kiểm tra chỉ được dùng 1 trong 2: điểm hoặc promotion
+    if (promotionTitle && PointsToUse) {
+      return res.status(400).json({ error: 'Chỉ được dùng 1 trong 2: điểm hoặc promotion!' });
+    }
     // Lấy user
     const user = await User.findById(userId);
     // Lấy thông tin loại ghế từ seatIds
@@ -98,14 +102,15 @@ const holdBooking = async (req, res) => {
       }
       seatTypes.push(seat.Type);
     }
-    const totalRequiredPoints = seatTypes.reduce((sum, type) => sum + seatTypeToPoint[type], 0);
-    if (PointsToUse !== totalRequiredPoints) {
-      return res.status(400).json({ error: 'Số điểm phải đúng bằng tổng số điểm quy định cho từng loại ghế!' });
-    }
     let pointsUsed = 0;
     let newScoreBalance = null;
     let discount = 0;
-    if (PointsToUse && PointsToUse > 0) {
+    // Nếu dùng điểm
+    if (PointsToUse) {
+      const totalRequiredPoints = seatTypes.reduce((sum, type) => sum + seatTypeToPoint[type], 0);
+      if (PointsToUse != totalRequiredPoints) {
+        return res.status(400).json({ error: 'Số điểm phải đúng bằng tổng số điểm quy định cho từng loại ghế!' });
+      }
       if (!user || user.ScoreBalance < PointsToUse) {
         return res.status(400).json({ error: 'Không đủ điểm để sử dụng!' });
       }
@@ -113,10 +118,9 @@ const holdBooking = async (req, res) => {
       pointsUsed = PointsToUse;
       newScoreBalance = user.ScoreBalance - PointsToUse;
     }
-    
+    // Nếu không dùng điểm, discount = 0
     // Gọi holdBooking ở model, truyền thêm discount để trừ vào tổng tiền
     const result = await Booking.holdBooking({ userId, showtimeId, seatIds, productIds, promotionTitle, discount });
-    
     // Nếu dùng điểm, trừ điểm và ghi lịch sử
     if (pointsUsed > 0) {
       await User.updateScoreBalance(userId, newScoreBalance);
@@ -129,7 +133,6 @@ const holdBooking = async (req, res) => {
         CreatedBy: userId
       });
     }
-    
     res.json({
       ...result,
       pointsUsed,
