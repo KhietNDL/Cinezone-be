@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Users, CheckCircle, Clock, Film, Eye } from "lucide-react";
 import { IoSearchOutline } from "react-icons/io5";
 import {
@@ -7,7 +7,6 @@ import {
   searchBookingsByUser,
 } from "../../../services/API";
 import Pagination from "../movieComponent/Pagination";
-import debounce from "lodash/debounce";
 
 const TicketBookingManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -135,48 +134,47 @@ const TicketBookingManagement = () => {
     try {
       const response = await searchBookingsByUser(searchTerm);
       if (response) {
-        setBookings(response || []);
+        // Chuẩn hóa dữ liệu booking
+        const bookingsData = Array.isArray(response)
+          ? response.map(normalizeBookingData)
+          : (response.data || []).map(normalizeBookingData);
+
+        setBookings(bookingsData);
+
+        // Xử lý pagination
         if (response.pagination) {
           setTotalItems(response.pagination.total);
           setTotalPages(response.pagination.totalPages);
         } else {
-          const total = response.length || 0;
+          const total = bookingsData.length;
           setTotalItems(total);
           setTotalPages(Math.ceil(total / itemsPerPage));
         }
 
-        const fetchDetails = async () => {
-          const detailsPromises = response.map(async (booking) => {
-            const bookingId = booking.BookingId;
-            if (!bookingDetails[bookingId]) {
-              try {
-                const detail = await getBookingById(bookingId);
-                return { [bookingId]: detail };
-              } catch (error) {
-                console.error(
-                  `Error fetching detail for booking ${bookingId}:`,
-                  error
-                );
-                return { [bookingId]: {} };
-              }
+        // Fetch chi tiết cho từng booking
+        const detailsPromises = bookingsData.map(async (booking) => {
+          const bookingId = booking.BookingId;
+          if (!bookingDetails[bookingId]) {
+            try {
+              const detail = await getBookingById(bookingId);
+              return { [bookingId]: detail };
+            } catch (error) {
+              console.error(
+                `Error fetching detail for booking ${bookingId}:`,
+                error
+              );
+              return { [bookingId]: booking }; // Sử dụng dữ liệu booking hiện có nếu không lấy được chi tiết
             }
-            return null;
-          });
-          const details = await Promise.all(detailsPromises);
-          const updatedDetails = details.reduce(
-            (acc, curr) => ({ ...acc, ...curr }),
-            {}
-          );
-          setBookingDetails((prev) => ({ ...prev, ...updatedDetails }));
-        };
-        await fetchDetails();
-        console.log("Search Response data:", response);
-        console.log(
-          "Search Total:",
-          totalItems,
-          "Search Total Pages:",
-          totalPages
+          }
+          return { [bookingId]: bookingDetails[bookingId] };
+        });
+
+        const details = await Promise.all(detailsPromises);
+        const updatedDetails = details.reduce(
+          (acc, curr) => ({ ...acc, ...curr }),
+          {}
         );
+        setBookingDetails((prev) => ({ ...prev, ...updatedDetails }));
       }
     } catch (error) {
       console.error("Error searching bookings:", error);
@@ -186,17 +184,42 @@ const TicketBookingManagement = () => {
       setLoading(false);
     }
   };
+  const normalizeBookingData = (booking) => {
+    return {
+      BookingId: booking.BookingId || booking.bookingId,
+      status: booking.status,
+      BookingDate: booking.BookingDate || booking.bookingDate,
+      buyerName: booking.buyerName || booking.BuyerName,
+      buyerPhone: booking.buyerPhone || booking.BuyerPhone,
+      movieNameEnglish: booking.movieNameEnglish || booking.MovieNameEnglish,
+      showTime: booking.showTime || booking.ShowTime,
+      seats: booking.seats || booking.Seats,
+      room: booking.room || booking.Room,
+      duration: booking.duration || booking.Duration,
+      totalPrice: booking.totalPrice || booking.TotalPrice,
+      totalAmount: booking.totalAmount || booking.TotalAmount,
+      pointsUsed: booking.pointsUsed || booking.PointsUsed || 0,
+      pointsEarned: booking.pointsEarned || booking.PointsEarned || 0,
+      hasConcessions: booking.hasConcessions || booking.HasConcessions || false,
+      concessionItems: booking.concessionItems || booking.ConcessionItems || [],
+      promotionTitle: booking.promotionTitle || booking.PromotionTitle,
+      PromotionId: booking.PromotionId || booking.promotionId,
+    };
+  };
 
-  // Debounced search function
-  const debouncedSearchBookingData = useCallback(
-    debounce(searchBookingData, 500),
-    []
-  );
-
+  // Thêm useEffect mới với debounce
   useEffect(() => {
-    setCurrentPage(1);
-    debouncedSearchBookingData(searchTerm);
-  }, [searchTerm, debouncedSearchBookingData]);
+    const delayDebounceFn = setTimeout(() => {
+      if (searchTerm) {
+        searchBookingData(searchTerm);
+      } else {
+        fetchBookings();
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
+
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
@@ -570,13 +593,7 @@ const TicketBookingManagement = () => {
                   />
                 </div>
               </div>
-              <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
-                <select className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
-                  <option>All</option>
-                  <option>Successful</option>
-                  <option>Pending</option>
-                </select>
-              </div>
+              
             </div>
 
             {/* Table */}
@@ -611,7 +628,7 @@ const TicketBookingManagement = () => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {bookings.map((booking) => (
                       <tr
-                        key={booking.id}
+                        key={booking.BookingId}
                         onClick={() => openModal(booking)}
                         className="border-b border-slate-200 hover:bg-slate-100 text-xs sm:text-sm cursor-pointer"
                       >

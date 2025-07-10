@@ -1,7 +1,6 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { Trash2, Building, Users, TrendingUp, X } from "lucide-react";
 import { FaSortAmountDownAlt, FaSortAmountUpAlt } from "react-icons/fa";
-
 import { FaRegEdit } from "react-icons/fa";
 import { RiDeleteBin5Line } from "react-icons/ri";
 import { IoSearchOutline } from "react-icons/io5";
@@ -20,9 +19,8 @@ import Pagination from "../movieComponent/Pagination";
 
 const RoomManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
-  // eslint-disable-next-line no-unused-vars
-  const [itemsPerPage, setItemsPerPage] = useState(5);
-  const [sortOrder, setSortOrder] = useState("desc"); // hoặc "asc"
+  const [itemsPerPage] = useState(5);
+  const [sortOrder, setSortOrder] = useState("desc");
   const [totalPages, setTotalPages] = useState(1);
   const [totalRooms, setTotalRooms] = useState(0);
 
@@ -36,11 +34,9 @@ const RoomManagement = () => {
   const [roomId, setRoomId] = useState("");
   const [roomName, setRoomName] = useState("");
   const [seatQuantity, setSeatQuantity] = useState("");
+  const [roomType, setRoomType] = useState("Normal");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const searchTimeout = useRef();
-
-  // Sample data matching your image
   const statsData = [
     {
       icon: Building,
@@ -63,45 +59,43 @@ const RoomManagement = () => {
       color: "text-orange-600",
       bgColor: "bg-orange-100",
     },
-    {
-      icon: TrendingUp,
-      label: "Avg Rate",
-      value: "75%",
-      color: "text-orange-600",
-      bgColor: "bg-orange-100",
-    },
   ];
 
   useEffect(() => {
-    if (!searchTerm) {
-      (async () => {
-        const response = await getCinemaRooms({
-          page: currentPage,
-          limit: itemsPerPage,
-          sortBy: "SeatQuantity",
-          sortOrder: sortOrder,
-        });
-        setRooms(response.data);
-        setTotalPages(response.pagination.totalPages);
-        setTotalRooms(response.pagination.total);
-      })();
-      return;
-    }
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    searchTimeout.current = setTimeout(async () => {
+    const fetchData = async () => {
       try {
-        const data = await searchCinemaRooms(searchTerm);
-        setRooms(data.rooms || []);
-        setTotalPages(1);
-        setTotalRooms(data?.rooms?.length || 0);
+        if (!searchTerm) {
+          const response = await getCinemaRooms({
+            page: currentPage,
+            limit: itemsPerPage,
+            sortBy: "SeatQuantity",
+            sortOrder: sortOrder,
+          });
+          setRooms(Array.isArray(response.data) ? response.data : []);
+          setTotalPages(response.pagination?.totalPages || 1);
+          setTotalRooms(response.pagination?.total || 0);
+        } else {
+          const data = await searchCinemaRooms({
+            searchTerm,
+            page: currentPage,
+            limit: itemsPerPage,
+            sortBy: "SeatQuantity",
+            sortOrder: sortOrder,
+          });
+          setRooms(Array.isArray(data.data) ? data.data : []);
+          setTotalPages(data.pagination?.totalPages || 1);
+          setTotalRooms(data.pagination?.total || 0);
+        }
       } catch (error) {
-        console.error("Error searching rooms:", error);
+        console.error("Error fetching/searching rooms:", error);
         setRooms([]);
         setTotalPages(1);
         setTotalRooms(0);
       }
-    }, 400);
-    // eslint-disable-next-line
+    };
+
+    const timeoutId = setTimeout(fetchData, 500);
+    return () => clearTimeout(timeoutId);
   }, [searchTerm, currentPage, itemsPerPage, sortOrder]);
 
   const handleView = (room) => {
@@ -114,6 +108,7 @@ const RoomManagement = () => {
     setRoomId(room.CinemaRoomId || "");
     setRoomName(room.Name || "");
     setSeatQuantity(room.SeatQuantity?.toString() || "");
+    setRoomType(room.Type || "Normal");
     setShowEditModal(true);
   };
 
@@ -126,6 +121,7 @@ const RoomManagement = () => {
     setRoomId("");
     setRoomName("");
     setSeatQuantity("");
+    setRoomType("Normal");
     setShowAddModal(true);
   };
 
@@ -150,6 +146,7 @@ const RoomManagement = () => {
       const payload = {
         Name: roomName.trim(),
         SeatQuantity: seatNum,
+        Type: roomType,
       };
       if (showEditModal && roomId) {
         await updateCinemaRoom(roomId, payload);
@@ -163,14 +160,14 @@ const RoomManagement = () => {
       setRoomId("");
       setRoomName("");
       setSeatQuantity("");
-      // Lấy lại rooms đúng trang hiện tại
+      setRoomType("Normal");
       const data = await getCinemaRooms({
         page: currentPage,
         limit: itemsPerPage,
         sortBy: "SeatQuantity",
         sortOrder: sortOrder,
       });
-      setRooms(data.rooms);
+      setRooms(data.data || []);
       setTotalPages(data.pagination?.totalPages || 1);
       setTotalRooms(data.pagination?.total || 0);
     } catch (error) {
@@ -186,14 +183,13 @@ const RoomManagement = () => {
       await deleteCinemaRoom(selectedRoom.CinemaRoomId);
       setShowDeleteModal(false);
       setSelectedRoom(null);
-      // Lấy lại rooms đúng trang hiện tại
       const data = await getCinemaRooms({
         page: currentPage,
         limit: itemsPerPage,
         sortBy: "SeatQuantity",
         sortOrder: sortOrder,
       });
-      setRooms(data.rooms);
+      setRooms(data.data || []);
       setTotalPages(data.pagination?.totalPages || 1);
       setTotalRooms(data.pagination?.total || 0);
       toast.success("Room deleted successfully!");
@@ -213,18 +209,20 @@ const RoomManagement = () => {
     setRoomId("");
     setRoomName("");
     setSeatQuantity("");
+    setRoomType("Normal");
   };
+
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
   };
+
   return (
     <div className="h-full">
       <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
         <div className="w-[90%] md:w-[95%] lg:w-[95%] max-w-7xl space-y-4">
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 lg:gap-4 w-full">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 lg:gap-4 w-full">
             {statsData.map((stat, index) => (
               <div key={index} className="bg-white rounded-md shadow-sm">
                 <div className="bg-white rounded-md p-2 lg:p-3 w-full">
@@ -248,7 +246,6 @@ const RoomManagement = () => {
             ))}
           </div>
 
-          {/* Search and Add Section */}
           <div className="w-full py-3 space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="w-full sm:w-auto">
@@ -279,7 +276,6 @@ const RoomManagement = () => {
               </div>
             </div>
 
-            {/* Table and Card Layout */}
             <div className="bg-white p-2 lg:p-4 rounded-lg shadow-sm">
               <div className="hidden sm:block">
                 <table className="w-full table-auto border-collapse">
@@ -304,6 +300,9 @@ const RoomManagement = () => {
                         </span>
                       </th>
                       <th className="py-2 px-2 sm:px-4 w-[80px] shrink-0 text-center hidden md:table-cell">
+                        Type
+                      </th>
+                      <th className="py-2 px-2 sm:px-4 w-[80px] shrink-0 text-center hidden md:table-cell">
                         Set Detail
                       </th>
                       <th className="py-2 px-2 sm:px-4 w-[80px] shrink-0 text-center">
@@ -312,130 +311,144 @@ const RoomManagement = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {rooms.map((room) => (
-                      <tr
-                        key={room.CinemaRoomId}
-                        onClick={() => handleEdit(room)}
-                        className="border-b cursor-pointer border-gray-200 hover:bg-gray-50 text-xs sm:text-sm transition-colors"
-                      >
-                        <td className="py-2 px-2 sm:px-4 w-[150px] sm:w-[180px] md:w-[200px] shrink-0">
-                          <span className="block text-center">
-                            {room.Name?.length > 20 ? (
-                              <span title={room.Name}>
-                                {room.Name.slice(0, 20) + "..."}
-                              </span>
-                            ) : (
-                              room.Name || "N/A"
-                            )}
-                          </span>
+                    {Array.isArray(rooms) && rooms.length > 0 ? (
+                      rooms.map((room) => (
+                        <tr
+                          key={room.CinemaRoomId}
+                          onClick={() => handleEdit(room)}
+                          className="border-b cursor-pointer border-gray-200 hover:bg-gray-50 text-xs sm:text-sm transition-colors"
+                        >
+                          <td className="py-2 px-2 sm:px-4 w-[150px] sm:w-[180px] md:w-[200px] shrink-0">
+                            <span className="block text-center">
+                              {room.Name?.length > 20
+                                ? `${room.Name.slice(0, 20)}...`
+                                : room.Name || "N/A"}
+                            </span>
+                          </td>
+                          <td className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] shrink-0 text-center">
+                            {room.SeatQuantity || "N/A"}
+                          </td>
+                          <td className="py-2 px-2 sm:px-4 w-[80px] shrink-0 text-center hidden md:table-cell">
+                            {room.Type || "Normal"}
+                          </td>
+                          <td className="py-2 px-2 sm:px-4 w-[80px] shrink-0 text-center hidden md:table-cell">
+                            <button
+                              className="text-blue-500 hover:text-blue-700 text-xs sm:text-sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleView(room);
+                              }}
+                            >
+                              Detail
+                            </button>
+                          </td>
+                          <td className="py-2 px-2 sm:px-4 w-[80px] shrink-0 text-center">
+                            <div className="flex justify-center space-x-2 sm:space-x-3">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEdit(room);
+                                }}
+                                className="text-blue-500 hover:text-blue-700 p-1 sm:p-2"
+                                title="Edit"
+                                aria-label={`Edit ${room.Name || "room"}`}
+                              >
+                                <FaRegEdit size={18} />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(room);
+                                }}
+                                className="text-red-400 hover:text-red-600 p-1 sm:p-2"
+                                title="Delete"
+                                aria-label={`Delete ${room.Name || "room"}`}
+                              >
+                                <RiDeleteBin5Line size={18} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan="5"
+                          className="py-4 text-center text-gray-500"
+                        >
+                          No rooms available
                         </td>
-                        <td className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] shrink-0 text-center">
-                          {room.SeatQuantity || "N/A"}
-                        </td>
-                        <td className="py-2 px-2 sm:px-4 w-[80px] shrink-0 text-center hidden md:table-cell">
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <div className="block sm:hidden space-y-4">
+                {Array.isArray(rooms) && rooms.length > 0 ? (
+                  rooms.map((room) => (
+                    <article
+                      key={room.CinemaRoomId}
+                      className="bg-white p-4 rounded-lg shadow-sm border border-slate-200"
+                      onClick={() => handleEdit(room)}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1">
+                          <h3 className="text-sm font-medium text-gray-900 truncate">
+                            {room.Name?.length > 20
+                              ? `${room.Name.slice(0, 20)}...`
+                              : room.Name || "N/A"}
+                          </h3>
+                          <p className="text-xs text-gray-500 truncate">
+                            Seats: {room.SeatQuantity || "N/A"}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">
+                            Type: {room.Type || "Normal"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-4 text-xs grid grid-cols-2 gap-x-2 gap-y-4 text-gray-700">
+                        <p>
+                          <strong>Detail:</strong>{" "}
                           <button
-                            className="text-blue-500 hover:text-blue-700 text-xs sm:text-sm"
+                            className="text-blue-500 hover:text-blue-700"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleView(room);
                             }}
                           >
-                            Detail
+                            View
                           </button>
-                        </td>
-                        <td className="py-2 px-2 sm:px-4 w-[80px] shrink-0 text-center">
-                          <div className="flex justify-center space-x-2 sm:space-x-3">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEdit(room);
-                              }}
-                              className="text-blue-500 hover:text-blue-700 p-1 sm:p-2"
-                              title="Edit"
-                              aria-label={`Edit ${room.Name || "room"}`}
-                            >
-                              <FaRegEdit size={18} />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(room);
-                              }}
-                              className="text-red-400 hover:text-red-600 p-1 sm:p-2"
-                              title="Delete"
-                              aria-label={`Delete ${room.Name || "room"}`}
-                            >
-                              <RiDeleteBin5Line size={18} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {/* Card Layout for Mobile */}
-              <div className="block sm:hidden space-y-4">
-                {rooms.map((room) => (
-                  <article
-                    key={room.CinemaRoomId}
-                    className="bg-white p-4 rounded-lg shadow-sm border border-slate-200"
-                    onClick={() => handleEdit(room)}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="flex-1">
-                        <h3 className="text-sm font-medium text-gray-900 truncate">
-                          {room.Name?.length > 20 ? (
-                            <span title={room.Name}>
-                              {room.Name.slice(0, 20) + "..."}
-                            </span>
-                          ) : (
-                            room.Name || "N/A"
-                          )}
-                        </h3>
-                        <p className="text-xs text-gray-500 truncate">
-                          Seats: {room.SeatQuantity || "N/A"}
                         </p>
                       </div>
-                    </div>
-                    <div className="mt-4 text-xs grid grid-cols-2 gap-x-2 gap-y-4 text-gray-700">
-                      <p>
-                        <strong>Detail:</strong>{" "}
+                      <div className="flex justify-center space-x-2 mt-2">
                         <button
-                          className="text-blue-500 hover:text-blue-700"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleView(room);
+                            handleEdit(room);
                           }}
+                          className="text-blue-500 hover:text-blue-700"
+                          aria-label={`Edit ${room.Name || "room"}`}
                         >
-                          View
+                          <FaRegEdit size={16} />
                         </button>
-                      </p>
-                    </div>
-                    <div className="flex justify-center space-x-2 mt-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(room);
-                        }}
-                        className="text-blue-500 hover:text-blue-700"
-                        aria-label={`Edit ${room.Name || "room"}`}
-                      >
-                        <FaRegEdit size={16} />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(room);
-                        }}
-                        className="text-red-400 hover:text-red-600"
-                        aria-label={`Delete ${room.Name || "room"}`}
-                      >
-                        <RiDeleteBin5Line size={16} />
-                      </button>
-                    </div>
-                  </article>
-                ))}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(room);
+                          }}
+                          className="text-red-400 hover:text-red-600"
+                          aria-label={`Delete ${room.Name || "room"}`}
+                        >
+                          <RiDeleteBin5Line size={16} />
+                        </button>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <div className="text-center text-gray-500 py-4">
+                    No rooms available
+                  </div>
+                )}
               </div>
             </div>
             <Pagination
@@ -447,7 +460,6 @@ const RoomManagement = () => {
         </div>
       </div>
 
-      {/* Modals */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
           <div className="bg-white rounded-lg p-4 lg:p-6 w-full max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto">
@@ -487,6 +499,20 @@ const RoomManagement = () => {
                   onChange={(e) => setSeatQuantity(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Room Type
+                </label>
+                <select
+                  value={roomType}
+                  onChange={(e) => setRoomType(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                >
+                  <option value="Normal">Normal</option>
+                  <option value="IMAX">IMAX</option>
+                </select>
               </div>
             </div>
 
@@ -546,6 +572,20 @@ const RoomManagement = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Room Type
+                </label>
+                <select
+                  value={roomType}
+                  onChange={(e) => setRoomType(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                >
+                  <option value="Normal">Normal</option>
+                  <option value="IMAX">IMAX</option>
+                </select>
+              </div>
             </div>
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
               <button
@@ -564,6 +604,7 @@ const RoomManagement = () => {
           </div>
         </div>
       )}
+
       {showDeleteModal && selectedRoom && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
           <div className="bg-white rounded-lg p-4 lg:p-6 w-full max-w-md sm:max-w-lg">
@@ -600,6 +641,7 @@ const RoomManagement = () => {
           </div>
         </div>
       )}
+
       {showDetailsModal && selectedRoom && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
           <div className="bg-white rounded-lg p-4 lg:p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -614,7 +656,8 @@ const RoomManagement = () => {
                   </h2>
                   <p className="text-sm text-gray-500">
                     Room ID: {selectedRoom.CinemaRoomId} • Total Seats:{" "}
-                    {selectedRoom.SeatQuantity}
+                    {selectedRoom.SeatQuantity} • Type:{" "}
+                    {selectedRoom.Type || "Normal"}
                   </p>
                 </div>
               </div>
@@ -636,9 +679,9 @@ const RoomManagement = () => {
         autoClose={3000}
         hideProgressBar={false}
         newestOnTop={false}
-        closeOnClick
+        closeOnClick={true}
         rtl={false}
-        draggable
+        draggable={true}
       />
     </div>
   );

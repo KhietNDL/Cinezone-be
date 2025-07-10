@@ -127,7 +127,7 @@ const MovieHeroSwiper = ({ movieData }) => {
       video.load();
 
       const handleCanPlay = () => {
-        console.log("Video can play");
+
         if (userInteracted) {
           startVideoWithSound();
         } else {

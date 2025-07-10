@@ -147,9 +147,7 @@ const MovieManagement = () => {
       if (response.data.data) {
         const normalizedMovies = response.data.data;
         setMovies(normalizedMovies);
-        const total = response.data.total || normalizedMovies.length;
-        const totalPagesFromApi = response.data.totalPages;
-        setTotalPages(totalPagesFromApi || Math.ceil(total / itemsPerPage));
+        setTotalPages(response.data.totalPages);
       }
     } catch (error) {
       console.error("Error searching movies:", error);

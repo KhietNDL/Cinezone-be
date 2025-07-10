@@ -46,6 +46,8 @@ const EmployeeManagement = () => {
   const [address, setAddress] = useState("");
   const [avatarPreview, setAvatarPreview] = useState(null);
   const avatarUploadRef = useRef(null);
+  const [sortBy, setSortBy] = useState("FullName");
+  const [sortOrder, setSortOrder] = useState("asc");
 
   const getEmployees = async () => {
     try {
@@ -115,12 +117,27 @@ const EmployeeManagement = () => {
     );
   }, [employees, searchEmployee]);
 
-  // Paginate filtered employees
+  // Sorting logic
+  const sortedEmployees = useMemo(() => {
+    const sorted = [...filteredEmployees];
+    if (sortBy === "FullName" || sortBy === "Email") {
+      sorted.sort((a, b) => {
+        const aValue = (a[sortBy] || "").toLowerCase();
+        const bValue = (b[sortBy] || "").toLowerCase();
+        if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
+        if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
+        return 0;
+      });
+    }
+    return sorted;
+  }, [filteredEmployees, sortBy, sortOrder]);
+
+  // Paginate sorted employees
   const paginatedEmployees = useMemo(() => {
     const startIndex = (page - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    return filteredEmployees.slice(startIndex, endIndex);
-  }, [filteredEmployees, page, itemsPerPage]);
+    return sortedEmployees.slice(startIndex, endIndex);
+  }, [sortedEmployees, page, itemsPerPage]);
 
   const validateForm = () => {
     if (!fullName || fullName.length < 6 || fullName.length > 100) {
@@ -337,6 +354,16 @@ const EmployeeManagement = () => {
     else setAvatarPreview(null);
   };
 
+  const handleSort = (column) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(column);
+      setSortOrder("asc");
+    }
+    setPage(1);
+  };
+
   return (
     <div className="h-full">
       <div
@@ -394,6 +421,9 @@ const EmployeeManagement = () => {
                 handleDelete={handleDelete}
                 handleRowClick={handleRowClick}
                 formatDate={formatDate}
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                handleSort={handleSort}
               />
             </div>
             {/* Card Layout for Mobile */}

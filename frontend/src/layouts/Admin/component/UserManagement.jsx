@@ -18,6 +18,7 @@ import {
 } from "../../../services/APIForAdmin/API";
 import { toast } from "react-toastify";
 import { IoMdPersonAdd } from "react-icons/io";
+import Pagination from "../movieComponent/Pagination";
 
 export const UserManagement = () => {
   const [showAddModal, setShowAddModal] = useState(false);
@@ -30,8 +31,10 @@ export const UserManagement = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
   const [users, setUsers] = useState([]);
-  const [allUsers, setAllUsers] = useState([]);
 
+  const itemsPerPage = 5;
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
   // Form states
   const [fullName, setFullName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
@@ -57,23 +60,46 @@ export const UserManagement = () => {
     setAvatarFile(null);
   };
 
+  const [sortBy, setSortBy] = useState("FullName");
+  const [sortOrder, setSortOrder] = useState("asc");
+
+  const handleSort = (column) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(column);
+      setSortOrder("asc");
+    }
+    setCurrentPage(1);
+  };
+
   useEffect(() => {
     loadUsers();
-  }, []);
+  }, [currentPage, sortBy, sortOrder]);
 
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const res = await getAllUsers();
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+        sortBy,
+        sortOrder,
+      };
+      const res = await getAllUsers(params);
       if (res.users) {
         setUsers(res.users);
-        setAllUsers(res.users);
+        if (res.pagination) {
+          setTotalPages(res.pagination.totalPages);
+          setTotalItems(res.pagination.total);
+        }
       }
     } catch (error) {
       console.error("Load users error:", error);
       toast.error("Failed to load users");
       setUsers([]);
-      setAllUsers([]);
+
+      setTotalPages(0);
     } finally {
       setLoading(false);
     }
@@ -83,25 +109,45 @@ export const UserManagement = () => {
   useEffect(() => {
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     searchTimeout.current = setTimeout(() => {
-      if (searchTerm.trim() === "") {
-        setUsers(allUsers);
-      } else {
-        handleSearchUser(searchTerm.trim());
-      }
+      handleSearchUser(searchTerm);
     }, 400);
     return () => clearTimeout(searchTimeout.current);
-  }, [searchTerm, allUsers]);
+  }, [searchTerm]);
 
   const handleSearchUser = async (keyword) => {
     try {
-      const res = await searchUserByName(keyword);
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+        sortBy,
+        sortOrder,
+      };
+      
+      let res;
+      if (keyword && keyword.trim()) {
+        res = await searchUserByName(keyword, params);
+      } else {
+        res = await getAllUsers(params);
+      }
+      
       if (res.users) {
         setUsers(res.users);
+        if (res.pagination) {
+          setTotalPages(res.pagination.totalPages);
+          setTotalItems(res.pagination.total);
+        } else {
+          // Fallback if pagination is not available
+          setTotalPages(Math.ceil(res.users.length / itemsPerPage));
+          setTotalItems(res.users.length);
+        }
+        setCurrentPage(1);
       }
     } catch (error) {
       console.error("Search error:", error);
       toast.error("Failed to search users");
       setUsers([]);
+      setTotalPages(0);
+      setTotalItems(0);
     }
   };
 
@@ -209,6 +255,7 @@ export const UserManagement = () => {
       setDeleteLoading(true);
       await deleteUser(selectedUser.UserId);
       setUsers(users.filter((user) => user.UserId !== selectedUser.UserId));
+      setTotalPages(Math.ceil((users.length - 1) / itemsPerPage));
       setShowDeleteModal(false);
       setSelectedUser(null);
       toast.success("User deleted successfully");
@@ -256,100 +303,10 @@ export const UserManagement = () => {
     setSelectedUser(user);
     setShowDeleteModal(true);
   };
-
-  const itemsPerPage = 5;
-  const totalItems = users.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentUsers = users.slice(startIndex, endIndex);
-
-  const renderPaginationButtons = () => {
-    const maxVisibleButtons = window.innerWidth < 640 ? 3 : 5;
-    const halfVisible = Math.floor(maxVisibleButtons / 2);
-    let startPage = Math.max(1, currentPage - halfVisible);
-    let endPage = Math.min(totalPages, currentPage + halfVisible);
-
-    if (currentPage <= halfVisible) {
-      endPage = Math.min(maxVisibleButtons, totalPages);
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
     }
-    if (currentPage + halfVisible >= totalPages) {
-      startPage = Math.max(1, totalPages - maxVisibleButtons + 1);
-    }
-
-    const pages = [];
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(
-        <button
-          key={`page-${i}`}
-          onClick={() => setCurrentPage(i)}
-          className={`px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${
-            currentPage === i
-              ? "bg-indigo-600 text-white shadow-sm"
-              : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm"
-          }`}
-          aria-label={`Page ${i}`}
-          aria-current={currentPage === i ? "true" : undefined}
-        >
-          {i}
-        </button>
-      );
-    }
-
-    if (startPage > 1) {
-      pages.unshift(
-        <span
-          key="ellipsis-start"
-          className="px-2 sm:px-3 py-1 sm:py-2 text-gray-500 text-sm sm:text-base"
-        >
-          ...
-        </span>
-      );
-      pages.unshift(
-        <button
-          key="page-1"
-          onClick={() => setCurrentPage(1)}
-          className={`px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${
-            currentPage === 1
-              ? "bg-indigo-600 text-white shadow-sm"
-              : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm"
-          }`}
-          aria-label="Page 1"
-        >
-          1
-        </button>
-      );
-    }
-    if (endPage < totalPages) {
-      pages.push(
-        <span
-          key="ellipsis-end"
-          className="px-2 sm:px-3 py-1 sm:py-2 text-gray-500 text-sm sm:text-base"
-        >
-          ...
-        </span>
-      );
-      pages.push(
-        <button
-          key={`page-${totalPages}`}
-          onClick={() => setCurrentPage(totalPages)}
-          className={`px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${
-            currentPage === totalPages
-              ? "bg-indigo-600 text-white shadow-sm"
-              : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm"
-          }`}
-          aria-label={`Page ${totalPages}`}
-        >
-          {totalPages}
-        </button>
-      );
-    }
-
-    return pages.length > 0 ? (
-      pages
-    ) : (
-      <span className="text-gray-500 text-sm">No pages to display</span>
-    );
   };
 
   if (addLoading || deleteLoading || loading) {
@@ -404,9 +361,7 @@ export const UserManagement = () => {
                   <MdPeopleAlt size={20} className="text-blue-500" />
                 </div>
               </div>
-              <p className="font-bold text-base sm:text-[19px]">
-                {users.length}
-              </p>
+              <p className="font-bold text-base sm:text-[19px]">{totalItems}</p>
             </div>
             <div className="bg-white rounded-lg p-2 sm:p-3 flex-1 shadow-sm">
               <div className="flex items-center justify-between">
@@ -476,8 +431,46 @@ export const UserManagement = () => {
                     <th className="py-2 px-2 sm:px-4 w-[60px] sm:w-[80px] shrink-0 text-center">
                       Avatar
                     </th>
-                    <th className="py-2 px-2 sm:px-4 w-[150px] sm:w-[180px] md:w-[200px] shrink-0">
+                    <th
+                      className="py-2 px-2 sm:px-4 w-[150px] sm:w-[180px] md:w-[200px] shrink-0 cursor-pointer select-none"
+                      onClick={() => handleSort("FullName")}
+                    >
                       Full Name
+                      <span className="ml-1 inline-block align-middle">
+                        {sortBy === "FullName" ? (
+                          sortOrder === "asc" ? (
+                            <svg
+                              width="12"
+                              height="12"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                              className="inline"
+                            >
+                              <path d="M10 6l-4 4h8l-4-4z" />
+                            </svg>
+                          ) : (
+                            <svg
+                              width="12"
+                              height="12"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                              className="inline"
+                            >
+                              <path d="M10 14l4-4H6l4 4z" />
+                            </svg>
+                          )
+                        ) : (
+                          <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            className="inline opacity-30"
+                          >
+                            <path d="M10 6l-4 4h8l-4-4z" />
+                          </svg>
+                        )}
+                      </span>
                     </th>
                     <th className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] shrink-0 text-center hidden xl:table-cell">
                       DOB
@@ -485,8 +478,46 @@ export const UserManagement = () => {
                     <th className="py-2 px-2 sm:px-4 w-[80px] sm:w-[100px] shrink-0 text-center hidden xl:table-cell">
                       Gender
                     </th>
-                    <th className="py-2 px-2 sm:px-4 w-[150px] sm:w-[180px] md:w-[200px] shrink-0 text-center hidden md:table-cell">
+                    <th
+                      className="py-2 px-2 sm:px-4 w-[150px] sm:w-[180px] md:w-[200px] shrink-0 cursor-pointer select-none hidden md:table-cell text-center"
+                      onClick={() => handleSort("Email")}
+                    >
                       Email
+                      <span className="ml-1 inline-block align-middle">
+                        {sortBy === "Email" ? (
+                          sortOrder === "asc" ? (
+                            <svg
+                              width="12"
+                              height="12"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                              className="inline"
+                            >
+                              <path d="M10 6l-4 4h8l-4-4z" />
+                            </svg>
+                          ) : (
+                            <svg
+                              width="12"
+                              height="12"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                              className="inline"
+                            >
+                              <path d="M10 14l4-4H6l4 4z" />
+                            </svg>
+                          )
+                        ) : (
+                          <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            className="inline opacity-30"
+                          >
+                            <path d="M10 6l-4 4h8l-4-4z" />
+                          </svg>
+                        )}
+                      </span>
                     </th>
                     <th className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] shrink-0 text-center">
                       Phone
@@ -497,7 +528,7 @@ export const UserManagement = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {currentUsers.map((user) => (
+                  {users.map((user) => (
                     <tr
                       key={user.UserId}
                       onClick={() => handleEditUser(user)}
@@ -583,7 +614,7 @@ export const UserManagement = () => {
             </div>
             {/* Card Layout for Mobile */}
             <div className="block sm:hidden space-y-4">
-              {currentUsers.map((user) => (
+              {users.map((user) => (
                 <article
                   key={user.UserId}
                   className="bg-white p-4 rounded-lg shadow-sm border border-slate-200"
@@ -662,37 +693,11 @@ export const UserManagement = () => {
           </div>
 
           {/* Pagination */}
-          {totalItems > 0 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between px-4 sm:px-6 py-4 border-t border-gray-200">
-              <div className="text-sm text-gray-700 mb-2 sm:mb-0">
-                Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of{" "}
-                {totalItems} users
-              </div>
-              <div className="flex items-center space-x-1 sm:space-x-2">
-                <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.max(1, prev - 1))
-                  }
-                  disabled={currentPage === 1}
-                  className="px-3 sm:px-4 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  aria-label="Previous page"
-                >
-                  Previous
-                </button>
-                {renderPaginationButtons()}
-                <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-                  }
-                  disabled={currentPage === totalPages}
-                  className="px-3 sm:px-4 py-1 sm:py-2 rounded-lg text-sm sm:text-base font-medium bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  aria-label="Next page"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            handlePageChange={handlePageChange}
+          />
         </div>
 
         {/* Add/Edit User Modal */}

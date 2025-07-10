@@ -2,6 +2,7 @@ import React from "react";
 import { IoEyeOutline } from "react-icons/io5";
 import { FaRegEdit } from "react-icons/fa";
 import { RiDeleteBin5Line } from "react-icons/ri";
+import { MdOutlineArrowDropDown, MdArrowDropUp } from "react-icons/md";
 
 const EmployeeTable = ({
   employees,
@@ -11,6 +12,9 @@ const EmployeeTable = ({
   handleDelete,
   handleRowClick,
   formatDate,
+  sortBy,
+  sortOrder,
+  handleSort,
 }) => {
   return (
     <div className="bg-white min-h-[300px] max-h-[500px] p-2 sm:p-3 md:p-4 rounded-lg shadow-sm overflow-x-auto">
@@ -20,8 +24,20 @@ const EmployeeTable = ({
             <th className="py-2 px-2 sm:px-4 w-[60px] sm:w-[80px] shrink-0 text-center">
               Avatar
             </th>
-            <th className="py-2 px-2 sm:px-4 w-[150px] sm:w-[180px] md:w-[200px] shrink-0">
+            <th
+              className="py-2 px-2 sm:px-4 w-[150px] sm:w-[180px] md:w-[200px] shrink-0 cursor-pointer select-none"
+              onClick={() => handleSort("FullName")}
+            >
               Full Name
+              {sortBy === "FullName" ? (
+                sortOrder === "asc" ? (
+                  <MdOutlineArrowDropDown size={20} className="inline ml-1" />
+                ) : (
+                  <MdArrowDropUp size={20} className="inline ml-1" />
+                )
+              ) : (
+                <MdOutlineArrowDropDown size={20} className="inline ml-1 text-gray-300" />
+              )}
             </th>
             <th className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] shrink-0 text-center hidden lg:table-cell">
               DOB
@@ -29,8 +45,20 @@ const EmployeeTable = ({
             <th className="py-2 px-2 sm:px-4 w-[80px] sm:w-[100px] shrink-0 text-center">
               Gender
             </th>
-            <th className="py-2 px-2 sm:px-4 w-[150px] sm:w-[180px] md:w-[150px] lg:w-[180px] shrink-0 hidden md:table-cell">
+            <th
+              className="py-2 px-2 sm:px-4 w-[150px] sm:w-[180px] md:w-[150px] lg:w-[180px] shrink-0 hidden md:table-cell cursor-pointer select-none"
+              onClick={() => handleSort("Email")}
+            >
               Email
+              {sortBy === "Email" ? (
+                sortOrder === "asc" ? (
+                  <MdOutlineArrowDropDown size={20} className="inline ml-1" />
+                ) : (
+                  <MdArrowDropUp size={20} className="inline ml-1" />
+                )
+              ) : (
+                <MdOutlineArrowDropDown size={20} className="inline ml-1 text-gray-300" />
+              )}
             </th>
             <th className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] shrink-0 text-center">
               Phone
@@ -60,7 +88,7 @@ const EmployeeTable = ({
                   />
                 </td>
                 <td className="py-2 px-2 sm:px-4 w-[150px] sm:w-[180px] md:w-[200px] shrink-0">
-                  <span className="block text-center">
+                  <span className="block ">
                     {emp.FullName?.length > 20 ? (
                       <span title={emp.FullName}>
                         {emp.FullName.slice(0, 20) + "..."}
