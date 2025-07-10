@@ -413,7 +413,8 @@ export const HoldingSeats = async (
   showtimeId,
   seatIds,
   productIds,
-  promotionTitle
+  promotionTitle,
+  PointsToUse
 ) => {
   try {
     const response = await api.post("/bookings/hold", {
@@ -422,6 +423,7 @@ export const HoldingSeats = async (
       seatIds: seatIds,
       productIds: productIds || [],
       promotionTitle: promotionTitle || "",
+      PointsToUse :PointsToUse
     });
     console.log("HoldingSeats Response:", response.data);
     return response.data;
@@ -553,12 +555,64 @@ export const getBookingHistory = async (memberId) => {
   }
 };
 
-export const getAllProducts = async () => {
+export const getAllProducts = async (params) => {
   try {
-    const response = await api.get("/products");
+    const response = await api.get("/products",
+      {params}
+    );
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy danh sách sản phẩm owr API:", error);
+    handleError(error);
+    throw error;
+  }
+}
+
+export const holdProducts = async (memberId, products, notes = "") => {
+  try {
+    const response = await api.post("/order-products/hold", {
+      MemberId: memberId,
+      products: products,
+      Notes: notes,
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("❌ Lỗi gọi holdOrderProducts:", error?.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const confirmProduct = async (id) => {
+  try {
+    const response = await api.post(`/order-products/confirm/${id}`);
+    console.log("confirm product:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi confirm product:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const getProductByOderProductId = async (orderProductId) => {
+  try {
+    const response = await api.get(`/order-products/${orderProductId}/detail`);
+    return response.data.data.products;
+  } catch (error) {
+    console.error("Lỗi khi lấy thông tin product đã thanh toán", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const cancelProduct = async (id) => {
+  try {
+    const response = await api.post(`/order-products/cancel/${id}`);
+    console.log("cancal product:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi cancel product:", error);
     handleError(error);
     throw error;
   }

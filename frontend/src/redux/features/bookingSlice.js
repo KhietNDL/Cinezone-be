@@ -3,6 +3,8 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   selectedSeats: [],
   seatIds: [],
+  setProducts: [],
+  orderProductsId: [],
   calculatedTotalPrice: 0,
   selectedRoom: "",
   selectedDate: "",
@@ -10,7 +12,10 @@ const initialState = {
   selectedShowtimeId: "",
   seatQuantity: 0,
   seatsData: [],
+  finalTotalPrice:0,
   movie: null,
+  product: null, 
+  productDetail:null,
 };
 
 const bookingSlice = createSlice({
@@ -47,6 +52,23 @@ const bookingSlice = createSlice({
     setMovie(state, action) {
       state.movie = action.payload;
     },
+     setProduct(state, action) {
+      state.product = action.payload;
+    },
+
+    setFinalTotalPrice(state, action) {
+      state.finalTotalPrice = action.payload; 
+    },
+    setProduct(state, action) {
+      state.product = action.payload;
+    },
+    setOrderProductsId(state, action) {
+      state.orderProductsId = action.payload;
+    } ,
+     setProductDetail(state, action) {
+      state.productDetail = action.payload;
+    },
+
     resetBooking(state) {
       Object.assign(state, initialState);
     },
@@ -65,6 +87,10 @@ export const {
   setSeatsData,
   setSeatQuantity,
   setMovie,
+  setProduct,
+  setProductDetail,
+  setOrderProductsId,
+  setFinalTotalPrice,
   resetBooking,
 } = bookingSlice.actions;
 

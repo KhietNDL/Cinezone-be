@@ -21,9 +21,9 @@ async function cleanupExpiredBookings() {
       [expiredIds]
     );
 
-    // 3. Đổi trạng thái các ghế từ "holding" sang "available" (xóa hoặc cập nhật SeatShowtime)
+    // 3. Đổi trạng thái các ghế từ "holding" sang "cancelled" (xóa hoặc cập nhật SeatShowtime)
     await connection.query(
-      `DELETE FROM SeatShowtime WHERE BookingId IN (?) AND Status = 'holding'`,
+      `UPDATE SeatShowtime SET Status = 'cancelled' WHERE BookingId IN (?) AND Status = 'holding'`,
       [expiredIds]
     );
 

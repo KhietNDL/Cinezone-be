@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { PiArmchairLight, PiArmchairFill } from "react-icons/pi";
 import { MdOutlineChair } from "react-icons/md";
+import { useDispatch,useSelector } from "react-redux";
 
 export const LayoutSelectSeat = ({
   onSeatSelect = () => { },
@@ -28,11 +29,12 @@ export const LayoutSelectSeat = ({
     normal: "text-purple-300",
     couple: "text-purple-400",
   },
-  showInfo = true,
+  
 }) => {
   const [selectedSeats, setSelectedSeats] = useState(new Set(initialSelectedSeats));
   const [seatLayout, setSeatLayout] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const dispatch = useDispatch();
 
   // Tạo seat map từ API data với seatId làm key
   const seatMap = {};
@@ -40,7 +42,7 @@ export const LayoutSelectSeat = ({
     seatMap[seat.seatNumber] = seat;
   });
 
-  // Group seats by row từ API data với cải thiện logic chia ghế
+  // Group seats by row từ API data 
   const groupSeatsByRow = () => {
     const rows = {};
 
@@ -64,9 +66,7 @@ export const LayoutSelectSeat = ({
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([row, seats]) => {
         const sortedSeats = seats.sort((a, b) => a.number - b.number);
-
-        // Chia ghế thành 2 bên một cách thông minh
-        // Ưu tiên chia đều, nếu lẻ thì bên trái nhiều hơn 1 ghế
+        
         const totalSeats = sortedSeats.length;
         const leftSideCount = Math.ceil(totalSeats / 2);
 
@@ -82,8 +82,6 @@ export const LayoutSelectSeat = ({
     return sortedRows;
   };
 
-  
-  
   useEffect(() => {
     if (seatDataFromAPI.length > 0) {
       const layout = groupSeatsByRow();
@@ -107,7 +105,6 @@ export const LayoutSelectSeat = ({
     setSelectedSeats(newSelectedSeats);
     console.log("Selected Seats: ", newSelectedSeats);
     
-
     // Trả về thông tin ghế đã chọn với tổng giá
     const selectedSeatDetails = Array.from(newSelectedSeats).map(seatNum => seatMap[seatNum]);
     const totalPrice = selectedSeatDetails.reduce((sum, seat) => sum + seat.price, 0);
@@ -121,8 +118,6 @@ export const LayoutSelectSeat = ({
     });
   };
 
-  
-
   const getSeatColor = (seat) => {
     const { seatNumber, status, type } = seat;
 
@@ -130,7 +125,6 @@ export const LayoutSelectSeat = ({
     else if (status === "holding") return seatColors.holding;
     else if (selectedSeats.has(seatNumber)) return seatColors.selected;
 
-    // Màu theo loại ghế - purple theme
     switch (type) {
       case 'VIP':
         return seatColors.vip;
@@ -141,7 +135,10 @@ export const LayoutSelectSeat = ({
       default:
         return "text-purple-300";
     }
+    
   };
+
+  
 
   const renderSeat = (seat) => {
     const { seatId, seatNumber, status, type, price } = seat;
@@ -149,55 +146,88 @@ export const LayoutSelectSeat = ({
     const isTaken = status === "taken";
     const isHolding = status === "holding";
     const isCouple = type === 'Couple';
+    const isClickable = !isTaken && !isHolding;
 
-    // Render ghế đôi (Couple)
+    // Ghế đôi
     if (isCouple) {
       return (
         <div
           key={seatId}
-          className="relative inline-block"
-          style={{ marginRight: `${seatSpacingCouple}px` }}
+          className="inline-block"
+          style={{ 
+            marginRight: `${seatSpacingCouple}px`,
+            width: `${widthDouble}px`,
+            height: `${heightDouble}px`,
+            position: 'relative'
+          }}
         >
-          <button
-            onClick={() => handleSeatClick(seatNumber)}
-            className={`transition-all duration-200 hover:scale-105 
-              ${isTaken ? "cursor-not-allowed opacity-50" : "cursor-pointer"}
-              ${isHolding ? "cursor-not-allowed opacity-50" : "cursor-pointer"}
-             ${getSeatColor(seat)} relative group`}
-            disabled={isTaken || isHolding}
+          {/* Click area chính xác trên icon */}
+          <div 
+            
+            className={`
+              ${getSeatColor(seat)} 
+              transition-opacity duration-200
+              ${!isClickable ? "opacity-50" : "opacity-100"}
+              ${!isClickable ? "cursor-not-allowed" : "cursor-pointer"}
+              group relative
+            `}
+            style={{
+              width: `${widthDouble}px`,
+              height: `${heightDouble}px`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
             title={`${type} Seat ${seatNumber} - ${price.toLocaleString()}đ - ${status}`}
           >
             <MdOutlineChair
               style={{
                 width: `${widthDouble}px`,
                 height: `${heightDouble}px`,
-                display: 'block'
-              }}
+                display: 'block',
+                pointerEvents: 'none'
+              }} 
+              onClick={isClickable ? () => handleSeatClick(seatNumber) : undefined}
             />
 
             {/* Tooltip */}
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
               {seatNumber} - {price.toLocaleString()}đ
             </div>
-          </button>
+          </div>
         </div>
       );
     }
 
-    // Render ghế đơn (Normal/VIP)
+    // Ghế đơn (Normal/VIP)
     return (
       <div
         key={seatId}
-        className="relative inline-block"
-        style={{ marginRight: `${seatSpacing}px` }}
+        className="inline-block"
+        style={{ 
+          marginRight: `${seatSpacing}px`,
+          width: `${width}px`,
+          height: `${height}px`,
+          position: 'relative'
+        }}
       >
-        <button
-          onClick={() => handleSeatClick(seatNumber)}
-          className={`transition-all duration-200 hover:scale-110 
-            ${isTaken ? "cursor-not-allowed opacity-50" : "cursor-pointer"} 
-            ${isHolding ? "cursor-not-allowed opacity-50" : "cursor-pointer"}
-            ${getSeatColor(seat)} relative group`}
-          disabled={isTaken || isHolding}
+        {/* Click area chính xác trên icon */}
+        <div 
+          onClick={isClickable ? () => handleSeatClick(seatNumber) : undefined}
+          className={`
+            ${getSeatColor(seat)} 
+            transition-opacity duration-200
+            ${!isClickable ? "opacity-50" : "opacity-100"}
+            ${!isClickable ? "cursor-not-allowed" : "cursor-pointer"}
+            group relative
+          `}
+          style={{
+            width: `${width}px`,
+            height: `${height}px`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
           title={`${type} Seat ${seatNumber} - ${price.toLocaleString()}đ - ${status}`}
         >
           {isTaken || isHolding || isSelected ? (
@@ -205,24 +235,26 @@ export const LayoutSelectSeat = ({
               style={{
                 width: `${width}px`,
                 height: `${height}px`,
-                display: 'block'
-              }}
+                display: 'block',
+                pointerEvents: 'none'
+              }} 
             />
           ) : (
             <PiArmchairLight
               style={{
                 width: `${width}px`,
                 height: `${height}px`,
-                display: 'block'
-              }}
+                display: 'block',
+                pointerEvents: 'none'
+              }} 
             />
           )}
 
           {/* Tooltip */}
-          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
             {seatNumber} - {price.toLocaleString()}đ
           </div>
-        </button>
+        </div>
       </div>
     );
   };
@@ -437,7 +469,7 @@ export const LayoutSelectSeat = ({
 
 
       {/* Selected Seats Info */}
-     {showInfo && selectedSeats.size > 0 && (
+      {/* {selectedSeats.size > 0 && (
         <div className="mt-6 p-4 bg-white/5 rounded-lg backdrop-blur-sm animate-fade-in">
           <div className="text-center">
             <p className="text-sm text-gray-300 mb-2">
@@ -451,7 +483,7 @@ export const LayoutSelectSeat = ({
             </p>
           </div>
         </div>
-      )}
+      )} */}
 
       <style jsx>{`
         @keyframes fade-in {

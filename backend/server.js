@@ -58,6 +58,7 @@ const productRoutes = require("./routes/products");
 const comboProductRoutes = require('./routes/comboProduct');
 const orderProductDetailRoutes = require('./routes/orderProductDetail');
 const orderProductRoutes = require('./routes/orderProduct');
+const cleanupExpiredOrderProducts = require("./jobs/orderProductCleanup");
 const ratingRoutes = require('./routes/rating');
 const analyticsRoutes = require("./routes/analytics");
 
@@ -107,4 +108,5 @@ app.listen(PORT, "0.0.0.0", () => {
 });
 
 setInterval(cleanupExpiredBookings, 60 * 1000); // Chạy mỗi phút
+setInterval(cleanupExpiredOrderProducts, 60 * 1000); // Chạy mỗi phút
 //cleanupOldSeats();

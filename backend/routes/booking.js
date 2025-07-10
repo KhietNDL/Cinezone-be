@@ -2,41 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bookingController = require('../controllers/booking.controller');
 const { auth } = require('../middlewares/auth.middleware');
-const { bookingSeatsValidator } = require('../middlewares/booking.validator');
-
-/**
- * @swagger
- * /api/bookings:
- *   post:
- *     summary: Create a new booking
- *     tags: [Bookings]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               MemberId:
- *                 type: string
- *               ShowtimeId:
- *                 type: string
- *               BookingDate:
- *                 type: string
- *                 format: date-time
- *               TotalAmount:
- *                 type: number
- *               Status:
- *                 type: string
- *               PromotionId:
- *                 type: string
- *     responses:
- *       201:
- *         description: Booking created
- *       500:
- *         description: Internal server error
- */
-router.post('/', bookingController.createBooking);
+const { bookingValidator, bookingSeatsValidator } = require('../middlewares/booking.validator');
 
 /**
  * @swagger
@@ -252,6 +218,7 @@ router.get('/member/:memberId/latest', bookingController.getLatestBookingByMembe
 router.post(
   '/hold',
   bookingSeatsValidator, 
+  bookingValidator,
   bookingController.holdBooking
 );
 
