@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { PiArmchairLight, PiArmchairFill } from "react-icons/pi";
 import { MdOutlineChair } from "react-icons/md";
-import { useDispatch,useSelector } from "react-redux";
 
 export const LayoutSelectSeat = ({
-  onSeatSelect = () => { },
+  onSeatSelect = () => {},
   initialSelectedSeats = [],
   seatDataFromAPI = [],
-  totalSeats = 80,
-  maxSeatsPerRow = 14,
-  maxRows = 10,
   containerWidth = "750px",
   width = 30,
   height = 30,
@@ -29,12 +25,12 @@ export const LayoutSelectSeat = ({
     normal: "text-purple-300",
     couple: "text-purple-400",
   },
-  
 }) => {
-  const [selectedSeats, setSelectedSeats] = useState(new Set(initialSelectedSeats));
+  const [selectedSeats, setSelectedSeats] = useState(
+    new Set(initialSelectedSeats)
+  );
   const [seatLayout, setSeatLayout] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
-  const dispatch = useDispatch();
 
   // Tạo seat map từ API data với seatId làm key
   const seatMap = {};
@@ -42,7 +38,7 @@ export const LayoutSelectSeat = ({
     seatMap[seat.seatNumber] = seat;
   });
 
-  // Group seats by row từ API data 
+  // Group seats by row từ API data
   const groupSeatsByRow = () => {
     const rows = {};
 
@@ -57,7 +53,7 @@ export const LayoutSelectSeat = ({
       rows[row].push({
         ...seat,
         number,
-        isCouple: seat.type === 'Couple'
+        isCouple: seat.type === "Couple",
       });
     });
 
@@ -66,7 +62,7 @@ export const LayoutSelectSeat = ({
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([row, seats]) => {
         const sortedSeats = seats.sort((a, b) => a.number - b.number);
-        
+
         const totalSeats = sortedSeats.length;
         const leftSideCount = Math.ceil(totalSeats / 2);
 
@@ -75,7 +71,7 @@ export const LayoutSelectSeat = ({
           seats: sortedSeats,
           leftSeats: sortedSeats.slice(0, leftSideCount),
           rightSeats: sortedSeats.slice(leftSideCount),
-          isDouble: sortedSeats.some(s => s.type === 'Couple')
+          isDouble: sortedSeats.some((s) => s.type === "Couple"),
         };
       });
 
@@ -104,17 +100,22 @@ export const LayoutSelectSeat = ({
 
     setSelectedSeats(newSelectedSeats);
     console.log("Selected Seats: ", newSelectedSeats);
-    
+
     // Trả về thông tin ghế đã chọn với tổng giá
-    const selectedSeatDetails = Array.from(newSelectedSeats).map(seatNum => seatMap[seatNum]);
-    const totalPrice = selectedSeatDetails.reduce((sum, seat) => sum + seat.price, 0);
-    const selectedSeatIds = selectedSeatDetails.map(seat => seat.seatId);
+    const selectedSeatDetails = Array.from(newSelectedSeats).map(
+      (seatNum) => seatMap[seatNum]
+    );
+    const totalPrice = selectedSeatDetails.reduce(
+      (sum, seat) => sum + seat.price,
+      0
+    );
+    const selectedSeatIds = selectedSeatDetails.map((seat) => seat.seatId);
 
     onSeatSelect({
       seats: selectedSeatDetails,
       seatIds: selectedSeatIds,
       totalPrice: totalPrice,
-      count: selectedSeatDetails.length
+      count: selectedSeatDetails.length,
     });
   };
 
@@ -126,26 +127,23 @@ export const LayoutSelectSeat = ({
     else if (selectedSeats.has(seatNumber)) return seatColors.selected;
 
     switch (type) {
-      case 'VIP':
+      case "VIP":
         return seatColors.vip;
-      case 'Normal':
+      case "Normal":
         return seatColors.normal;
-      case 'Couple':
+      case "Couple":
         return seatColors.couple;
       default:
         return "text-purple-300";
     }
-    
   };
-
-  
 
   const renderSeat = (seat) => {
     const { seatId, seatNumber, status, type, price } = seat;
     const isSelected = selectedSeats.has(seatNumber);
     const isTaken = status === "taken";
     const isHolding = status === "holding";
-    const isCouple = type === 'Couple';
+    const isCouple = type === "Couple";
     const isClickable = !isTaken && !isHolding;
 
     // Ghế đôi
@@ -154,16 +152,15 @@ export const LayoutSelectSeat = ({
         <div
           key={seatId}
           className="inline-block"
-          style={{ 
+          style={{
             marginRight: `${seatSpacingCouple}px`,
             width: `${widthDouble}px`,
             height: `${heightDouble}px`,
-            position: 'relative'
+            position: "relative",
           }}
         >
           {/* Click area chính xác trên icon */}
-          <div 
-            
+          <div
             className={`
               ${getSeatColor(seat)} 
               transition-opacity duration-200
@@ -174,9 +171,9 @@ export const LayoutSelectSeat = ({
             style={{
               width: `${widthDouble}px`,
               height: `${heightDouble}px`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
             title={`${type} Seat ${seatNumber} - ${price.toLocaleString()}đ - ${status}`}
           >
@@ -184,10 +181,12 @@ export const LayoutSelectSeat = ({
               style={{
                 width: `${widthDouble}px`,
                 height: `${heightDouble}px`,
-                display: 'block',
-                pointerEvents: 'none'
-              }} 
-              onClick={isClickable ? () => handleSeatClick(seatNumber) : undefined}
+                display: "block",
+                pointerEvents: "none",
+              }}
+              onClick={
+                isClickable ? () => handleSeatClick(seatNumber) : undefined
+              }
             />
 
             {/* Tooltip */}
@@ -204,15 +203,15 @@ export const LayoutSelectSeat = ({
       <div
         key={seatId}
         className="inline-block"
-        style={{ 
+        style={{
           marginRight: `${seatSpacing}px`,
           width: `${width}px`,
           height: `${height}px`,
-          position: 'relative'
+          position: "relative",
         }}
       >
         {/* Click area chính xác trên icon */}
-        <div 
+        <div
           onClick={isClickable ? () => handleSeatClick(seatNumber) : undefined}
           className={`
             ${getSeatColor(seat)} 
@@ -224,9 +223,9 @@ export const LayoutSelectSeat = ({
           style={{
             width: `${width}px`,
             height: `${height}px`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
           title={`${type} Seat ${seatNumber} - ${price.toLocaleString()}đ - ${status}`}
         >
@@ -235,18 +234,18 @@ export const LayoutSelectSeat = ({
               style={{
                 width: `${width}px`,
                 height: `${height}px`,
-                display: 'block',
-                pointerEvents: 'none'
-              }} 
+                display: "block",
+                pointerEvents: "none",
+              }}
             />
           ) : (
             <PiArmchairLight
               style={{
                 width: `${width}px`,
                 height: `${height}px`,
-                display: 'block',
-                pointerEvents: 'none'
-              }} 
+                display: "block",
+                pointerEvents: "none",
+              }}
             />
           )}
 
@@ -267,13 +266,13 @@ export const LayoutSelectSeat = ({
     seatLayout.forEach((row) => {
       // Tính width của left side
       const leftWidth = row.leftSeats.reduce((total, seat) => {
-        const seatWidth = seat.type === 'Couple' ? widthDouble : width;
+        const seatWidth = seat.type === "Couple" ? widthDouble : width;
         return total + seatWidth + seatSpacing;
       }, 0);
 
       // Tính width của right side
       const rightWidth = row.rightSeats.reduce((total, seat) => {
-        const seatWidth = seat.type === 'Couple' ? widthDouble : width;
+        const seatWidth = seat.type === "Couple" ? widthDouble : width;
         return total + seatWidth + seatSpacing;
       }, 0);
 
@@ -288,13 +287,13 @@ export const LayoutSelectSeat = ({
 
   const renderRow = (rowData, index) => {
     return (
-      <div 
-        key={rowData.row} 
+      <div
+        key={rowData.row}
         className={`flex items-center justify-center mb-3 transition-all duration-500 ${
-          isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+          isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
         }`}
-        style={{ 
-          transitionDelay: `${index * 100}ms` 
+        style={{
+          transitionDelay: `${index * 100}ms`,
         }}
       >
         {/* Row label - Left */}
@@ -310,13 +309,13 @@ export const LayoutSelectSeat = ({
           style={{ width: `${maxLeftWidth}px` }}
         >
           {rowData.leftSeats.map((seat, seatIndex) => (
-            <div 
-              key={seat.seatId} 
+            <div
+              key={seat.seatId}
               className={`last:mr-0 transition-all duration-300 ${
-                isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
+                isLoaded ? "opacity-100 scale-100" : "opacity-0 scale-75"
               }`}
-              style={{ 
-                transitionDelay: `${(index * 100) + (seatIndex * 50)}ms` 
+              style={{
+                transitionDelay: `${index * 100 + seatIndex * 50}ms`,
               }}
             >
               {renderSeat(seat)}
@@ -338,13 +337,15 @@ export const LayoutSelectSeat = ({
           style={{ width: `${maxRightWidth}px` }}
         >
           {rowData.rightSeats.map((seat, seatIndex) => (
-            <div 
-              key={seat.seatId} 
+            <div
+              key={seat.seatId}
               className={`last:mr-0 transition-all duration-300 ${
-                isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
+                isLoaded ? "opacity-100 scale-100" : "opacity-0 scale-75"
               }`}
-              style={{ 
-                transitionDelay: `${(index * 100) + ((rowData.leftSeats.length + seatIndex) * 50)}ms` 
+              style={{
+                transitionDelay: `${
+                  index * 100 + (rowData.leftSeats.length + seatIndex) * 50
+                }ms`,
               }}
             >
               {renderSeat(seat)}
@@ -362,20 +363,14 @@ export const LayoutSelectSeat = ({
     );
   };
 
-  // Tính tổng giá của ghế đã chọn
-  const getTotalPrice = () => {
-    return Array.from(selectedSeats).reduce((total, seatNumber) => {
-      const seat = seatMap[seatNumber];
-      return total + (seat ? seat.price : 0);
-    }, 0);
-  };
-
   return (
     <div className="text-white rounded-lg" style={{ width: containerWidth }}>
       {/* Screen */}
-      <div className={`w-full h-[60px] relative overflow-hidden mb-8 transition-all duration-700 ${
-        isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
-      }`}>
+      <div
+        className={`w-full h-[60px] relative overflow-hidden mb-8 transition-all duration-700 ${
+          isLoaded ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
+        }`}
+      >
         <svg
           width="100%"
           height="40"
@@ -384,7 +379,13 @@ export const LayoutSelectSeat = ({
           preserveAspectRatio="none"
         >
           <defs>
-            <linearGradient id="purpleGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <linearGradient
+              id="purpleGradient"
+              x1="0%"
+              y1="0%"
+              x2="100%"
+              y2="0%"
+            >
               <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.2" />
               <stop offset="50%" stopColor="#8b5cf6" stopOpacity="1" />
               <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.2" />
@@ -398,7 +399,9 @@ export const LayoutSelectSeat = ({
             fill="none"
           />
         </svg>
-        <div className={`text-center font-medium text-base mt-6 ${textColor} tracking-wider`}>
+        <div
+          className={`text-center font-medium text-base mt-6 ${textColor} tracking-wider`}
+        >
           SCREEN
         </div>
       </div>
@@ -407,36 +410,6 @@ export const LayoutSelectSeat = ({
       <div className="flex flex-col space-y-2">
         {seatLayout.map((row, index) => renderRow(row, index))}
       </div>
-
-      {/* Legend */}
-      {/* <div className={`mt-8 flex justify-center flex-wrap gap-6 text-sm transition-all duration-700 ${
-        isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-      }`} style={{ transitionDelay: `${seatLayout.length * 100 + 200}ms` }}>
-        <div className="flex items-center space-x-2">
-          <PiArmchairLight className="text-purple-300" size={20} />
-          <span className="text-gray-400">Normal</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <PiArmchairLight className="text-purple-200" size={20} />
-          <span className="text-gray-400">VIP</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <MdOutlineChair className="text-purple-400" size={20} />
-          <span className="text-gray-400">Couple</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <PiArmchairFill className="text-purple-100" size={20} />
-          <span className="text-gray-400">Selected</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <PiArmchairFill className="text-purple-600" size={20} />
-          <span className="text-gray-400">Taken</span>
-        </div>
-         <div className="flex items-center space-x-2">
-          <PiArmchairFill className={seatColors.holding} size={20} />
-          <span className="text-gray-400">Holding</span>
-        </div>
-      </div> */}
       <div className="mt-8 overflow-x-auto w-full flex items-center justify-center">
         <div className="flex justify-center items-center flex-wrap gap-4 sm:gap-6 text-sm sm:text-lg w-full sm:px-3 max-w-full px-5">
           <div className="flex items-center space-x-2 min-w-fit">
@@ -466,28 +439,9 @@ export const LayoutSelectSeat = ({
         </div>
       </div>
 
-
-
-      {/* Selected Seats Info */}
-      {/* {selectedSeats.size > 0 && (
-        <div className="mt-6 p-4 bg-white/5 rounded-lg backdrop-blur-sm animate-fade-in">
-          <div className="text-center">
-            <p className="text-sm text-gray-300 mb-2">
-              Selected: <span className="font-semibold">{selectedSeats.size}</span> seats
-            </p>
-            <p className="text-sm text-gray-300 mb-3">
-              Seats: <span className="font-semibold">{Array.from(selectedSeats).join(', ')}</span>
-            </p>
-            <p className="text-xl font-bold text-white">
-              Total: <span className="text-purple-200">{getTotalPrice().toLocaleString()}₫</span>
-            </p>
-          </div>
-        </div>
-      )} */}
-
-      <style jsx>{`
+      <style>{`
         @keyframes fade-in {
-          from { opacity: 0; transform: translateY(10px); }
+          from { opacity: 0; t    ransform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-in {

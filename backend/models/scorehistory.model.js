@@ -43,6 +43,48 @@ class ScoreHistory {
     }
   }
 
+  // Lấy lịch sử điểm theo MemberId
+  static async getScoreHistoryByMemberId(memberId, page = 1, limit = 0) {
+    if (limit <= 0) {
+      const [rows] = await db
+        .promise()
+        .query(
+          "SELECT * FROM ScoreHistory WHERE IsDeleted = 0 AND MemberId = ? ORDER BY CreatedAt DESC",
+          [memberId]
+        );
+      return {
+        scoreHistory: rows,
+        pagination: {
+          total: rows.length,
+          currentPage: 1,
+          totalPages: 1,
+          limit: rows.length,
+        },
+      };
+    } else {
+      const offset = (page - 1) * limit;
+      const [rows] = await db
+        .promise()
+        .query(
+          "SELECT * FROM ScoreHistory WHERE IsDeleted = 0 AND MemberId = ? ORDER BY CreatedAt DESC LIMIT ? OFFSET ?",
+          [memberId, limit, offset]
+        );
+      const [countResult] = await db
+        .promise()
+        .query("SELECT COUNT(*) as total FROM ScoreHistory WHERE IsDeleted = 0 AND MemberId = ?", [memberId]);
+      const total = countResult[0].total;
+      return {
+        scoreHistory: rows,
+        pagination: {
+          total,
+          currentPage: page,
+          totalPages: Math.ceil(total / limit),
+          limit,
+        },
+      };
+    }
+  }
+
   static async createScoreHistory({ MemberId, RelatedBookingId, ScoreValue, ChangeType, ChangeDate, CreatedBy }) {
     const ScoreHistoryId = uuidv4();
     const changeDate = ChangeDate || new Date();
