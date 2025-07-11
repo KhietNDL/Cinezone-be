@@ -629,6 +629,15 @@ export const createShowtime = async (showtimeData) => {
   }
 };
 
+export const getScoreHistoryByMemberId = async (MemberId) => {
+  try {
+    const response = await api.get(`/scorehistory/member/${MemberId}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
 // API Analytics
 export const getRevenueByMonth = async (year) => {
   try {
@@ -640,6 +649,8 @@ export const getRevenueByMonth = async (year) => {
     handleError(error);
   }
 };
+
+
 
 export const getRevenueByQuarter = async (year) => {
   try {
