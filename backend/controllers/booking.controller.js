@@ -85,7 +85,7 @@ const getLatestBookingByMemberId = async (req, res) => {
 
 const holdBooking = async (req, res) => {
   try {
-    const { userId, showtimeId, seatIds, productIds, promotionTitle, PointsToUse } = req.body;
+    const { userId, showtimeId, seatIds, productIds, promotionCode, PointsToUse } = req.body;
     // Lấy user
     const user = await User.findById(userId);
     // Lấy thông tin loại ghế từ seatIds
@@ -115,7 +115,7 @@ const holdBooking = async (req, res) => {
     }
     
     // Gọi holdBooking ở model, truyền thêm discount để trừ vào tổng tiền
-    const result = await Booking.holdBooking({ userId, showtimeId, seatIds, productIds, promotionTitle, discount });
+    const result = await Booking.holdBooking({ userId, showtimeId, seatIds, productIds, promotionCode, discount });
     
     // Nếu dùng điểm, trừ điểm và ghi lịch sử
     if (pointsUsed > 0) {

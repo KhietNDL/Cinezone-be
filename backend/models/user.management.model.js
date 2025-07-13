@@ -111,28 +111,11 @@ class UserManagement {
   static async updateUser(userId, userData) {
     if (!userId || !userData || Object.keys(userData).length === 0) return false;
 
-    // Nếu có password mới thì hash lại
-    if (userData.password) {
-      userData.Password = await bcrypt.hash(userData.password, 10);
-      delete userData.password;
-    }
-    // Chuyển các trường camelCase sang đúng tên cột DB nếu cần
-    if (userData.fullName) { userData.FullName = userData.fullName; delete userData.fullName; }
-    if (userData.dateOfBirth) { userData.DateOfBirth = userData.dateOfBirth; delete userData.dateOfBirth; }
-    if (userData.sex) { userData.Sex = userData.sex; delete userData.sex; }
-    if (userData.email) { userData.Email = userData.email; delete userData.email; }
-    if (userData.phoneNumber) { userData.PhoneNumber = userData.phoneNumber; delete userData.phoneNumber; }
-    if (userData.address) { userData.Address = userData.address; delete userData.address; }
-    if (userData.cccd) { userData.CCCD = userData.cccd; delete userData.cccd; }
-    if (userData.avatar_url) { userData.avatar_url = userData.avatar_url; }
-
     const updateKeys = Object.keys(userData);
     const updateValues = Object.values(userData);
 
-    if (updateKeys.length === 0) return false;
-
     const setClauses = updateKeys.map((key) => `\`${key}\` = ?`).join(", ");
-    const query = `UPDATE Users SET ${setClauses}, UpdatedAt = NOW() WHERE UserId = ? AND Role = 1 AND IsDeleted = 0`;
+    const query = `UPDATE Users SET ${setClauses}, UpdatedAt = NOW() WHERE UserId = ? AND IsDeleted = 0`;
     const values = [...updateValues, userId];
 
     const [result] = await db.promise().query(query, values);

@@ -135,9 +135,9 @@ const getUserByEmail = async (req, res) => {
 const createUser = async (req, res) => {
   try {
     // Xử lý upload avatar nếu có file gửi lên
-    if (req.file) {
+    if (req.files && req.files.avatar && req.files.avatar[0]) {
       // Nếu dùng Firebase:
-      const avatarFile = req.file;
+      const avatarFile = req.files.avatar[0];
       const avatarFileName = `avatars/${Date.now()}-${avatarFile.originalname.replace(/\s+/g, "_")}`;
       const avatarBlob = bucket.file(avatarFileName);
 
@@ -214,7 +214,7 @@ const updateUser = async (req, res) => {
     }
 
     // Xử lý upload avatar nếu có file gửi lên
-    if (req.file) {
+    if (req.files && req.files.avatar && req.files.avatar[0]) {
       // Xóa avatar cũ trên Firebase nếu có
       if (existingUser.avatar_url) {
         try {
@@ -229,7 +229,7 @@ const updateUser = async (req, res) => {
       }
 
       // Upload avatar mới lên Firebase
-      const avatarFile = req.file;
+      const avatarFile = req.files.avatar[0];
       const avatarFileName = `avatars/${Date.now()}-${avatarFile.originalname.replace(/\s+/g, "_")}`;
       const avatarBlob = bucket.file(avatarFileName);
 
