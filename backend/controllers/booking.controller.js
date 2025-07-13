@@ -85,9 +85,9 @@ const getLatestBookingByMemberId = async (req, res) => {
 
 const holdBooking = async (req, res) => {
   try {
-    const { userId, showtimeId, seatIds, productIds, promotionTitle, PointsToUse } = req.body;
+    const { userId, showtimeId, seatIds, productIds, promotionCode, PointsToUse } = req.body;
     // Kiểm tra chỉ được dùng 1 trong 2: điểm hoặc promotion
-    if (promotionTitle && PointsToUse) {
+    if (promotionCode && PointsToUse) {
       return res.status(400).json({ error: 'Chỉ được dùng 1 trong 2: điểm hoặc promotion!' });
     }
     // Lấy user
@@ -120,7 +120,8 @@ const holdBooking = async (req, res) => {
     }
     // Nếu không dùng điểm, discount = 0
     // Gọi holdBooking ở model, truyền thêm discount để trừ vào tổng tiền
-    const result = await Booking.holdBooking({ userId, showtimeId, seatIds, productIds, promotionTitle, discount });
+    const result = await Booking.holdBooking({ userId, showtimeId, seatIds, productIds, promotionCode, discount });
+    
     // Nếu dùng điểm, trừ điểm và ghi lịch sử
     if (pointsUsed > 0) {
       await User.updateScoreBalance(userId, newScoreBalance);

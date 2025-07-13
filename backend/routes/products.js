@@ -175,5 +175,26 @@ router.put('/:productId', auth, upload.fields([{ name: 'image', maxCount: 1 }]),
  *         description: Internal server error
  */
 router.delete('/:productId', auth, productController.deleteProduct);
+/** 
+ * @swagger
+ * /api/products/combo-children/{productId}:
+ *   get:
+ *     summary: Get children products of a combo by combo ProductId
+ *     tags: [Products]
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Children products of combo
+ *       404:
+ *         description: Combo product not found or not a combo
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/combo-children/:productId', productController.getComboChildren);
 
 module.exports = router;

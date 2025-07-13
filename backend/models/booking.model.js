@@ -2,6 +2,8 @@ const db = require("../config/database");
 const { v4: uuidv4 } = require("uuid");
 const { normalizeDate } = require("../middlewares/showtime.validator");
 const Ticket = require("./ticket.model"); // Đảm bảo đã require ở đầu file
+const io = global._io;
+
 class Booking {
   static async getBookingById(bookingId) {
     const sql = `SELECT * FROM Bookings WHERE BookingId = ? AND IsDeleted = 0`;
@@ -24,43 +26,43 @@ class Booking {
     return bookingDetails;
   }
 
-static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrder = 'desc' } = {}) {
-  let sql = `SELECT * FROM Bookings WHERE IsDeleted = 0`;
-  let countSql = `SELECT COUNT(*) as total FROM Bookings WHERE IsDeleted = 0`;
-  const params = [];
+  static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrder = 'desc' } = {}) {
+    let sql = `SELECT * FROM Bookings WHERE IsDeleted = 0`;
+    let countSql = `SELECT COUNT(*) as total FROM Bookings WHERE IsDeleted = 0`;
+    const params = [];
 
-  // Sorting
-  const allowedSort = ['CreatedAt', 'BookingDate', 'TotalAmount', 'Status'];
-  if (!allowedSort.includes(sortBy)) sortBy = 'CreatedAt';
-  if (!['asc', 'desc'].includes(sortOrder.toLowerCase())) sortOrder = 'desc';
+    // Sorting
+    const allowedSort = ['CreatedAt', 'BookingDate', 'TotalAmount', 'Status'];
+    if (!allowedSort.includes(sortBy)) sortBy = 'CreatedAt';
+    if (!['asc', 'desc'].includes(sortOrder.toLowerCase())) sortOrder = 'desc';
 
-  sql += ` ORDER BY ${sortBy} ${sortOrder.toUpperCase()}`;
+    sql += ` ORDER BY ${sortBy} ${sortOrder.toUpperCase()}`;
 
-  // Pagination
-  let total = 0;
-  if (limit > 0) {
-    const [[countRow]] = await db.promise().query(countSql);
-    total = countRow.total;
-    const offset = (page - 1) * limit;
-    sql += ` LIMIT ? OFFSET ?`;
-    params.push(Number(limit), Number(offset));
+    // Pagination
+    let total = 0;
+    if (limit > 0) {
+      const [[countRow]] = await db.promise().query(countSql);
+      total = countRow.total;
+      const offset = (page - 1) * limit;
+      sql += ` LIMIT ? OFFSET ?`;
+      params.push(Number(limit), Number(offset));
+    }
+
+    const [rows] = await db.promise().query(sql, params);
+
+    if (limit > 0) {
+      return {
+        data: rows,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          totalPages: Math.ceil(total / limit)
+        }
+      };
+    }
+    return { data: rows };
   }
-
-  const [rows] = await db.promise().query(sql, params);
-
-  if (limit > 0) {
-    return {
-      data: rows,
-      pagination: {
-        page: Number(page),
-        limit: Number(limit),
-        total,
-        totalPages: Math.ceil(total / limit)
-      }
-    };
-  }
-  return { data: rows };
-}
 
   static async createBooking(data) {
     const {
@@ -148,7 +150,7 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
     userId,
     showtimeId,
     seatIds,
-    promotionTitle,
+    promotionCode,
     discount = 0,
     CreatedBy,
   }) {
@@ -179,10 +181,10 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
       // 2. Xử lý promotion hoặc discount (chỉ 1 trong 2)
       let promotionDiscount = 0; // phần trăm
       let promotionId = null;
-      if (promotionTitle) {
+      if (promotionCode) {
         const [promotion] = await connection.query(
-          `SELECT DiscountValue, PromotionId FROM Promotions WHERE Title = ? AND IsDeleted = 0`,
-          [promotionTitle]
+          `SELECT DiscountValue, PromotionId FROM Promotions WHERE Code = ? AND IsDeleted = 0`,
+          [promotionCode]
         );
         if (promotion.length === 0) {
           throw new Error("Promotion not found");
@@ -273,8 +275,6 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
         [bookingId]
       );
 
-      await connection.commit();
-
       // Gửi email xác nhận booking sau khi confirm thành công
       try {
         const BookingEmailService = require('../services/bookingEmailService');
@@ -329,6 +329,21 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
       } catch (emailError) {
         console.error('Error sending booking confirmation email:', emailError);
         // Không fail booking nếu gửi email thất bại
+      }
+          await connection.commit();
+
+      // Lấy io tại đây, đảm bảo luôn lấy giá trị mới nhất
+      const io = global._io;
+      const [[booking]] = await db.promise().query(
+        `SELECT MemberId FROM Bookings WHERE BookingId = ?`, [bookingId]
+      );
+      if (io && booking && booking.MemberId) {
+        io.to(booking.MemberId).emit('notification', {
+          type: 'booking',
+          bookingId,
+          status: 2,
+          message: 'Your ticket has been confirmed!'
+        });
       }
     } catch (err) {
       await connection.rollback();
@@ -433,6 +448,20 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
       }
 
       await connection.commit();
+
+      // Gửi notification realtime khi cancel
+      const io = global._io;
+      const [[booking]] = await db.promise().query(
+        `SELECT MemberId FROM Bookings WHERE BookingId = ?`, [bookingId]
+      );
+      if (io && booking && booking.MemberId) {
+        io.to(booking.MemberId).emit('notification', {
+          type: 'booking',
+          bookingId,
+          status: 4,
+          message: 'Your ticket has been cancelled!'
+        });
+      }
       return true;
     } catch (err) {
       await connection.rollback();
@@ -446,7 +475,7 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
     const [rows] = await db
       .promise()
       .query(
-        "SELECT Status FROM Bookings WHERE BookingId = ? AND IsDeleted = 0",
+        "SELECT Status, MemberId FROM Bookings WHERE BookingId = ? AND IsDeleted = 0",
         [bookingId]
       );
     if (!rows[0]) {
@@ -461,6 +490,19 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
         "UPDATE Bookings SET Status = 3, UpdatedAt = NOW() WHERE BookingId = ? AND Status = 2 AND IsDeleted = 0",
         [bookingId]
       );
+
+    // Gửi notification realtime khi checkin
+    const io = global._io;
+    const memberId = rows[0].MemberId;
+    if (io && memberId) {
+      io.to(memberId).emit('notification', {
+        type: 'booking',
+        bookingId,
+        status: 3,
+        message: 'Your ticket has been checked in!'
+      });
+    }
+
     return {
       success: result.affectedRows > 0,
       message:
