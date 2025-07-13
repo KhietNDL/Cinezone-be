@@ -41,9 +41,6 @@ const VersionCard = ({ version, selectedVersion, children, readonly = false, cla
                     {!readonly && children}
                 </div>
             </div>
-
-            {/* Hiển thị children nếu có (ví dụ: ShowtimeButton) */}
-
         </div>
     );
 };
