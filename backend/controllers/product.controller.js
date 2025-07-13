@@ -3,8 +3,13 @@ const bucket = require('../config/firebase');
 
 const getAllProducts = async (req, res) => {
   try {
-    const products = await Product.getAllProducts();
-    res.json({ Products: products });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 0;
+    const sortBy = req.query.sortBy || 'ProductName';
+    const sortOrder = req.query.sortOrder || 'asc';
+
+    const result = await Product.getAllProducts(page, limit, sortBy, sortOrder);
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { createCashPaymentForProduct, createProductHold, createMomoPaymentForProducts } from '../../../services/APIForStaff/API';
 import { useAuth } from '../../../context/AuthContext';
 import { toast } from 'react-toastify';
-import {FaTimes} from "react-icons/fa";
+import { FaCheck, FaTimes } from "react-icons/fa";
 import { FaArrowLeft, FaMoneyBillWave } from "react-icons/fa6";
 import momo from "../../../assets/momo-seeklogo.png";
 import vnpay from "../../../assets/vnpay-seeklogo.png";
@@ -118,11 +118,11 @@ export default function CheckOutComboPage() {
     }
   };
 
-    const handleCancel = () => {
-      dispatch(clearComboCart());
-      dispatch(clearOrderInfo());
-      navigate("/staff/combo-selling");
-    };
+  const handleCancel = () => {
+    dispatch(clearComboCart());
+    dispatch(clearOrderInfo());
+    navigate("/staff/combo-selling");
+  };
 
   const columns = [
     {
@@ -159,7 +159,7 @@ export default function CheckOutComboPage() {
       <h1 className="text-3xl font-bold mb-4 text-[#9810FA] justify-between items-center flex flex-col sm:flex-row">
         Confirm Combos
       </h1>
-       <div className="mb-4 flex justify-start">
+      <div className="mb-4 flex justify-start">
         <Button icon={<FaArrowLeft />} onClick={() => navigate(-1)}>
           Back
         </Button>
@@ -214,23 +214,21 @@ export default function CheckOutComboPage() {
         </div>
       </div>
 
-      <div className="flex justify-end gap-4">
+      <div className="flex justify-center gap-4 mt-5">
+        <Button
+          type="primary"
+          icon={<FaCheck />}
+          loading={loading}
+          onClick={handlePayment}
+        >
+          Confirm
+        </Button>
         <Button
           danger
           onClick={handleCancel}
-          style={{ width: 120, fontWeight: 600, fontSize: 16 }}
           icon={<FaTimes />}
         >
           Cancel
-        </Button>
-        <Button
-          type="primary"
-          icon={<FaMoneyBillWave />}
-          loading={loading}
-          onClick={handlePayment}
-          style={{ backgroundColor: '#7254EF', borderColor: '#7254EF' }}
-        >
-          Confirm
         </Button>
       </div>
     </div>

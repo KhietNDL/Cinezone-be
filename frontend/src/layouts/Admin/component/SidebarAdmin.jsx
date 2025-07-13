@@ -4,7 +4,7 @@ import { IoTicketSharp } from "react-icons/io5";
 import { FaDoorOpen, FaTicket, FaUser } from "react-icons/fa6";
 import { NavLink } from "react-router-dom";
 import { X } from "lucide-react";
-
+import { AiOutlineProduct } from "react-icons/ai";
 const SidebarAdmin = ({ onClose }) => {
   const menu = [
     {
@@ -36,6 +36,11 @@ const SidebarAdmin = ({ onClose }) => {
       label: "Ticket Booking Management",
       icon: <IoTicketSharp size={20} />,
       to: "/admin/bookings",
+    },
+    {
+      label: "Product Management",
+      icon: <AiOutlineProduct size={20} />,
+      to: "/admin/products",
     },
     {
       label: "Promotion Management",

@@ -130,7 +130,7 @@ export default function ComboInformation() {
         </div>
 
         {/* Actions */}
-        <div className="flex justify-center items-center gap-6 p-8 w-full max-w-2xl">
+        <div className="flex justify-center gap-4 mt-6">
           {status === "error" ? (
             <Button
               icon={<FaRedo />}

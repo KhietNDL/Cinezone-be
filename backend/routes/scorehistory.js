@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getAllScoreHistory } = require('../controllers/scorehistory.controller');
+const { getAllScoreHistory, getScoreHistoryByMemberId } = require('../controllers/scorehistory.controller');
 
 /**
  * @swagger
@@ -61,6 +61,41 @@ router.get('/', getAllScoreHistory);
  *         description: Server error
  */
 router.post('/create', require('../controllers/scorehistory.controller').createScoreHistory);
+
+/**
+ * @swagger
+ * /api/scorehistory/member/{memberId}:
+ *   get:
+ *     summary: Get score history by memberId with pagination
+ *     tags: [ScoreHistory]
+ *     parameters:
+ *       - in: path
+ *         name: memberId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: MemberId
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of records per page (0 = all)
+ *     responses:
+ *       200:
+ *         description: List of score history for member with pagination info
+ *       404:
+ *         description: Not found
+ *       500:
+ *         description: Server error
+ */
+router.get('/member/:memberId', getScoreHistoryByMemberId);
 
 /**
  * @swagger

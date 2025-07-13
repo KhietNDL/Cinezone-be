@@ -182,7 +182,7 @@ export default function ComboPage() {
                                 pagination={{ clickable: true }}
                                 spaceBetween={50}
                                 slidesPerView={4}
-                                slidesPerGroup={2}
+                                slidesPerGroup={1}
                                 loop={true}
                                 breakpoints={{
                                     320: { slidesPerView: 1 },
@@ -224,17 +224,17 @@ export default function ComboPage() {
                             {formatPrice(cart.reduce((sum, item) => sum + item.price * item.quantity, 0))} VNĐ
                         </p>
                     </div>
-                    <div className="flex justify-center gap-4 mt-8">
+                    <div className="flex justify-center gap-4 mt-5">
                         <Button
-                            style={{ width: 180, fontWeight: 600, fontSize: 16, backgroundColor: '#7254EF', color: 'white' }}
+                            type='primary'
                             icon={<FaCheck />}
                             onClick={handleCheckout}
+                            disabled={cart.length === 0}
                         >
                             Check out
                         </Button>
                         <Button
                             danger
-                            style={{ width: 120, fontWeight: 600, fontSize: 16 }}
                             icon={<FaXmark />}
                             onClick={handleCancel}
                         >

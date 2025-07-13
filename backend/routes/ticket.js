@@ -17,9 +17,8 @@ const ticketController = require('../controllers/ticket.controller');
  *             properties:
  *               BookingId:
  *                 type: string
- *               IssuedAt:
+ *               SeatId:
  *                 type: string
- *                 format: date-time
  *               TotalPrice:
  *                 type: number
  *     responses:
@@ -43,7 +42,41 @@ router.post('/', ticketController.createTicket);
  *         description: Internal server error
  */
 router.get('/', ticketController.getAllTickets);
-
+/**
+ * @swagger
+ * /api/tickets/stats:
+ *   get:
+ *     summary: Get ticket statistics by day, month, or year
+ *     tags: [Tickets]
+ *     parameters:
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [day, month, year]
+ *         required: true
+ *         description: Statistic type (day, month, year)
+ *       - in: query
+ *         name: year
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: Year for statistics
+ *       - in: query
+ *         name: month
+ *         schema:
+ *           type: integer
+ *         required: false
+ *         description: Month for statistics (required if type=day)
+ *     responses:
+ *       200:
+ *         description: Statistic result list
+ *       400:
+ *         description: Missing parameters
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/stats', ticketController.getTicketStats);
 /**
  * @swagger
  * /api/tickets/{ticketId}:
@@ -110,9 +143,8 @@ router.get('/booking/:bookingId', ticketController.getTicketsByBookingId);
  *             properties:
  *               BookingId:
  *                 type: string
- *               IssuedAt:
+ *               SeatId:
  *                 type: string
- *                 format: date-time
  *               TotalPrice:
  *                 type: number
  *     responses:
@@ -146,5 +178,6 @@ router.put('/:ticketId', ticketController.updateTicket);
  *         description: Internal server error
  */
 router.delete('/:ticketId', ticketController.deleteTicket);
+
 
 module.exports = router;

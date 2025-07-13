@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/orderProduct.controller');
 const { auth } = require('../middlewares/auth.middleware');
+const { orderProductValidator } = require('../middlewares/orderProduct.validator');
 
 /**
  * @swagger
@@ -72,24 +73,6 @@ router.get('/', controller.getAll);
  *         description: Not found
  */
 router.get('/:id', controller.getById);
-
-/**
- * @swagger
- * /api/order-products/create:
- *   post:
- *     summary: Create a new order product
- *     tags: [OrderProduct]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/OrderProduct'
- *     responses:
- *       201:
- *         description: Created successfully
- */
-router.post('/create', auth, controller.create);
 
 /**
  * @swagger
@@ -173,7 +156,7 @@ router.delete('/:id', auth, controller.delete);
  *       500:
  *         description: Internal server error
  */
-router.post('/hold', controller.holdOrder);
+router.post('/hold', orderProductValidator, controller.holdOrder);
 /**
  * @swagger
  * /api/order-products/confirm/{id}:

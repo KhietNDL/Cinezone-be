@@ -1,4 +1,3 @@
-import React from "react";
 import { IoEyeOutline } from "react-icons/io5";
 import { FaRegEdit } from "react-icons/fa";
 import { RiDeleteBin5Line } from "react-icons/ri";
@@ -13,6 +12,7 @@ const MovieTable = ({
   handleDelete,
   handleRowClick,
   formatDate,
+  openAddShowtimePopup,
 }) => {
   return (
     <div className="bg-white md:p-2 lg:p-4 rounded-md shadow-sm">
@@ -200,6 +200,29 @@ const MovieTable = ({
                     title="Delete"
                   >
                     <RiDeleteBin5Line size={20} />
+                  </div>
+                  <div
+                    role="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openAddShowtimePopup(mov);
+                    }}
+                    className="text-green-500 hover:text-green-700"
+                    title="Add Showtime"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
                   </div>
                 </div>
               </td>
