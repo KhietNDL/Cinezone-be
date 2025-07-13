@@ -9,9 +9,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { login } from "../../services/API";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
-import { jwtDecode } from "jwt-decode";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { auth } from "../../config/firebase";
+
 const MovieTheaterLogin = () => {
   const { signIn } = useAuth();
   const [formData, setFormData] = useState({
@@ -70,20 +68,14 @@ const MovieTheaterLogin = () => {
           email: formData.email,
           password: formData.password,
         });
+        console.log("Login API response:", response);
 
         if (response.token && response.user?.userId) {
           await signIn(response.token, response.user.userId);
           setIsLoading(false);
           toast.success("Login Successfully!");
 
-          const decoded = jwtDecode(response.token);
-          if (decoded.role === 1) {
-            navigate("/");
-          } else if (decoded.role === 3) {
-            navigate("/admin/dashboard");
-          } else if (decoded.role === 2) {
-            navigate("/staff");
-          }
+          navigate("/");
         } else {
           throw new Error("No token in response");
         }
@@ -95,54 +87,9 @@ const MovieTheaterLogin = () => {
     }
   };
 
-  // const handleLoginGoogle = async () => {
-  //   setIsGoogleLoading(true);
-  //   const provider = new GoogleAuthProvider();
-  //   try {
-  //     const result = await signInWithPopup(auth, provider);
-  //     const user = result.user;
-  //     // Nếu bạn có backend xử lý Google login, gửi user info lên backend để lấy token và userId
-  //     // Ví dụ:
-  //     // const response = await loginWithGoogle({ email: user.email, ... });
-  //     // await signIn(response.token, response.user.userId);
-
-  //     // Nếu chỉ dùng firebase, bạn có thể lưu user vào context/localStorage
-  //     await signIn(user.accessToken, user.uid); // hoặc truyền các giá trị phù hợp với context của bạn
-
-  //     toast.success("Đăng nhập Google thành công!");
-  //     navigate("/"); // hoặc navigate("/user") nếu UserLayout ở đó
-  //   } catch (error) {
-  //     console.error("Đăng nhập Google thất bại:", error);
-  //     toast.error("Đăng nhập Google thất bại!");
-  //   } finally {
-  //     setIsGoogleLoading(false);
-  //   }
-  // };
-  const handleLoginGoogle = () => {
-    console.log("login google...");
-    const provider = new GoogleAuthProvider();
-    signInWithPopup(auth, provider)
-      .then((result) => {
-        // eslint-disable-next-line no-unused-vars
-        const token = result.user.accessToken;
-        const user = result.user;
-
-        console.log(user);
-      })
-      .catch((error) => {
-        // Handle Errors here.
-        // eslint-disable-next-line no-unused-vars
-        const errorCode = error.code;
-        // eslint-disable-next-line no-unused-vars
-        const errorMessage = error.message;
-        // The email of the user's account used.
-        // eslint-disable-next-line no-unused-vars
-        const email = error.customData.email;
-        // The AuthCredential type that was used.
-        // eslint-disable-next-line no-unused-vars
-        const credential = GoogleAuthProvider.credentialFromError(error);
-        // ...
-      });
+  const handleGoogleLogin = () => {
+    // window.location.href = "http://localhost:4458/api/auth/login-google";
+    window.location.href = "http://cinezone:4458/api/auth/login-google";
   };
 
   return (
@@ -214,7 +161,7 @@ const MovieTheaterLogin = () => {
             <div className="mb-6">
               <button
                 type="button"
-                onClick={handleLoginGoogle}
+                onClick={handleGoogleLogin}
                 disabled={isGoogleLoading}
                 className="w-full py-3 px-6 rounded-xl font-semibold text-lg transition-all duration-200 transform hover:scale-[1.02] hover:shadow-lg
                        bg-white text-gray-700 border border-gray-300 flex items-center justify-center space-x-3
@@ -262,103 +209,102 @@ const MovieTheaterLogin = () => {
             </div>
 
             <div className="space-y-2">
-              <form onSubmit={handleSubmit}>
-                {/* Email input */}
-                <div className="relative mb-8">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-purple-400 z-10">
-                    <Mail className="h-5 w-5" />
-                  </div>
-                  <input
-                    type="email"
-                    className="block w-full pl-12 pr-4 py-3 text-base border-2 rounded-xl bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-purple-500 focus:border-transparent transition-all duration-300 border-white/10 hover:border-white/40 backdrop-blur-sm"
-                    placeholder="Enter your email"
-                    value={formData.email}
-                    onFocus={() => setFocusedField("email")}
-                    onBlur={() => setFocusedField("")}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                  />
-                  <div className="absolute -bottom-6 left-0 w-full">
-                    {errors.email && (
-                      <p className="text-sm text-red-400 animate-pulse">
-                        {errors.email}
-                      </p>
-                    )}
-                  </div>
+              {/* Email input */}
+              <div className="relative mb-8">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-purple-400 z-10">
+                  <Mail className="h-5 w-5" />
                 </div>
+                <input
+                  type="email"
+                  className="block w-full pl-12 pr-4 py-3 text-base border-2 rounded-xl bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-purple-500 focus:border-transparent transition-all duration-300 border-white/10 hover:border-white/40 backdrop-blur-sm"
+                  placeholder="Enter your email"
+                  value={formData.email}
+                  onFocus={() => setFocusedField("email")}
+                  onBlur={() => setFocusedField("")}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                />
+                <div className="absolute -bottom-6 left-0 w-full">
+                  {errors.email && (
+                    <p className="text-sm text-red-400 animate-pulse">
+                      {errors.email}
+                    </p>
+                  )}
+                </div>
+              </div>
 
-                {/* Password input */}
-                <div className="relative mb-8">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-purple-400 z-10">
-                    <Lock className="h-5 w-5" />
-                  </div>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    className="block w-full pl-12 pr-12 py-3 text-base border-2 rounded-xl bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-purple-500 focus:border-transparent transition-all duration-300 border-white/10 hover:border-white/40 backdrop-blur-sm"
-                    placeholder="Enter password"
-                    value={formData.password}
-                    onFocus={() => setFocusedField("password")}
-                    onBlur={() => setFocusedField("")}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                  />
-                  <button
-                    type="button"
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center hover:scale-110 transition-transform duration-200 z-10"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5 text-purple-400 hover:text-purple-300" />
-                    ) : (
-                      <Eye className="h-5 w-5 text-purple-400 hover:text-purple-300" />
-                    )}
-                  </button>
-                  <div className="absolute -bottom-6 left-0 w-full">
-                    {errors.password && (
-                      <p className="text-sm text-red-400 animate-pulse">
-                        {errors.password}
-                      </p>
-                    )}
-                    {errors.api && (
-                      <p className="text-sm text-red-400 animate-pulse">
-                        {errors.api}
-                      </p>
-                    )}
-                  </div>
+              {/* Password input */}
+              <div className="relative mb-8">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-purple-400 z-10">
+                  <Lock className="h-5 w-5" />
                 </div>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className="block w-full pl-12 pr-12 py-3 text-base border-2 rounded-xl bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-purple-500 focus:border-transparent transition-all duration-300 border-white/10 hover:border-white/40 backdrop-blur-sm"
+                  placeholder="Enter password"
+                  value={formData.password}
+                  onFocus={() => setFocusedField("password")}
+                  onBlur={() => setFocusedField("")}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center hover:scale-110 transition-transform duration-200 z-10"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5 text-purple-400 hover:text-purple-300" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-purple-400 hover:text-purple-300" />
+                  )}
+                </button>
+                <div className="absolute -bottom-6 left-0 w-full">
+                  {errors.password && (
+                    <p className="text-sm text-red-400 animate-pulse">
+                      {errors.password}
+                    </p>
+                  )}
+                  {errors.api && (
+                    <p className="text-sm text-red-400 animate-pulse">
+                      {errors.api}
+                    </p>
+                  )}
+                </div>
+              </div>
 
-                {/* Forgot password */}
-                <div className="w-full flex justify-end mb-2">
-                  <Link
-                    to="/forgot"
-                    className="text-purple-400 hover:text-purple-300 hover:underline text-sm font-medium"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
+              {/* Forgot password */}
+              <div className="w-full flex justify-end mb-2">
+                <Link
+                  to="/forgot"
+                  className="text-purple-400 hover:text-purple-300 hover:underline text-sm font-medium"
+                >
+                  Forgot password?
+                </Link>
+              </div>
 
-                {/* Submit button */}
-                <div>
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full py-3 px-6 rounded-xl font-semibold text-lg transition-all duration-150 transform
-                         bg-gradient-to-r from-purple-500 to-purple-600 text-white
-                         disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                  >
-                    {isLoading ? (
-                      <div className="flex items-center justify-center space-x-3">
-                        <div className="w-5 h-5 border-2 border-white/10 border-t-white rounded-full animate-spin"></div>
-                        <span className="text-base">Signing In...</span>
-                      </div>
-                    ) : (
-                      "Sign In"
-                    )}
-                  </button>
-                </div>
-              </form>
+              {/* Submit button */}
+              <div>
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={isLoading}
+                  className="w-full py-3 px-6 rounded-xl font-semibold text-lg transition-all duration-150 transform
+                       bg-gradient-to-r from-purple-500 to-purple-600 text-white
+                       disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                >
+                  {isLoading ? (
+                    <div className="flex items-center justify-center space-x-3">
+                      <div className="w-5 h-5 border-2 border-white/10 border-t-white rounded-full animate-spin"></div>
+                      <span className="text-base">Signing In...</span>
+                    </div>
+                  ) : (
+                    "Sign In"
+                  )}
+                </button>
+              </div>
             </div>
             <p className="mt-6 text-center text-base text-gray-300">
               New to CineZone?{" "}
