@@ -84,11 +84,6 @@ app.use('/api/order-product-details', orderProductDetailRoutes);
 app.use('/api/order-products', orderProductRoutes);
 app.use('/api/ratings', ratingRoutes);
 
-// Log all incoming requests for debugging
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
-  next();
-});
 app.use("/api/analytics", analyticsRoutes);
 
 //port
