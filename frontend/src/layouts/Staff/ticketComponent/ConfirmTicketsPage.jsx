@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
 import { toast } from "react-toastify";
@@ -14,7 +14,7 @@ import vnpay from "../../../assets/vnpay-seeklogo.png";
 import momo from "../../../assets/momo-seeklogo.png";
 import zalopay from '../../../assets/zalopay-seeklogo.svg';
 import {
-  getMovieById, getUserByEmail, getUserByCCCD, getUserByPhone, convertScoreToMoney, cancelBookingById,
+  getMovieById, getUserByEmail, getUserByCCCD, getUserByPhone, cancelBookingById,
   checkPromotion, createBookingHold, createMomoPayment, createCashPayment, confirmBooking
 } from "../../../services/APIForStaff/API";
 import { useAuth } from "../../../context/AuthContext";
@@ -28,7 +28,7 @@ import {
   setMemberChecked,
   resetMember
 } from '../../../redux/features/memberSlice'
-import { Button, Tag, Spin, message, Switch } from "antd";
+import { Button, Tag, Spin, Switch } from "antd";
 import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
 import { Formik, Form, Field } from "formik";
 import VersionCard from "../component/VersionCard";
@@ -64,7 +64,7 @@ const PAYMENT_METHODS = [
 // Helper functions
 const formatPrice = (price) => price?.toLocaleString("vi-VN");
 
-const calculatePointsAndPrice = (selectedSeats, seatData, memberChecked, convertToTicket, discount, totalPrice) => {
+const calculatePointsAndPrice = (selectedSeats, seatData, memberChecked, convertToTicket, discount, totalPrice, memberScore) => {
   let PointsToUse = 0;
   let finalPrice = totalPrice;
 
@@ -73,8 +73,15 @@ const calculatePointsAndPrice = (selectedSeats, seatData, memberChecked, convert
       const seat = seatData.find((s) => s.seatNumber === seatNumber);
       return total + (seat?.price || 0);
     }, 0);
-    PointsToUse = Math.floor(totalAmount / 1000);
-    finalPrice = 0;
+
+    const pointsOfAmount = Math.floor(totalAmount / 1000)
+    if (memberScore >= pointsOfAmount) {
+      PointsToUse = pointsOfAmount;
+      finalPrice = totalAmount - PointsToUse * 1000;
+    } else {
+      PointsToUse = 0;
+      finalPrice = totalAmount;
+    }
   } else if (memberChecked && convertToTicket === "Disagree" && discount) {
     finalPrice = Math.round(totalPrice * (1 - discount / 100));
   }
@@ -84,7 +91,7 @@ const calculatePointsAndPrice = (selectedSeats, seatData, memberChecked, convert
 
 // Sub-components
 const MovieInfoSection = React.memo(({ movieInfo, bookingData }) => (
-  <div className="bg-white border border-gray-300 rounded-lg shadow-md p-6 mb-6">
+  <div className="bg-white border border-gray-300 rounded-lg shadow-md p-6">
     <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
       <RiFilmAiFill /> Ticket Information
     </h2>
@@ -98,7 +105,7 @@ const MovieInfoSection = React.memo(({ movieInfo, bookingData }) => (
       <div className="flex-1">
         <div className="flex items-center justify-center sm:justify-start gap-3 mb-3">
           <div className="px-3 py-2 rounded-full shadow-md  flex items-center justify-center 
-            bg-[linear-gradient(to_right,_#FACC15,_#DDB61A,_#DBBB3B,_#CDB03D,_#B1900C)] text-[#FFF8A7]">
+            bg-[linear-gradient(to_right,_#FACC15,_#DDB61A,_#DBBB3B,_#CDB03D,_#B1900C)]">
             <p className="font-bold text-sm leading-4 text-[#FFF8A7] [text-shadow:_0_1px_2px_orange]">
               Now Showing
             </p>
@@ -121,7 +128,7 @@ const MovieInfoSection = React.memo(({ movieInfo, bookingData }) => (
           <InfoItem icon={<FaCalendarDays />} label="Day:" value={bookingData.selectedDay} />
           <InfoItem icon={<IoTime />} label="Time:" value={bookingData.selectedTime} />
           <InfoItem icon={<FaLocationDot />} label="Room:" value={bookingData.room} />
-          <InfoItem icon={<FaCouch />} label="Seats:" value={`${bookingData.selectedSeats.join(", ")} - (${bookingData.selectedSeats.length} tickets)`}/>
+          <InfoItem icon={<FaCouch />} label="Seats:" value={`${bookingData.selectedSeats.join(", ")} - (${bookingData.selectedSeats.length} tickets)`} />
         </div>
 
         <PriceDetails selectedSeats={bookingData.selectedSeats} seatData={bookingData.seatData} />
@@ -206,7 +213,7 @@ const PaymentMethodSection = React.memo(({
   </div>
 ));
 
-const PaymentOptions = React.memo(({ values, setFieldValue }) => (
+const PaymentOptions = React.memo(({ values }) => (
   <div className="mb-6">
     <h3 className="font-semibold mb-3 text-xl">
       Select Payment method: <span className="text-red-500">*</span>
@@ -269,12 +276,6 @@ const PriceSummary = React.memo(({
         </div>
       )}
 
-      <div className="border-t pt-2 mt-2 flex justify-between font-bold text-lg">
-        <span>Total Amount:</span>
-        <span className="text-purple-600">
-          {formatPrice(finalPrice)} VNĐ
-        </span>
-      </div>
 
       {memberChecked && values.convertToTicket === "Agree" && (
         <PointsInfo
@@ -283,12 +284,20 @@ const PriceSummary = React.memo(({
           PointsToUse={PointsToUse}
         />
       )}
+
+
+      <div className="border-t pt-2 mt-2 flex justify-between font-bold text-lg">
+        <span>Total Amount:</span>
+        <span className="text-purple-600">
+          {formatPrice(finalPrice)} VNĐ
+        </span>
+      </div>
     </div>
   </div>
 ));
 
 const PointsInfo = React.memo(({ bookingData, member, PointsToUse }) => (
-  <div className="pt-2 mt-2 flex flex-col gap-2 text-md">
+  <div className="flex flex-col gap-2 text-md">
     <div className="flex justify-between">
       <span>Conversion rate:</span>
       <span className="text-gray-600">1,000 VNĐ = 1 point</span>
@@ -303,13 +312,13 @@ const PointsInfo = React.memo(({ bookingData, member, PointsToUse }) => (
         <FaFire /> {Math.floor(bookingData.totalPrice / 1000)} points
       </span>
     </div>
-    <div className="flex justify-between">
+    {/* <div className="flex justify-between">
       <span>Points available:</span>
       <span className="text-green-600 flex items-center gap-1">
         <FaFire /> {member.score} points
       </span>
-    </div>
-    {PointsToUse > member.score && (
+    </div> */}
+    {PointsToUse > member.score || PointsToUse === 0 && (
       <div className="text-red-500 text-sm">
         Not enough points to complete this transaction
       </div>
@@ -434,14 +443,14 @@ const MemberInfo = React.memo(({ member }) => (
       <p className="text-gray-600 flex items-center gap-2">
         <FaStar /> Points:
       </p>
-      <p className="font-medium flex items-center gap-1 text-green-600">
-        <FaFire /> {member.score}
+      <p className={`font-medium flex items-center gap-1 ${member.score ? "text-green-600" : "text-red-600"}`}>
+        <FaFire /> {member.score ? member.score : 0}
       </p>
     </div>
   </div>
 ));
 
-const ConvertPoints = React.memo(({ values, setFieldValue }) => (
+const ConvertPoints = React.memo(({ setFieldValue }) => (
   <div className="mt-4 flex flex-row items-center justify-between">
     <label className="text-gray-700 flex items-center gap-2 sm:w-[80%] w-full">
       <FaExchangeAlt /> Convert points to tickets:
@@ -539,10 +548,13 @@ const ConfirmTicketsPage = () => {
 
       if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(searchValue)) {
         res = await getUserByEmail(searchValue);
+
       } else if (/^0\d{9,10}$/.test(searchValue)) {
         res = await getUserByPhone(searchValue);
+
       } else if (/^\d{9,12}$/.test(searchValue)) {
         res = await getUserByCCCD(searchValue);
+
       } else {
         throw new Error("Invalid Email/Phone/ID");
       }
@@ -570,7 +582,7 @@ const ConfirmTicketsPage = () => {
     }
   };
 
-  const handleAddPromotion = async (promotionCode, setFieldValue) => {
+  const handleAddPromotion = useCallback(async (promotionCode, setFieldValue) => {
     try {
       if (!promotionCode?.trim()) {
         toast.error("Please enter a promotion code");
@@ -584,15 +596,8 @@ const ConfirmTicketsPage = () => {
 
       const promotion = res.promotions[0];
       const now = new Date();
-      const start = new Date(promotion.StartTime);
-      const end = new Date(promotion.EndTime);
-
-      if (now < start) {
-        throw new Error("Promotion not yet valid");
-      }
-      if (now > end) {
-        throw new Error("Promotion has expired");
-      }
+      if (now < new Date(promotion.StartTime)) throw new Error("Promotion not yet valid");
+      if (now > new Date(promotion.EndTime)) throw new Error("Promotion has expired");
 
       setDiscount(promotion.DiscountValue);
       toast.success(`Successfully applied ${promotion.DiscountValue}% discount`);
@@ -601,7 +606,7 @@ const ConfirmTicketsPage = () => {
       setFieldValue("promotionCode", "");
       toast.error(error.message);
     }
-  };
+  }, []);
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
@@ -631,8 +636,13 @@ const ConfirmTicketsPage = () => {
         memberChecked,
         values.convertToTicket,
         discount,
-        bookingData.totalPrice
+        bookingData.totalPrice,
+        member?.score || 0
       );
+
+      if (values.convertToTicket === "Agree" && memberChecked && PointsToUse > (member?.score || 0)) {
+        throw new Error("Not enough points to complete this transaction");
+      }
 
       // Get seat IDs
       const seatIds = bookingData.selectedSeats.map((seat) => {
@@ -700,7 +710,7 @@ const ConfirmTicketsPage = () => {
     }
   };
 
-  const handleCancel = async () => {
+  const handleCancel = useCallback(async () => {
     try {
       if (bookingData?.bookingId) {
         await cancelBookingById(bookingData.bookingId);
@@ -712,7 +722,7 @@ const ConfirmTicketsPage = () => {
     dispatch(resetBooking());
     dispatch(resetMember());
     navigate("/staff/ticket-selling");
-  };
+  }, [bookingData?.bookingId, dispatch, navigate]);
 
   const validationSchema = Yup.object().shape({
     convertToTicket: Yup.string().when([], {
@@ -779,14 +789,32 @@ const ConfirmTicketsPage = () => {
             memberChecked,
             values.convertToTicket,
             discount,
-            bookingData.totalPrice
+            bookingData.totalPrice,
+            member?.score || 0
           );
+
 
           return (
             <Form>
-              <div className="flex flex-col lg:flex-row gap-6">
-                <div className="lg:w-2/3">
-                  <MovieInfoSection movieInfo={movieInfo} bookingData={bookingData} />
+              <div className="flex flex-col gap-3">
+                <div className=" flex lg:flex-row flex-col gap-3">
+                  <div className="lg:w-2/3">
+                    <MovieInfoSection movieInfo={movieInfo} bookingData={bookingData} />
+                  </div>
+                  <div className="lg:w-1/3">
+                    <MemberSection
+                      values={values}
+                      isSearching={isSearching}
+                      memberChecked={memberChecked}
+                      member={member}
+                      handleMemberSearch={handleMemberSearch}
+                      setFieldValue={setFieldValue}
+                      discount={discount}
+                      handleAddPromotion={handleAddPromotion}
+                    />
+                  </div>
+                </div>
+                <div className="lg:w-2/3 lg:pr-2">
                   <PaymentMethodSection
                     values={values}
                     isSubmitting={isSubmitting}
@@ -798,18 +826,6 @@ const ConfirmTicketsPage = () => {
                     finalPrice={finalPrice}
                     handleCancel={handleCancel}
                     setFieldValue={setFieldValue}
-                  />
-                </div>
-                <div className="lg:w-1/3">
-                  <MemberSection
-                    values={values}
-                    isSearching={isSearching}
-                    memberChecked={memberChecked}
-                    member={member}
-                    handleMemberSearch={handleMemberSearch}
-                    setFieldValue={setFieldValue}
-                    discount={discount}
-                    handleAddPromotion={handleAddPromotion}
                   />
                 </div>
               </div>
@@ -828,7 +844,7 @@ async function processPayment(paymentMethod, bookingId, finalAmount, navigate, s
       await createCashPayment(bookingId, finalAmount, `CASH-${Date.now()}`);
       await confirmBooking(bookingId);
       toast.success("Cash payment successful!");
-      navigate("/staff/ticket-selling/ticket-infomation");
+      navigate("/staff/ticket-selling/ticket-information");
       break;
     case "Momo":
       setIsRedirecting(true);
@@ -836,7 +852,7 @@ async function processPayment(paymentMethod, bookingId, finalAmount, navigate, s
         const momoRes = await createMomoPayment(
           bookingId,
           finalAmount,
-          `${window.location.origin}/staff/ticket-selling/ticket-infomation`
+          `${window.location.origin}/staff/ticket-selling/ticket-information`
         );
         const payUrl = momoRes?.payUrl || momoRes?.data?.payUrl;
         if (!payUrl) {

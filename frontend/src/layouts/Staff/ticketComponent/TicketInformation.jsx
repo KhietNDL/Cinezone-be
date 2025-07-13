@@ -1,42 +1,21 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Button, Spin, message } from "antd";
+import { Button, Spin } from "antd";
 import { CheckCircleTwoTone, CloseCircleTwoTone } from "@ant-design/icons";
 import { FaTicket, FaCouch, FaLocationDot, FaUser, FaPhone, FaCalendarDays, FaEnvelope, FaStar, FaFire } from "react-icons/fa6";
 import { IoReloadOutline, IoTicketSharp, IoTime } from "react-icons/io5";
 import { RiFilmAiFill, RiMovie2AiFill, RiDiscountPercentFill } from "react-icons/ri";
 import { FaMoneyBillWave, FaIdCard, FaRegEye } from "react-icons/fa";
-import { confirmBooking, checkInfoBookingById, cancelBookingById, getUserByPhone } from "../../../services/APIForStaff/API";
+import { confirmBooking, checkInfoBookingById, cancelBookingById, getUserByPhone, getMovieById } from "../../../services/APIForStaff/API";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useDispatch, useSelector } from 'react-redux';
 import { resetBooking } from '../../../redux/features/sellingSlice'
 import { resetMember } from '../../../redux/features/memberSlice'
 
-const statusMap = {
-  success: {
-    icon: <CheckCircleTwoTone twoToneColor="#52c41a" className="text-8xl" />,
-    title: "Payment Successful",
-    color: "text-green-500",
-    btn: "New Ticket",
-    btnIcon: <FaTicket />,
-    btnColor: "bg-green-600 hover:bg-green-700"
-  },
-  error: {
-    icon: <CloseCircleTwoTone twoToneColor="#ff4d4f" className="text-8xl" />,
-    title: "Payment Failed",
-    color: "text-red-500",
-    btn: "Try Again",
-    btnIcon: <IoReloadOutline />,
-    btnColor: "bg-red-600 hover:bg-red-700"
-  }
-};
 
-const formatPrice = (price) => {
-  return price?.toLocaleString('vi-VN') || "0";
-};
 
-const TicketInfomation = () => {
+const TicketInformation = () => {
   const hasRun = useRef(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -48,7 +27,30 @@ const TicketInfomation = () => {
   const [apiBookingData, setApiBookingData] = useState(null);
   const [apiCustomerData, setApiCustomerData] = useState(null);
 
-  const processPaymentResult = async () => {
+  const statusMap = useMemo(() => ({
+    success: {
+      icon: <CheckCircleTwoTone twoToneColor="#52c41a" className="text-8xl" />,
+      title: "Payment Successful",
+      color: "text-green-500",
+      btn: "New Ticket",
+      btnIcon: <FaTicket />,
+      btnColor: "bg-green-600 hover:bg-green-700"
+    },
+    error: {
+      icon: <CloseCircleTwoTone twoToneColor="#ff4d4f" className="text-8xl" />,
+      title: "Payment Failed",
+      color: "text-red-500",
+      btn: "Try Again",
+      btnIcon: <IoReloadOutline />,
+      btnColor: "bg-red-600 hover:bg-red-700"
+    }
+  }), []);
+
+  const formatPrice = useCallback((price) => {
+    return price?.toLocaleString('vi-VN');
+  }, []);
+
+  const processPaymentResult = useCallback(async () => {
     try {
       const params = new URLSearchParams(window.location.search);
       const resultCode = params.get('resultCode');
@@ -61,13 +63,13 @@ const TicketInfomation = () => {
       //Bước 1: Luôn fetch thông tin booking trước
       const res = await checkInfoBookingById(bookingId);
       setApiBookingData(res);
-      console.log("Booking data from API:", res);
+      // console.log("Booking data from API:", res);
 
       //Nếu có thông tin khách hàng, lấy thêm info
       if (memberData?.member?.phone) {
         const customerData = await getUserByPhone(memberData?.member?.phone);
         setApiCustomerData(customerData);
-        console.log("Customer data from API:", customerData);
+        // console.log("Customer data from API:", customerData);
       }
 
       // Bước 2: Xác định trạng thái thanh toán
@@ -77,9 +79,9 @@ const TicketInfomation = () => {
             await confirmBooking(bookingId);
             setPaymentStatus('success');
             toast.success("Payment successful!");
-          } catch (apiError) {
+          } catch (error) {
             setPaymentStatus('success'); // vẫn success nếu confirm thất bại
-            toast.success("Payment successful (confirm failed)");
+            toast.success("Payment successful (confirm failed)", error.message);
           }
         } else {
           setPaymentStatus('error'); //vẫn hiển thị vé nhưng báo thất bại
@@ -97,7 +99,7 @@ const TicketInfomation = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [bookingData, memberData]);
 
   useEffect(() => {
     if (!hasRun.current) {
@@ -123,9 +125,8 @@ const TicketInfomation = () => {
     loadMovie();
   }, [bookingData, navigate]);
 
-  const handleTryAgain = async () => {
+  const handleTryAgain = useCallback(async () => {
     try {
-      // Gọi API huỷ booking
       await cancelBookingById(bookingData?.bookingId);
       toast.info("Previous booking cancelled. Please try again.");
     } catch (err) {
@@ -134,15 +135,13 @@ const TicketInfomation = () => {
     } finally {
       navigate("/staff/ticket-selling/confirm-ticket");
     }
-  };
+  }, [bookingData, navigate]);
 
-  const handleNewTicket = () => {
+  const handleNewTicket = useCallback(() => {
     dispatch(resetBooking());
     dispatch(resetMember());
     navigate("/staff/ticket-selling", { replace: true });
-  };
-
-
+  }, [dispatch, navigate]);
 
   if (isLoading) {
     return (
@@ -170,19 +169,19 @@ const TicketInfomation = () => {
 
   const status = statusMap[paymentStatus];
   const {
-    movie,
-    day,
-    time,
-    room,
-    version,
-    selectedSeats,
-    totalPrice,
-    memberInfo,
-    paymentMethod,
+    // movie,
+    // day,
+    // time,
+    // room,
+    // version,
+    // selectedSeats,
+    // totalPrice,
+    // memberInfo,
+    // paymentMethod,
     discount
   } = bookingData;
 
-  const finalAmount = totalPrice * (1 - (discount / 100));
+  // const finalAmount = totalPrice * (1 - (discount / 100));
 
   return (
     <div className="p-4 w-full mx-auto bg-white rounded-lg shadow-sm">
@@ -190,7 +189,6 @@ const TicketInfomation = () => {
       <div className="text-center py-8">
         {status.icon}
         <h1 className={`text-3xl font-bold mt-4 ${status.color}`}>{status.title}</h1>
-        {/* <p className="text-gray-600 mt-2">Booking ID: <span className="font-mono">{bookingData?.bookingId}</span></p> */}
       </div>
 
       {/* Main Content */}
@@ -287,7 +285,7 @@ const TicketInfomation = () => {
               <div className="border-t pt-3 mt-3 flex justify-between font-bold text-lg">
                 <span>Total Amount:</span>
                 <span className="text-purple-600">
-                  {formatPrice(apiBookingData?.totalAmount)} VNĐ
+                  {formatPrice(Math.floor(apiBookingData?.TotalAmount))} VNĐ
                 </span>
               </div>
             </div>
@@ -399,4 +397,4 @@ const TicketInfomation = () => {
   );
 };
 
-export default TicketInfomation;
+export default TicketInformation;

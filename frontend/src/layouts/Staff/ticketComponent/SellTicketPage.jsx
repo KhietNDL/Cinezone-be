@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Button, Input, Spin } from "antd";
 import { Link } from "react-router-dom";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -14,10 +14,8 @@ import {
   getShowtimesByMovieId,
   getShowtimesByMovieIdAndDay
 } from "../../../services/APIForStaff/API";
-
 import ItemCard from "../component/ItemCard";
 import ShowtimeButton from "./ShowtimeButton";
-
 import { useDispatch, useSelector } from 'react-redux';
 import {
   setSelectedMovie,
@@ -28,7 +26,6 @@ import {
   setShowtimeId,
   resetBooking
 } from '../../../redux/features/sellingSlice';
-
 import { resetMember } from '../../../redux/features/memberSlice';
 import VersionCard from "../component/VersionCard";
 
@@ -40,7 +37,7 @@ const SellTicketPage = () => {
     selectedVersion,
     selectedTime,
     room,
-    showtimeId
+    // showtimeId
   } = useSelector((state) => state.selling);
 
   const [movies, setMovies] = useState([]);
@@ -51,7 +48,6 @@ const SellTicketPage = () => {
 
   useEffect(() => {
     if (!selectedMovie) return;
-
     getShowtimesByMovieId(selectedMovie.MovieId).then(res => {
       if (res?.showtimes) {
         const uniqueDays = Array.from(
@@ -80,7 +76,6 @@ const SellTicketPage = () => {
       if (res?.versions) {
         setVersionsAndTimes(res.versions);
 
-        // Giữ lại room/showtime nếu version + time vẫn còn trong dữ liệu mới
         const ver = res.versions.find(v => v.version === selectedVersion);
         const timeObj = ver?.showtimes.find(t => t.time === selectedTime);
 
@@ -111,7 +106,7 @@ const SellTicketPage = () => {
     }
   }, [selectedVersion, selectedTime, versionsAndTimes]);
 
-  const getCurrentMovie = async () => {
+  const getCurrentMovie = useCallback(async () => {
     try {
       const response = await getCurrentMovies();
       if (response.data) {
@@ -120,9 +115,9 @@ const SellTicketPage = () => {
     } catch (error) {
       console.error("Error fetching movies:", error);
     }
-  };
+  }, []);
 
-  const handleSearch = async (value) => {
+  const handleSearch = useCallback(async (value) => {
     setSearch(value);
     setLoading(true);
     try {
@@ -139,25 +134,48 @@ const SellTicketPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getCurrentMovie]);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     dispatch(resetBooking());
     dispatch(resetMember());
     setVersionsAndTimes([]);
     setDays([]);
-  };
+  }, [dispatch]);
 
   useEffect(() => {
     getCurrentMovie();
-  }, []);
+  }, [getCurrentMovie]);
 
-  const swiperBreakpoints = {
+  const swiperBreakpoints = useMemo(() => ({
     320: { slidesPerView: 1, spaceBetween: 50, slidesPerGroup: 1 },
     640: { slidesPerView: 2, spaceBetween: 30, slidesPerGroup: 1 },
     768: { slidesPerView: 2, spaceBetween: 50, slidesPerGroup: 2 },
     1024: { slidesPerView: 4, spaceBetween: 50, slidesPerGroup: 2 },
-  };
+  }), []);
+
+  const handleSelectMovie = useCallback((movie) => {
+    const isSame = selectedMovie?.MovieId === movie.MovieId;
+    dispatch(setSelectedMovie(isSame ? null : movie));
+    if (!isSame) {
+      dispatch(setSelectedDay(null));
+      dispatch(setSelectedVersion(null));
+      dispatch(setSelectedTime(null));
+      dispatch(setRoom(""));
+      dispatch(setShowtimeId(""));
+      setVersionsAndTimes([]);
+      setDays([]);
+    }
+  }, [selectedMovie, dispatch]);
+
+  const handleSelectDay = useCallback((day) => {
+    dispatch(setSelectedDay(day));
+  }, [dispatch]);
+
+  const handleSelectTime = useCallback((ver, time) => {
+    dispatch(setSelectedVersion(ver));
+    dispatch(setSelectedTime(time));
+  }, [dispatch]);
 
   return (
     <div className="w-full bg-[#fafbfc] p-[20px]">
@@ -183,8 +201,7 @@ const SellTicketPage = () => {
             navigation
             pagination={{ clickable: true }}
             slidesPerView={4}
-            // slidesPerGroup={2}
-            loop={movies.length > 4}
+            loop={true}
           >
             {movies.map((movie) => (
               <SwiperSlide key={movie.MovieId}>
@@ -192,21 +209,8 @@ const SellTicketPage = () => {
                   <ItemCard
                     item={movie}
                     type="movie"
-                    onSelect={() => {
-                      const isSame = selectedMovie?.MovieId === movie.MovieId;
-                      dispatch(setSelectedMovie(isSame ? null : movie));
-                      if (!isSame) {
-                        dispatch(setSelectedDay(null));
-                        dispatch(setSelectedVersion(null));
-                        dispatch(setSelectedTime(null));
-                        dispatch(setRoom(""));
-                        dispatch(setShowtimeId(""));
-                        setVersionsAndTimes([]);
-                        setDays([]);
-                      }
-                    }}
+                    onSelect={() => handleSelectMovie(movie)}
                     selected={selectedMovie?.MovieId === movie.MovieId}
-
                   />
                 </div>
               </SwiperSlide>
@@ -220,9 +224,7 @@ const SellTicketPage = () => {
           <p className="font-semibold"><i className="fa-solid fa-calendar-days"></i> Select Day</p>
           <ShowtimeButton
             selectedDay={selectedDay}
-            onSelectDay={(day) => {
-              dispatch(setSelectedDay(day));
-            }}
+            onSelectDay={handleSelectDay}
             days={days}
             showDay
           />
@@ -244,15 +246,11 @@ const SellTicketPage = () => {
                 <ShowtimeButton
                   parentVersion={ver.version}
                   selectedTime={selectedTime}
-                  onSelectTime={(ver, time) => {
-                    dispatch(setSelectedVersion(ver));
-                    dispatch(setSelectedTime(time));
-                  }}
+                  onSelectTime={handleSelectTime}
                   times={ver.showtimes}
                   showTime
                 />
               </VersionCard>
-
             ))}
           </div>
         </>
@@ -287,7 +285,6 @@ const SellTicketPage = () => {
           Cancel
         </Button>
       </div>
-
     </div>
   );
 };

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Input, Button, Table, Image, Space, message, Modal } from 'antd';
-import { LeftOutlined, RightOutlined, DeleteOutlined, MinusOutlined, PlusOutlined } from '@ant-design/icons';
+import { Input, Button, Table, Image, Space } from 'antd';
+import { MinusOutlined, PlusOutlined } from '@ant-design/icons';
 import ItemCard from '../component/ItemCard';
 import { BsTrash3Fill } from "react-icons/bs";
-import { FaCheck, FaX, FaXmark } from "react-icons/fa6";
+import { FaCheck, FaXmark } from "react-icons/fa6";
 import './ComboPage.css';
 import { PiPopcornDuotone } from "react-icons/pi";
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -11,20 +11,19 @@ import { Navigation, Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
-import { getAllProduct, createProductHold } from '../../../services/APIForStaff/API';
-import { useAuth } from '../../../context/AuthContext';
+import { getAllProduct } from '../../../services/APIForStaff/API';
 import { toast, ToastContainer } from "react-toastify";
+import { useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from "react-redux";
+import { setComboCart, clearComboCart, clearOrderInfo } from "../../../redux/features/comboSlice";
 
 export default function ComboPage() {
-    const [cart, setCart] = useState([]);
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const cart = useSelector(state => state.combo.cart) || [];
     const [search, setSearch] = useState('');
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [checkoutLoading, setCheckoutLoading] = useState(false);
-    const [notes, setNotes] = useState('');
-    const [isModalVisible, setIsModalVisible] = useState(false);
-    const { user } = useAuth();
-
 
     const formatPrice = (price) => {
         return price?.toLocaleString('vi-VN');
@@ -33,14 +32,13 @@ export default function ComboPage() {
     const fetchProducts = async () => {
         try {
             const response = await getAllProduct();
-            if (response && response.Products) {
-                // Transform the API data to match our expected format
-                const transformedProducts = response.Products.map(product => ({
+            if (response && response.products) {
+                const transformedProducts = response.products.map(product => ({
                     id: product.ProductId,
                     name: product.ProductName,
                     description: product.Description,
-                    price: parseFloat(product.Price), // Convert string to number
-                    image: product.ImageUrl, // Fallback image
+                    price: parseFloat(product.Price),
+                    image: product.ImageUrl,
                     quantity: product.Quantity
                 }));
                 setProducts(transformedProducts);
@@ -57,6 +55,40 @@ export default function ComboPage() {
         fetchProducts();
     }, []);
 
+    // Thêm combo vào cart
+    const handleAddCombo = (combo) => {
+        const found = cart.find(item => item.id === combo.id);
+        let newCart;
+        if (found) {
+            newCart = cart.filter(item => item.id !== combo.id);
+        } else {
+            newCart = [...cart, { ...combo, quantity: 1 }];
+        }
+        dispatch(setComboCart(newCart));
+    };
+
+    // Xóa combo khỏi cart
+    const handleRemove = (id) => {
+        const newCart = cart.filter(item => item.id !== id);
+        dispatch(setComboCart(newCart));
+    };
+
+    // Thay đổi số lượng combo
+    const handleQuantity = (id, delta) => {
+        const newCart = cart.map(item =>
+            item.id === id
+                ? { ...item, quantity: Math.max(1, item.quantity + delta) }
+                : item
+        );
+        dispatch(setComboCart(newCart));
+    };
+
+    // Xóa toàn bộ cart
+     const handleCancel = () => {
+       dispatch(clearComboCart());
+       dispatch(clearOrderInfo());
+     };
+
     const filteredCombos = products.filter(c =>
         c.name.toLowerCase().includes(search.toLowerCase()) ||
         (c.description && c.description.toLowerCase().includes(search.toLowerCase()))
@@ -67,70 +99,7 @@ export default function ComboPage() {
             toast.warning('Your cart is empty');
             return;
         }
-
-        setIsModalVisible(true);
-    };
-
-    const handleConfirmCheckout = async () => {
-        try {
-            
-            setCheckoutLoading(true);
-            const userId = user?.userId || user?.id;
-            console.log("User id: ", userId)
-            if (!userId) {
-                toast.error('User ID not found');
-                return;
-            }
-
-            // Prepare products for API
-            const productsForApi = cart.map(item => ({
-                ProductId: item.id,
-                Quantity: item.quantity
-            }));
-
-
-
-            // Call the product hold API
-            const response = await createProductHold(
-                userId, // You need to set this memberId (from your auth system)
-                productsForApi,
-                notes
-            );
-
-            toast.success('Products held successfully!');
-            setCart([]); // Clear cart after successful hold
-            setNotes(''); // Reset notes
-            setIsModalVisible(false);
-        } catch (error) {
-            toast.error('Failed to hold products');
-            console.error('Error holding products:', error);
-        } finally {
-            setCheckoutLoading(false);
-        }
-    };
-
-    const handleAddCombo = (combo) => {
-        setCart(prev => {
-            const found = prev.find(item => item.id === combo.id);
-            if (found) {
-                return prev.filter(item => item.id !== combo.id);
-            }
-            return [...prev, { ...combo, quantity: 1 }];
-        });
-    };
-
-    const handleRemove = (id) => {
-        setCart(prev => prev.filter(item => item.id !== id));
-    };
-
-    const handleQuantity = (id, delta) => {
-        setCart(prev =>
-            prev.map(item =>
-                item.id === id
-                    ? { ...item, quantity: Math.max(1, item.quantity + delta) }
-                    : item
-            )
-        );
+        navigate("/staff/combo-selling/checkout");
     };
 
     const columns = [
@@ -138,7 +107,7 @@ export default function ComboPage() {
             title: 'Image',
             dataIndex: 'image',
             width: 242,
-            render: img => <Image src={img} width={100} />,
+            render: img => <Image src={img} width={100} height={130} />,
         },
         {
             title: 'Name',
@@ -229,6 +198,7 @@ export default function ComboPage() {
                                                 type="combo"
                                                 onSelect={handleAddCombo}
                                                 selected={cart.some(item => item.id === combo.id)}
+                                                disabled={combo.quantity === 0}
                                             />
                                         </div>
                                     </SwiperSlide>
@@ -250,7 +220,7 @@ export default function ComboPage() {
                     />
                     <div className='flex justify-center mt-4 gap-3 text-2xl'>
                         <strong>Total Price: </strong>
-                        <p className='text-green-700'>
+                        <p className='text-green-700 font-bold'>
                             {formatPrice(cart.reduce((sum, item) => sum + item.price * item.quantity, 0))} VNĐ
                         </p>
                     </div>
@@ -259,7 +229,6 @@ export default function ComboPage() {
                             style={{ width: 180, fontWeight: 600, fontSize: 16, backgroundColor: '#7254EF', color: 'white' }}
                             icon={<FaCheck />}
                             onClick={handleCheckout}
-                            loading={checkoutLoading}
                         >
                             Check out
                         </Button>
@@ -267,37 +236,13 @@ export default function ComboPage() {
                             danger
                             style={{ width: 120, fontWeight: 600, fontSize: 16 }}
                             icon={<FaXmark />}
-                            onClick={() => setCart([])}
+                            onClick={handleCancel}
                         >
                             Cancel
                         </Button>
                     </div>
                 </div>
             </div>
-            {/* Checkout Confirmation Modal */}
-            <Modal
-                title="Confirm Product Hold"
-                visible={isModalVisible}
-                onOk={handleConfirmCheckout}
-                onCancel={() => setIsModalVisible(false)}
-                confirmLoading={checkoutLoading}
-                okText="Confirm Hold"
-                cancelText="Cancel"
-            >
-                <div className="mb-4">
-                    <p>You are about to hold {cart.length} product(s).</p>
-                    <p>Total: {formatPrice(cart.reduce((sum, item) => sum + item.price * item.quantity, 0))} VNĐ</p>
-                </div>
-                <div className="mb-4">
-                    <label className="block mb-2">Notes (Optional):</label>
-                    <Input.TextArea
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        placeholder="Enter any notes for this order..."
-                        rows={3}
-                    />
-                </div>
-            </Modal>
         </div>
     );
 }
