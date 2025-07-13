@@ -12,10 +12,9 @@
     background: transparent !important;
     color: #fff;
     text-align: center;
-    border-right: none !important; /* Xóa vạch trắng dọc */
+    border-right: none !important;
     border-left: none !important;
-    box-shadow: none !important;   /* Xóa bóng nếu có */
-    
+    box-shadow: none !important;
 }
 
 .table-cart-staff .ant-table-tbody>tr>td {

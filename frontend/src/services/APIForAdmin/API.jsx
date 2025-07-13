@@ -56,9 +56,9 @@ const handleError = (error) => {
   throw new Error(errorMessage);
 };
 
-export const getAllUsers = async () => {
+export const getAllUsers = async (params) => {
   try {
-    const response = await api.get("/user");
+    const response = await api.get("/user",{ params });
     return response.data;
   } catch (error) {
     handleError(error);
@@ -97,10 +97,10 @@ export const deleteUser = async (userId) => {
     handleError(error);
   }
 };
-export const searchUserByName = async (name) => {
+export const searchUserByName = async (name, params) => {
   try {
     const response = await api.get("/user/searchByName", {
-      params: { name },
+      params: { name, ...params },
     });
     return response.data;
   } catch (error) {

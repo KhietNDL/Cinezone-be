@@ -174,11 +174,39 @@ export const createCashPayment = async (bookingId, amount, reference) => {
   }
 };
 
+// Thanh toán bằng tiền mặt cho product
+export const createCashPaymentForProduct = async (orderProductId, amount, reference) => {
+  try {
+    const response = await api.post("/payment/offline", {
+      orderProductId,
+      amount,
+      reference,
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
 // Thanh toán bằng momo
 export const createMomoPayment = async (bookingId, amount, returnUrl) => {
   try {
     const response = await api.post("/payment/momo", {
       bookingId,
+      amount,
+      returnUrl
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+// Thanh toán bằng momo cho product
+export const createMomoPaymentForProducts = async (orderProductId, amount, returnUrl) => {
+  try {
+    const response = await api.post("/payment/momo", {
+      orderProductId,
       amount,
       returnUrl
     });
@@ -222,6 +250,17 @@ export const cancelBookingById = async (bookingId) => {
   }
 };
 
+
+//Hủy products bằng id
+export const cancelProductsById = async (orderProductId) => {
+  try {
+    const response = await api.post(`/order-products/cancel/${encodeURIComponent(orderProductId)}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
 // Lấy tất cả product
 export const getAllProduct = async () => {
   try {
@@ -240,6 +279,16 @@ export const createProductHold = async (MemberId, products, Notes = "") => {
       products,
       Notes
     });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+// Tạo confirm product (xac nhan mua product)
+export const confirmProducts = async (OrderProductId) => {
+  try {
+    const response = await api.post(`/order-products/confirm/${OrderProductId}`);
     return response.data;
   } catch (error) {
     handleError(error);

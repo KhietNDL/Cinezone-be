@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getMovieById } from '../../../services/APIForStaff/API';
+// import { getMovieById } from '../../../services/APIForStaff/API';
 import { FaStar, FaRegStar, FaStarHalfAlt } from 'react-icons/fa';
 import { LuChartBar } from "react-icons/lu";
 import { GiTrophyCup } from "react-icons/gi";
@@ -12,6 +12,7 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { Navigation, Pagination } from "swiper/modules";
 import '../component/SwiperButton.css'
+import { toast } from 'react-toastify';
 //import { getDaysByMovieName, getVersionsAndTimesByMovieAndDay } from '../../../services/APIForStaff/API';
 
 export default function MovieDetail() {
@@ -43,8 +44,9 @@ export default function MovieDetail() {
       } else {
         setMovie(null);
       }
-    } catch (e) {
+    } catch (error) {
       setMovie(null);
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }
@@ -69,8 +71,9 @@ export default function MovieDetail() {
         );
         setRecommended(filtered);
       }
-    } catch (e) {
+    } catch (error) {
       setRecommended([]);
+      toast.error(error.message);
     }
   }
 
@@ -140,23 +143,23 @@ export default function MovieDetail() {
     "ULTRA 4DX": "text-black font-semibold"
   };
 
-  const renderStars = (rating) => {
-    const stars = [];
-    const full = Math.floor(rating);
-    const hasHalf = rating % 1 >= 0.5;
+  // const renderStars = (rating) => {
+  //   const stars = [];
+  //   const full = Math.floor(rating);
+  //   const hasHalf = rating % 1 >= 0.5;
 
-    for (let i = 0; i < 5; i++) {
-      if (i < full) {
-        stars.push(<FaStar key={i} className="text-yellow-400" />);
-      } else if (i === full && hasHalf) {
-        stars.push(<FaStarHalfAlt key={i} className="text-yellow-400" />);
-      } else {
-        stars.push(<FaRegStar key={i} className="text-gray-300" />);
-      }
-    }
+  //   for (let i = 0; i < 5; i++) {
+  //     if (i < full) {
+  //       stars.push(<FaStar key={i} className="text-yellow-400" />);
+  //     } else if (i === full && hasHalf) {
+  //       stars.push(<FaStarHalfAlt key={i} className="text-yellow-400" />);
+  //     } else {
+  //       stars.push(<FaRegStar key={i} className="text-gray-300" />);
+  //     }
+  //   }
 
-    return stars;
-  };
+  //   return stars;
+  // };
 
   const fallbackImage = "https://via.placeholder.com/80x120.png?text=No+Image";
 
@@ -284,7 +287,7 @@ export default function MovieDetail() {
               navigation
               pagination={{ clickable: true }}
               slidesPerView={5}
-              style={{ padding: "0 50px", minHeight: 300 }} // Thêm padding hai bên và tăng chiều cao
+              style={{ padding: "0 50px", minHeight: 300 }}
               breakpoints={swiperBreakpoints}
               className="custom-swiper-nav"
             >

@@ -266,9 +266,9 @@ export const searchMovies = async (params) => {
 
 // API cho Employee
 
-export const getEmployee = async () => {
+export const getEmployee = async (params) => {
   try {
-    const response = await api.get("/employee");
+    const response = await api.get("/employee", { params });
     return response.data;
   } catch (error) {
     handleError(error);
@@ -370,7 +370,7 @@ export const deleteCinemaRoom = async (id) => {
 export const getShowtimeByMovieId = async (movieId) => {
   try {
     const response = await api.get(`/showtimes/movie/${movieId}/day`);
-    console.log(response.data);
+
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy showtime theo movieId:", error);
@@ -390,7 +390,6 @@ export const getTimeByDay = async (movieId, day) => {
       }
     );
 
-    console.log(response.data);
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy showtime theo movieId va Day:", error);
@@ -413,7 +412,8 @@ export const HoldingSeats = async (
   showtimeId,
   seatIds,
   productIds,
-  promotionTitle
+  promotionTitle,
+  PointsToUse
 ) => {
   try {
     const response = await api.post("/bookings/hold", {
@@ -422,6 +422,7 @@ export const HoldingSeats = async (
       seatIds: seatIds,
       productIds: productIds || [],
       promotionTitle: promotionTitle || "",
+      PointsToUse: PointsToUse,
     });
     console.log("HoldingSeats Response:", response.data);
     return response.data;
@@ -553,12 +554,185 @@ export const getBookingHistory = async (memberId) => {
   }
 };
 
-export const getAllProducts = async () => {
+export const getAllProducts = async (params) => {
   try {
-    const response = await api.get("/products");
+    const response = await api.get("/products", { params });
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy danh sách sản phẩm owr API:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const holdProducts = async (memberId, products, notes = "") => {
+  try {
+    const response = await api.post("/order-products/hold", {
+      MemberId: memberId,
+      products: products,
+      Notes: notes,
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error(
+      "❌ Lỗi gọi holdOrderProducts:",
+      error?.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
+export const confirmProduct = async (id) => {
+  try {
+    const response = await api.post(`/order-products/confirm/${id}`);
+    console.log("confirm product:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi confirm product:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const getProductByOderProductId = async (orderProductId) => {
+  try {
+    const response = await api.get(`/order-products/${orderProductId}/detail`);
+    return response.data.data.products;
+  } catch (error) {
+    console.error("Lỗi khi lấy thông tin product đã thanh toán", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const cancelProduct = async (id) => {
+  try {
+    const response = await api.post(`/order-products/cancel/${id}`);
+    console.log("cancal product:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi cancel product:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const createShowtime = async (showtimeData) => {
+  try {
+    const response = await api.post("/showtimes/create", showtimeData, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+// API Analytics
+export const getRevenueByMonth = async (year) => {
+  try {
+    const response = await api.get("/analytics/revenue/month", {
+      params: { year },
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const getRevenueByQuarter = async (year) => {
+  try {
+    const response = await api.get("/analytics/revenue/quarter", {
+      params: { year },
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const getRevenueThisMonth = async () => {
+  try {
+    const response = await api.get("/analytics/revenue/this-month");
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const getRevenueThisWeek = async () => {
+  try {
+    const response = await api.get("/analytics/revenue/this-week");
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const getRevenueThisQuarter = async () => {
+  try {
+    const response = await api.get("/analytics/revenue/this-quarter");
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+// API cho Rating
+export const createMovieRating = async ({ movieId, rating, comment }) => {
+  try {
+    const response = await api.post("/ratings", {
+      movieId,
+      rating,
+      comment,
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};
+
+export const getMovieRatingSummary = async (movieId) => {
+  try {
+    const response = await api.get(`/ratings/summary/${movieId}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};
+
+export const getMovieRatingsList = async (
+  movieId,
+  { page = 1, limit = 10, sortBy = "newest" } = {}
+) => {
+  try {
+    const response = await api.get(`/ratings/movie/${movieId}`, {
+      params: { page, limit, sortBy },
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};
+
+export const updateMovieRating = async (ratingId, { rating, comment }) => {
+  try {
+    const response = await api.put(`/ratings/${ratingId}`, { rating, comment });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};
+
+export const deleteMovieRating = async (ratingId) => {
+  try {
+    const response = await api.delete(`/ratings/${ratingId}`);
+    return response.data;
+  } catch (error) {
     handleError(error);
     throw error;
   }

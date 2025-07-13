@@ -18,6 +18,8 @@ import {
   getUpcomingMovies,
 } from "../../../services/API";
 import { toast } from "react-toastify";
+import { useDispatch, useSelector } from "react-redux";
+import { resetBooking } from "../../../redux/features/bookingSlice";
 
 const LandingPage = () => {
   const [movieData, setMovieData] = useState([]);
@@ -29,12 +31,13 @@ const LandingPage = () => {
   // const [totalCurrentPages, setTotalCurrentPages] = useState(0);
   // const [totalUpcomingPages, setTotalUpcomingPages] = useState(0);
   const [hoveredMovie, setHoveredMovie] = useState(null);
-  // eslint-disable-next-line no-unused-vars
+ 
   const [isHovered, setIsHovered] = useState(false);
   const [currentMovies, setCurrentMovies] = useState([]);
   const [upcomingMovies, setUpcomingMovies] = useState([]);
   const [promotionData, setPromotionData] = useState([]);
   const [hoveredPromotion, setHoveredPromotion] = useState(null);
+  const dispatch = useDispatch();
   const fetchPromotions = async () => {
     try {
       const res = await getPromotion();
@@ -99,20 +102,16 @@ const LandingPage = () => {
     fetchPromotions();
   }, [itemsPerPage, currentPage]);
   const navigate = useNavigate();
-  //  const slugify = (str) => {
-  //   return str
-  //     .toLowerCase() // chữ thường
-  //     .normalize("NFD") // chuẩn hóa chuỗi để tách dấu
-  //     .replace(/[\u0300-\u036f]/g, "") // xóa dấu
-  //     .replace(/[^a-z0-9\s-]/g, "") // loại bỏ ký tự đặc biệt
-  //     .trim() // xóa khoảng trắng đầu/cuối
-  //     .replace(/\s+/g, "-"); // thay khoảng trắng bằng dấu -
-  // };
 
   const handleClickMovie = (movieTitle) => {
     const slug = slugify(movieTitle);
     navigate(`/${slug}`);
   };
+
+  useEffect(() => {
+  dispatch(resetBooking()); // reset lại state bôking
+}, []);
+
 
   // Responsive breakpoints for Swiper
   const swiperBreakpoints = {

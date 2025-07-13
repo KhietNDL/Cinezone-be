@@ -22,7 +22,7 @@ import MoviePromotions from "./layouts/User/component/PromotionPage";
 import MovieManagement from "./layouts/Admin/component/MovieManagement";
 import { AuthProvider } from "./context/AuthContext";
 import ComboPage from "./layouts/Staff/foodComponent/ComboPage";
-import TicketInfomation from "./layouts/Staff/ticketComponent/TicketInfomation";
+import TicketInformation from "./layouts/Staff/ticketComponent/TicketInformation";
 import PrintTicket from "./layouts/Staff/ticketComponent/PrintTicket";
 import RoomManagement from "./layouts/Admin/component/RoomManagement";
 import { ToastContainer } from "react-toastify";
@@ -44,11 +44,13 @@ import GoogleCallback from "./auth/login/GoogleCallback";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 import { ConfigProvider } from 'antd';
+import ProductManagement from "./layouts/Admin/component/ProductManagement";
+import CheckOutComboPage from "./layouts/Staff/foodComponent/CheckOutComboPage";
+import ComboInformation from "./layouts/Staff/foodComponent/ComboInformation";
 
 function App() {
   return (
     <AuthProvider>
-
       <Routes>
         <Route path="/login" element={<MovieTheaterLogin />} />
         <Route path="/register" element={<RegistrationPage />} />
@@ -82,6 +84,7 @@ function App() {
             <Route path="bookings" element={<TicketBookingManagement />} />
             <Route path="promotions" element={<PromotionManagement />} />
             <Route path="users" element={<UserManagement />} />
+            <Route path="products" element={<ProductManagement />} />
           </Route>
         </Route>
 
@@ -92,7 +95,7 @@ function App() {
               <ConfigProvider
                 theme={{
                   token: {
-                    colorPrimary: '#8A2BE2',
+                    colorPrimary: "#8A2BE2",
                   },
                 }}
               >
@@ -106,17 +109,17 @@ function App() {
             <Route path="movie/:slug" element={<MovieDetail />} />
             <Route path="ticket-selling/select-seats" element={<SelectSeatsPage />} />
             <Route path="ticket-selling/confirm-ticket" element={<ConfirmTicketsPage />} />
-            <Route path="ticket-selling/ticket-infomation" element={<TicketInfomation />} />
-            <Route path="combo-selling" element={<ComboPage />} />
+            <Route path="ticket-selling/ticket-information" element={<TicketInformation />} />
             <Route path="ticket-selling/view-ticket/:id" element={<PrintTicket />} />
+            <Route path="combo-selling" element={<ComboPage />} />
+            <Route path="combo-selling/checkout" element={<CheckOutComboPage />} />
+            <Route path="combo-selling/combo-information" element={<ComboInformation />} />
           </Route>
         </Route>
-
       </Routes>
 
       <ToastContainer />
     </AuthProvider>
-
   );
 }
 

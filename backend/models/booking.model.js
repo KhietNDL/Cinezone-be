@@ -275,7 +275,62 @@ class Booking {
         [bookingId]
       );
 
-      await connection.commit();
+      // Gửi email xác nhận booking sau khi confirm thành công
+      try {
+        const BookingEmailService = require('../services/bookingEmailService');
+        const User = require('./user.model');
+        
+        // Lấy thông tin booking chi tiết
+        const bookingDetail = await Booking.getBookingDetail(bookingId);
+        if (bookingDetail) {
+          // Lấy thông tin user (bao gồm cả user đã bị xóa mềm)
+          const [userRows] = await connection.query(
+            `SELECT UserId, FullName, Email, IsDeleted 
+             FROM Users 
+             WHERE UserId = ?`,
+            [bookingDetail.MemberId]
+          );
+          const user = userRows[0];
+          if (user && user.Email && user.IsDeleted === 0) {
+            // Lấy thông tin ghế
+            const [seats] = await connection.query(
+              `SELECT s.SeatNumber, s.Price
+               FROM SeatShowtime ss
+               JOIN Seats s ON s.SeatId = ss.SeatId
+               WHERE ss.BookingId = ?
+               AND ss.Status = 'taken'
+               AND ss.IsDeleted = 0`,
+              [bookingId]
+            );
+
+            // Lấy thông tin showtime và movie
+            const [showtimeInfo] = await connection.query(
+              `SELECT s.Day, s.Time, s.Duration, mv.NameOfVietnamese, mv.NameOfEnglish
+               FROM Showtimes s
+               JOIN Version v ON s.VersionId = v.VersionId
+               JOIN Movies mv ON v.MovieId = mv.MovieId
+               JOIN Bookings b ON b.ShowtimeId = s.ShowtimeId
+               WHERE b.BookingId = ?`,
+              [bookingId]
+            );
+
+            if (showtimeInfo[0]) {
+              const emailResult = await BookingEmailService.sendBookingConfirmationEmail(
+                user,
+                bookingDetail,
+                showtimeInfo[0],
+                { NameOfVietnamese: showtimeInfo[0].NameOfVietnamese, NameOfEnglish: showtimeInfo[0].NameOfEnglish },
+                seats
+              );
+            } else {
+            }
+          }
+        }
+      } catch (emailError) {
+        console.error('Error sending booking confirmation email:', emailError);
+        // Không fail booking nếu gửi email thất bại
+      }
+          await connection.commit();
 
       // Lấy io tại đây, đảm bảo luôn lấy giá trị mới nhất
       const io = global._io;
@@ -289,7 +344,6 @@ class Booking {
           status: 2,
           message: 'Your ticket has been confirmed!'
         });
-      } else {
       }
     } catch (err) {
       await connection.rollback();
@@ -461,6 +515,7 @@ class Booking {
       `
     SELECT 
       b.BookingId,
+      b.MemberId,
       b.TotalAmount,
       b.BookingDate,
       u.FullName AS buyerName,
@@ -504,8 +559,13 @@ class Booking {
     );
 
     return {
-      bookingId: rows[0].BookingId,
-      bookingDate: rows[0].BookingDate,
+      BookingId: rows[0].BookingId,
+      MemberId: rows[0].MemberId,
+      TotalAmount: rows[0].TotalAmount,
+      BookingDate: rows[0].BookingDate,
+      buyerName: rows[0].buyerName,
+      buyerPhone: rows[0].buyerPhone,
+      buyerCCCD: rows[0].buyerCCCD,
       movieNameVN: rows[0].NameOfVietnamese,
       movieNameEnglish: rows[0].NameOfEnglish,
       versionType: rows[0].VersionType,
@@ -522,10 +582,6 @@ class Booking {
       totalPrice: seats.reduce((sum, s) => sum + Number(s.Price), 0),
       promotionTitle: rows[0].Title,
 
-      totalAmount: rows[0].TotalAmount,
-      buyerName: rows[0].buyerName,
-      buyerPhone: rows[0].buyerPhone,
-      buyerCCCD: rows[0].buyerCCCD,
       pointEarn: rows[0].ScoreValue > 0 ? rows[0].ScoreValue : undefined,
       pointUse: rows[0].ScoreValue < 0 ? Math.abs(rows[0].ScoreValue) : undefined,
       status: rows[0].Status

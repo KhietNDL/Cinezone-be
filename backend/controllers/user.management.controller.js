@@ -25,11 +25,12 @@ const getAllUsers = async (req, res) => {
 
 // Get users by name
 const getUsersbyName = async (req, res) => {
-  const { name } = req.query;
+  const { name, page = 1, limit = 0, sortBy = 'FullName', sortOrder = 'asc' } = req.query;
   try {
-    const users = await UserManagement.getUsersbyName(name);
+    const result = await UserManagement.getUsersbyName(name, parseInt(page), parseInt(limit), sortBy, sortOrder);
+    
     // Chỉ lấy các trường cần thiết
-    const filteredUsers = users.map((user) => ({
+    const filteredUsers = result.users.map((user) => ({
       UserId: user.UserId,
       FullName: user.FullName,
       DateOfBirth: user.DateOfBirth,
@@ -42,9 +43,11 @@ const getUsersbyName = async (req, res) => {
       ScoreBalance: user.ScoreBalance,
       CreatedAt: user.CreatedAt,
     }));
+    
     res.status(200).json({
       message: "Users retrieved successfully",
       users: filteredUsers,
+      pagination: result.pagination,
     });
   } catch (error) {
     console.error("Get users by name error:", error);
