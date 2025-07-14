@@ -15,7 +15,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { MdOutlineClose } from "react-icons/md";
 import Pagination from "../movieComponent/Pagination";
 import { createComboProduct } from "../../../services/API";
-
+import { CiCirclePlus } from "react-icons/ci";
 const ProductManagement = () => {
   const [productId, setProductId] = useState("");
   const [productName, setProductName] = useState("");
@@ -426,11 +426,11 @@ const ProductManagement = () => {
                                   setComboIdForAddItem(product.ProductId);
                                   setShowAddItemPopup(true);
                                 }}
-                                className="text-purple-500 hover:text-purple-700 cursor-pointer"
+                                className="text-purple-500 hover:text-purple-600 cursor-pointer"
                                 title="Add Item"
                                 aria-label="Add item to combo"
                               >
-                                Add Item
+                                <CiCirclePlus size={20} />
                               </button>
                             )}
                           </div>
@@ -518,7 +518,7 @@ const ProductManagement = () => {
                           title="Add Item"
                           aria-label="Add item to combo"
                         >
-                          Add Item
+                          <CiCirclePlus size={16} />
                         </button>
                       )}
                     </div>
