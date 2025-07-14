@@ -699,7 +699,7 @@ const MovieManagement = () => {
                     className="bg-white p-4 rounded-lg shadow-sm border border-slate-200"
                     onClick={(e) => handleRowClick(movie, e)}
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 w-full">
                       {movie.PosterImage ? (
                         <img
                           src={movie.PosterImage}
@@ -709,11 +709,11 @@ const MovieManagement = () => {
                       ) : (
                         <span className="text-gray-400 italic">No image</span>
                       )}
-                      <div className="flex-1">
-                        <h3 className="text-sm font-semibold text-gray-900 truncate">
+                      <div className="flex-1 w-[200px]">
+                        <h3 className="text-sm font-semibold text-gray-900 break-words">
                           {movie.NameOfEnglish}
                         </h3>
-                        <p className="text-xs text-gray-500 truncate">
+                        <p className="text-xs text-gray-500 break-words">
                           {movie.NameOfVietnamese}
                         </p>
                       </div>
