@@ -17,6 +17,7 @@ import { slugify } from "./Slug";
 import {
   createMovieRating,
   deleteMovieRating,
+  getAllProducts,
   getMovieRatingsList,
   getMovies,
   getSeatsByShowtimeId,
@@ -302,6 +303,24 @@ const BookingPage = () => {
       setRatingsLoading(false);
     }
   }, [movie?.MovieId]);
+
+  useEffect(() => {
+  const fetchProducts = async () => {
+    try {
+      const response = await getAllProducts();
+      dispatch(setProduct(response.products || [])); 
+      
+    } catch (error) {
+      console.error("Lỗi khi lấy sản phẩm:", error);
+      toast.error("Không thể tải danh sách sản phẩm", {
+        duration: 4000,
+        position: "top-center",
+      });
+    }
+  };
+
+  fetchProducts();
+}, [dispatch]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] text-white">

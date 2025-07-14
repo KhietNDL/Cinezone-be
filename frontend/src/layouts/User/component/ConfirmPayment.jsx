@@ -110,7 +110,7 @@ const ConfirmPayment = () => {
       const response = await getPromotionByTitle(promoCode);
       let promotionData = Array.isArray(response.promotions) ? response.promotions[0] : response.promotions;
 
-      if (promotionData?.Title) {
+      if (promotionData?.Code) {
         // *** CHỈ GIẢM GIÁ GHẾ, KHÔNG GIẢM PRODUCT ***
         const seatDiscount = seatPrice * (promotionData.DiscountValue / 100);
         const newSeatPrice = seatPrice - seatDiscount ;
@@ -138,7 +138,7 @@ const ConfirmPayment = () => {
     } catch (error) {
       console.error("Lỗi khi kiểm tra promotion:", error);
       setPromotionError('Có lỗi xảy ra khi kiểm tra mã khuyến mãi');
-      alert('Có lỗi xảy ra khi kiểm tra mã khuyến mãi!');
+      alert('Invalid Code');
     } finally {
       setIsLoadingPromotion(false);
     }
@@ -171,7 +171,7 @@ const ConfirmPayment = () => {
 
 
     if (points > user?.scoreBalance) {
-      setPointsError(`Bạn chỉ có ${scoreBalance} điểm`);
+      setPointsError(`Existing points: ${user.scoreBalance} `);
       return;
     }
 
@@ -240,7 +240,7 @@ const ConfirmPayment = () => {
         userId: user.userId,
         selectedShowtimeId,
         seatIds,
-        promotionTitle: appliedPromotion?.Title || '',
+        promotionCode: appliedPromotion?.Code || '',
         PointsToUse: isUsingPoints ? parseInt(pointsToUse) : 0
       });
 
@@ -249,7 +249,7 @@ const ConfirmPayment = () => {
         selectedShowtimeId,
         seatIds,
         [],
-        appliedPromotion?.Title || '',
+        appliedPromotion?.Code || '',
         isUsingPoints ? parseInt(pointsToUse) : 0
       );
 
@@ -301,7 +301,7 @@ const ConfirmPayment = () => {
 
         // *** UPDATED PRICE DATA ***
         discountType,
-        promotionTitle: appliedPromotion?.Title || null,
+        promotionCode: appliedPromotion?.Code || null,
         promotionData: appliedPromotion,
         pointsUsed: isUsingPoints ? parseInt(pointsToUse) : 0,
         discountAmount, // Chỉ là discount của ghế
@@ -624,7 +624,7 @@ const ConfirmPayment = () => {
                         <div className="mt-3 p-3 bg-green-500/20 rounded-lg border border-green-400/30">
                           <div className="flex justify-between items-center">
                             <div className="text-green-400 text-sm">
-                              ✓ Promotion applied: {appliedPromotion.Title}
+                              ✓ Promotion applied: {appliedPromotion.Code}
                             </div>
                             <button
                               onClick={handleRemovePromotion}
