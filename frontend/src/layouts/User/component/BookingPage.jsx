@@ -47,6 +47,7 @@ const BookingPage = () => {
     selectedSeats,
     selectedRoom,
     selectedDate,
+    // eslint-disable-next-line no-unused-vars
     selectedTime,
     selectedShowtimeId,
     seatQuantity,

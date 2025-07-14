@@ -95,6 +95,7 @@ export const forgot = async (credentials) => {
     handleError(error);
   }
 };
+
 export const verification = async (credentials) => {
   try {
     const response = await api.post("/auth/verify-otp", credentials, {
