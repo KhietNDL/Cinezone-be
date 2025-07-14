@@ -444,7 +444,6 @@ router.put(
   UserController.updateProfile
 );
 
-
 /**
  * @swagger
  * /api/auth/login-google:
@@ -500,7 +499,9 @@ router.get(
   }),
   (req, res) => {
     if (!req.user) {
-      return res.redirect(`${process.env.FRONTEND_URL}/login?error=authentication_failed`);
+      return res.redirect(
+        `${process.env.FRONTEND_URL}/login?error=authentication_failed`
+      );
     }
 
     const token = jwt.sign(
@@ -510,14 +511,18 @@ router.get(
     );
 
     // Redirect về frontend với token và user data
-    const userString = encodeURIComponent(JSON.stringify({
-      UserId: req.user.UserId,
-      Email: req.user.Email,
-      FullName: req.user.FullName,
-      Role: req.user.Role
-    }));
+    const userString = encodeURIComponent(
+      JSON.stringify({
+        UserId: req.user.UserId,
+        Email: req.user.Email,
+        FullName: req.user.FullName,
+        Role: req.user.Role,
+      })
+    );
 
-    res.redirect(`${process.env.FRONTEND_URL}/auth/google/callback?token=${token}&user=${userString}`);
+    res.redirect(
+      `${process.env.FRONTEND_URL}/auth/google/callback?token=${token}&user=${userString}`
+    );
   }
 );
 

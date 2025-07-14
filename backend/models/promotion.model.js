@@ -159,12 +159,12 @@ class Promotion {
     return result.affectedRows > 0;
   }
 
-  static async searchPromotionsByTitle(title) {
+  static async searchPromotionsByCode(code) {
     const [rows] = await db
       .promise()
       .query(
-        "SELECT * FROM Promotions WHERE LOWER(Title) LIKE LOWER(?) AND IsDeleted = 0",
-        [`%${title}%`]
+        "SELECT * FROM Promotions WHERE LOWER(Code) LIKE LOWER(?) AND IsDeleted = 0",
+        [`%${code}%`]
       );
     return rows;
   }

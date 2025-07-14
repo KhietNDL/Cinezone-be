@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import { getPromotionByTitle, HoldingSeats, cancelBooking, holdProducts } from "../../../services/API";
 import { useSelector } from "react-redux";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const ConfirmPayment = () => {
   const { state } = useLocation();
@@ -81,7 +83,10 @@ const ConfirmPayment = () => {
   console.log( "Final PRICE:", finalPrice);
 
   // Handle payment method selection
-  const handlePaymentMethod = (method) => setPaymentMethod(method);
+  const handlePaymentMethod = (method) => {
+    setPaymentMethod(method);
+ 
+  };
   console.log("METHOD SELECTED", paymentMethod);
 
   // Promotion handling - CHỈ ÁP DỤNG CHO GHẾ
@@ -92,7 +97,10 @@ const ConfirmPayment = () => {
 
   const handleAddPromotion = async () => {
     if (promoCode.trim() === '') {
-      alert('Vui lòng nhập mã khuyến mãi!');
+      toast.error('Please enter a promotion code!', {
+        duration: 4000,
+        position: "top-center",
+      });
       return;
     }
 
@@ -110,7 +118,7 @@ const ConfirmPayment = () => {
       const response = await getPromotionByTitle(promoCode);
       let promotionData = Array.isArray(response.promotions) ? response.promotions[0] : response.promotions;
 
-      if (promotionData?.Title) {
+      if (promotionData?.Code) {
         // *** CHỈ GIẢM GIÁ GHẾ, KHÔNG GIẢM PRODUCT ***
         const seatDiscount = seatPrice * (promotionData.DiscountValue / 100);
         const newSeatPrice = seatPrice - seatDiscount ;
@@ -122,7 +130,11 @@ const ConfirmPayment = () => {
         setDiscountedSeatPrice(newSeatPrice);
         setFinalPrice(newFinalPrice);
         setPromoCode('');
-        alert('Áp dụng mã khuyến mãi thành công!');
+        
+        toast.success(`Promotion "${promotionData.Code}" applied successfully! Save ${formatPrice(seatDiscount)}`, {
+          duration: 4000,
+          position: "top-center",
+        });
 
         console.log("🎫 Promotion applied:", {
           originalSeatPrice: seatPrice,
@@ -132,19 +144,26 @@ const ConfirmPayment = () => {
           newFinalPrice
         });
       } else {
-        setPromotionError('Mã khuyến mãi không hợp lệ');
-        alert('Mã khuyến mãi không hợp lệ!');
+        setPromotionError('Invalid promotion code');
+        toast.error('Invalid promotion code!', {
+          duration: 4000,
+          position: "top-center",
+        });
       }
     } catch (error) {
-      console.error("Lỗi khi kiểm tra promotion:", error);
-      setPromotionError('Có lỗi xảy ra khi kiểm tra mã khuyến mãi');
-      alert('Có lỗi xảy ra khi kiểm tra mã khuyến mãi!');
+      console.error("Error checking promotion:", error);
+      setPromotionError('Error occurred while checking promotion code');
+      toast.error('Invalid promotion code', {
+        duration: 4000,
+        position: "top-center",
+      });
     } finally {
       setIsLoadingPromotion(false);
     }
   };
 
   const handleRemovePromotion = () => {
+    const savedAmount = discountAmount;
     setAppliedPromotion(null);
     setPromotionError('');
     setPromoCode('');
@@ -152,6 +171,11 @@ const ConfirmPayment = () => {
     setDiscountType('');
     setDiscountedSeatPrice(seatPrice); // Reset về giá ghế gốc
     setFinalPrice(seatPrice + productPrice); // Reset về tổng gốc
+    
+    toast.info(`Promotion removed. Added back ${formatPrice(savedAmount)}`, {
+      duration: 3000,
+      position: "top-center",
+    });
   };
 
   // Points handling - CHỈ ÁP DỤNG CHO GHẾ
@@ -163,26 +187,37 @@ const ConfirmPayment = () => {
 
   const handleUsePoints = () => {
     if (!pointsToUse || pointsToUse <= 0) {
-      setPointsError('Vui lòng nhập số điểm hợp lệ');
+      setPointsError('Please enter valid points');
+      toast.error('Please enter valid points', {
+        duration: 4000,
+        position: "top-center",
+      });
       return;
     }
 
     const points = parseInt(pointsToUse);
 
-
     if (points > user?.scoreBalance) {
-      setPointsError(`Bạn chỉ có ${scoreBalance} điểm`);
+      setPointsError(`Available points: ${user.scoreBalance}`);
+      toast.error(`Available points: ${user.scoreBalance}`, {
+        duration: 4000,
+        position: "top-center",
+      });
       return;
     }
 
     // *** CHỈ KIỂM TRA VỚI GIÁ GHẾ, KHÔNG PHẢI TỔNG ***
     if (points > seatPrice) {
-      setPointsError('Số điểm không thể lớn hơn giá ghế');
+      setPointsError('Points cannot be greater than seat price');
+      toast.error('Points cannot be greater than seat price', {
+        duration: 4000,
+        position: "top-center",
+      });
       return;
     }
 
     if (appliedPromotion) {
-      const confirm = window.confirm('Bạn đang sử dụng mã khuyến mãi. Sử dụng điểm sẽ hủy mã khuyến mãi. Tiếp tục?');
+      const confirm = window.confirm('You are using a promotion. Using points will cancel the promotion. Continue?');
       if (!confirm) return;
       handleRemovePromotion();
     }
@@ -198,7 +233,11 @@ const ConfirmPayment = () => {
     setDiscountedSeatPrice(newSeatPrice);
     setFinalPrice(newFinalPrice);
     setPointsError('');
-    alert('Sử dụng điểm thành công!');
+    
+    toast.success(`${points.toLocaleString()} points applied successfully! Save ${formatPrice(seatDiscount)}`, {
+      duration: 4000,
+      position: "top-center",
+    });
 
     console.log("Points applied:", {
       originalSeatPrice: seatPrice,
@@ -211,6 +250,9 @@ const ConfirmPayment = () => {
   };
 
   const handleRemovePoints = () => {
+    const savedAmount = discountAmount;
+    const usedPoints = pointsToUse;
+    
     setIsUsingPoints(false);
     setPointsToUse('');
     setPointsError('');
@@ -218,6 +260,11 @@ const ConfirmPayment = () => {
     setDiscountType('');
     setDiscountedSeatPrice(seatPrice); // Reset về giá ghế gốc
     setFinalPrice(seatPrice + productPrice); // Reset về tổng gốc
+    
+    toast.info(`${parseInt(usedPoints).toLocaleString()} points removed. Added back ${formatPrice(savedAmount)}`, {
+      duration: 3000,
+      position: "top-center",
+    });
   };
 
   // Enhanced handleConfirm with both HoldingSeats and holdProducts
@@ -225,11 +272,19 @@ const ConfirmPayment = () => {
     e.preventDefault();
 
     if (!paymentMethod) {
-      alert("Vui lòng chọn phương thức thanh toán!");
+      toast.error("Please select a payment method!", {
+        duration: 4000,
+        position: "top-center",
+      });
       return;
     }
 
     setIsConfirming(true);
+
+    // Show loading toast
+    // const loadingToastId = toast.loading("Processing your booking...", {
+    //   position: "top-center",
+    // });
 
     try {
       let holdingResult = null;
@@ -240,7 +295,7 @@ const ConfirmPayment = () => {
         userId: user.userId,
         selectedShowtimeId,
         seatIds,
-        promotionTitle: appliedPromotion?.Title || '',
+        promotionCode: appliedPromotion?.Code || '',
         PointsToUse: isUsingPoints ? parseInt(pointsToUse) : 0
       });
 
@@ -249,10 +304,9 @@ const ConfirmPayment = () => {
         selectedShowtimeId,
         seatIds,
         [],
-        appliedPromotion?.Title || '',
+        appliedPromotion?.Code || '',
         isUsingPoints ? parseInt(pointsToUse) : 0
       );
-
 
       console.log("✅ Seats held successfully:", holdingResult);
 
@@ -285,6 +339,15 @@ const ConfirmPayment = () => {
         console.log("ℹ️ No products to hold");
       }
 
+      // Update loading toast to success  // toast.update(loadingToastId, {
+      //   render: "Booking confirmed! Redirecting to payment...",
+      //   type: "success",
+      //   isLoading: false,
+      //   autoClose: 2000,
+      //   position: "top-center",
+      // });
+    
+
       // 3. Navigate to waiting page with all data
       const waitingData = {
         // Seat data
@@ -301,7 +364,7 @@ const ConfirmPayment = () => {
 
         // *** UPDATED PRICE DATA ***
         discountType,
-        promotionTitle: appliedPromotion?.Title || null,
+        promotionCode: appliedPromotion?.Code || null,
         promotionData: appliedPromotion,
         pointsUsed: isUsingPoints ? parseInt(pointsToUse) : 0,
         discountAmount, // Chỉ là discount của ghế
@@ -322,22 +385,40 @@ const ConfirmPayment = () => {
 
       console.log("Navigating to waiting page with data:", waitingData);
 
-      navigate("/waiting", {
-        state: waitingData
-      });
+      // Delay navigation slightly to show success message
+      setTimeout(() => {
+        navigate("/waiting", {
+          state: waitingData
+        });
+      }, 1000);
 
     } catch (error) {
       console.error("❌ Error during confirmation process:", error);
 
-      // Show specific error message based on which step failed
-      if (error.message && error.message.includes('product')) {
-        alert("Có lỗi xảy ra khi giữ sản phẩm. Vui lòng thử lại!");
-      } else {
-        alert("Có lỗi xảy ra khi đặt chỗ. Vui lòng thử lại!");
-      }
+      // Update loading toast to error
+      // toast.update(loadingToastId, {
+      //   render: error.message && error.message.includes('product') 
+      //     ? "Error holding products. Please try again!"
+      //     : "Error processing booking. Please try again!",
+      //   type: "error",
+      //   isLoading: false,
+      //   autoClose: 4000,
+      //   position: "top-center",
+      // });
     } finally {
       setIsConfirming(false);
     }
+  };
+
+  // Handle cancel action
+  const handleCancel = () => {
+    toast.info("Booking cancelled. Returning to home page...", {
+      duration: 2000,
+      position: "top-center",
+    });
+    setTimeout(() => {
+      navigate("/");
+    }, 1000);
   };
 
   useEffect(() => {
@@ -346,6 +427,19 @@ const ConfirmPayment = () => {
     console.log("==PRODUCT PRICE (original):", productPrice);
   }, [finalPrice, discountedSeatPrice, productPrice]);
 
+  // Check if user is logged in
+  useEffect(() => {
+    if (!user) {
+      toast.error("Please login to continue with payment", {
+        duration: 4000,
+        position: "top-center",
+      });
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+    }
+  }, [user, navigate]);
+
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -353,8 +447,33 @@ const ConfirmPayment = () => {
     }).format(price);
   };
 
+  // Show loading or redirect if no user
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] text-white flex items-center justify-center">
+        <ToastContainer />
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white mb-4"></div>
+          <p className="text-lg">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] text-white">
+      <ToastContainer 
+        position="top-center"
+        autoClose={4000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
       <div className="max-w-7xl mx-auto py-1 md:py-14 lg:py-18 px-4 sm:px-10 mt-0 pb-8">
         <div className="space-y-6 mt-10">
           {/* Grid 2 cột với chiều cao bằng nhau */}
@@ -527,7 +646,7 @@ const ConfirmPayment = () => {
 
                   {/* Price Breakdown */}
                   <div className="mb-6">
-                    <h3 className="text-lg md:text-xl font-bold text-white mb-4">Price Breakdown</h3>
+                    <h3 className="text-lg md:text-xl font-bold text-white mb-4">Price </h3>
                     <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
                       <div className="space-y-3">
                         {/* Seat Price */}
@@ -576,19 +695,6 @@ const ConfirmPayment = () => {
                           <span className="text-purple-300">{formatPrice(finalPrice)}</span>
                         </div>
                       </div>
-
-                      {/* Display active discount */}
-                      {/* {appliedPromotion && (
-                        <p className="text-xs text-green-400 mt-3">
-                          ✓ Applied promotion: {appliedPromotion.Title}
-                          {appliedPromotion.DiscountValue && ` (-${appliedPromotion.DiscountValue}% on seats)`}
-                        </p>
-                      )}
-                      {isUsingPoints && (
-                        <p className="text-xs text-yellow-400 mt-2">
-                          ✓ Using {parseInt(pointsToUse).toLocaleString()} points on seats
-                        </p>
-                      )} */}
                     </div>
                   </div>
 
@@ -606,7 +712,7 @@ const ConfirmPayment = () => {
                           disabled={isLoadingPromotion || appliedPromotion || isUsingPoints}
                         />
                         <button
-                          className={`px-6 py-3 bg-gradient-to-r  via-purple-500  hover:from-purple-700 hover:via-purple-600  text-white font-semibold rounded-xl text-sm transition-all duration-300 whitespace-nowrap ${isLoadingPromotion || appliedPromotion || isUsingPoints ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          className={`px-6 py-3 bg-gradient-to-r from-purple-600 via-purple-500 to-purple-700 hover:from-purple-700 hover:via-purple-600 hover:to-purple-800 text-white font-semibold rounded-xl text-sm transition-all duration-300 whitespace-nowrap ${isLoadingPromotion || appliedPromotion || isUsingPoints ? 'opacity-50 cursor-not-allowed' : ''}`}
                           onClick={handleAddPromotion}
                           disabled={isLoadingPromotion || appliedPromotion || isUsingPoints}
                         >
@@ -624,11 +730,11 @@ const ConfirmPayment = () => {
                         <div className="mt-3 p-3 bg-green-500/20 rounded-lg border border-green-400/30">
                           <div className="flex justify-between items-center">
                             <div className="text-green-400 text-sm">
-                              ✓ Promotion applied: {appliedPromotion.Title}
+                              ✓ Promotion applied: {appliedPromotion.Code} (-{appliedPromotion.DiscountValue}%)
                             </div>
                             <button
                               onClick={handleRemovePromotion}
-                              className="text-red-400 hover:text-red-300 text-xs ml-2"
+                              className="text-red-400 hover:text-red-300 text-xs ml-2 transition-colors"
                             >
                               ✕ Remove
                             </button>
@@ -658,7 +764,7 @@ const ConfirmPayment = () => {
                           disabled={isUsingPoints || appliedPromotion}
                         />
                         <button
-                          className={`px-6 py-3 bg-gradient-to-r  via-purple-500  hover:from-purple-700 hover:via-purple-600  text-white font-semibold rounded-xl text-sm transition-all duration-300 whitespace-nowrap ${isUsingPoints || appliedPromotion ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          className={`px-6 py-3 bg-gradient-to-r from-purple-600 via-purple-500 to-purple-700 hover:from-purple-700 hover:via-purple-600 hover:to-purple-800 text-white  rounded-xl text-sm transition-all duration-300 whitespace-nowrap ${isUsingPoints || appliedPromotion ? 'opacity-50 cursor-not-allowed' : ''}`}
                           onClick={handleUsePoints}
                           disabled={isUsingPoints || appliedPromotion}
                         >
@@ -680,7 +786,7 @@ const ConfirmPayment = () => {
                             </div>
                             <button
                               onClick={handleRemovePoints}
-                              className="text-red-400 hover:text-red-300 text-xs ml-2"
+                              className="text-red-400 hover:text-red-300 text-xs ml-2 transition-colors"
                             >
                               ✕ Remove
                             </button>
@@ -693,6 +799,8 @@ const ConfirmPayment = () => {
                           Cannot use both discounts at the same time.
                         </div>
                       )}
+
+                    
                     </div>
                   </div>
 
@@ -704,48 +812,48 @@ const ConfirmPayment = () => {
                         onClick={() => handlePaymentMethod("3")}
                         className={`flex flex-col items-center justify-center rounded-2xl p-4 h-20 font-semibold transition-all duration-300 border-2 ${
                           paymentMethod === "3" 
-                            ? "bg-gray/20 shadow-lg" 
-                            : "bg-white hover:bg-white/10 border-white/20"
-                        } focus:outline-none focus:ring-4 focus:ring-purple-500`}
+                            ? "bg-purple-500/20 border-purple-400 shadow-lg transform scale-105" 
+                            : "bg-white/5 hover:bg-white/10 border-white/20 hover:border-purple-400/50"
+                        } focus:outline-none focus:ring-4 focus:ring-purple-500/50`}
                       >
                         <img
                           src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-VNPAY-QR-350x65.png"
                           alt="VnPay logo"
                           className="w-16 h-3 mb-1"
                         />
-                        
+                       
                       </button>
                       
                       <button
                         onClick={() => handlePaymentMethod("4")}
                         className={`flex flex-col items-center justify-center rounded-2xl p-4 h-20 font-semibold transition-all duration-300 border-2 ${
                           paymentMethod === "4" 
-                            ? "bg-gray/20 shadow-lg" 
-                            : "bg-white hover:bg-white/10 border-white/20"
-                        } focus:outline-none focus:ring-4 focus:ring-purple-500`}
+                            ? "bg-purple-500/20 border-purple-400 shadow-lg transform scale-105" 
+                            : "bg-white/5 hover:bg-white/10 border-white/20 hover:border-purple-400/50"
+                        } focus:outline-none focus:ring-4 focus:ring-purple-500/50`}
                       >
                         <img
                           src="https://vectorseek.com/wp-content/uploads/2023/09/Zalopay-Logo-Vector.svg-.png"
                           alt="ZaloPay logo"
                           className="w-16 h-5 mb-1"
                         />
-                        
+                     
                       </button>
 
                       <button
                         onClick={() => handlePaymentMethod("2")}
                         className={`flex flex-col items-center justify-center rounded-2xl p-4 h-20 font-semibold transition-all duration-300 border-2 ${
                           paymentMethod === "2" 
-                            ? "bg-gray/20 shadow-lg" 
-                            : "bg-white hover:bg-white/10 border-white/20"
-                        } focus:outline-none focus:ring-4 focus:ring-purple-500`}
+                            ? "bg-purple-500/20 border-purple-400 shadow-lg transform scale-105" 
+                            : "bg-white/5 hover:bg-white/10 border-white/20 hover:border-purple-400/50"
+                        } focus:outline-none focus:ring-4 focus:ring-purple-500/50`}
                       >
                         <img
                           src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-MoMo-Transparent-1024x1024.png"
                           alt="Momo logo"
                           className="w-10 h-8 mb-1"
                         />
-                        
+                       
                       </button>
                     </div>
                   </div>
@@ -758,13 +866,20 @@ const ConfirmPayment = () => {
                       onClick={handleConfirm}
                       disabled={!paymentMethod || isConfirming}
                     >
-                      {isConfirming ? 'Processing...' : 'Confirm And Payment'}
+                      {isConfirming ? (
+                        <div className="flex items-center justify-center space-x-2">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                          <span>Processing...</span>
+                        </div>
+                      ) : (
+                        'Confirm And Payment'
+                      )}
                     </button>
                     
                     <button
                       type="button"
                       className="w-full py-4 bg-transparent hover:bg-white/10 border-2 border-purple-500/70 hover:border-purple-400 text-white font-semibold rounded-2xl text-lg transition-all duration-300"
-                      onClick={() => navigate("/")}
+                      onClick={handleCancel}
                       disabled={isConfirming}
                     >
                       Cancel
