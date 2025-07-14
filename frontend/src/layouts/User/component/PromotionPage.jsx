@@ -512,11 +512,11 @@ const MoviePromotions = () => {
                               </button>
                             ) : getPromotionStatus(promo) === "upcoming" ? (
                               <span className="text-yellow-400 text-xs font-bold">
-                                Sắp diễn ra
+                                Upcomming
                               </span>
                             ) : (
                               <span className="text-gray-400 text-xs font-bold">
-                                Hết hạn
+                                Expired
                               </span>
                             )}
                           </div>
