@@ -133,10 +133,22 @@ const deleteProduct = async (req, res) => {
   }
 };
 
+const getComboChildren = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const result = await Product.getComboChildren(productId);
+    if (!result) return res.status(404).json({ error: "Combo product not found or not a combo" });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getAllProducts,
   getProductById,
   createProduct,
   updateProduct,
   deleteProduct,
+  getComboChildren,
 };

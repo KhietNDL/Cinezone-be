@@ -74,8 +74,31 @@ const deleteScoreHistory = async (req, res) => {
   }
 };
 
+const getScoreHistoryByMemberId = async (req, res) => {
+  try {
+    const { memberId } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 0;
+    const result = await ScoreHistory.getScoreHistoryByMemberId(memberId, page, limit);
+    if (limit > 0 && page > 1 && result.scoreHistory.length === 0) {
+      return res.status(404).json({ message: "No score history found for this page" });
+    }
+    if (result.scoreHistory.length === 0) {
+      return res.status(200).json({ message: "No score history found", scoreHistory: [] });
+    }
+    res.status(200).json({
+      scoreHistory: result.scoreHistory,
+      pagination: result.pagination,
+    });
+  } catch (error) {
+    console.error("Get score history by memberId error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 module.exports = {
   getAllScoreHistory,
+  getScoreHistoryByMemberId,
   createScoreHistory,
   updateScoreHistory,
   deleteScoreHistory

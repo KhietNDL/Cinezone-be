@@ -131,6 +131,23 @@ class OrderProduct {
       `UPDATE OrderProduct SET Status = 2 WHERE OrderProductId = ? AND Status = 1 AND IsDeleted = 0`,
       [orderProductId]
     );
+
+    // Lấy io tại đây, đảm bảo luôn lấy giá trị mới nhất
+    const io = global._io;
+    const [[order]] = await db.promise().query(
+      `SELECT MemberId FROM OrderProduct WHERE OrderProductId = ?`, [orderProductId]
+    );
+    if (io && order && order.MemberId) {
+      console.log("[BE] Emit notification to:", order.MemberId, orderProductId);
+      io.to(order.MemberId).emit('notification', {
+        type: 'orderProduct',
+        orderProductId,
+        status: 2,
+        message: 'Your order has been confirmed!'
+      });
+    } else {
+      console.log("[BE] Không emit được notification", io, order);
+    }
     return result.affectedRows > 0;
   }
 
@@ -140,6 +157,20 @@ class OrderProduct {
       `UPDATE OrderProduct SET Status = 3 WHERE OrderProductId = ? AND Status = 2 AND IsDeleted = 0`,
       [orderProductId]
     );
+
+    // Gửi notification realtime khi checkin
+    const io = global._io;
+    const [[order]] = await db.promise().query(
+      `SELECT MemberId FROM OrderProduct WHERE OrderProductId = ?`, [orderProductId]
+    );
+    if (io && order && order.MemberId) {
+      io.to(order.MemberId).emit('notification', {
+        type: 'orderProduct',
+        orderProductId,
+        status: 3,
+        message: 'Your order has been checked in!'
+      });
+    }
     return result.affectedRows > 0;
   }
 
@@ -194,11 +225,25 @@ class OrderProduct {
 
       // 4. Cập nhật trạng thái đơn hàng sang cancelled
       const [result] = await connection.query(
-        `UPDATE OrderProduct SET Status = 4 WHERE OrderProductId = ? AND Status IN (0,1) AND IsDeleted = 0`,
+        `UPDATE OrderProduct SET Status = 4 WHERE OrderProductId = ? AND Status IN (1,2) AND IsDeleted = 0`,
         [orderProductId]
       );
 
       await connection.commit();
+
+      // Gửi notification realtime khi cancel
+      const io = global._io;
+      const [[order]] = await db.promise().query(
+        `SELECT MemberId FROM OrderProduct WHERE OrderProductId = ?`, [orderProductId]
+      );
+      if (io && order && order.MemberId) {
+        io.to(order.MemberId).emit('notification', {
+          type: 'orderProduct',
+          orderProductId,
+          status: 4,
+          message: 'Your order has been cancelled!'
+        });
+      }
       return result.affectedRows > 0;
     } catch (err) {
       await connection.rollback();

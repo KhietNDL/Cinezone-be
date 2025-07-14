@@ -1,12 +1,18 @@
 import React from "react";
 
-const ItemCard = ({ item, type, onSelect, selected, small }) => {
+const ItemCard = ({ item, type, onSelect, selected, small, disabled }) => {
+
+  const handleClick = () => {
+    if (!disabled) {
+      onSelect && onSelect(item);
+    }
+  };
 
   const formatPrice = (price) => {
     return price?.toLocaleString('vi-VN');
   };
 
-  if (!item) return null; // An toàn hơn
+  if (!item) return null;
 
   const truncateText = (text, maxLength) => {
     if (!text) return "";
@@ -25,9 +31,21 @@ const ItemCard = ({ item, type, onSelect, selected, small }) => {
 
   const fullName = type === "movie" ? item?.NameOfEnglish : item?.name;
 
+  // Xác định màu cho quantity
+  let quantityColor = "text-green-700";
+  if (item?.quantity === 0) {
+    quantityColor = "text-gray-700";
+  } else if (item?.quantity < 5) {
+    quantityColor = "text-red-600";
+  } else if (item?.quantity < 10) {
+    quantityColor = "text-orange-500";
+  } else if (item?.quantity >= 11) {
+    quantityColor = "text-green-700";
+  }
+
   return (
     <div
-      onClick={() => onSelect && onSelect(item)}
+      onClick={handleClick}
       className={`cursor-pointer rounded-xl border border-gray-300 transition-transform
         ${selected ? "shadow-[0_10px_10px_gray]" : "none"}
         ${type === "movie"
@@ -39,26 +57,53 @@ const ItemCard = ({ item, type, onSelect, selected, small }) => {
             : "w-[250px] h-[380px]"
         }`}
       title={fullName}
+      style={{ position: "relative", overflow: "hidden" }}
     >
       {type === "movie" ? (
         <img
           alt={item?.NameOfEnglish}
           src={item?.PosterImage}
           loading="lazy"
-          className={`w-full ${small ? "h-[230px]" : "h-[350px]"} 
-          object-cover rounded-tl-xl rounded-tr-xl mx-auto`}
+          className={`w-full ${small ? "h-[230px]" : "h-[350px]"} object-cover rounded-tl-xl rounded-tr-xl mx-auto`}
         />
       ) : (
-        <img
-          alt={item?.name}
-          src={item?.image}
-          className={`w-full ${small ? "h-[100px]" : "h-[250px]"} 
-          object-cover rounded-tl-xl rounded-tr-xl mx-auto`}
-        />
+        <div style={{ position: "relative" }}>
+          <img
+            alt={item?.name}
+            src={item?.image}
+            className={`w-full object-cover rounded-tl-xl rounded-tr-xl mx-auto
+                      ${small ? "h-[100px] max-h-[100px]" : "h-[250px] max-h-[250px]"}
+                      ${item?.quantity === 0 ? "opacity-40 grayscale" : ""}`
+            }
+          />
+          {item?.quantity === 0 && (
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: small ? "100px" : "250px",
+                background: "rgba(0,0,0,0.5)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#fff",
+                fontWeight: "bold",
+                fontSize: small ? 24 : 40,
+                letterSpacing: 2,
+                zIndex: 2,
+                borderRadius: "12px"
+              }}
+            >
+              SOLD
+            </div>
+          )}
+        </div>
       )}
 
       <div
-        className={`p-1 font-semibold text-center uppercase flex flex-col text-gray-700 ${small ? "text-[11px]" : "text-md"
+        className={`p-2 font-semibold text-center uppercase flex flex-col text-gray-700 ${small ? "text-[11px]" : "text-md"
           }`}
       >
         <div>{displayNameEN}</div>
@@ -70,7 +115,7 @@ const ItemCard = ({ item, type, onSelect, selected, small }) => {
           <div className="text-xl p-2 font-bold text-center uppercase text-green-700">
             {formatPrice(item?.price?.toFixed ? item.price : item.price)} VNĐ
           </div>
-          <div className="p-2">
+          <div className={`p-2 font-bold ${quantityColor}`}>
             Quantity: {item?.quantity}
           </div>
         </div>
@@ -80,79 +125,3 @@ const ItemCard = ({ item, type, onSelect, selected, small }) => {
 };
 
 export default ItemCard;
-
-// import React from "react";
-
-// const ItemCard = ({ item, type, onSelect, selected, small }) => {
-//   const formatPrice = (price) => {
-//     return price?.toLocaleString('vi-VN');
-//   };
-
-//   if (!item) return null;
-
-//   const truncateText = (text, maxLength) => {
-//     if (!text) return "";
-//     return text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
-//   };
-
-//   const displayNameEN =
-//     type === "movie"
-//       ? truncateText(item?.NameOfEnglish, 15) // Luôn giới hạn độ dài cho mobile
-//       : truncateText(item?.name, 15);
-
-//   const displayNameVN =
-//     type === "movie"
-//       ? truncateText(item?.NameOfVietnamese, 15)
-//       : null;
-
-//   const fullName = type === "movie" ? item?.NameOfEnglish : item?.name;
-
-//   return (
-//     <div
-//       onClick={() => onSelect && onSelect(item)}
-//       className={`cursor-pointer rounded-xl border border-gray-300 transition-transform
-//         ${selected ? "shadow-[0_10px_10px_gray]" : "none"}
-//         ${
-//           type === "movie"
-//             ? "w-[120px] h-[200px] min-h-[200px] md:w-[170px] md:h-[270px] md:min-h-[220px] lg:w-[250px] lg:h-[420px] lg:min-h-[350px]"
-//             : "w-[100px] h-[150px] md:w-[140px] md:h-[180px] lg:w-[250px] lg:h-[380px]"
-//         }`}
-//       title={fullName}
-//     >
-//       {type === "movie" ? (
-//         <img
-//           alt={item?.NameOfEnglish}
-//           src={item?.PosterImage}
-//           loading="lazy"
-//           className={`w-full h-[150px] md:h-[230px] lg:h-[350px] object-cover rounded-tl-xl rounded-tr-xl mx-auto`}
-//         />
-//       ) : (
-//         <img
-//           alt={item?.name}
-//           src={item?.image}
-//           className={`w-full h-[80px] md:h-[100px] lg:h-[250px] object-cover rounded-tl-xl rounded-tr-xl mx-auto`}
-//         />
-//       )}
-
-//       <div
-//         className={`p-1 font-semibold text-center uppercase flex flex-col text-gray-700 text-[11px] md:text-lg`}
-//       >
-//         <div>{displayNameEN}</div>
-//         <div>{displayNameVN}</div>
-//       </div>
-
-//       {type === "combo" && (
-//         <div className="flex flex-col items-center justify-center">
-//           <div className="text-sm p-1 md:text-xl md:p-2 font-bold text-center uppercase text-green-700">
-//             {formatPrice(item?.price?.toFixed ? item.price : item.price)} VNĐ
-//           </div>
-//           <div className="p-1 md:p-2 text-xs md:text-base">
-//             Quantity: {item?.quantity}
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
-
-// export default ItemCard;

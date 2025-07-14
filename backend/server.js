@@ -1,4 +1,6 @@
 const express = require("express");
+const http = require("http");
+const socketIo = require("socket.io");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpecs = require("./swagger");
 require("dotenv").config();
@@ -10,6 +12,19 @@ const cleanupOldSeats = require("./jobs/seatCleanup");
 const scoreHistoryRoutes = require("./routes/scorehistory");
 
 const app = express();
+const server = http.createServer(app);
+const io = socketIo(server, { cors: { origin: '*' } }); // KHỞI TẠO ĐÚNG
+
+global._io = io; // Gán vào global sau khi đã khởi tạo
+
+app.set("io", io);
+
+io.on("connection", (socket) => {
+  console.log("Socket connected:", socket.id); // Thêm dòng này để debug
+  socket.on("join", (userId) => {
+    if (userId) socket.join(userId);
+  });
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -84,16 +99,7 @@ app.use('/api/order-product-details', orderProductDetailRoutes);
 app.use('/api/order-products', orderProductRoutes);
 app.use('/api/ratings', ratingRoutes);
 
-// Log all incoming requests for debugging
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
-  next();
-});
 app.use("/api/analytics", analyticsRoutes);
-
-//port
-const PORT = process.env.PORT || 4458;
-
 app.use(
   "/",
   swaggerUi.serve,
@@ -102,7 +108,10 @@ app.use(
   })
 );
 
-app.listen(PORT, "0.0.0.0", () => {
+//port
+const PORT = process.env.PORT || 4458;
+
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Swagger documentation available at http://localhost:${PORT}/`);
 });

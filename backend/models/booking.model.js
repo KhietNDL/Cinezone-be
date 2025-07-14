@@ -2,6 +2,8 @@ const db = require("../config/database");
 const { v4: uuidv4 } = require("uuid");
 const { normalizeDate } = require("../middlewares/showtime.validator");
 const Ticket = require("./ticket.model"); // Đảm bảo đã require ở đầu file
+const io = global._io;
+
 class Booking {
   static async getBookingById(bookingId) {
     const sql = `SELECT * FROM Bookings WHERE BookingId = ? AND IsDeleted = 0`;
@@ -24,43 +26,43 @@ class Booking {
     return bookingDetails;
   }
 
-static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrder = 'desc' } = {}) {
-  let sql = `SELECT * FROM Bookings WHERE IsDeleted = 0`;
-  let countSql = `SELECT COUNT(*) as total FROM Bookings WHERE IsDeleted = 0`;
-  const params = [];
+  static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrder = 'desc' } = {}) {
+    let sql = `SELECT * FROM Bookings WHERE IsDeleted = 0`;
+    let countSql = `SELECT COUNT(*) as total FROM Bookings WHERE IsDeleted = 0`;
+    const params = [];
 
-  // Sorting
-  const allowedSort = ['CreatedAt', 'BookingDate', 'TotalAmount', 'Status'];
-  if (!allowedSort.includes(sortBy)) sortBy = 'CreatedAt';
-  if (!['asc', 'desc'].includes(sortOrder.toLowerCase())) sortOrder = 'desc';
+    // Sorting
+    const allowedSort = ['CreatedAt', 'BookingDate', 'TotalAmount', 'Status'];
+    if (!allowedSort.includes(sortBy)) sortBy = 'CreatedAt';
+    if (!['asc', 'desc'].includes(sortOrder.toLowerCase())) sortOrder = 'desc';
 
-  sql += ` ORDER BY ${sortBy} ${sortOrder.toUpperCase()}`;
+    sql += ` ORDER BY ${sortBy} ${sortOrder.toUpperCase()}`;
 
-  // Pagination
-  let total = 0;
-  if (limit > 0) {
-    const [[countRow]] = await db.promise().query(countSql);
-    total = countRow.total;
-    const offset = (page - 1) * limit;
-    sql += ` LIMIT ? OFFSET ?`;
-    params.push(Number(limit), Number(offset));
+    // Pagination
+    let total = 0;
+    if (limit > 0) {
+      const [[countRow]] = await db.promise().query(countSql);
+      total = countRow.total;
+      const offset = (page - 1) * limit;
+      sql += ` LIMIT ? OFFSET ?`;
+      params.push(Number(limit), Number(offset));
+    }
+
+    const [rows] = await db.promise().query(sql, params);
+
+    if (limit > 0) {
+      return {
+        data: rows,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          totalPages: Math.ceil(total / limit)
+        }
+      };
+    }
+    return { data: rows };
   }
-
-  const [rows] = await db.promise().query(sql, params);
-
-  if (limit > 0) {
-    return {
-      data: rows,
-      pagination: {
-        page: Number(page),
-        limit: Number(limit),
-        total,
-        totalPages: Math.ceil(total / limit)
-      }
-    };
-  }
-  return { data: rows };
-}
 
   static async createBooking(data) {
     const {
@@ -148,7 +150,7 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
     userId,
     showtimeId,
     seatIds,
-    promotionTitle,
+    promotionCode,
     discount = 0,
     CreatedBy,
   }) {
@@ -179,10 +181,10 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
       // 2. Xử lý promotion hoặc discount (chỉ 1 trong 2)
       let promotionDiscount = 0; // phần trăm
       let promotionId = null;
-      if (promotionTitle) {
+      if (promotionCode) {
         const [promotion] = await connection.query(
-          `SELECT DiscountValue, PromotionId FROM Promotions WHERE Title = ? AND IsDeleted = 0`,
-          [promotionTitle]
+          `SELECT DiscountValue, PromotionId FROM Promotions WHERE Code = ? AND IsDeleted = 0`,
+          [promotionCode]
         );
         if (promotion.length === 0) {
           throw new Error("Promotion not found");
@@ -273,7 +275,76 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
         [bookingId]
       );
 
-      await connection.commit();
+      // Gửi email xác nhận booking sau khi confirm thành công
+      try {
+        const BookingEmailService = require('../services/bookingEmailService');
+        const User = require('./user.model');
+        
+        // Lấy thông tin booking chi tiết
+        const bookingDetail = await Booking.getBookingDetail(bookingId);
+        if (bookingDetail) {
+          // Lấy thông tin user (bao gồm cả user đã bị xóa mềm)
+          const [userRows] = await connection.query(
+            `SELECT UserId, FullName, Email, IsDeleted 
+             FROM Users 
+             WHERE UserId = ?`,
+            [bookingDetail.MemberId]
+          );
+          const user = userRows[0];
+          if (user && user.Email && user.IsDeleted === 0) {
+            // Lấy thông tin ghế
+            const [seats] = await connection.query(
+              `SELECT s.SeatNumber, s.Price
+               FROM SeatShowtime ss
+               JOIN Seats s ON s.SeatId = ss.SeatId
+               WHERE ss.BookingId = ?
+               AND ss.Status = 'taken'
+               AND ss.IsDeleted = 0`,
+              [bookingId]
+            );
+
+            // Lấy thông tin showtime và movie
+            const [showtimeInfo] = await connection.query(
+              `SELECT s.Day, s.Time, s.Duration, mv.NameOfVietnamese, mv.NameOfEnglish
+               FROM Showtimes s
+               JOIN Version v ON s.VersionId = v.VersionId
+               JOIN Movies mv ON v.MovieId = mv.MovieId
+               JOIN Bookings b ON b.ShowtimeId = s.ShowtimeId
+               WHERE b.BookingId = ?`,
+              [bookingId]
+            );
+
+            if (showtimeInfo[0]) {
+              const emailResult = await BookingEmailService.sendBookingConfirmationEmail(
+                user,
+                bookingDetail,
+                showtimeInfo[0],
+                { NameOfVietnamese: showtimeInfo[0].NameOfVietnamese, NameOfEnglish: showtimeInfo[0].NameOfEnglish },
+                seats
+              );
+            } else {
+            }
+          }
+        }
+      } catch (emailError) {
+        console.error('Error sending booking confirmation email:', emailError);
+        // Không fail booking nếu gửi email thất bại
+      }
+          await connection.commit();
+
+      // Lấy io tại đây, đảm bảo luôn lấy giá trị mới nhất
+      const io = global._io;
+      const [[booking]] = await db.promise().query(
+        `SELECT MemberId FROM Bookings WHERE BookingId = ?`, [bookingId]
+      );
+      if (io && booking && booking.MemberId) {
+        io.to(booking.MemberId).emit('notification', {
+          type: 'booking',
+          bookingId,
+          status: 2,
+          message: 'Your ticket has been confirmed!'
+        });
+      }
     } catch (err) {
       await connection.rollback();
       throw err;
@@ -377,6 +448,20 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
       }
 
       await connection.commit();
+
+      // Gửi notification realtime khi cancel
+      const io = global._io;
+      const [[booking]] = await db.promise().query(
+        `SELECT MemberId FROM Bookings WHERE BookingId = ?`, [bookingId]
+      );
+      if (io && booking && booking.MemberId) {
+        io.to(booking.MemberId).emit('notification', {
+          type: 'booking',
+          bookingId,
+          status: 4,
+          message: 'Your ticket has been cancelled!'
+        });
+      }
       return true;
     } catch (err) {
       await connection.rollback();
@@ -390,7 +475,7 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
     const [rows] = await db
       .promise()
       .query(
-        "SELECT Status FROM Bookings WHERE BookingId = ? AND IsDeleted = 0",
+        "SELECT Status, MemberId FROM Bookings WHERE BookingId = ? AND IsDeleted = 0",
         [bookingId]
       );
     if (!rows[0]) {
@@ -405,6 +490,19 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
         "UPDATE Bookings SET Status = 3, UpdatedAt = NOW() WHERE BookingId = ? AND Status = 2 AND IsDeleted = 0",
         [bookingId]
       );
+
+    // Gửi notification realtime khi checkin
+    const io = global._io;
+    const memberId = rows[0].MemberId;
+    if (io && memberId) {
+      io.to(memberId).emit('notification', {
+        type: 'booking',
+        bookingId,
+        status: 3,
+        message: 'Your ticket has been checked in!'
+      });
+    }
+
     return {
       success: result.affectedRows > 0,
       message:
@@ -417,6 +515,7 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
       `
     SELECT 
       b.BookingId,
+      b.MemberId,
       b.TotalAmount,
       b.BookingDate,
       u.FullName AS buyerName,
@@ -460,8 +559,13 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
     );
 
     return {
-      bookingId: rows[0].BookingId,
-      bookingDate: rows[0].BookingDate,
+      BookingId: rows[0].BookingId,
+      MemberId: rows[0].MemberId,
+      TotalAmount: rows[0].TotalAmount,
+      BookingDate: rows[0].BookingDate,
+      buyerName: rows[0].buyerName,
+      buyerPhone: rows[0].buyerPhone,
+      buyerCCCD: rows[0].buyerCCCD,
       movieNameVN: rows[0].NameOfVietnamese,
       movieNameEnglish: rows[0].NameOfEnglish,
       versionType: rows[0].VersionType,
@@ -478,10 +582,6 @@ static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrd
       totalPrice: seats.reduce((sum, s) => sum + Number(s.Price), 0),
       promotionTitle: rows[0].Title,
 
-      totalAmount: rows[0].TotalAmount,
-      buyerName: rows[0].buyerName,
-      buyerPhone: rows[0].buyerPhone,
-      buyerCCCD: rows[0].buyerCCCD,
       pointEarn: rows[0].ScoreValue > 0 ? rows[0].ScoreValue : undefined,
       pointUse: rows[0].ScoreValue < 0 ? Math.abs(rows[0].ScoreValue) : undefined,
       status: rows[0].Status
