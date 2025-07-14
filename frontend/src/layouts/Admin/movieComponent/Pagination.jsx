@@ -110,9 +110,6 @@ const Pagination = ({ currentPage, totalPages, handlePageChange }) => {
           Next
         </button>
       </div>
-      <span className="text-gray-500  text-sm sm:text-base">
-        Page {currentPage} of {totalPages}
-      </span>
     </div>
   );
 };

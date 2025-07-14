@@ -350,14 +350,6 @@ const TicketBookingManagement = () => {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center py-2 border-b border-gray-100">
                       <span className="text-gray-600 font-medium">
-                        Member ID:
-                      </span>
-                      <span className="font-semibold text-gray-800 bg-gray-100 px-3 py-1 rounded-full text-sm">
-                        {booking.MemberId}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                      <span className="text-gray-600 font-medium">
                         Full Name:
                       </span>
                       <span className="font-semibold text-gray-800">
@@ -444,7 +436,7 @@ const TicketBookingManagement = () => {
                             : "bg-gray-100 text-gray-600"
                         }`}
                       >
-                        {booking.promotionTitle || "None"}
+                        {booking.promotionCode || "None"}
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-gray-100">
@@ -495,7 +487,7 @@ const TicketBookingManagement = () => {
                         Points Used:
                       </span>
                       <span className="font-bold text-orange-600 bg-orange-100 px-3 py-1 rounded-full text-sm">
-                        {booking.pointsUsed} pts
+                        {booking.pointsUsed || 0} pts
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-gray-100">
@@ -503,7 +495,7 @@ const TicketBookingManagement = () => {
                         Points Earned:
                       </span>
                       <span className="font-bold text-green-600 bg-green-100 px-3 py-1 rounded-full text-sm">
-                        +{booking.pointsEarned} pts
+                        +{booking.pointEarn || 0} pts
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-gray-100">
@@ -519,7 +511,7 @@ const TicketBookingManagement = () => {
                         Total Amount:
                       </span>
                       <span className="font-bold text-2xl text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
-                        {formatPrice(booking.totalAmount)}
+                        {formatPrice(booking.TotalAmount)}
                       </span>
                     </div>
                   </div>
@@ -593,7 +585,6 @@ const TicketBookingManagement = () => {
                   />
                 </div>
               </div>
-              
             </div>
 
             {/* Table */}

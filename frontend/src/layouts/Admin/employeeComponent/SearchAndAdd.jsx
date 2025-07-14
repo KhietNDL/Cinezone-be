@@ -1,7 +1,6 @@
 import React from "react";
 import { IoSearchOutline } from "react-icons/io5";
 import { GoPlus } from "react-icons/go";
-
 const SearchAndAdd = ({
   searchEmployee,
   setSearchEmployee,

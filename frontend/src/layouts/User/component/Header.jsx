@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../../../assets/logoWeb.png";
-import { FaSearch, FaUser, FaBell, FaTicketAlt, FaBoxOpen, FaClock, FaRegSmileBeam } from "react-icons/fa";
+import {
+  FaSearch,
+  FaUser,
+  FaBell,
+  FaTicketAlt,
+  FaBoxOpen,
+  FaClock,
+  FaRegSmileBeam,
+} from "react-icons/fa";
 import { useAuth } from "../../../context/AuthContext";
 import { searchMovies } from "../../../services/API";
 import { slugify } from "./Slug";
@@ -64,9 +72,18 @@ const Header = () => {
   const highlightStatus = (message) => {
     if (!message) return "";
     return message
-      .replace(/confirmed/gi, '<span class="text-green-600 font-bold">confirmed</span>')
-      .replace(/checked in/gi, '<span class="text-purple-600 font-bold">checked in</span>')
-      .replace(/cancelled/gi, '<span class="text-red-600 font-bold">cancelled</span>');
+      .replace(
+        /confirmed/gi,
+        '<span class="text-green-600 font-bold">confirmed</span>'
+      )
+      .replace(
+        /checked in/gi,
+        '<span class="text-purple-600 font-bold">checked in</span>'
+      )
+      .replace(
+        /cancelled/gi,
+        '<span class="text-red-600 font-bold">cancelled</span>'
+      );
   };
 
   return (
@@ -82,7 +99,11 @@ const Header = () => {
         />
       </div>
       <div className="md:flex items-center text-[17px] font-bold space-x-8 hidden">
-        <div role="button" className="hover:underline shadow-2xl">
+        <div
+          onClick={() => navigate("/movies")}
+          role="button"
+          className="hover:underline shadow-2xl"
+        >
           Movies
         </div>
         <Link
@@ -181,7 +202,12 @@ const Header = () => {
                           </span>
                         </div>
                       )}
-                      <div className="mt-1 text-gray-700" dangerouslySetInnerHTML={{ __html: highlightStatus(noti.message) }} />
+                      <div
+                        className="mt-1 text-gray-700"
+                        dangerouslySetInnerHTML={{
+                          __html: highlightStatus(noti.message),
+                        }}
+                      />
                       <div className="text-xs text-gray-400 mt-2 flex items-center gap-1">
                         <FaClock className="inline-block" />
                         {new Date().toLocaleString()}
