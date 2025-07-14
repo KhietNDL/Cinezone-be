@@ -161,6 +161,9 @@ export const LayoutSelectSeat = ({
         >
           {/* Click area chính xác trên icon */}
           <div
+            onClick={
+                isClickable ? () => handleSeatClick(seatNumber) : undefined
+              }
             className={`
               ${getSeatColor(seat)} 
               transition-opacity duration-200
@@ -184,9 +187,7 @@ export const LayoutSelectSeat = ({
                 display: "block",
                 pointerEvents: "none",
               }}
-              onClick={
-                isClickable ? () => handleSeatClick(seatNumber) : undefined
-              }
+            
             />
 
             {/* Tooltip */}
