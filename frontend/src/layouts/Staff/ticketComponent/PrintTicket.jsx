@@ -11,6 +11,7 @@ import logo from '../../../assets/logoWhite.png'
 import { resetBooking } from '../../../redux/features/sellingSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import VersionCard from '../component/VersionCard';
+import { getMovieById } from '../../../services/APIForStaff/API';
 
 export default function PrintTicket() {
     const componentRef = useRef();
@@ -27,8 +28,8 @@ export default function PrintTicket() {
         selectedVersion: version = "Standard",
         selectedSeats = [],
         totalPrice = 0,
-        memberInfo = {},
-        paymentMethod = "",
+        // memberInfo = {},
+        // paymentMethod = "",
         discount = 0,
         amountPaid = totalPrice
     } = bookingData;
@@ -77,7 +78,7 @@ export default function PrintTicket() {
             pdf.addImage(imgData, 'PNG', 0, 10, pdfWidth, pdfHeight);
             pdf.save("ticket.pdf");
         } catch (error) {
-            toast.error("Failed to generate PDF");
+            toast.error("Failed to generate PDF" + error.message);
         }
     };
 
@@ -95,14 +96,8 @@ export default function PrintTicket() {
                         <div className="w-full flex flex-col justify-center items-center rounded-xl space-y-2 bg-[linear-gradient(to_right,_#6366F1,_#8B5CF6,_#4F46E5)] mt-6 mb-6">
                             <div className="relative flex h-[180px] w-[1000px] md:h-[200px] lg:h-[300px] p-5">
                                 <div className='w-[63%] h-full'>
-                                    <div className="flex items-start gap-4 border-b border-white pb-2 w-[95%] text-white">
-                                        {/* <img
-                                            src={movie.PosterImage}
-                                            alt={`Poster ${bookingData?.NameOfEnglish}`}
-                                            className="w-25 h-auto rounded shadow"
-                                        /> */}
+                                    <div className="flex items-start gap-4 border-b border-white pb-2 w-[95%] text-white">                                   
                                         <div className="flex-1">
-
                                             <div className="flex items-center gap-2">
                                                 <img
                                                     src={logo}

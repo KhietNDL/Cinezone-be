@@ -147,56 +147,55 @@ export const LayoutSelectSeat = ({
     const isClickable = !isTaken && !isHolding;
 
     // Ghế đôi
-    if (isCouple) {
-      return (
-        <div
-          key={seatId}
-          className="inline-block"
+   // Ghế đôi - FIXED VERSION
+if (isCouple) {
+  return (
+    <div
+      key={seatId}
+      className="inline-block"
+      style={{
+        marginRight: `${seatSpacingCouple}px`,
+        width: `${widthDouble}px`,
+        height: `${heightDouble}px`,
+        position: "relative",
+      }}
+    >
+     
+      <div
+        onClick={isClickable ? () => handleSeatClick(seatNumber) : undefined} 
+        className={`
+          ${getSeatColor(seat)} 
+          transition-opacity duration-200
+          ${!isClickable ? "opacity-50" : "opacity-100"}
+          ${!isClickable ? "cursor-not-allowed" : "cursor-pointer"}
+          group relative
+        `}
+        style={{
+          width: `${widthDouble}px`,
+          height: `${heightDouble}px`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+        title={`${type} Seat ${seatNumber} - ${price.toLocaleString()}đ - ${status}`}
+      >
+        <MdOutlineChair
           style={{
-            marginRight: `${seatSpacingCouple}px`,
             width: `${widthDouble}px`,
             height: `${heightDouble}px`,
-            position: "relative",
+            display: "block",
+            pointerEvents: "none", 
           }}
-        >
-          {/* Click area chính xác trên icon */}
-          <div
-            className={`
-              ${getSeatColor(seat)} 
-              transition-opacity duration-200
-              ${!isClickable ? "opacity-50" : "opacity-100"}
-              ${!isClickable ? "cursor-not-allowed" : "cursor-pointer"}
-              group relative
-            `}
-            style={{
-              width: `${widthDouble}px`,
-              height: `${heightDouble}px`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            title={`${type} Seat ${seatNumber} - ${price.toLocaleString()}đ - ${status}`}
-          >
-            <MdOutlineChair
-              style={{
-                width: `${widthDouble}px`,
-                height: `${heightDouble}px`,
-                display: "block",
-                pointerEvents: "none",
-              }}
-              onClick={
-                isClickable ? () => handleSeatClick(seatNumber) : undefined
-              }
-            />
+        />
 
-            {/* Tooltip */}
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-              {seatNumber} - {price.toLocaleString()}đ
-            </div>
-          </div>
+        {/* Tooltip */}
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+          {seatNumber} - {price.toLocaleString()}đ
         </div>
-      );
-    }
+      </div>
+    </div>
+  );
+}
 
     // Ghế đơn (Normal/VIP)
     return (

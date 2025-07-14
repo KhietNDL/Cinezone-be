@@ -34,12 +34,6 @@ const HistoryActivity = () => {
     setShowDetailModal(true);
   };
 
-  const generateTicketCode = (bookingId) => {
-    if (!bookingId || typeof bookingId !== 'string') return 'CineZone-UNKNOWN';
-    const shortId = bookingId.substring(0, 6).toUpperCase();
-    return `CineZone-${shortId}`;
-  };
-
   // Helper function to convert date to dd/mm/yyyy format
   const formatDateToDDMMYYYY = (date) => {
     if (!date) return '';
@@ -511,34 +505,34 @@ const HistoryActivity = () => {
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="text-left py-4 px-6 font-semibold text-gray-700">Name</th>
-                      <th className="text-left py-4 px-6 font-semibold text-gray-700">Date</th>
-                      <th className="text-left py-4 px-6 font-semibold text-gray-700">Time</th>
-                      <th className="text-left py-4 px-2 font-semibold text-gray-700">Ticket</th>
-                      <th className="text-left py-4 px-6 font-semibold text-gray-700">Price</th>
-                      <th className="text-left py-4 px-6 font-semibold text-gray-700">Customer</th>
-                      <th className="text-left py-4 px-6 font-semibold text-gray-700">Status</th>
-                      <th className="text-left py-4 px-6 font-semibold text-gray-700">Action</th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">Name</th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">Date</th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">Time</th>
+                      <th className="text-center py-4 px-2 font-semibold text-gray-700">Ticket</th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">Price</th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">Customer</th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">Status</th>
+                      <th className="text-center py-4 px-2 font-semibold text-gray-700">Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {currentData.map((item, index) => (
                       <tr key={item.id || index} className="border-b border-gray-100 hover:bg-purple-50/50 transition-colors duration-200">
                         <td className="py-4 px-6">
-                          <div className="flex items-center space-x-3">
+                          <div className="text-center space-x-3">
                             <span className="font-medium text-gray-800">{item.movieNameEnglish || 'Unknown Movie'}</span>
                           </div>
                         </td>
 
                         <td className="py-4 px-6">
-                          <div className="flex items-center text-gray-700">
+                          <div className="text-center text-gray-700">
                             {item.BookingDate
                               ? new Date(item.BookingDate).toLocaleDateString('vi-VN').replace(/\//g, '-')
                               : 'N/A'}
                           </div>
                         </td>
                         <td className="py-4 px-6">
-                          <div className="flex items-center text-gray-700">
+                          <div className="text-center text-gray-700">
                             {item.BookingDate
                               ? new Date(item.BookingDate).toLocaleTimeString('vi-VN', {
                                 hour: '2-digit',
@@ -548,22 +542,22 @@ const HistoryActivity = () => {
                               : 'N/A'}
                           </div>
                         </td>
-                        <td className="py-4 px-4 text-gray-700 ">
+                        <td className=" text-center py-4 px-4 text-gray-700 ">
                           {item.seats ? (Array.isArray(item.seats) ? item.seats.length : item.seats.toString().split(',').length) : 0}
                         </td>
-                        <td className="py-4 px-6 text-gray-700 font-medium">{item.totalAmount || '0'}</td>
-                        <td className="py-4 px-6 text-gray-700 font-medium">{item.buyerName || 'N/A'}</td>
-                        <td className="py-4 px-6">
+                        <td className=" text-center py-4 px-6 text-gray-700 font-medium">{item.totalAmount || '0'}</td>
+                        <td className=" text-center py-4 px-6 text-gray-700 font-medium">{item.buyerName || 'N/A'}</td>
+                        <td className="text-center py-4 px-6">
                           <span className={`${getStatusStyle(item.status)} px-4 py-2 rounded-full text-sm font-medium`}>
                             {getStatusLabel(item.status)}
                           </span>
                         </td>
 
-                        <td className="py-0 px-2">
+                        <td className="  text-center py-0 px-2">
                           {item.status === 2 && (
                             <button
                               onClick={() => handleViewDetail(item)}
-                              className="px-4 py-0 text-sm  bg-transparent rounded-lg  text-blue-500"
+                              className="bg-blue-100 text-blue-600 px-4  py-2 rounded-full text-sm font-medium hover:bg-blue-500/50"
                             >
                               Detail
                             </button>
@@ -708,19 +702,19 @@ const HistoryActivity = () => {
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="text-left py-4 px-6 font-semibold text-gray-700">Date</th>
-                      <th className="text-left py-4 px-6 font-semibold text-gray-700">Time</th>
-                      <th className="text-left py-4 px-6 font-semibold text-gray-700">Activity Type</th>
-                      <th className="text-left py-4 px-6 font-semibold text-gray-700">Points</th>
-                      <th className="text-left py-4 px-6 font-semibold text-gray-700">Booking ID</th>
-                      <th className="text-left py-4 px-6 font-semibold text-gray-700">Status</th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">Date</th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">Time</th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">Points</th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">Booking ID</th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">Activity Type</th>
+                      {/* <th className="text-center py-4 px-6 font-semibold text-gray-700">Status</th> */}
                     </tr>
                   </thead>
                   <tbody>
                     {currentScoreData.map((item, index) => (
                       <tr key={item.ScoreHistoryId || index} className="border-b border-gray-100 hover:bg-purple-50/50 transition-colors duration-200">
                         <td className="py-4 px-6">
-                          <div className="flex items-center text-gray-700">
+                          <div className="flex items-center justify-center text-gray-700">
                             {item.ChangeDate
                               ? new Date(item.ChangeDate).toLocaleDateString('vi-VN').replace(/\//g, '-')
                               : 'N/A'}
@@ -728,7 +722,7 @@ const HistoryActivity = () => {
                         </td>
 
                         <td className="py-4 px-6">
-                          <div className="flex items-center text-gray-700">
+                          <div className="flex items-center justify-center text-gray-700">
                             {item.ChangeDate
                               ? new Date(item.ChangeDate).toLocaleTimeString('vi-VN', {
                                 hour: '2-digit',
@@ -739,7 +733,20 @@ const HistoryActivity = () => {
                           </div>
                         </td>
 
-                        <td className="py-4 px-6">
+                       
+
+                        <td className="text-center py-4 px-6">
+                          <div className={`font-semibold ${
+                            item.ScoreValue > 0 ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {item.ScoreValue > 0 ? `+${item.ScoreValue}` : item.ScoreValue}
+                          </div>
+                        </td>
+
+                        <td className="text-center py-4 px-6 text-gray-700 font-mono text-sm">
+                          {item.RelatedBookingId}
+                        </td>
+                         <td className="text-center py-4 px-6">
                           <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                             item.ChangeType === 2 
                               ? 'bg-red-100 text-red-700' 
@@ -751,19 +758,7 @@ const HistoryActivity = () => {
                           </span>
                         </td>
 
-                        <td className="py-4 px-6">
-                          <div className={`font-semibold ${
-                            item.ScoreValue > 0 ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            {item.ScoreValue > 0 ? `+${item.ScoreValue}` : item.ScoreValue}
-                          </div>
-                        </td>
-
-                        <td className="py-4 px-6 text-gray-700 font-mono text-sm">
-                          {item.RelatedBookingId ? item.RelatedBookingId.substring(0, 8) + '...' : 'N/A'}
-                        </td>
-
-                        <td className="py-4 px-6">
+                        {/* <td className="text-center py-4 px-6">
                           <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                             item.IsDeleted === 0 
                               ? 'bg-green-100 text-green-700' 
@@ -771,7 +766,7 @@ const HistoryActivity = () => {
                           }`}>
                             {item.IsDeleted === 0 ? 'Active' : 'Deleted'}
                           </span>
-                        </td>
+                        </td> */}
                       </tr>
                     ))}
                   </tbody>
@@ -803,11 +798,7 @@ const HistoryActivity = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <button className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-xl font-medium hover:shadow-lg transition-all duration-300">
-                        View Points Details
-                      </button>
-                    </div>
+                    
                   </div>
                 </div>
 
@@ -874,7 +865,7 @@ const HistoryActivity = () => {
                   <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2">Ticket Code</p>
                   <div className="bg-gray-50 rounded-lg py-3 px-4 border border-gray-200">
                     <p className="text-lg font-mono font-bold text-gray-900 tracking-wider">
-                      {generateTicketCode(selectedBooking.BookingId)}
+                      {selectedBooking.BookingId}
                     </p>
                   </div>
                 </div>

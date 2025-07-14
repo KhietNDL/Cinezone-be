@@ -211,53 +211,59 @@ const RatingListModal = ({
                       )}
 
                       {/* Rating header */}
-                      <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-3">
-                          {/* Stars */}
-                          {isEditing ? (
-                            <div className="flex items-center gap-1">
-                              {[1, 2, 3, 4, 5].map((star) => (
-                                <button
-                                  key={star}
-                                  type="button"
-                                  className="focus:outline-none transition-all duration-200 hover:scale-110 active:scale-95"
-                                  onClick={() => setEditRatingValue(star)}
-                                  onMouseEnter={() => setHoveredStar(star)}
-                                  onMouseLeave={() => setHoveredStar(0)}
-                                  disabled={editLoading}
-                                >
-                                  {(hoveredStar || editRatingValue) >= star ? (
-                                    <MdStar className="text-yellow-400 text-xl" />
-                                  ) : (
-                                    <MdStarBorder className="text-yellow-400 text-xl opacity-60 hover:opacity-100" />
+                          <div className="w-[50px] h-[50px] rounded-full">
+                            <img
+                              src={rating.avatar_url}
+                              alt=""
+                              className="w-full h-full rounded-full"
+                            />
+                          </div>
+                          <div>
+                            <div>{rating.FullName}</div>
+                            <div className="flex items-center gap-3 mt-1">
+                              {/* Stars */}
+                              {isEditing ? (
+                                <div className="flex items-center gap-1">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <button
+                                      key={star}
+                                      type="button"
+                                      className="focus:outline-none transition-all duration-200 hover:scale-110 active:scale-95"
+                                      onClick={() => setEditRatingValue(star)}
+                                      onMouseEnter={() => setHoveredStar(star)}
+                                      onMouseLeave={() => setHoveredStar(0)}
+                                      disabled={editLoading}
+                                    >
+                                      {(hoveredStar || editRatingValue) >=
+                                      star ? (
+                                        <MdStar className="text-yellow-400 text-xl" />
+                                      ) : (
+                                        <MdStarBorder className="text-yellow-400 text-xl opacity-60 hover:opacity-100" />
+                                      )}
+                                    </button>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1">
+                                  {Array.from({ length: 5 }).map((_, i) =>
+                                    i < rating.Rating ? (
+                                      <MdStar
+                                        key={i}
+                                        className="text-yellow-400 text-lg"
+                                      />
+                                    ) : (
+                                      <MdStarBorder
+                                        key={i}
+                                        className="text-yellow-400 text-lg opacity-50"
+                                      />
+                                    )
                                   )}
-                                </button>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-1">
-                              {Array.from({ length: 5 }).map((_, i) =>
-                                i < rating.Rating ? (
-                                  <MdStar
-                                    key={i}
-                                    className="text-yellow-400 text-lg"
-                                  />
-                                ) : (
-                                  <MdStarBorder
-                                    key={i}
-                                    className="text-yellow-400 text-lg opacity-50"
-                                  />
-                                )
+                                </div>
                               )}
                             </div>
-                          )}
-
-                          <span className="text-white/80 font-medium">
-                            {isEditing
-                              ? hoveredStar || editRatingValue
-                              : rating.Rating}
-                            /5
-                          </span>
+                          </div>
                         </div>
 
                         <span className="text-xs text-white/60 bg-white/5 px-3 py-1 rounded-full">

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../../../assets/logoWeb.png";
-import { FaSearch, FaUser } from "react-icons/fa";
+import { FaSearch, FaUser, FaBell, FaTicketAlt, FaBoxOpen, FaClock, FaRegSmileBeam } from "react-icons/fa";
 import { useAuth } from "../../../context/AuthContext";
 import { searchMovies } from "../../../services/API";
 import { slugify } from "./Slug";
+import { io } from "socket.io-client";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -12,6 +13,8 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const { user } = useAuth();
+  const [notifications, setNotifications] = useState([]);
+  const [showNoti, setShowNoti] = useState(false);
 
   const handleSearch = async (query) => {
     if (!query.trim()) {
@@ -42,6 +45,28 @@ const Header = () => {
     setIsSearchOpen(false);
     setSearchQuery("");
     setSearchResults([]);
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    const socket = io("http://localhost:4458");
+    socket.emit("join", user.userId || user.UserId);
+    console.log("[FE] Join room:", user.userId || user.UserId);
+
+    socket.on("notification", (data) => {
+      console.log("[FE] Received notification:", data);
+      setNotifications((prev) => [data, ...prev]);
+    });
+
+    return () => socket.disconnect();
+  }, [user]);
+
+  const highlightStatus = (message) => {
+    if (!message) return "";
+    return message
+      .replace(/confirmed/gi, '<span class="text-green-600 font-bold">confirmed</span>')
+      .replace(/checked in/gi, '<span class="text-purple-600 font-bold">checked in</span>')
+      .replace(/cancelled/gi, '<span class="text-red-600 font-bold">cancelled</span>');
   };
 
   return (
@@ -109,7 +134,65 @@ const Header = () => {
             </div>
           )}
         </div>
-
+        {/* Notification Icon */}
+        <div className="relative">
+          <FaBell
+            size={24}
+            className="cursor-pointer"
+            onClick={() => setShowNoti((prev) => !prev)}
+          />
+          {notifications.length > 0 && (
+            <span className="absolute -top-1 -right-1 bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-full px-2 text-xs font-bold shadow-lg animate-pulse">
+              {notifications.length}
+            </span>
+          )}
+          {showNoti && (
+            <div className="absolute right-0 mt-3 w-100 bg-white text-black rounded-xl shadow-2xl z-50 max-h-96 overflow-y-auto border border-gray-200">
+              <div className="p-3 font-bold border-b text-lg flex items-center gap-2 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-t-xl">
+                <FaBell className="text-indigo-500" />
+                Notification
+              </div>
+              {notifications.length === 0 ? (
+                <div className="p-4 text-gray-500 text-center">
+                  <FaRegSmileBeam className="inline-block mr-2 text-xl text-gray-400" />
+                  No notifications
+                </div>
+              ) : (
+                notifications.map((noti, idx) => (
+                  <div
+                    key={idx}
+                    className="p-4 border-b last:border-b-0 flex items-start gap-3 hover:bg-indigo-50 transition-all cursor-pointer"
+                    onClick={() => navigate("/account/history")}
+                  >
+                    <div>
+                      {noti.type === "booking" && (
+                        <div className="flex items-center gap-2">
+                          <FaTicketAlt className="text-blue-500" />
+                          <span className="font-semibold text-blue-700">
+                            Ticket <b>{noti.bookingId}</b>
+                          </span>
+                        </div>
+                      )}
+                      {noti.type === "orderProduct" && (
+                        <div className="flex items-center gap-2">
+                          <FaBoxOpen className="text-green-500" />
+                          <span className="font-semibold text-green-700">
+                            Order <b>{noti.orderProductId}</b>
+                          </span>
+                        </div>
+                      )}
+                      <div className="mt-1 text-gray-700" dangerouslySetInnerHTML={{ __html: highlightStatus(noti.message) }} />
+                      <div className="text-xs text-gray-400 mt-2 flex items-center gap-1">
+                        <FaClock className="inline-block" />
+                        {new Date().toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
         {user ? (
           <div className="flex items-center space-x-2">
             {user.avatar_url ? (

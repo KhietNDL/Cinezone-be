@@ -110,6 +110,28 @@ class Product {
     );
     return result.affectedRows > 0;
   }
+
+  static async getComboChildren(productId) {
+    // Kiểm tra product có phải combo không
+    const [comboRows] = await db.promise().query(
+      "SELECT * FROM Products WHERE ProductId = ? AND Unit = 'combo' AND IsDeleted = 0",
+      [productId]
+    );
+    if (!comboRows.length) return null;
+
+    // Lấy các product con của combo
+    const [children] = await db.promise().query(
+      `SELECT cp.ComboProductId, cp.Quantity, p.ProductId, p.ProductName, p.Description, p.Unit, p.Price, p.ImageUrl
+       FROM ComboProduct cp
+       JOIN Products p ON cp.ProductId = p.ProductId
+       WHERE cp.ComboId = ?`,
+      [productId]
+    );
+    return {
+      combo: comboRows[0],
+      children
+    };
+  }
 }
 
 module.exports = Product;

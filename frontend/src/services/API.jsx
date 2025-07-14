@@ -566,6 +566,47 @@ export const getAllProducts = async (params) => {
   }
 };
 
+export const createProduct = async (productData) => {
+  try {
+    const response = await api.post("/products/create", productData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi tạo sản phẩm:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const updateProduct = async (productId, productData) => {
+  try {
+    const response = await api.put(`/products/${productId}`, productData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi cập nhật sản phẩm:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const deleteProduct = async (productId) => {
+  try {
+    const response = await api.delete(`/products/${productId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi xóa sản phẩm:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
 export const holdProducts = async (memberId, products, notes = "") => {
   try {
     const response = await api.post("/order-products/hold", {
@@ -747,6 +788,21 @@ export const deleteMovieRating = async (ratingId) => {
     const response = await api.delete(`/ratings/${ratingId}`);
     return response.data;
   } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};
+
+export const createComboProduct = async (comboProductData) => {
+  try {
+    const response = await api.post("/combo-products/create", comboProductData, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi tạo combo product:", error);
     handleError(error);
     throw error;
   }

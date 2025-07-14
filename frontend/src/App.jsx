@@ -22,7 +22,7 @@ import MoviePromotions from "./layouts/User/component/PromotionPage";
 import MovieManagement from "./layouts/Admin/component/MovieManagement";
 import { AuthProvider } from "./context/AuthContext";
 import ComboPage from "./layouts/Staff/foodComponent/ComboPage";
-import TicketInfomation from "./layouts/Staff/ticketComponent/TicketInfomation";
+import TicketInformation from "./layouts/Staff/ticketComponent/TicketInformation";
 import PrintTicket from "./layouts/Staff/ticketComponent/PrintTicket";
 import RoomManagement from "./layouts/Admin/component/RoomManagement";
 import { ToastContainer } from "react-toastify";
@@ -43,8 +43,10 @@ import TicketDetails from "./layouts/User/component/TicketDetails";
 import GoogleCallback from "./auth/login/GoogleCallback";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
-import { ConfigProvider } from "antd";
+import { ConfigProvider } from 'antd';
 import ProductManagement from "./layouts/Admin/component/ProductManagement";
+import CheckOutComboPage from "./layouts/Staff/foodComponent/CheckOutComboPage";
+import ComboInformation from "./layouts/Staff/foodComponent/ComboInformation";
 
 function App() {
   return (
@@ -105,23 +107,13 @@ function App() {
             <Route path="ticket-selling" element={<SellTicketPage />} />
             <Route path="movie" element={<MoviePage />} />
             <Route path="movie/:slug" element={<MovieDetail />} />
-            <Route
-              path="ticket-selling/select-seats"
-              element={<SelectSeatsPage />}
-            />
-            <Route
-              path="ticket-selling/confirm-ticket"
-              element={<ConfirmTicketsPage />}
-            />
-            <Route
-              path="ticket-selling/ticket-infomation"
-              element={<TicketInfomation />}
-            />
+            <Route path="ticket-selling/select-seats" element={<SelectSeatsPage />} />
+            <Route path="ticket-selling/confirm-ticket" element={<ConfirmTicketsPage />} />
+            <Route path="ticket-selling/ticket-information" element={<TicketInformation />} />
+            <Route path="ticket-selling/view-ticket/:id" element={<PrintTicket />} />
             <Route path="combo-selling" element={<ComboPage />} />
-            <Route
-              path="ticket-selling/view-ticket/:id"
-              element={<PrintTicket />}
-            />
+            <Route path="combo-selling/checkout" element={<CheckOutComboPage />} />
+            <Route path="combo-selling/combo-information" element={<ComboInformation />} />
           </Route>
         </Route>
       </Routes>

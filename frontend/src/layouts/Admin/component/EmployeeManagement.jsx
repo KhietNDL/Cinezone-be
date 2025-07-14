@@ -440,11 +440,11 @@ const EmployeeManagement = () => {
                       alt={emp.FullName}
                       className="w-16 h-16 rounded-full object-cover"
                     />
-                    <div className="flex-1">
-                      <h3 className="text-sm font-medium text-gray-900 truncate">
+                    <div className="flex-1 w-[200px]">
+                      <h3 className="text-sm font-medium text-gray-900 break-words">
                         {emp.FullName}
                       </h3>
-                      <p className="text-xs text-gray-500 truncate">
+                      <p className="text-xs text-gray-500 break-words">
                         {emp.Email}
                       </p>
                     </div>
