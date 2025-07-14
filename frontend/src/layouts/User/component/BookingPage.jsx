@@ -11,12 +11,15 @@ import {
   setMovie,
   setFinalTotalPrice,
   setProduct,
+  setSelectedTime,
+  setSelectedShowtimeId,
 } from "../../../redux/features/bookingSlice";
 import { useAuth } from "../../../context/AuthContext";
 import { slugify } from "./Slug";
 import {
   createMovieRating,
   deleteMovieRating,
+  getAllProducts,
   getMovieRatingsList,
   getMovies,
   getSeatsByShowtimeId,
@@ -60,7 +63,6 @@ const BookingPage = () => {
   const [showtimes, setShowtimes] = useState([]);
   const [timeOptions, setTimeOptions] = useState([]);
   const [dateIndex, setDateIndex] = useState(0);
-  // eslint-disable-next-line no-unused-vars
   const [loading, setLoading] = useState(true);
   const [lastRefreshTime, setLastRefreshTime] = useState(Date.now());
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -76,9 +78,37 @@ const BookingPage = () => {
   const [isRatingListOpen, setIsRatingListOpen] = useState(false);
   const [ratingsList, setRatingsList] = useState([]);
   const [ratingsTotal, setRatingsTotal] = useState(0);
-  // eslint-disable-next-line no-unused-vars
   const [ratingsPage, setRatingsPage] = useState(1);
   const [ratingsLoading, setRatingsLoading] = useState(false);
+  
+  // Thêm state để theo dõi việc loading seat map
+  const [seatMapLoading, setSeatMapLoading] = useState(false);
+  const [previousDate, setPreviousDate] = useState(null);
+
+  // Theo dõi thay đổi ngày và reset time selection
+  useEffect(() => {
+    if (previousDate !== null && previousDate !== selectedDate) {
+      // Reset time selection khi ngày thay đổi
+      dispatch(setSelectedTime(null));
+      dispatch(setSelectedShowtimeId(null));
+      
+      // Clear seats data và set loading cho seat map
+      dispatch(setSeatsData([]));
+      dispatch(setSeatQuantity(0));
+      dispatch(setSelectedSeats([]));
+      dispatch(setCalculatedTotalPrice(0));
+      dispatch(setSeatIds([]));
+      setSeatMapLoading(true);
+    }
+    setPreviousDate(selectedDate);
+  }, [selectedDate, previousDate, dispatch]);
+
+  // Tắt loading seat map khi không có showtime được chọn
+  useEffect(() => {
+    if (!selectedShowtimeId) {
+      setSeatMapLoading(false);
+    }
+  }, [selectedShowtimeId]);
 
   const handleProductSelect = (product, quantity) => {
     if (!product || !product.ProductId) return;
@@ -194,6 +224,7 @@ const BookingPage = () => {
     const fetchSeatsByShowtimeId = async () => {
       if (!selectedShowtimeId) return;
       setIsRefreshing(true);
+      setSeatMapLoading(true);
       try {
         const response = await getSeatsByShowtimeId(selectedShowtimeId);
         dispatch(setSeatsData(response.seats));
@@ -210,6 +241,7 @@ const BookingPage = () => {
         });
       } finally {
         setIsRefreshing(false);
+        setSeatMapLoading(false);
       }
     };
     fetchSeatsByShowtimeId();
@@ -304,6 +336,22 @@ const BookingPage = () => {
     }
   }, [movie?.MovieId]);
 
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await getAllProducts();
+        dispatch(setProduct(response.products || [])); 
+      } catch (error) {
+        console.error("Lỗi khi lấy sản phẩm:", error);
+        toast.error("Không thể tải danh sách sản phẩm", {
+          duration: 4000,
+          position: "top-center",
+        });
+      }
+    };
+    fetchProducts();
+  }, [dispatch]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] text-white">
       <ToastContainer />
@@ -351,6 +399,7 @@ const BookingPage = () => {
                     selectedShowtimeId={selectedShowtimeId}
                     lastRefreshTime={lastRefreshTime}
                     isRefreshing={isRefreshing}
+                    seatMapLoading={seatMapLoading} 
                     user={user}
                     onRefresh={refreshSeats}
                     dispatch={dispatch}
@@ -425,7 +474,7 @@ const BookingPage = () => {
               duration: 4000,
               position: "top-center",
             });
-            handleFetchRatings(); // Refresh ratings after submitting feedback
+            handleFetchRatings();
           } catch (err) {
             console.log(err);
             toast.error("Failed to submit feedback", {

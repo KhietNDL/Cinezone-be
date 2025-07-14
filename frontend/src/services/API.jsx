@@ -413,7 +413,7 @@ export const HoldingSeats = async (
   showtimeId,
   seatIds,
   productIds,
-  promotionTitle,
+  promotionCode,
   PointsToUse
 ) => {
   try {
@@ -422,7 +422,7 @@ export const HoldingSeats = async (
       showtimeId: showtimeId,
       seatIds: seatIds,
       productIds: productIds || [],
-      promotionTitle: promotionTitle || "",
+      promotionCode: promotionCode || "",
       PointsToUse: PointsToUse,
     });
     console.log("HoldingSeats Response:", response.data);
@@ -460,10 +460,10 @@ export const createZalopayPayment = async (data) => {
   return res.data;
 };
 
-export const getPromotionByTitle = async (title) => {
+export const getPromotionByTitle = async (code) => {
   try {
     const response = await api.get("/promotions/search", {
-      params: { title },
+      params: { code },
     });
     return response.data;
   } catch (error) {
@@ -559,6 +559,7 @@ export const getAllProducts = async (params) => {
   try {
     const response = await api.get("/products", { params });
     return response.data;
+    console.log("DATA PRODCUT",response.data)
   } catch (error) {
     console.error("Lỗi khi lấy danh sách sản phẩm owr API:", error);
     handleError(error);
@@ -671,6 +672,17 @@ export const createShowtime = async (showtimeData) => {
   }
 };
 
+export const getScoreHistoryByMemberId = async (MemberId) => {
+  try {
+    const response = await api.get(`/scorehistory/member/${MemberId}`);
+    return response.data.scoreHistory;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+
+
 // API Analytics
 export const getRevenueByMonth = async (year) => {
   try {
@@ -682,6 +694,8 @@ export const getRevenueByMonth = async (year) => {
     handleError(error);
   }
 };
+
+
 
 export const getRevenueByQuarter = async (year) => {
   try {
