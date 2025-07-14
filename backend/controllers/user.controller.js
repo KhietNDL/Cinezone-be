@@ -5,6 +5,7 @@ const bcrypt = require("bcryptjs");
 const { v4: uuidv4, validate: uuidValidate } = require("uuid");
 const bucket = require("../config/firebase");
 const ScoreHistory = require("../models/scorehistory.model");
+const admin = require("firebase-admin");
 
 // Define error codes
 const ERROR_CODES = {
@@ -152,6 +153,11 @@ const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
+    console.log("=== Forgot Password Debug ===");
+    console.log("Request body:", req.body);
+    console.log("Session ID:", req.sessionID);
+    console.log("Session before:", req.session);
+
     // Check if user exists
     const user = await User.findByEmail(email);
     if (!user) {
@@ -172,6 +178,21 @@ const forgotPassword = async (req, res) => {
       email: user.Email,
       verified: false,
     };
+
+    // Save session to ensure it's persisted
+    await new Promise((resolve, reject) => {
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          reject(err);
+        } else {
+          console.log("Session saved successfully");
+          resolve();
+        }
+      });
+    });
+
+    console.log("Session after setting reset data:", req.session);
 
     // Configure email transporter
     const transporter = nodemailer.createTransport({
@@ -296,8 +317,15 @@ const verifyOtp = async (req, res) => {
     const { resetCode } = req.body;
     const sessionData = req.session.reset;
 
+    console.log("=== Verify OTP Debug ===");
+    console.log("Request body:", req.body);
+    console.log("Session data:", sessionData);
+    console.log("Full session:", req.session);
+    console.log("Session ID:", req.sessionID);
+
     // Check if session data exists
     if (!sessionData || !sessionData.email) {
+      console.log("Session validation failed - no session data or email");
       return res.status(400).json({
         error: "Session expired or invalid. Please request a new reset code.",
         code: ERROR_CODES.INVALID_RESET_CODE,
@@ -325,6 +353,19 @@ const verifyOtp = async (req, res) => {
       email: user.Email,
       verified: true,
     };
+
+    // Save session to ensure it's persisted
+    await new Promise((resolve, reject) => {
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error in verifyOtp:", err);
+          reject(err);
+        } else {
+          console.log("Session saved successfully in verifyOtp");
+          resolve();
+        }
+      });
+    });
 
     res.status(200).json({ message: "OTP verified successfully" });
   } catch (error) {
@@ -578,9 +619,12 @@ const getUserById = async (req, res) => {
   try {
     const { id } = req.params;
 
-
     // Check view permissions
-    if (req.user.Role !== "admin" && req.user.Role !== 1 && req.user.UserId !== id) {
+    if (
+      req.user.Role !== "admin" &&
+      req.user.Role !== 1 &&
+      req.user.UserId !== id
+    ) {
       return res.status(403).json({
         error: "Forbidden: You can only view your own information",
         code: ERROR_CODES.FORBIDDEN,
@@ -658,16 +702,16 @@ const exchangeScore = async (req, res) => {
       MemberId: userId,
       RelatedBookingId: bookingId || null,
       ScoreValue: -points,
-      ChangeType: '2',
+      ChangeType: "2",
       ChangeDate: new Date(),
-      CreatedBy: userId
+      CreatedBy: userId,
     });
 
     res.json({
       message: "Score exchanged successfully",
       moneyGained,
       newScoreBalance,
-      scoreHistoryId
+      scoreHistoryId,
     });
   } catch (error) {
     console.error("Exchange score error:", error);
@@ -677,9 +721,106 @@ const exchangeScore = async (req, res) => {
   }
 };
 
+// Google login with Firebase token
+const loginWithGoogle = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({
+        error: "ID token is required",
+        code: ERROR_CODES.INVALID_CREDENTIALS,
+      });
+    }
+
+    // Verify the Firebase ID token
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const { uid, email, name, picture } = decodedToken;
+
+    // Check if user exists by Google ID
+    let user = await User.findByGoogleId(uid);
+
+    if (!user) {
+      // Check if email already exists
+      const existingUserByEmail = await User.findByEmail(email);
+
+      if (existingUserByEmail) {
+        return res.status(400).json({
+          error: "Email này đã được đăng ký với một tài khoản khác",
+          code: ERROR_CODES.USER_EXISTS,
+        });
+      }
+
+      // Create new Google user
+      const userData = {
+        googleId: uid,
+        fullName: name || "Google User",
+        email: email,
+        refreshToken: null,
+        accessToken: null,
+      };
+
+      const userId = await User.createGoogleUser(userData);
+      user = await User.findById(userId);
+
+      if (!user) {
+        return res.status(500).json({
+          error: "Failed to create user",
+          code: ERROR_CODES.SERVER_ERROR,
+        });
+      }
+    }
+
+    // Check if user is active
+    if (user.IsDeleted) {
+      return res.status(401).json({
+        error: "Account is locked",
+        code: ERROR_CODES.ACCOUNT_LOCKED,
+      });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user.UserId, role: user.Role },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "24h",
+      }
+    );
+
+    res.json({
+      message: "Google login successful",
+      user: removeSensitiveData(user),
+      token,
+    });
+  } catch (error) {
+    console.error("Google login error:", error);
+
+    if (error.code === "auth/id-token-expired") {
+      return res.status(401).json({
+        error: "Token has expired",
+        code: ERROR_CODES.INVALID_CREDENTIALS,
+      });
+    }
+
+    if (error.code === "auth/invalid-id-token") {
+      return res.status(401).json({
+        error: "Invalid token",
+        code: ERROR_CODES.INVALID_CREDENTIALS,
+      });
+    }
+
+    res.status(500).json({
+      error: "Internal server error during Google login",
+      code: ERROR_CODES.SERVER_ERROR,
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
+  loginWithGoogle,
   forgotPassword,
   verifyOtp,
   resetPassword,

@@ -1,0 +1,11 @@
+{
+  "setupFiles": ["<rootDir>/src/test/jestPolyfills.js"],
+  "setupFilesAfterEnv": ["<rootDir>/src/test/setupTests.js"],
+
+  "moduleNameMapper": {
+    "\\.(gif|ttf|eot|svg|png)$": "<rootDir>/src/test/fileMock.js",
+    "\\.(css|less)$": "identity-obj-proxy",
+    "\\.(jpg|jpeg|png|gif|svg)$": "<rootDir>/src/test/fileMock.js"
+  },
+  "testEnvironment": "jest-environment-jsdom"
+}

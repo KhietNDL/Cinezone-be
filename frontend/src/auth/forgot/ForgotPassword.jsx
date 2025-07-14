@@ -60,9 +60,15 @@ const MovieForgotPassword = () => {
         navigate("/verification", { state: { email: formData.email } });
       } catch (error) {
         console.error("Error sending password reset:", error);
-        setApiError(
-          error?.message || "Có lỗi xảy ra khi gửi email. Vui lòng thử lại."
-        );
+        // Nếu là lỗi 404 thì hiện Email not found
+        if (error?.message === "Email not found") {
+          setApiError("Email not found");
+        } else {
+          setApiError(
+            error?.message || "Có lỗi xảy ra khi gửi email. Vui lòng thử lại."
+          );
+        }
+        setIsSuccess(false);
       } finally {
         setIsLoading(false);
       }
