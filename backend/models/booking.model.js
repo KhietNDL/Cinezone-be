@@ -527,7 +527,7 @@ class Booking {
       s.Time,
       cr.Name,
       v.VersionType,
-      p.Title,
+      p.Code,
       b.Status,
       s.Duration,
       sh.ScoreValue
@@ -580,7 +580,7 @@ class Booking {
         return acc;
       }, {}),
       totalPrice: seats.reduce((sum, s) => sum + Number(s.Price), 0),
-      promotionTitle: rows[0].Title,
+      promotionCode: rows[0].Code,
 
       pointEarn: rows[0].ScoreValue > 0 ? rows[0].ScoreValue : undefined,
       pointUse: rows[0].ScoreValue < 0 ? Math.abs(rows[0].ScoreValue) : undefined,
