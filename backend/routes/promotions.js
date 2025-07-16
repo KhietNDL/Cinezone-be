@@ -6,7 +6,7 @@ const {
   createPromotion,
   updatePromotion,
   deletePromotion,
-  searchPromotionsByTitle,
+  searchPromotionsByCode,
 } = require('../controllers/promotion.controller');
 const { auth, isAdmin } = require('../middlewares/auth.middleware');
 const multer = require('multer');
@@ -98,20 +98,20 @@ router.get('/getAll', getAllPromotions);
  * @swagger
  * /api/promotions/search:
  *   get:
- *     summary: Search promotions by title
+ *     summary: Search promotions by code
  *     tags: [Promotion Management]
  *     parameters:
  *       - in: query
- *         name: title
+ *         name: code
  *         schema:
  *           type: string
  *         required: true
- *         description: Title (or part of title) of the promotion
+ *         description: Code (or part of code) of the promotion
  *     responses:
  *       200:
  *         description: List of matching promotions
  */
-router.get('/search', searchPromotionsByTitle);
+router.get('/search', searchPromotionsByCode);
 
 /**
  * @swagger

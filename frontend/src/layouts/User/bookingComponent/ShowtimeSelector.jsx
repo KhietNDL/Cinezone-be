@@ -60,21 +60,33 @@ const ShowtimeSelector = ({
               {visibleDates.map((d, idx) => {
                 const isSelected = d.Day === selectedDate;
                 const dayObj = new Date(d.Day);
+                const today = new Date();
+                
+                // Đặt thời gian về 00:00:00 để so sánh chính xác ngày
+                const dateToCheck = new Date(dayObj.getFullYear(), dayObj.getMonth(), dayObj.getDate());
+                const todayForComparison = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                
+                const isPastDate = dateToCheck < todayForComparison;
+                
                 return (
                   <div
                     key={idx}
-                    className={`flex flex-col items-center justify-center w-16 md:w-20 h-12 md:h-16 rounded-2xl md:rounded-4xl text-xs md:text-sm cursor-pointer transition-all duration-200
+                    className={`flex flex-col items-center justify-center w-16 md:w-20 h-12 md:h-16 rounded-2xl md:rounded-4xl text-xs md:text-sm transition-all duration-200
                       ${
-                        isSelected
-                          ? "bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 text-white shadow-lg"
-                          : "bg-white/10 hover:bg-white/20 text-white/80"
+                        isPastDate
+                          ? "bg-gray-600/40 text-gray-400   opacity-50"
+                          : isSelected
+                          ? "bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 text-white shadow-lg cursor-pointer"
+                          : "bg-white/10 hover:bg-white/20 text-white/80 cursor-pointer"
                       }`}
-                    onClick={() =>
-                      dispatch({
-                        type: "booking/setSelectedDate",
-                        payload: d.Day,
-                      })
-                    }
+                    onClick={() => {
+                      if (!isPastDate) {
+                        dispatch({
+                          type: "booking/setSelectedDate",
+                          payload: d.Day,
+                        });
+                      }
+                    }}
                   >
                     <span className="text-[8px] md:text-[10px] font-medium opacity-90">
                       {dayObj
@@ -96,7 +108,7 @@ const ShowtimeSelector = ({
             <button
               className="p-2 text-purple-400 hover:text-purple-300 hover:bg-white/10 rounded-xl transition-all flex-shrink-0"
               onClick={() => handleChangeDate(+1)}
-              disabled={dateIndex >= showtimes.length - 3}
+              disabled={dateIndex >= showtimes.length }
             >
               <FaChevronRight />
             </button>

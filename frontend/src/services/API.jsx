@@ -95,6 +95,7 @@ export const forgot = async (credentials) => {
     handleError(error);
   }
 };
+
 export const verification = async (credentials) => {
   try {
     const response = await api.post("/auth/verify-otp", credentials, {
@@ -412,7 +413,7 @@ export const HoldingSeats = async (
   showtimeId,
   seatIds,
   productIds,
-  promotionTitle,
+  promotionCode,
   PointsToUse
 ) => {
   try {
@@ -421,7 +422,7 @@ export const HoldingSeats = async (
       showtimeId: showtimeId,
       seatIds: seatIds,
       productIds: productIds || [],
-      promotionTitle: promotionTitle || "",
+      promotionCode: promotionCode || "",
       PointsToUse: PointsToUse,
     });
     console.log("HoldingSeats Response:", response.data);
@@ -459,10 +460,10 @@ export const createZalopayPayment = async (data) => {
   return res.data;
 };
 
-export const getPromotionByTitle = async (title) => {
+export const getPromotionByTitle = async (code) => {
   try {
     const response = await api.get("/promotions/search", {
-      params: { title },
+      params: { code },
     });
     return response.data;
   } catch (error) {
@@ -558,8 +559,50 @@ export const getAllProducts = async (params) => {
   try {
     const response = await api.get("/products", { params });
     return response.data;
+    console.log("DATA PRODCUT",response.data)
   } catch (error) {
     console.error("Lỗi khi lấy danh sách sản phẩm owr API:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const createProduct = async (productData) => {
+  try {
+    const response = await api.post("/products/create", productData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi tạo sản phẩm:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const updateProduct = async (productId, productData) => {
+  try {
+    const response = await api.put(`/products/${productId}`, productData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi cập nhật sản phẩm:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const deleteProduct = async (productId) => {
+  try {
+    const response = await api.delete(`/products/${productId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi xóa sản phẩm:", error);
     handleError(error);
     throw error;
   }
@@ -629,6 +672,17 @@ export const createShowtime = async (showtimeData) => {
   }
 };
 
+export const getScoreHistoryByMemberId = async (MemberId) => {
+  try {
+    const response = await api.get(`/scorehistory/member/${MemberId}`);
+    return response.data.scoreHistory;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+
+
 // API Analytics
 export const getRevenueByMonth = async (year) => {
   try {
@@ -640,6 +694,8 @@ export const getRevenueByMonth = async (year) => {
     handleError(error);
   }
 };
+
+
 
 export const getRevenueByQuarter = async (year) => {
   try {
@@ -733,6 +789,21 @@ export const deleteMovieRating = async (ratingId) => {
     const response = await api.delete(`/ratings/${ratingId}`);
     return response.data;
   } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};
+
+export const createComboProduct = async (comboProductData) => {
+  try {
+    const response = await api.post("/combo-products/create", comboProductData, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi tạo combo product:", error);
     handleError(error);
     throw error;
   }

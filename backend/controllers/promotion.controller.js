@@ -336,20 +336,20 @@ const deletePromotion = async (req, res) => {
     }
 };
 
-// Search promotions by title
-const searchPromotionsByTitle = async (req, res) => {
+// Search promotions by code
+const searchPromotionsByCode = async (req, res) => {
     try {
-        const { title } = req.query;
+        const { code } = req.query;
 
         // Validate search query
-        if (!title || typeof title !== 'string' || title.trim().length === 0) {
+        if (!code || typeof code !== 'string' || code.trim().length === 0) {
             return res.status(400).json({
-                error: 'Valid title query parameter is required',
+                error: 'Valid code query parameter is required',
                 code: ERROR_CODES.INVALID_INPUT
             });
         }
 
-        const promotions = await Promotion.searchPromotionsByTitle(title.trim());
+        const promotions = await Promotion.searchPromotionsByCode(code.trim());
         if (!promotions || promotions.length === 0) {
             return res.status(404).json({
                 error: 'No promotions found',
@@ -378,6 +378,6 @@ module.exports = {
     createPromotion,
     updatePromotion,
     deletePromotion,
-    searchPromotionsByTitle,
+    searchPromotionsByCode,
     validatePromotionData
 };

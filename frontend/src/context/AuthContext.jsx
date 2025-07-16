@@ -3,12 +3,12 @@ import { getUser, logout } from "../services/API";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
 
-
-const AuthContext = createContext();
+export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  // eslint-disable-next-line no-unused-vars
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem("token");
       localStorage.removeItem("userId");
       setUser(null);
-      
+
       // Trả về object với thông tin lỗi
       return { success: false, error: error.message };
     }

@@ -130,7 +130,7 @@ export default function CheckOutComboPage() {
 
       <div className="flex gap-3 items-center my-4 justify-center">
         <span className="text-2xl font-semibold">Total Amount:</span>
-        <span className="text-xl font-bold text-green-600">{formatPrice(totalPrice)} VNĐ</span>
+        <span className="text-xl font-bold text-green-600" data-testid="total-amount">{formatPrice(totalPrice)} VNĐ</span>
       </div>
 
       <div className="mx-6 my-3">

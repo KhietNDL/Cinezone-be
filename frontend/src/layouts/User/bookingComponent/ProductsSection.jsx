@@ -1,4 +1,5 @@
-import { ProductCard } from "../../../component/ProductCard";
+import { ProductCard } from "../../../component/productCard";
+
 
 const ProductsSection = ({ product, selectedProducts, onProductSelect }) => {
   return (
