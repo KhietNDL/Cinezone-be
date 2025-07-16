@@ -529,9 +529,6 @@ const BookingPage = () => {
           }
         }}
         onDeleteRating={async (ratingId) => {
-          if (!window.confirm("Are you sure you want to delete this rating?"))
-            return;
-          setEditLoading(true);
           try {
             await deleteMovieRating(ratingId);
             await handleFetchRatings();

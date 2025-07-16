@@ -1,6 +1,6 @@
 // Landing.jsx - Cách tích hợp component
 import React, { useEffect, useState } from "react";
-import { FaRegCalendarCheck, FaRegCirclePlay } from "react-icons/fa6";
+import { FaRegCalendarCheck, FaRegCirclePlay, FaStar } from "react-icons/fa6";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/pagination";
@@ -18,7 +18,7 @@ import {
   getUpcomingMovies,
 } from "../../../services/API";
 import { toast } from "react-toastify";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { resetBooking } from "../../../redux/features/bookingSlice";
 
 const LandingPage = () => {
@@ -28,10 +28,8 @@ const LandingPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   // eslint-disable-next-line no-unused-vars
   const [totalPages, setTotalPages] = useState(0);
-  // const [totalCurrentPages, setTotalCurrentPages] = useState(0);
-  // const [totalUpcomingPages, setTotalUpcomingPages] = useState(0);
   const [hoveredMovie, setHoveredMovie] = useState(null);
- 
+  // eslint-disable-next-line no-unused-vars
   const [isHovered, setIsHovered] = useState(false);
   const [currentMovies, setCurrentMovies] = useState([]);
   const [upcomingMovies, setUpcomingMovies] = useState([]);
@@ -109,9 +107,8 @@ const LandingPage = () => {
   };
 
   useEffect(() => {
-  dispatch(resetBooking()); // reset lại state bôking
-}, []);
-
+    dispatch(resetBooking()); // reset lại state bôking
+  }, []);
 
   // Responsive breakpoints for Swiper
   const swiperBreakpoints = {
@@ -330,6 +327,14 @@ const LandingPage = () => {
                     loading="lazy"
                     className="w-full h-[250px] md:h-[320px] object-cover rounded-tl-xl rounded-tr-xl"
                   />
+                  {item.AverageRating && (
+                    <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1">
+                      <FaStar size={14} className="text-yellow-400" />
+                      <span className="text-white font-semibold text-sm">
+                        {parseFloat(item.AverageRating).toFixed(1)}
+                      </span>
+                    </div>
+                  )}
                   {/* Hover Overlay */}
                   {hoveredMovie === item.MovieId && (
                     <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex flex-col justify-center items-start p-4 rounded-tl-xl rounded-tr-xl transition-all duration-300 ease-in-out">
@@ -356,7 +361,16 @@ const LandingPage = () => {
                               {formatRunningTime(item.RunningTime)}
                             </span>
                           </div>
-
+                          {item.AverageRating && (
+                            <div className="flex items-center justify-start gap-1 mt-1">
+                              <span className=" font-bold">
+                                <FaStar size={20} />
+                              </span>
+                              <span className=" font-semibold ml-1">
+                                {parseFloat(item.AverageRating).toFixed(1)}
+                              </span>
+                            </div>
+                          )}
                           <div className="flex">
                             <span className="text-gray-300 mr-1">
                               <IoMdBookmark size={24} />
@@ -450,6 +464,14 @@ const LandingPage = () => {
                     loading="lazy"
                     className="w-full h-[250px] md:h-[320px] object-cover rounded-tl-xl rounded-tr-xl"
                   />
+                  {item.AverageRating && (
+                    <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1">
+                      <FaStar size={14} className="text-yellow-400" />
+                      <span className="text-white font-semibold text-sm">
+                        {parseFloat(item.AverageRating).toFixed(1)}
+                      </span>
+                    </div>
+                  )}
                   {/* Hover Overlay for Coming Soon */}
                   {hoveredMovie === `coming-${item.MovieId}` && (
                     <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex flex-col justify-center items-start p-4 rounded-tl-xl rounded-tr-xl transition-all duration-300 ease-in-out">

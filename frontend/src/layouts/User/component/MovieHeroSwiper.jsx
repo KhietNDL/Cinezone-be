@@ -6,6 +6,7 @@ import {
   Volume2,
   VolumeX,
   X,
+  Star,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { slugify } from "./Slug";
@@ -127,7 +128,6 @@ const MovieHeroSwiper = ({ movieData }) => {
       video.load();
 
       const handleCanPlay = () => {
-
         if (userInteracted) {
           startVideoWithSound();
         } else {
@@ -342,10 +342,21 @@ const MovieHeroSwiper = ({ movieData }) => {
                 className="w-full h-[350px] rounded-2xl shadow-2xl transform transition-all duration-500 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#6a57f5]/30 to-transparent rounded-2xl opacity-75 group-hover:opacity-100 transition-opacity duration-300" />
+
+              {/* Rating Badge on Poster */}
+              {currentMovie.AverageRating && (
+                <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-sm rounded-xl px-3 py-2 flex items-center gap-2 shadow-lg">
+                  <Star size={16} className="text-yellow-400 fill-yellow-400" />
+                  <span className="text-white font-bold text-sm">
+                    {parseFloat(currentMovie.AverageRating).toFixed(1)}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
           <div className="flex flex-col justify-center mt-auto mb-[20px] md:mb-0 md:mt-0 w-full space-y-6 md:w-1/2 lg:w-3/5">
+            {/* Genre Tags */}
             {currentMovie.Genres && (
               <div className="flex flex-wrap gap-2">
                 {currentMovie.Genres.split(",").map((genre, index) => (
@@ -358,9 +369,45 @@ const MovieHeroSwiper = ({ movieData }) => {
                 ))}
               </div>
             )}
-            <h1 className="text-2xl sm:text-4xl  font-extrabold text-white leading-tight tracking-tight">
-              {currentMovie.NameOfEnglish}
-            </h1>
+
+            {/* Movie Title */}
+            <div className="space-y-3">
+              <h1 className="text-2xl sm:text-4xl font-extrabold text-white leading-tight tracking-tight">
+                {currentMovie.NameOfEnglish}
+              </h1>
+
+              {/* Rating Section for Mobile/Below Title */}
+              {currentMovie.AverageRating && (
+                <div className="flex items-center gap-3 md:hidden">
+                  <div className="flex items-center gap-1 bg-black/50 backdrop-blur-sm rounded-lg px-3 py-1.5">
+                    <Star
+                      size={18}
+                      className="text-yellow-400 fill-yellow-400"
+                    />
+                    <span className="text-white font-bold text-base">
+                      {parseFloat(currentMovie.AverageRating).toFixed(1)}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Rating Section for Desktop */}
+              {currentMovie.AverageRating && (
+                <div className="hidden md:flex items-center gap-4">
+                  <div className="flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-xl px-4 py-2">
+                    <Star
+                      size={20}
+                      className="text-yellow-400 fill-yellow-400"
+                    />
+                    <span className="text-white font-bold text-lg">
+                      {parseFloat(currentMovie.AverageRating).toFixed(1)}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Synopsis */}
             {currentMovie.ContentSynopsis?.length > 100 ? (
               <p className="text-white/85 text-sm hidden md:block sm:text-base md:text-[18px] max-w-xl leading-relaxed line-clamp-4">
                 {currentMovie.ContentSynopsis.slice(0, 100) + "..."}
@@ -370,7 +417,9 @@ const MovieHeroSwiper = ({ movieData }) => {
                 {currentMovie.ContentSynopsis}
               </p>
             )}
-            <div className="flex  flex-row gap-3 w-full sm:w-auto">
+
+            {/* Action Buttons */}
+            <div className="flex flex-row gap-3 w-full sm:w-auto">
               <button
                 onClick={() => handleClickMovie(currentMovie.NameOfEnglish)}
                 className="bg-[#6a57f5] hover:bg-[#5a47e5] text-white px-6 py-2.5 rounded-full font-semibold text-sm sm:text-base transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg shadow-[#6a57f5]/40 focus:outline-none focus:ring-2 focus:ring-[#6a57f5]/50"

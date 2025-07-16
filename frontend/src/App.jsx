@@ -36,17 +36,18 @@ import TicketBookingManagement from "./layouts/Admin/component/TicketBookingMang
 import PromotionManagement from "./layouts/Admin/component/PromotionManagement";
 import ResetPassword from "./auth/resetPassword/ResetPassword";
 
-import { UserManagement } from "./layouts/Admin/component/UserManagement";
+import UserManagement from "./layouts/Admin/component/UserManagement";
 import MoviePage from "./layouts/Staff/movieComponent/MoviePage";
 import MovieDetail from "./layouts/Staff/movieComponent/MovieDetail";
 import TicketDetails from "./layouts/User/component/TicketDetails";
 import GoogleCallback from "./auth/login/GoogleCallback";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
-import { ConfigProvider } from 'antd';
+import { ConfigProvider } from "antd";
 import ProductManagement from "./layouts/Admin/component/ProductManagement";
 import CheckOutComboPage from "./layouts/Staff/foodComponent/CheckOutComboPage";
 import ComboInformation from "./layouts/Staff/foodComponent/ComboInformation";
+import MovieListPage from "./layouts/User/component/MovieListPage";
 
 function App() {
   return (
@@ -68,6 +69,7 @@ function App() {
             <Route path="/confirmPayment" element={<ConfirmPayment />} />
             <Route path="/promotions" element={<MoviePromotions />} />
             <Route path="/waiting" element={<WaitingPayment />} />
+            <Route path="/movies" element={<MovieListPage />} />
             <Route path="/account" element={<AccountImformation />}>
               <Route path="*" element={<AccountImformation />} />
               <Route path="personal" element={<EditAccount />} />
@@ -107,13 +109,31 @@ function App() {
             <Route path="ticket-selling" element={<SellTicketPage />} />
             <Route path="movie" element={<MoviePage />} />
             <Route path="movie/:slug" element={<MovieDetail />} />
-            <Route path="ticket-selling/select-seats" element={<SelectSeatsPage />} />
-            <Route path="ticket-selling/confirm-ticket" element={<ConfirmTicketsPage />} />
-            <Route path="ticket-selling/ticket-information" element={<TicketInformation />} />
-            <Route path="ticket-selling/view-ticket/:id" element={<PrintTicket />} />
+            <Route
+              path="ticket-selling/select-seats"
+              element={<SelectSeatsPage />}
+            />
+            <Route
+              path="ticket-selling/confirm-ticket"
+              element={<ConfirmTicketsPage />}
+            />
+            <Route
+              path="ticket-selling/ticket-information"
+              element={<TicketInformation />}
+            />
+            <Route
+              path="ticket-selling/view-ticket/:id"
+              element={<PrintTicket />}
+            />
             <Route path="combo-selling" element={<ComboPage />} />
-            <Route path="combo-selling/checkout" element={<CheckOutComboPage />} />
-            <Route path="combo-selling/combo-information" element={<ComboInformation />} />
+            <Route
+              path="combo-selling/checkout"
+              element={<CheckOutComboPage />}
+            />
+            <Route
+              path="combo-selling/combo-information"
+              element={<ComboInformation />}
+            />
           </Route>
         </Route>
       </Routes>
