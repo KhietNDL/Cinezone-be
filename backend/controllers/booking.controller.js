@@ -17,8 +17,15 @@ const getBookingById = async (req, res) => {
 
 const getBookingsByMemberId = async (req, res) => {
   const { memberId } = req.params;
+  // Lấy các tham số phân trang và sort từ query string
+  const { page = 1, limit = 10, sortBy = "CreatedAt", sortOrder = "desc" } = req.query;
   try {
-    const bookings = await Booking.getBookingsByMemberId(memberId);
+    const bookings = await Booking.getBookingsByMemberId(memberId, {
+      page: Number(page),
+      limit: Number(limit),
+      sortBy,
+      sortOrder
+    });
     res.json(bookings);
   } catch (error) {
     res.status(500).json({ error: error.message });
