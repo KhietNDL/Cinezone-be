@@ -47,6 +47,11 @@ const SidebarAdmin = ({ onClose }) => {
       icon: <FaTicket size={20} />,
       to: "/admin/promotions",
     },
+    {
+      label: "Blog Management",
+      icon: <MdMovieCreation size={20} />,
+      to: "/admin/blogs",
+    },
   ];
 
   const handleLinkClick = () => {
