@@ -374,8 +374,7 @@ class Booking {
           movieNameEnglish: bookingDetail.movieNameEnglish, // gửi movieNameEnglish thay cho bookingId
           status: 2,
           message: 'Your ticket has been confirmed!',
-          createdAt: bookingDetail.BookingDate, // nếu muốn gửi thời gian
-          scoreValue: bookingDetail.pointEarn || 0 // điểm cộng khi booking
+          createdAt: bookingDetail.BookingDate // nếu muốn gửi thời gian
         });
       }
     } catch (err) {
@@ -494,8 +493,7 @@ class Booking {
           movieNameEnglish: bookingDetail.movieNameEnglish,
           status: 4,
           message: 'Your ticket has been cancelled!',
-          createdAt: bookingDetail.BookingDate,
-          scoreValue: bookingDetail.pointUse || 0 // điểm đã sử dụng hoặc được hoàn lại
+          createdAt: bookingDetail.BookingDate
         });
       }
       return true;

@@ -13,7 +13,6 @@ export default function ComboInformation() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // Lấy trạng thái thanh toán từ URL (Momo redirect về có resultCode)
   const params = new URLSearchParams(window.location.search);
   const momoResult = params.get('resultCode');
   let status = "success";

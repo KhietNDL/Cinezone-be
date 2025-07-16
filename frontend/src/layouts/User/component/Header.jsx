@@ -159,7 +159,11 @@ const Header = () => {
         />
       </div>
       <div className="md:flex items-center text-[17px] font-bold space-x-8 hidden">
-        <div role="button" className="hover:underline shadow-2xl">
+        <div
+          onClick={() => navigate("/movies")}
+          role="button"
+          className="hover:underline shadow-2xl"
+        >
           Movies
         </div>
         <Link

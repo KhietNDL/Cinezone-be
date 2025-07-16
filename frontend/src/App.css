@@ -42,6 +42,10 @@ div[role="button"] {
     padding-right: 35px !important;
     padding-left: 35px !important;
   }
+  .swiper-button-next,
+  .swiper-button-prev {
+    display: none !important;
+  }
 }
 @media (max-width: 426.5px) {
   .landingPage .swiper {

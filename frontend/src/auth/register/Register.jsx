@@ -290,7 +290,6 @@ const RegistrationForm = () => {
                       errors.fullName ? "border-red-500" : "border-white/10"
                     } focus:border-purple-400 focus:ring-2 focus:ring-purple-400/50 transition-all duration-300`}
                     placeholder="Enter your full name"
-                    required
                   />
                   {errors.fullName && (
                     <p className="mt-1 text-sm text-red-400">
@@ -308,7 +307,7 @@ const RegistrationForm = () => {
                     Email Address *
                   </label>
                   <input
-                    type="email"
+                    type="texttext"
                     id="email"
                     name="email"
                     value={formData.email}
@@ -317,7 +316,6 @@ const RegistrationForm = () => {
                       errors.email ? "border-red-500" : "border-white/10"
                     } focus:border-purple-400 focus:ring-2 focus:ring-purple-400/50 transition-all duration-300`}
                     placeholder="Enter your email address"
-                    required
                   />
                   {errors.email && (
                     <p className="mt-1 text-sm text-red-400">{errors.email}</p>
@@ -343,7 +341,6 @@ const RegistrationForm = () => {
                         errors.password ? "border-red-500" : "border-white/10"
                       } focus:border-purple-400 focus:ring-2 focus:ring-purple-400/50 transition-all duration-300`}
                       placeholder="Create a strong password"
-                      required
                     />
                     <button
                       type="button"

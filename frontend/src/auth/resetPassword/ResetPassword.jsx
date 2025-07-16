@@ -315,6 +315,7 @@ const ResetPassword = () => {
                         Password Strength
                       </span>
                       <span
+                        data-testid="password-strength-label"
                         className={`text-xs font-medium ${
                           passwordStrength.score < 2
                             ? "text-red-400"

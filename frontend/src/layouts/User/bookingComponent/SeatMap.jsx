@@ -1,4 +1,3 @@
-// import { useSelector } from "react-redux";
 import { LayoutSelectSeat } from "../../../component/LayoutSelectSeat";
 import { toast } from "react-toastify";
 
@@ -104,7 +103,7 @@ const SeatMap = ({
           <div className="text-center h-full w-full py-8 md:py-12 bg-white/5 rounded-2xl text-gray-400">
             <DNALoader />
             <p className="font-semibold mt-2 text-sm md:text-base">
-              {isRefreshing ? "Refreshing seats..." : "Loading seats..."}
+              {isRefreshing ? "Refreshing seats..." : "Please select showtimes ..."}
             </p>
           </div>
         )}
