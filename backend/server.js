@@ -13,7 +13,7 @@ const scoreHistoryRoutes = require("./routes/scorehistory");
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, { cors: { origin: "*" } }); // KHỞI TẠO ĐÚNG
+const io = socketIo(server, { cors: { origin: '*' } });
 
 global._io = io; // Gán vào global sau khi đã khởi tạo
 

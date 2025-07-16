@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
 import { toast } from "react-toastify";
@@ -10,12 +10,10 @@ import { BiSolidDiscount } from "react-icons/bi";
 import { IoTime, IoSearch, IoAddOutline } from "react-icons/io5";
 import { IoMdCash } from "react-icons/io";
 import { FiLoader } from "react-icons/fi";
-import vnpay from "../../../assets/vnpay-seeklogo.png";
-import momo from "../../../assets/momo-seeklogo.png";
-import zalopay from '../../../assets/zalopay-seeklogo.svg';
 import {
   getMovieById, getUserByEmail, getUserByCCCD, getUserByPhone, cancelBookingById,
-  checkPromotion, createBookingHold, createMomoPayment, createCashPayment, confirmBooking
+  // checkPromotion, createBookingHold, createMomoPayment, createCashPayment, confirmBooking
+  checkPromotion, createBookingHold
 } from "../../../services/APIForStaff/API";
 import { useAuth } from "../../../context/AuthContext";
 import { useDispatch, useSelector } from 'react-redux';
@@ -32,36 +30,9 @@ import { Button, Tag, Spin, Switch } from "antd";
 import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
 import { Formik, Form, Field } from "formik";
 import VersionCard from "../component/VersionCard";
+import PaymentMethod from '../component/PaymentMethod'
+import { processPayment } from '../../../hooks/useProcessPayment';
 
-// Constants
-const PAYMENT_METHODS = [
-  {
-    value: "Cash",
-    label: "Cash",
-    icon: <IoMdCash className="text-3xl mx-auto mb-2" />,
-    color: "bg-[#F3E8FF] border border-pink-300 ring-4 ring-pink-400 focus:ring-4",
-  },
-  {
-    value: "Momo",
-    label: "Momo",
-    icon: <img src={momo} alt="Momo" className="h-8 mx-auto mb-2" />,
-    color: "bg-[#F3E8FF] border border-pink-300 ring-4 ring-pink-400 focus:ring-4",
-  },
-  {
-    value: "VNPay",
-    label: "VNPay",
-    icon: <img src={vnpay} alt="VNPay" className="h-8 mx-auto mb-2" />,
-    color: "bg-[#F3E8FF] border border-pink-300 ring-4 ring-pink-400 focus:ring-4",
-  },
-  {
-    value: "ZaloPay",
-    label: "ZaloPay",
-    icon: <img src={zalopay} alt="ZaloPay" className="h-8 mx-auto mb-2" />,
-    color: "bg-[#F3E8FF] border border-pink-300 ring-4 ring-pink-400 focus:ring-4",
-  },
-];
-
-// Helper functions
 const formatPrice = (price) => price?.toLocaleString("vi-VN");
 
 const calculatePointsAndPrice = (selectedSeats, seatData, memberChecked, convertToTicket, discount, totalPrice, memberScore) => {
@@ -89,423 +60,6 @@ const calculatePointsAndPrice = (selectedSeats, seatData, memberChecked, convert
   return { PointsToUse, finalPrice };
 };
 
-// Sub-components
-const MovieInfoSection = React.memo(({ movieInfo, bookingData }) => (
-  <div className="bg-white border border-gray-300 rounded-lg shadow-md p-6">
-    <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-      <RiFilmAiFill /> Ticket Information
-    </h2>
-    <div className="flex flex-col md:flex-row gap-6 items-center justify-center sm:items-start sm:justify-center">
-      <img
-        src={movieInfo.PosterImage}
-        alt={movieInfo.NameOfEnglish}
-        className="lg:h-[300px] object-cover rounded-lg shadow sm:w-[30%] w-[90%] h-auto"
-        onError={(e) => (e.target.src = "/placeholder-poster.jpg")}
-      />
-      <div className="flex-1">
-        <div className="flex items-center justify-center sm:justify-start gap-3 mb-3">
-          <div className="px-3 py-2 rounded-full shadow-md  flex items-center justify-center 
-            bg-[linear-gradient(to_right,_#FACC15,_#DDB61A,_#DBBB3B,_#CDB03D,_#B1900C)]">
-            <p className="font-bold text-sm leading-4 text-[#FFF8A7] [text-shadow:_0_1px_2px_orange]">
-              Now Showing
-            </p>
-          </div>
-          <VersionCard
-            version={bookingData.selectedVersion}
-            readonly={true}
-            className="text-sm"
-          />
-        </div>
-
-        <div className="flex flex-col sm:items-start w-full py-4 items-center justify-center">
-          <h3 className="text-2xl font-bold">{movieInfo.NameOfEnglish}</h3>
-          <p className="text-xl text-gray-600 font-semibold text-center">
-            ({movieInfo.NameOfVietnamese})
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-          <InfoItem icon={<FaCalendarDays />} label="Day:" value={bookingData.selectedDay} />
-          <InfoItem icon={<IoTime />} label="Time:" value={bookingData.selectedTime} />
-          <InfoItem icon={<FaLocationDot />} label="Room:" value={bookingData.room} />
-          <InfoItem icon={<FaCouch />} label="Seats:" value={`${bookingData.selectedSeats.join(", ")} - (${bookingData.selectedSeats.length} tickets)`} />
-        </div>
-
-        <PriceDetails selectedSeats={bookingData.selectedSeats} seatData={bookingData.seatData} />
-      </div>
-    </div>
-  </div>
-));
-
-const InfoItem = ({ icon, label, value }) => (
-  <div className="flex items-center justify-between lg:justify-start">
-    <div className="flex items-center gap-1 font-semibold w-[30%]">
-      {icon} {label}
-    </div>
-    <span className="text-gray-700">{value}</span>
-  </div>
-);
-
-const PriceDetails = React.memo(({ selectedSeats, seatData }) => (
-  <div className="mt-6">
-    <h4 className="font-semibold mb-2">Price Details:</h4>
-    <div className="space-y-2">
-      {selectedSeats.map((seat, index) => {
-        const seatInfo = seatData.find((s) => s.seatNumber === seat);
-        return (
-          <div key={index} className="flex justify-between">
-            <span>Seat {seat}:</span>
-            <span>{formatPrice(seatInfo?.price || 0)} VNĐ</span>
-          </div>
-        );
-      })}
-    </div>
-    <div className="mt-4 pt-4 border-t flex justify-between items-center">
-      <span className="font-bold text-lg">Total:</span>
-      <span className="text-green-600 font-bold text-xl">
-        {formatPrice(
-          selectedSeats.reduce((total, seatNumber) => {
-            const seat = seatData.find((s) => s.seatNumber === seatNumber);
-            return total + (seat?.price || 0);
-          }, 0)
-        )}{" "}
-        VNĐ
-      </span>
-    </div>
-  </div>
-));
-
-const PaymentMethodSection = React.memo(({
-  values,
-  isSubmitting,
-  memberChecked,
-  member,
-  bookingData,
-  discount,
-  PointsToUse,
-  finalPrice,
-  handleCancel,
-  setFieldValue
-}) => (
-  <div className="bg-white rounded-lg shadow-md p-6 border border-gray-300">
-    <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-      <FaMoneyBillWave /> Payment Method
-    </h2>
-
-    <PaymentOptions values={values} setFieldValue={setFieldValue} />
-    <PriceSummary
-      values={values}
-      memberChecked={memberChecked}
-      member={member}
-      bookingData={bookingData}
-      discount={discount}
-      PointsToUse={PointsToUse}
-      finalPrice={finalPrice}
-    />
-    <ActionButtons
-      isSubmitting={isSubmitting}
-      values={values}
-      memberChecked={memberChecked}
-      PointsToUse={PointsToUse}
-      member={member}
-      handleCancel={handleCancel}
-    />
-  </div>
-));
-
-const PaymentOptions = React.memo(({ values }) => (
-  <div className="mb-6">
-    <h3 className="font-semibold mb-3 text-xl">
-      Select Payment method: <span className="text-red-500">*</span>
-    </h3>
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {PAYMENT_METHODS.map((method) => (
-        <label
-          key={method.value}
-          className={`border rounded-lg p-3 cursor-pointer transition-all ${values.paymentMethod === method.value
-            ? "ring-4 ring-purple-500 " + method.color
-            : "hover:border-purple-300 hover:ring-4 hover:ring-purple-500"
-            }`}
-        >
-          <Field
-            type="radio"
-            name="paymentMethod"
-            value={method.value}
-            className="hidden"
-          />
-          {method.icon}
-          <div className="text-center font-medium">{method.label}</div>
-        </label>
-      ))}
-    </div>
-  </div>
-));
-
-const PriceSummary = React.memo(({
-  values,
-  memberChecked,
-  member,
-  bookingData,
-  discount,
-  PointsToUse,
-  finalPrice
-}) => (
-  <div className="bg-white p-4 rounded-lg mb-6">
-    <h3 className="font-semibold mb-3 text-lg">Payment Summary</h3>
-    <div className="space-y-2">
-      <div className="flex justify-between">
-        <span>Total ticket price:</span>
-        <span>{formatPrice(bookingData.totalPrice)} VNĐ</span>
-      </div>
-
-      {memberChecked && values.convertToTicket === "Disagree" && discount && (
-        <div className="flex justify-between">
-          <span>Discount {discount}%:</span>
-          <span className="text-green-600">
-            -{formatPrice(bookingData.totalPrice * discount / 100)} VNĐ
-          </span>
-        </div>
-      )}
-
-      {memberChecked && values.convertToTicket === "Agree" && (
-        <div className="flex justify-between">
-          <span>Points used:</span>
-          <span className="text-orange-500 flex items-center gap-1">
-            -{PointsToUse} <FaFire />
-          </span>
-        </div>
-      )}
-
-
-      {memberChecked && values.convertToTicket === "Agree" && (
-        <PointsInfo
-          bookingData={bookingData}
-          member={member}
-          PointsToUse={PointsToUse}
-        />
-      )}
-
-
-      <div className="border-t pt-2 mt-2 flex justify-between font-bold text-lg">
-        <span>Total Amount:</span>
-        <span className="text-purple-600">
-          {formatPrice(finalPrice)} VNĐ
-        </span>
-      </div>
-    </div>
-  </div>
-));
-
-const PointsInfo = React.memo(({ bookingData, member, PointsToUse }) => (
-  <div className="flex flex-col gap-2 text-md">
-    <div className="flex justify-between">
-      <span>Conversion rate:</span>
-      <span className="text-gray-600">1,000 VNĐ = 1 point</span>
-    </div>
-    <div className="flex justify-between">
-      <span>Total amount:</span>
-      <span className="text-gray-700">{formatPrice(bookingData.totalPrice)} VNĐ</span>
-    </div>
-    <div className="flex justify-between">
-      <span>Points needed:</span>
-      <span className="text-orange-500 flex items-center gap-1">
-        <FaFire /> {Math.floor(bookingData.totalPrice / 1000)} points
-      </span>
-    </div>
-    {/* <div className="flex justify-between">
-      <span>Points available:</span>
-      <span className="text-green-600 flex items-center gap-1">
-        <FaFire /> {member.score} points
-      </span>
-    </div> */}
-    {PointsToUse > member.score || PointsToUse === 0 && (
-      <div className="text-red-500 text-sm">
-        Not enough points to complete this transaction
-      </div>
-    )}
-  </div>
-));
-
-const ActionButtons = React.memo(({
-  isSubmitting,
-  values,
-  memberChecked,
-  PointsToUse,
-  member,
-  handleCancel
-}) => (
-  <div className="flex justify-end gap-4">
-    <Button
-      type="primary"
-      htmlType="submit"
-      disabled={
-        isSubmitting ||
-        !values.paymentMethod ||
-        (memberChecked &&
-          values.convertToTicket === "Agree" &&
-          PointsToUse > member.score)
-      }
-      className="px-6 py-2 rounded-lg flex items-center gap-2 disabled:!bg-gray-400 disabled:!border-gray-400 disabled:!text-white"
-      icon={
-        isSubmitting ? <FiLoader className="animate-spin h-4 w-4 text-white" /> : <CheckOutlined />
-      }
-    >
-      {isSubmitting ? "Processing..." : "Confirm Payment"}
-    </Button>
-
-    <Button
-      type="default"
-      danger
-      onClick={handleCancel}
-      icon={<FaX />}
-      className="px-2 py-1 sm:px-4 sm:py-2 rounded-lg flex items-center gap-2"
-    >
-      Cancel
-    </Button>
-  </div>
-));
-
-const MemberSection = React.memo(({
-  values,
-  isSearching,
-  memberChecked,
-  member,
-  handleMemberSearch,
-  setFieldValue,
-  discount,
-  handleAddPromotion
-}) => (
-  <div className="bg-white rounded-lg shadow-md p-6 sticky top-4 border border-gray-300">
-    <h2 className="text-xl font-bold mb-4 flex items-center gap-1">
-      <FaUser /> Member
-    </h2>
-    <div className="flex gap-3 items-center justify-center">
-      <Field
-        name="memberSearch"
-        type="text"
-        placeholder="Email / Phone / ID"
-        className="flex-1 border border-gray-300 rounded-full px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-      />
-      <button
-        type="button"
-        onClick={() => handleMemberSearch(values.memberSearch)}
-        disabled={isSearching}
-        className="bg-purple-600 text-white px-4 py-2 rounded-full hover:bg-purple-700 disabled:bg-gray-400 flex items-center gap-2 cursor-pointer"
-      >
-        {isSearching ? (
-          <>
-            <FiLoader className="animate-spin h-4 w-4 text-white" /> Checking...
-          </>
-        ) : (
-          <>
-            <IoSearch className="text-xl" /> Check
-          </>
-        )}
-      </button>
-    </div>
-
-    {memberChecked && member && (
-      <div className="mt-4">
-        <MemberInfo member={member} />
-        <ConvertPoints values={values} setFieldValue={setFieldValue} />
-        <PromotionCode
-          values={values}
-          setFieldValue={setFieldValue}
-          discount={discount}
-          handleAddPromotion={handleAddPromotion}
-        />
-      </div>
-    )}
-  </div>
-));
-
-const MemberInfo = React.memo(({ member }) => (
-  <div className="flex flex-col gap-4">
-    <div className="flex items-center justify-between">
-      <p className="text-gray-600 flex items-center gap-2">
-        <FaIdCard /> Identity card:
-      </p>
-      <p className="font-medium">{member.identityCard}</p>
-    </div>
-    <div className="flex items-center justify-between">
-      <p className="text-gray-600 flex items-center gap-2">
-        <FaUser /> Full Name:
-      </p>
-      <p className="font-medium">{member.fullName}</p>
-    </div>
-    <div className="flex items-center justify-between">
-      <p className="text-gray-600 flex items-center gap-2">
-        <FaPhone /> Phone:
-      </p>
-      <p className="font-medium">{member.phone}</p>
-    </div>
-    <div className="flex items-center justify-between">
-      <p className="text-gray-600 flex items-center gap-2">
-        <FaStar /> Points:
-      </p>
-      <p className={`font-medium flex items-center gap-1 ${member.score ? "text-green-600" : "text-red-600"}`}>
-        <FaFire /> {member.score ? member.score : 0}
-      </p>
-    </div>
-  </div>
-));
-
-const ConvertPoints = React.memo(({ setFieldValue }) => (
-  <div className="mt-4 flex flex-row items-center justify-between">
-    <label className="text-gray-700 flex items-center gap-2 sm:w-[80%] w-full">
-      <FaExchangeAlt /> Convert points to tickets:
-      <span className="text-red-500">*</span>
-    </label>
-    <Field name="convertToTicket">
-      {({ field }) => (
-        <Switch
-          style={{ width: "100px" }}
-          checked={field.value === "Agree"}
-          onChange={(checked) => {
-            setFieldValue("convertToTicket", checked ? "Agree" : "Disagree");
-          }}
-          checkedChildren="Agree"
-          unCheckedChildren="Disagree"
-        />
-      )}
-    </Field>
-  </div>
-));
-
-const PromotionCode = React.memo(({
-  values,
-  setFieldValue,
-  discount,
-  handleAddPromotion
-}) => (
-  <div className="mt-4">
-    <label className=" text-gray-700 mb-2 text-lg font-semibold flex items-center gap-2">
-      <BiSolidDiscount />  Promotion code:
-    </label>
-    <div className="flex gap-3 items-center justify-center">
-      <Field
-        name="promotionCode"
-        type="text"
-        disabled={values.convertToTicket === "Agree"}
-        placeholder="Enter promotion code"
-        className="flex-1 border border-gray-300 rounded-full px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100"
-      />
-      <button
-        type="button"
-        onClick={() => handleAddPromotion(values.promotionCode, setFieldValue)}
-        disabled={values.convertToTicket === "Agree" || !values.promotionCode}
-        className="bg-purple-600 text-white px-4 py-2 rounded-full hover:bg-purple-700 disabled:bg-gray-400 cursor-pointer flex items-center gap-1"
-      >
-        <IoAddOutline className="text-xl" /> Add
-      </button>
-    </div>
-    {discount && values.convertToTicket === "Disagree" && (
-      <p className="mt-2 text-green-600">Applied {discount}% discount</p>
-    )}
-  </div>
-));
-
-// Main Component
 const ConfirmTicketsPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -606,21 +160,18 @@ const ConfirmTicketsPage = () => {
       setFieldValue("promotionCode", "");
       toast.error(error.message);
     }
-  }, []);
+  }, [setDiscount]);
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
       setSubmitting(true);
 
-      // Validate form
       await validationSchema.validate(values, { abortEarly: false });
 
-      // Check booking data
       if (!bookingData?.selectedSeats?.length || !bookingData.showtimeId) {
         throw new Error("Invalid ticket data, please select again");
       }
 
-      // Prepare data
       const userId = memberChecked ? member?.id : user?.userId || user?.id;
       if (!userId) throw new Error("Could not determine user ID");
 
@@ -629,7 +180,6 @@ const ConfirmTicketsPage = () => {
           ? values.promotionCode
           : "";
 
-      // Calculate points and final price
       const { PointsToUse, finalPrice } = calculatePointsAndPrice(
         bookingData.selectedSeats,
         bookingData.seatData,
@@ -644,7 +194,6 @@ const ConfirmTicketsPage = () => {
         throw new Error("Not enough points to complete this transaction");
       }
 
-      // Get seat IDs
       const seatIds = bookingData.selectedSeats.map((seat) => {
         const seatData = bookingData.seatData.find((s) => s.seatNumber === seat);
         if (!seatData?.seatId) {
@@ -653,7 +202,6 @@ const ConfirmTicketsPage = () => {
         return seatData.seatId;
       });
 
-      // Create booking hold
       const bookingRes = await createBookingHold(
         userId,
         bookingData.showtimeId,
@@ -666,7 +214,6 @@ const ConfirmTicketsPage = () => {
         throw new Error("Failed to create booking");
       }
 
-      // Prepare complete booking data
       const completeBooking = {
         ...bookingData,
         bookingId: bookingRes.bookingId,
@@ -687,17 +234,18 @@ const ConfirmTicketsPage = () => {
         }),
       };
 
-      // Update Redux state
       dispatch(setCompleteBooking(completeBooking));
 
-      // Process payment
-      await processPayment(
-        values.paymentMethod,
-        bookingRes.bookingId,
-        finalPrice,
+      await processPayment({
+        paymentMethod: values.paymentMethod,
+        orderId: bookingRes.bookingId,
+        amount: finalPrice,
+        type: "ticket",
         navigate,
-        setIsRedirecting
-      );
+        setIsRedirecting,
+        // successUrl: `${window.location.origin}/staff/ticket-selling/ticket-information`,
+        successUrl: `${values.paymentMethod === "Cash" ? "/staff/ticket-selling/ticket-information" :`${window.location.origin}/staff/ticket-selling/ticket-information`}`,
+      });
     } catch (error) {
       console.error("Booking error:", error);
       if (error.inner) {
@@ -771,7 +319,6 @@ const ConfirmTicketsPage = () => {
       <h1 className="text-3xl font-bold mb-4 text-[#9810FA] justify-between items-center flex flex-col sm:flex-row">
         Confirm Tickets
       </h1>
-
       <Formik
         initialValues={{
           memberSearch: "",
@@ -782,96 +329,375 @@ const ConfirmTicketsPage = () => {
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
       >
-        {({ values, setFieldValue, isSubmitting }) => {
-          const { PointsToUse, finalPrice } = calculatePointsAndPrice(
-            bookingData.selectedSeats,
-            bookingData.seatData,
-            memberChecked,
-            values.convertToTicket,
-            discount,
-            bookingData.totalPrice,
-            member?.score || 0
-          );
-
-
-          return (
-            <Form>
-              <div className="flex flex-col gap-3">
-                <div className=" flex lg:flex-row flex-col gap-3">
-                  <div className="lg:w-2/3">
-                    <MovieInfoSection movieInfo={movieInfo} bookingData={bookingData} />
-                  </div>
-                  <div className="lg:w-1/3">
-                    <MemberSection
-                      values={values}
-                      isSearching={isSearching}
-                      memberChecked={memberChecked}
-                      member={member}
-                      handleMemberSearch={handleMemberSearch}
-                      setFieldValue={setFieldValue}
-                      discount={discount}
-                      handleAddPromotion={handleAddPromotion}
-                    />
-                  </div>
-                </div>
-                <div className="lg:w-2/3 lg:pr-2">
-                  <PaymentMethodSection
-                    values={values}
-                    isSubmitting={isSubmitting}
-                    memberChecked={memberChecked}
-                    member={member}
-                    bookingData={bookingData}
-                    discount={discount}
-                    PointsToUse={PointsToUse}
-                    finalPrice={finalPrice}
-                    handleCancel={handleCancel}
-                    setFieldValue={setFieldValue}
-                  />
-                </div>
-              </div>
-            </Form>
-          );
-        }}
+        {(formikProps) => (
+          <ConfirmFormBody
+            {...formikProps}
+            bookingData={bookingData}
+            memberChecked={memberChecked}
+            member={member}
+            discount={discount}
+            isSearching={isSearching}
+            handleMemberSearch={handleMemberSearch}
+            handleAddPromotion={handleAddPromotion}
+            handleCancel={handleCancel}
+            movieInfo={movieInfo}
+          />
+        )}
       </Formik>
     </div>
   );
 };
 
-// Helper function for payment processing
-async function processPayment(paymentMethod, bookingId, finalAmount, navigate, setIsRedirecting) {
-  switch (paymentMethod) {
-    case "Cash":
-      await createCashPayment(bookingId, finalAmount, `CASH-${Date.now()}`);
-      await confirmBooking(bookingId);
-      toast.success("Cash payment successful!");
-      navigate("/staff/ticket-selling/ticket-information");
-      break;
-    case "Momo":
-      setIsRedirecting(true);
-      try {
-        const momoRes = await createMomoPayment(
-          bookingId,
-          finalAmount,
-          `${window.location.origin}/staff/ticket-selling/ticket-information`
-        );
-        const payUrl = momoRes?.payUrl || momoRes?.data?.payUrl;
-        if (!payUrl) {
-          setIsRedirecting(false);
-          throw new Error("Did not receive payment URL from Momo");
-        }
-        window.location.href = payUrl;
-      } catch (error) {
-        setIsRedirecting(false);
-        throw error;
-      }
-      break;
-    case "VNPay":
-      throw new Error("VNPay payment method not yet supported");
-    case "ZaloPay":
-      throw new Error("ZaloPay payment method not yet supported");
-    default:
-      throw new Error("Invalid payment method");
-  }
+// Component thực sự, dùng hook thoải mái
+function ConfirmFormBody({
+  values,
+  setFieldValue,
+  isSubmitting,
+  bookingData,
+  memberChecked,
+  member,
+  discount,
+  isSearching,
+  handleMemberSearch,
+  handleAddPromotion,
+  handleCancel,
+  movieInfo
+}) {
+  const { PointsToUse, finalPrice } = useMemo(
+    () => calculatePointsAndPrice(
+      bookingData.selectedSeats,
+      bookingData.seatData,
+      memberChecked,
+      values.convertToTicket,
+      discount,
+      bookingData.totalPrice,
+      member?.score || 0
+    ),
+    [
+      bookingData.selectedSeats,
+      bookingData.seatData,
+      memberChecked,
+      values.convertToTicket,
+      discount,
+      bookingData.totalPrice,
+      member?.score
+    ]
+  );
+
+  return (
+    <Form>
+      <div className="flex flex-col gap-3">
+        <div className=" flex lg:flex-row flex-col gap-3">
+          <div className="lg:w-2/3">
+            {/* MovieInfoSection inline */}
+            <div className="bg-white border border-gray-300 rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <RiFilmAiFill /> Ticket Information
+              </h2>
+              <div className="flex flex-col md:flex-row gap-6 items-center justify-center sm:items-start sm:justify-center">
+                <img
+                  src={movieInfo.PosterImage}
+                  alt={movieInfo.NameOfEnglish}
+                  className="lg:h-[300px] object-cover rounded-lg shadow sm:w-[30%] w-[90%] h-auto"
+                  onError={(e) => (e.target.src = "/placeholder-poster.jpg")}
+                />
+                <div className="flex-1">
+                  <div className="flex items-center justify-center sm:justify-start gap-3 mb-3">
+                    <div className="px-3 py-2 rounded-full shadow-md  flex items-center justify-center 
+                      bg-[linear-gradient(to_right,_#FACC15,_#DDB61A,_#DBBB3B,_#CDB03D,_#B1900C)]">
+                      <p className="font-bold text-sm leading-4 text-[#FFF8A7] [text-shadow:_0_1px_2px_orange]">
+                        Now Showing
+                      </p>
+                    </div>
+                    <VersionCard
+                      version={bookingData.selectedVersion}
+                      readonly={true}
+                      className="text-sm"
+                    />
+                  </div>
+                  <div className="flex flex-col sm:items-start w-full py-4 items-center justify-center">
+                    <h3 className="text-2xl font-bold">{movieInfo.NameOfEnglish}</h3>
+                    <p className="text-xl text-gray-600 font-semibold text-center">
+                      ({movieInfo.NameOfVietnamese})
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+                    {/* InfoItem inline */}
+                    <div className="flex items-center justify-between lg:justify-start">
+                      <div className="flex items-center gap-1 font-semibold w-[30%]">
+                        <FaCalendarDays /> Day:
+                      </div>
+                      <span className="text-gray-700">{bookingData.selectedDay}</span>
+                    </div>
+                    <div className="flex items-center justify-between lg:justify-start">
+                      <div className="flex items-center gap-1 font-semibold w-[30%]">
+                        <IoTime /> Time:
+                      </div>
+                      <span className="text-gray-700">{bookingData.selectedTime}</span>
+                    </div>
+                    <div className="flex items-center justify-between lg:justify-start">
+                      <div className="flex items-center gap-1 font-semibold w-[30%]">
+                        <FaLocationDot /> Room:
+                      </div>
+                      <span className="text-gray-700">{bookingData.room}</span>
+                    </div>
+                    <div className="flex items-center justify-between lg:justify-start">
+                      <div className="flex items-center gap-1 font-semibold w-[30%]">
+                        <FaCouch /> Seats:
+                      </div>
+                      <span className="text-gray-700">
+                        {`${bookingData.selectedSeats.join(", ")} - (${bookingData.selectedSeats.length} tickets)`}
+                      </span>
+                    </div>
+                  </div>
+                  {/* PriceDetails inline */}
+                  <div className="mt-6">
+                    <h4 className="font-semibold mb-2">Price Details:</h4>
+                    <div className="space-y-2">
+                      {bookingData.selectedSeats.map((seat, index) => {
+                        const seatInfo = bookingData.seatData.find((s) => s.seatNumber === seat);
+                        return (
+                          <div key={index} className="flex justify-between">
+                            <span>Seat {seat}:</span>
+                            <span>{formatPrice(seatInfo?.price || 0)} VNĐ</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-4 pt-4 border-t flex justify-between items-center">
+                      <span className="font-bold text-lg">Total:</span>
+                      <span className="text-green-600 font-bold text-xl">
+                        {formatPrice(
+                          bookingData.selectedSeats.reduce((total, seatNumber) => {
+                            const seat = bookingData.seatData.find((s) => s.seatNumber === seatNumber);
+                            return total + (seat?.price || 0);
+                          }, 0)
+                        )}{" "}
+                        VNĐ
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="lg:w-1/3">
+            {/* MemberSection inline */}
+            <div className="bg-white rounded-lg shadow-md p-6 sticky top-4 border border-gray-300">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-1">
+                <FaUser /> Member
+              </h2>
+              <div className="flex gap-3 items-center justify-center">
+                <Field
+                  name="memberSearch"
+                  type="text"
+                  placeholder="Email / Phone / ID"
+                  className="flex-1 border border-gray-300 rounded-full px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleMemberSearch(values.memberSearch)}
+                  disabled={isSearching}
+                  className="bg-purple-600 text-white px-4 py-2 rounded-full hover:bg-purple-700 disabled:bg-gray-400 flex items-center gap-2 cursor-pointer"
+                >
+                  {isSearching ? (
+                    <>
+                      <FiLoader className="animate-spin h-4 w-4 text-white" /> Checking...
+                    </>
+                  ) : (
+                    <>
+                      <IoSearch className="text-xl" /> Check
+                    </>
+                  )}
+                </button>
+              </div>
+              {memberChecked && member && (
+                <div className="mt-4">
+                  {/* MemberInfo inline */}
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-gray-600 flex items-center gap-2">
+                        <FaIdCard /> Identity card:
+                      </p>
+                      <p className="font-medium">{member.identityCard}</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-gray-600 flex items-center gap-2">
+                        <FaUser /> Full Name:
+                      </p>
+                      <p className="font-medium">{member.fullName}</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-gray-600 flex items-center gap-2">
+                        <FaPhone /> Phone:
+                      </p>
+                      <p className="font-medium">{member.phone}</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-gray-600 flex items-center gap-2">
+                        <FaStar /> Points:
+                      </p>
+                      <p className={`font-medium flex items-center gap-1 ${member.score ? "text-green-600" : "text-red-600"}`}>
+                        <FaFire /> {member.score ? member.score : 0}
+                      </p>
+                    </div>
+                  </div>
+                  {/* ConvertPoints inline */}
+                  <div className="mt-4 flex flex-row items-center justify-between">
+                    <label className="text-gray-700 flex items-center gap-2 sm:w-[80%] w-full">
+                      <FaExchangeAlt /> Convert points to tickets:
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <Field name="convertToTicket">
+                      {({ field }) => (
+                        <Switch
+                          style={{ width: "100px" }}
+                          checked={field.value === "Agree"}
+                          onChange={(checked) => {
+                            setFieldValue("convertToTicket", checked ? "Agree" : "Disagree");
+                          }}
+                          checkedChildren="Agree"
+                          unCheckedChildren="Disagree"
+                        />
+                      )}
+                    </Field>
+                  </div>
+                  {/* PromotionCode inline */}
+                  <div className="mt-4">
+                    <label className=" text-gray-700 mb-2 text-lg font-semibold flex items-center gap-2">
+                      <BiSolidDiscount />  Promotion code:
+                    </label>
+                    <div className="flex gap-3 items-center justify-center">
+                      <Field
+                        name="promotionCode"
+                        type="text"
+                        disabled={values.convertToTicket === "Agree"}
+                        placeholder="Enter promotion code"
+                        className="flex-1 border border-gray-300 rounded-full px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleAddPromotion(values.promotionCode, setFieldValue)}
+                        disabled={values.convertToTicket === "Agree" || !values.promotionCode}
+                        className="bg-purple-600 text-white px-4 py-2 rounded-full hover:bg-purple-700 disabled:bg-gray-400 cursor-pointer flex items-center gap-1"
+                      >
+                        <IoAddOutline className="text-xl" /> Add
+                      </button>
+                    </div>
+                    {discount && values.convertToTicket === "Disagree" && (
+                      <p className="mt-2 text-green-600">Applied {discount}% discount</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="lg:w-2/3 lg:pr-2">
+          {/* PaymentMethodSection inline */}
+          <div className="bg-white rounded-lg shadow-md p-6 border border-gray-300">
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+              <FaMoneyBillWave /> Payment Method
+            </h2>
+            {/* PaymentOptions inline */}
+            <div className="mb-6">
+              <h3 className="font-semibold mb-3 text-xl">
+                Select Payment method: <span className="text-red-500">*</span>
+              </h3>
+              <PaymentMethod
+                value={values.paymentMethod}
+                onChange={val => setFieldValue('paymentMethod', val)}
+              />
+            </div>
+            {/* PriceSummary inline */}
+            <div className="bg-white p-4 rounded-lg mb-6">
+              <h3 className="font-semibold mb-3 text-lg">Payment Summary</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span>Total ticket price:</span>
+                  <span>{formatPrice(bookingData.totalPrice)} VNĐ</span>
+                </div>
+                {memberChecked && values.convertToTicket === "Disagree" && discount && (
+                  <div className="flex justify-between">
+                    <span>Discount {discount}%:</span>
+                    <span className="text-green-600">
+                      -{formatPrice(bookingData.totalPrice * discount / 100)} VNĐ
+                    </span>
+                  </div>
+                )}
+                {memberChecked && values.convertToTicket === "Agree" && (
+                  <div className="flex justify-between">
+                    <span>Points used:</span>
+                    <span className="text-orange-500 flex items-center gap-1">
+                      -{PointsToUse} <FaFire />
+                    </span>
+                  </div>
+                )}
+                {memberChecked && values.convertToTicket === "Agree" && (
+                  <div className="flex flex-col gap-2 text-md">
+                    <div className="flex justify-between">
+                      <span>Conversion rate:</span>
+                      <span className="text-gray-600">1,000 VNĐ = 1 point</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Total amount:</span>
+                      <span className="text-gray-700">{formatPrice(bookingData.totalPrice)} VNĐ</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Points needed:</span>
+                      <span className="text-orange-500 flex items-center gap-1">
+                        <FaFire /> {Math.floor(bookingData.totalPrice / 1000)} points
+                      </span>
+                    </div>
+                    {(PointsToUse > member.score || PointsToUse === 0) && (
+                      <div className="text-red-500 text-sm">
+                        Not enough points to complete this transaction
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div className="border-t pt-2 mt-2 flex justify-between font-bold text-lg">
+                  <span>Total Amount:</span>
+                  <span className="text-purple-600">
+                    {formatPrice(finalPrice)} VNĐ
+                  </span>
+                </div>
+              </div>
+            </div>
+            {/* ActionButtons inline */}
+            <div className="flex justify-end gap-4">
+              <Button
+                type="primary"
+                htmlType="submit"
+                disabled={
+                  isSubmitting ||
+                  !values.paymentMethod ||
+                  (memberChecked &&
+                    values.convertToTicket === "Agree" &&
+                    PointsToUse > member.score)
+                }
+                className="px-6 py-2 rounded-lg flex items-center gap-2 disabled:!bg-gray-400 disabled:!border-gray-400 disabled:!text-white"
+                icon={
+                  isSubmitting ? <FiLoader className="animate-spin h-4 w-4 text-white" /> : <CheckOutlined />
+                }
+              >
+                {isSubmitting ? "Processing..." : "Confirm Payment"}
+              </Button>
+              <Button
+                type="default"
+                danger
+                onClick={handleCancel}
+                icon={<FaX />}
+                className="px-2 py-1 sm:px-4 sm:py-2 rounded-lg flex items-center gap-2"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Form>
+  );
 }
 
 export default ConfirmTicketsPage;

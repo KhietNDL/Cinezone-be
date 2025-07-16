@@ -88,7 +88,7 @@ const SellTicketPage = () => {
         }
       }
     });
-  }, [selectedDay, selectedMovie]);
+  }, [selectedTime, selectedDay, selectedMovie, selectedVersion, dispatch]);
 
   useEffect(() => {
     if (selectedVersion && selectedTime && versionsAndTimes.length > 0) {
@@ -104,7 +104,7 @@ const SellTicketPage = () => {
         }
       }
     }
-  }, [selectedVersion, selectedTime, versionsAndTimes]);
+  }, [selectedVersion, selectedTime, versionsAndTimes, dispatch]);
 
   const getCurrentMovie = useCallback(async () => {
     try {

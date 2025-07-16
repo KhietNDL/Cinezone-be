@@ -143,23 +143,23 @@ export default function MovieDetail() {
     "ULTRA 4DX": "text-black font-semibold"
   };
 
-  // const renderStars = (rating) => {
-  //   const stars = [];
-  //   const full = Math.floor(rating);
-  //   const hasHalf = rating % 1 >= 0.5;
+  const renderStars = (AverageRating) => {
+    const stars = [];
+    const full = Math.floor(AverageRating);
+    const hasHalf = AverageRating % 1 >= 0.5;
 
-  //   for (let i = 0; i < 5; i++) {
-  //     if (i < full) {
-  //       stars.push(<FaStar key={i} className="text-yellow-400" />);
-  //     } else if (i === full && hasHalf) {
-  //       stars.push(<FaStarHalfAlt key={i} className="text-yellow-400" />);
-  //     } else {
-  //       stars.push(<FaRegStar key={i} className="text-gray-300" />);
-  //     }
-  //   }
+    for (let i = 0; i < 5; i++) {
+      if (i < full) {
+        stars.push(<FaStar key={i} className="text-yellow-400" />);
+      } else if (i === full && hasHalf) {
+        stars.push(<FaStarHalfAlt key={i} className="text-yellow-400" />);
+      } else {
+        stars.push(<FaRegStar key={i} className="text-gray-300" />);
+      }
+    }
 
-  //   return stars;
-  // };
+    return stars;
+  };
 
   const fallbackImage = "https://via.placeholder.com/80x120.png?text=No+Image";
 
@@ -229,13 +229,13 @@ export default function MovieDetail() {
                     </button>
                   ))}
                 </div>
-                {/* <div className="mt-3 flex items-center gap-8">
+                <div className="mt-3 flex items-center gap-8">
                   <span className="text-lg font-semibold ">Rating:</span>
                   <div className='flex gap-1 items-center'>
-                    <div className="flex">{renderStars(movie.rating)}</div>
-                    <span className="text-sm text-gray-500 ml-2">({movie.rating})</span>
+                    <div className="flex">{renderStars(movie.AverageRating)}</div>
+                    <span className="text-sm text-gray-500 ml-2">({movie.AverageRating})</span>
                   </div>
-                </div> */}
+                </div>
               </div>
             </div>
           </div>
