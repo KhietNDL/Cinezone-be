@@ -24,11 +24,11 @@ import { resetMember } from "../../../redux/features/memberSlice";
 import VersionCard from "../component/VersionCard";
 
 const SelectSeatsPage = () => {
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const bookingData = useSelector((state) => state.selling);
-  const seatData = bookingData.seatData || [];
-  const selectedSeats = bookingData.selectedSeats || [];
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const bookingData = useSelector((state) => state.selling);
+    const seatData = bookingData.seatData;
+    const selectedSeats = bookingData.selectedSeats;
 
   const [movieInfo, setMovieInfo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -62,13 +62,14 @@ const SelectSeatsPage = () => {
       }
     };
 
-    fetchData();
-  }, [
-    bookingData?.selectedMovie?.MovieId,
-    bookingData?.showtimeId,
-    navigate,
-    dispatch,
-  ]);
+        fetchData();
+    }, [
+        bookingData?.selectedMovie,
+        bookingData?.selectedMovie?.MovieId,
+        bookingData?.showtimeId,
+        navigate,
+        dispatch
+    ]);
 
   useEffect(() => {
     return () => {

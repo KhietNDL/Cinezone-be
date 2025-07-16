@@ -31,7 +31,7 @@ const HeaderStaff = () => {
       setIsOpen(false);
       navigate("/");
     } catch (error) {
-      console.error("Lỗi khi đăng xuất:", error);
+      console.error("Error when Sign out:", error);
       setIsOpen(false);
       navigate("/");
     } finally {
