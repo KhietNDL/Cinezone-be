@@ -173,6 +173,13 @@ const Header = () => {
         >
           Promotions
         </Link>
+        <div
+          onClick={() => navigate("/blog")}
+          role="button"
+          className="hover:underline shadow-2xl"
+        >
+          News
+        </div>
       </div>
       <div className="flex items-center space-x-4">
         <div className="relative flex items-center z-50">
