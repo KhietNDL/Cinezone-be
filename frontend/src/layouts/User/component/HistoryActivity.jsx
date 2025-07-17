@@ -217,21 +217,21 @@ const HistoryActivity = () => {
   };
 
   const getStatusLabel = (status) => {
-  const statusValue = typeof status === 'string' ? 
-    (status === 'Waiting' ? 'Waiting' : parseInt(status)) : 
-    status;
-    
-  switch (statusValue) {
-    case 2:
-      return 'Success';
-    case 4:
-      return 'Canceled';
-    case 'Waiting':
-      return 'Waiting';
-    default:
-      return 'Unknown';
-  }
-};
+    const statusValue = typeof status === 'string' ?
+      (status === 'Waiting' ? 'Waiting' : parseInt(status)) :
+      status;
+
+    switch (statusValue) {
+      case 2:
+        return 'Success';
+      case 4:
+        return 'Canceled';
+      case 'Waiting':
+        return 'Waiting';
+      default:
+        return 'Unknown';
+    }
+  };
 
   // Pagination cho booking
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
@@ -249,7 +249,7 @@ const HistoryActivity = () => {
 
   const renderPagination = () => {
     const currentTotalPages = activeTab === "booking" ? totalPages : totalPagesPoints;
-    
+
     if (currentTotalPages <= 1) return null;
 
     const pages = [];
@@ -382,7 +382,7 @@ const HistoryActivity = () => {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
             <div className="flex flex-col lg:flex-row gap-4 items-end">
               {/* Search by Movie Name */}
-              <div className="flex-1">
+              <div className="flex-1 w-full">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Search Movie
                 </label>
@@ -396,7 +396,7 @@ const HistoryActivity = () => {
               </div>
 
               {/* Filter by Status */}
-              <div className="flex-1">
+              <div className="flex-1 w-full">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Status
                 </label>
@@ -413,7 +413,7 @@ const HistoryActivity = () => {
               </div>
 
               {/* Filter by Date */}
-              <div className="flex-1">
+              <div className="flex-1 w-full">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Date
                 </label>
@@ -512,7 +512,7 @@ const HistoryActivity = () => {
                       <th className="text-center py-4 px-6 font-semibold text-gray-700">Price</th>
                       <th className="text-center py-4 px-6 font-semibold text-gray-700">Customer</th>
                       <th className="text-center py-4 px-6 font-semibold text-gray-700">Status</th>
-                      <th className="text-center py-4 px-2 font-semibold text-gray-700">Action</th>
+                      <th className="text-start py-4 px-2 font-semibold text-gray-700">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -547,17 +547,20 @@ const HistoryActivity = () => {
                         </td>
                         <td className=" text-center py-4 px-6 text-gray-700 font-medium">{item.totalAmount || '0'}</td>
                         <td className=" text-center py-4 px-6 text-gray-700 font-medium">{item.buyerName || 'N/A'}</td>
-                        <td className="text-center py-4 px-6">
-                          <span className={`${getStatusStyle(item.status)} px-4 py-2 rounded-full text-sm font-medium`}>
+                        <td className="text-center py-4 px-6 mr-0 ">
+                          <span
+                            className={`${getStatusStyle(item.status)} inline-flex justify-center items-center px-4 py-2 rounded-full text-sm font-medium min-w-[90px] text-center`}
+                          >
                             {getStatusLabel(item.status)}
                           </span>
+
                         </td>
 
-                        <td className="  text-center py-0 px-2">
+                        <td className="  text-start py-0 px-0">
                           {item.status === 2 && (
                             <button
                               onClick={() => handleViewDetail(item)}
-                              className="bg-blue-100 text-blue-600 px-4  py-2 rounded-full text-sm font-medium hover:bg-blue-500/50"
+                              className="bg-blue-100 text-blue-600 px-2  py-2 w-[60px] rounded-full text-sm font-medium hover:bg-blue-500/50"
                             >
                               Detail
                             </button>
@@ -580,7 +583,7 @@ const HistoryActivity = () => {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
             <div className="flex flex-col lg:flex-row gap-4 items-end">
               {/* Search by Booking ID */}
-              <div className="flex-1">
+              <div className="flex-1 w-full">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Search Booking ID
                 </label>
@@ -594,7 +597,7 @@ const HistoryActivity = () => {
               </div>
 
               {/* Filter by Change Type */}
-              <div className="flex-1">
+              <div className="flex-1 w-full">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Activity Type
                 </label>
@@ -610,7 +613,7 @@ const HistoryActivity = () => {
               </div>
 
               {/* Filter by Date */}
-              <div className="flex-1">
+              <div className="flex-1 w-full">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Date
                 </label>
@@ -733,12 +736,11 @@ const HistoryActivity = () => {
                           </div>
                         </td>
 
-                       
+
 
                         <td className="text-center py-4 px-6">
-                          <div className={`font-semibold ${
-                            item.ScoreValue > 0 ? 'text-green-600' : 'text-red-600'
-                          }`}>
+                          <div className={`font-semibold ${item.ScoreValue > 0 ? 'text-green-600' : 'text-red-600'
+                            }`}>
                             {item.ScoreValue > 0 ? `+${item.ScoreValue}` : item.ScoreValue}
                           </div>
                         </td>
@@ -746,14 +748,13 @@ const HistoryActivity = () => {
                         <td className="text-center py-4 px-6 text-gray-700 font-mono text-sm">
                           {item.RelatedBookingId}
                         </td>
-                         <td className="text-center py-4 px-6">
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                            item.ChangeType === 2 
-                              ? 'bg-red-100 text-red-700' 
-                              : item.ChangeType === 4 
+                        <td className="text-center py-4 px-6">
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${item.ChangeType === 2
+                            ? 'bg-red-100 text-red-700'
+                            : item.ChangeType === 4
                               ? 'bg-green-100 text-green-700'
                               : 'bg-gray-100 text-gray-700'
-                          }`}>
+                            }`}>
                             {item.ChangeType === 2 ? 'Points Used' : item.ChangeType === 4 ? 'Points Earned' : 'Unknown'}
                           </span>
                         </td>
@@ -798,7 +799,7 @@ const HistoryActivity = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                   </div>
                 </div>
 
