@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { cancelBooking, cancelProduct, ConfirmBooking, confirmProduct, getBookingById, getProductByOderProductId } from "../../../services/API";
 import { useDispatch, useSelector} from "react-redux"
-import {  setProductDetail } from "../../../redux/features/bookingSlice"; // THÊM IMPORT NÀY
+import {  setProductDetail } from "../../../redux/features/bookingSlice";
 
 const TicketDetails = () => {
   const [searchParams] = useSearchParams();

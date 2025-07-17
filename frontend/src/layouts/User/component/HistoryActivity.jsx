@@ -61,8 +61,9 @@ const HistoryActivity = () => {
   };
 
   // Filter và Search functions cho booking
-  const applyFilters = () => {
-    let filtered = [...historyData];
+ const applyFilters = () => {
+  const safeHistoryData = Array.isArray(historyData) ? historyData : [];
+  let filtered = [...safeHistoryData];
 
     // Search by movie name
     if (searchTerm) {
@@ -98,8 +99,9 @@ const HistoryActivity = () => {
   };
 
   // Filter functions cho points
-  const applyPointsFilters = () => {
-    let filtered = [...scoreHistory];
+ const applyPointsFilters = () => {
+  const safeScoreHistory = Array.isArray(scoreHistory) ? scoreHistory : [];
+  let filtered = [...safeScoreHistory];
 
     // Search by booking ID
     if (pointsSearchTerm) {
@@ -157,8 +159,8 @@ const HistoryActivity = () => {
         setLoading(true);
         const response = await getBookingHistory(user.userId);
         console.log("Booking History in HistoryPage:", response);
-        setHistoryData(response || []);
-        setFilteredData(response || []);
+        setHistoryData(response?.data || []);
+        setFilteredData(response?.data || []);
       } catch (error) {
         console.error("Lỗi khi lấy history:", error);
         setHistoryData([]);
@@ -203,6 +205,15 @@ const HistoryActivity = () => {
     applyPointsFilters();
   }, [pointsSearchTerm, pointsStatusFilter, pointsDateFilter, scoreHistory]);
 
+  useEffect(() => {
+  setCurrentPage(1);
+}, [activeTab]);
+
+const handleTabChange = (tab) => {
+  setActiveTab(tab);
+  setCurrentPage(1);
+};
+
   const getStatusStyle = (status) => {
     switch (status) {
       case 2:
@@ -234,6 +245,7 @@ const HistoryActivity = () => {
   };
 
   // Pagination cho booking
+ 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -357,7 +369,7 @@ const HistoryActivity = () => {
 
       <div className="flex mb-8 space-x-2 bg-gray-100 p-2 rounded-2xl">
         <button
-          onClick={() => setActiveTab("booking")}
+          onClick={() => handleTabChange("booking")}
           className={`flex-1 px-8 py-3 rounded-xl font-medium transition-all duration-300 ${activeTab === "booking"
             ? "bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-lg"
             : "text-gray-600 hover:text-gray-800 hover:bg-white/50"
@@ -366,7 +378,7 @@ const HistoryActivity = () => {
           Booking History
         </button>
         <button
-          onClick={() => setActiveTab("points")}
+          onClick={() => handleTabChange("points")}
           className={`flex-1 px-8 py-3 rounded-xl font-medium transition-all duration-300 ${activeTab === "points"
             ? "bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-lg"
             : "text-gray-600 hover:text-gray-800 hover:bg-white/50"

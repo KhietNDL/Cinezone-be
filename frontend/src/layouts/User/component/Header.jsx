@@ -110,8 +110,8 @@ const Header = () => {
           .slice(0, 8) // Chỉ lấy 8 noti mới nhất
       );
     }
-    if (user.userId) fetchBookings();
-  }, [user.userId]);
+    if (user?.userId) fetchBookings();
+  }, [user?.userId]);
 
   const highlightStatus = (message) => {
     if (!message) return "";
