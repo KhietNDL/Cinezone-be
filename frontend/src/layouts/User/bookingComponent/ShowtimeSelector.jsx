@@ -62,7 +62,7 @@ const ShowtimeSelector = ({
                 const dayObj = new Date(d.Day);
                 const today = new Date();
                 
-                // Đặt thời gian về 00:00:00 để so sánh chính xác ngày
+                
                 const dateToCheck = new Date(dayObj.getFullYear(), dayObj.getMonth(), dayObj.getDate());
                 const todayForComparison = new Date(today.getFullYear(), today.getMonth(), today.getDate());
                 

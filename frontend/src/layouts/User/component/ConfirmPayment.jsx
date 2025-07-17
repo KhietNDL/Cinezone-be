@@ -812,14 +812,14 @@ const ConfirmPayment = () => {
                         onClick={() => handlePaymentMethod("3")}
                         className={`flex flex-col items-center justify-center rounded-2xl p-4 h-20 font-semibold transition-all duration-300 border-2 ${
                           paymentMethod === "3" 
-                            ? "bg-purple-500/20 border-purple-400 shadow-lg transform scale-105" 
-                            : "bg-white/5 hover:bg-white/10 border-white/20 hover:border-purple-400/50"
-                        } focus:outline-none focus:ring-4 focus:ring-purple-500/50`}
+                            ? "bg-white border-purple-400 shadow-lg transform scale-105" 
+                            : "bg-white hover:bg-white/70 border-white/20 hover:border-purple-400/50"
+                        } focus:outline-none focus:bg-white  focus:ring-4 focus:ring-purple-500`}
                       >
                         <img
                           src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-VNPAY-QR-350x65.png"
                           alt="VnPay logo"
-                          className="w-16 h-3 mb-1"
+                          className="w-16 h-3 mb-1 "
                         />
                        
                       </button>
@@ -828,9 +828,9 @@ const ConfirmPayment = () => {
                         onClick={() => handlePaymentMethod("4")}
                         className={`flex flex-col items-center justify-center rounded-2xl p-4 h-20 font-semibold transition-all duration-300 border-2 ${
                           paymentMethod === "4" 
-                            ? "bg-purple-500/20 border-purple-400 shadow-lg transform scale-105" 
-                            : "bg-white/5 hover:bg-white/10 border-white/20 hover:border-purple-400/50"
-                        } focus:outline-none focus:ring-4 focus:ring-purple-500/50`}
+                            ? "bg-white border-purple-400 shadow-lg transform scale-105" 
+                            : "bg-white hover:bg-white/70 border-white/20 hover:border-purple-400/50"
+                        } focus:outline-none focus:bg-white focus:ring-4 focus:ring-purple-500`}
                       >
                         <img
                           src="https://vectorseek.com/wp-content/uploads/2023/09/Zalopay-Logo-Vector.svg-.png"
@@ -844,9 +844,9 @@ const ConfirmPayment = () => {
                         onClick={() => handlePaymentMethod("2")}
                         className={`flex flex-col items-center justify-center rounded-2xl p-4 h-20 font-semibold transition-all duration-300 border-2 ${
                           paymentMethod === "2" 
-                            ? "bg-purple-500/20 border-purple-400 shadow-lg transform scale-105" 
-                            : "bg-white/5 hover:bg-white/10 border-white/20 hover:border-purple-400/50"
-                        } focus:outline-none focus:ring-4 focus:ring-purple-500/50`}
+                            ? "bg-white border-purple-400 shadow-lg transform scale-105" 
+                            : "bg-white hover:bg-white/70 border-white/20 hover:border-purple-400/50"
+                        } focus:outline-none  focus:bg-white focus:ring-4 focus:ring-purple-500`}
                       >
                         <img
                           src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-MoMo-Transparent-1024x1024.png"
@@ -862,7 +862,7 @@ const ConfirmPayment = () => {
                   <div className="mt-auto space-y-4">
                     <button
                       type="button"
-                      className={`w-full py-4 bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 hover:from-purple-700 hover:via-purple-600 hover:to-pink-600 shadow-xl hover:shadow-2xl hover:shadow-purple-500/20 transform hover:scale-[1.02] transition-all duration-300 ease-out border border-purple-400/20 text-white font-semibold rounded-2xl text-lg ${(!paymentMethod || isConfirming) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`w-full py-4 bg-gradient-to-r via-purple-500   hover:via-purple-600  shadow-xl hover:shadow-2xl hover:shadow-purple-500/20 transform hover:scale-[1.02] transition-all duration-300 ease-out border border-purple-400/10 text-white font-semibold rounded-2xl text-lg ${(!paymentMethod || isConfirming) ? 'opacity-50 cursor-not-allowed' : ''}`}
                       onClick={handleConfirm}
                       disabled={!paymentMethod || isConfirming}
                     >
@@ -878,7 +878,7 @@ const ConfirmPayment = () => {
                     
                     <button
                       type="button"
-                      className="w-full py-4 bg-transparent hover:bg-white/10 border-2 border-purple-500/70 hover:border-purple-400 text-white font-semibold rounded-2xl text-lg transition-all duration-300"
+                      className="w-full py-4 bg-transparent hover:bg-white/10 border-2 border-purple-500/50 hover:border-purple-400 text-white font-semibold rounded-2xl text-lg transition-all duration-300"
                       onClick={handleCancel}
                       disabled={isConfirming}
                     >
