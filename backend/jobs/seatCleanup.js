@@ -26,7 +26,9 @@ async function cleanupOldSeats() {
 
     // Xóa các ghế liên quan trong SeatShowtime
     await connection.query(
-      `DELETE FROM SeatShowtime WHERE ShowtimeId IN (?)`,
+      `UPDATE SeatShowtime
+         SET Status = 'cancelled', IsDeleted = 1
+         WHERE BookingId = ? AND Status IN ('holding', 'taken')`,
       [showtimeIds]
     );
 

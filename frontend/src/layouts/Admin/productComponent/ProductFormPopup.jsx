@@ -22,16 +22,21 @@ const ProductFormPopup = ({
   loading,
 }) => {
   if (!showFormPopup) return null;
+
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[95vh] overflow-hidden border border-gray-100 animate-slideUp">
-        <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-blue-700 px-6 py-5 text-white relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent"></div>
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[95vh] overflow-hidden border border-gray-100 transform transition-all duration-300 animate-slideUp">
+        {/* Header */}
+        <div className="bg-gradient-to-br from-indigo-500 via-purple-500 to-blue-600 px-8 py-6 text-white relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-white/10 to-transparent"></div>
+          <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full transform translate-x-20 -translate-y-20"></div>
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full transform -translate-x-16 translate-y-16"></div>
+
           <div className="relative flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+            <div className="flex items-center space-x-4">
+              <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30">
                 <svg
-                  className="w-6 h-6 text-white"
+                  className="w-8 h-8 text-white"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -45,12 +50,12 @@ const ProductFormPopup = ({
                 </svg>
               </div>
               <div>
-                <h2 className="text-2xl font-bold tracking-tight">
+                <h2 className="text-2xl font-bold tracking-tight mb-1">
                   {isEdit ? "Edit Product" : "Add New Product"}
                 </h2>
-                <p className="text-indigo-100 text-sm mt-1 font-medium">
+                <p className="text-indigo-100 text-sm font-medium">
                   {isEdit
-                    ? "Update product information"
+                    ? "Update your product information"
                     : "Create a new product entry"}
                 </p>
               </div>
@@ -61,25 +66,51 @@ const ProductFormPopup = ({
                 setShowFormPopup(false);
                 resetForm();
               }}
-              className="w-10 h-10 hover:bg-white/10 rounded-xl transition-all duration-200 flex items-center justify-center group"
+              className="w-12 h-12 hover:bg-white/20 rounded-2xl transition-all duration-300 flex items-center justify-center group border border-white/20 hover:border-white/40"
               aria-label="Close"
             >
-              <MdOutlineClose className="w-6 h-6 text-white group-hover:rotate-90 transition-transform duration-200" />
+              <MdOutlineClose className="w-6 h-6 text-white group-hover:rotate-90 transition-transform duration-300" />
             </button>
           </div>
         </div>
-        <div className="p-6 overflow-y-auto max-h-[calc(95vh-200px)]">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 p-6 rounded-xl border border-gray-200/50 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <div className="w-2 h-2 bg-indigo-500 rounded-full mr-3"></div>
-                Product Information
-              </h3>
+
+        {/* Content */}
+        <div className="p-8 overflow-y-auto max-h-[calc(95vh-200px)]">
+          <form className="space-y-8" onSubmit={handleSubmit}>
+            {/* Product Information Section */}
+            <div className="bg-gradient-to-br from-gray-50 to-white p-8 rounded-2xl border-2 border-gray-100 shadow-sm">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-indigo-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800">
+                    Product Information
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Fill in the basic details of your product
+                  </p>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Product Name */}
                 <div className="group">
                   <label
                     htmlFor="productName"
-                    className="block text-sm font-semibold text-gray-700 mb-2 flex items-center"
+                    className="block text-sm font-bold text-gray-700 mb-3 flex items-center"
                   >
                     Product Name <span className="text-red-500 ml-1">*</span>
                   </label>
@@ -89,31 +120,35 @@ const ProductFormPopup = ({
                       type="text"
                       value={productName}
                       onChange={(e) => setProductName(e.target.value)}
-                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500"
+                      className="w-full px-5 py-4 bg-white border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-300 text-gray-900 placeholder-gray-500 text-base"
                       placeholder="Enter product name"
                       required
                     />
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                      <svg
-                        className="w-5 h-5 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-                        />
-                      </svg>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                      <div className="w-8 h-8 bg-gray-100 rounded-xl flex items-center justify-center">
+                        <svg
+                          className="w-5 h-5 text-gray-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                          />
+                        </svg>
+                      </div>
                     </div>
                   </div>
                 </div>
+
+                {/* Unit */}
                 <div className="group">
                   <label
                     htmlFor="unit"
-                    className="block text-sm font-semibold text-gray-700 mb-2 flex items-center"
+                    className="block text-sm font-bold text-gray-700 mb-3 flex items-center"
                   >
                     Unit <span className="text-red-500 ml-1">*</span>
                   </label>
@@ -122,7 +157,7 @@ const ProductFormPopup = ({
                       id="unit"
                       value={unit}
                       onChange={(e) => setUnit(e.target.value)}
-                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-900 appearance-none"
+                      className="w-full px-5 py-4 bg-white border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-300 text-gray-900 appearance-none cursor-pointer"
                       required
                     >
                       <option value="">Select unit</option>
@@ -130,27 +165,31 @@ const ProductFormPopup = ({
                       <option value="Cup">☕ Cup</option>
                       <option value="Combo">🎯 Combo</option>
                     </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                      <svg
-                        className="w-5 h-5 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                      <div className="w-8 h-8 bg-gray-100 rounded-xl flex items-center justify-center">
+                        <svg
+                          className="w-5 h-5 text-gray-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </div>
                     </div>
                   </div>
                 </div>
+
+                {/* Price */}
                 <div className="group">
                   <label
                     htmlFor="price"
-                    className="block text-sm font-semibold text-gray-700 mb-2 flex items-center"
+                    className="block text-sm font-bold text-gray-700 mb-3 flex items-center"
                   >
                     Price (VND) <span className="text-red-500 ml-1">*</span>
                   </label>
@@ -160,21 +199,25 @@ const ProductFormPopup = ({
                       type="number"
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
-                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500"
+                      className="w-full px-5 py-4 bg-white border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-300 text-gray-900 placeholder-gray-500 text-base"
                       placeholder="e.g. 50,000"
                       required
                     />
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                      <span className="text-gray-400 text-sm font-medium">
-                        ₫
-                      </span>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                      <div className="w-8 h-8 bg-green-100 rounded-xl flex items-center justify-center">
+                        <span className="text-green-600 text-sm font-bold">
+                          ₫
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
+
+                {/* Quantity */}
                 <div className="group">
                   <label
                     htmlFor="quantity"
-                    className="block text-sm font-semibold text-gray-700 mb-2 flex items-center"
+                    className="block text-sm font-bold text-gray-700 mb-3 flex items-center"
                   >
                     Quantity <span className="text-red-500 ml-1">*</span>
                   </label>
@@ -184,31 +227,33 @@ const ProductFormPopup = ({
                       type="number"
                       value={quantity}
                       onChange={(e) => setQuantity(e.target.value)}
-                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500"
+                      className="w-full px-5 py-4 bg-white border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-300 text-gray-900 placeholder-gray-500 text-base"
                       placeholder="e.g. 100"
                       required
                     />
-                    <div className="absolute inset-0 right-0 flex items-center pr-3 pointer-events-none">
-                      <svg
-                        className="w-5 h-5 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"
-                        />
-                      </svg>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                      <div className="w-8 h-8 bg-blue-100 rounded-xl flex items-center justify-center">
+                        <svg
+                          className="w-5 h-5 text-blue-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"
+                          />
+                        </svg>
+                      </div>
                     </div>
                   </div>
                 </div>
                 <div className="md:col-span-2">
                   <label
                     htmlFor="description"
-                    className="block text-sm font-semibold text-gray-700 mb-2"
+                    className="block text-sm font-bold text-gray-700 mb-3"
                   >
                     Description
                   </label>
@@ -224,7 +269,7 @@ const ProductFormPopup = ({
                 <div className="md:col-span-2">
                   <label
                     htmlFor="image"
-                    className="block text-sm font-semibold text-gray-700 mb-2"
+                    className="block text-sm font-bold text-gray-700 mb-3"
                   >
                     Product Image
                   </label>
