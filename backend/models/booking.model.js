@@ -383,6 +383,7 @@ class Booking {
     } finally {
       if (connection) connection.release();
     }
+    
   }
   /**
    * @param {string} bookingId - ID của booking
