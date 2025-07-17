@@ -566,7 +566,15 @@ export const getAllProducts = async (params) => {
     throw error;
   }
 };
-
+export const getComboChildren = async (productId) => {
+  try {
+    const response = await api.get(`/products/combo-children/${productId}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};
 export const createProduct = async (productData) => {
   try {
     const response = await api.post("/products/create", productData, {
@@ -796,11 +804,15 @@ export const deleteMovieRating = async (ratingId) => {
 
 export const createComboProduct = async (comboProductData) => {
   try {
-    const response = await api.post("/combo-products/create", comboProductData, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await api.post(
+      "/combo-products/create",
+      comboProductData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
     return response.data;
   } catch (error) {
     console.error("Lỗi khi tạo combo product:", error);

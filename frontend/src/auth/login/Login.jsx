@@ -289,7 +289,7 @@ const MovieTheaterLogin = () => {
                 {/* Submit button */}
                 <div>
                   <button
-                    type="submit"
+                    type="submit" // Đổi thành submit
                     disabled={isLoading}
                     className="w-full py-3 px-6 rounded-xl font-semibold text-lg transition-all duration-150 transform
                        bg-gradient-to-r from-purple-500 to-purple-600 text-white

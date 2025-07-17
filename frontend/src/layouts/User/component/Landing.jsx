@@ -1,6 +1,6 @@
 // Landing.jsx - Cách tích hợp component
-import React, { useEffect, useState } from "react";
-import { FaRegCalendarCheck, FaRegCirclePlay } from "react-icons/fa6";
+import React, { useEffect, useState, useRef } from "react";
+import { FaRegCalendarCheck, FaRegCirclePlay, FaStar } from "react-icons/fa6";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/pagination";
@@ -18,8 +18,9 @@ import {
   getUpcomingMovies,
 } from "../../../services/API";
 import { toast } from "react-toastify";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { resetBooking } from "../../../redux/features/bookingSlice";
+import { X } from "lucide-react";
 
 const LandingPage = () => {
   const [movieData, setMovieData] = useState([]);
@@ -28,15 +29,16 @@ const LandingPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   // eslint-disable-next-line no-unused-vars
   const [totalPages, setTotalPages] = useState(0);
-  // const [totalCurrentPages, setTotalCurrentPages] = useState(0);
-  // const [totalUpcomingPages, setTotalUpcomingPages] = useState(0);
   const [hoveredMovie, setHoveredMovie] = useState(null);
- 
+  // eslint-disable-next-line no-unused-vars
   const [isHovered, setIsHovered] = useState(false);
   const [currentMovies, setCurrentMovies] = useState([]);
   const [upcomingMovies, setUpcomingMovies] = useState([]);
   const [promotionData, setPromotionData] = useState([]);
   const [hoveredPromotion, setHoveredPromotion] = useState(null);
+  const [isTrailerPopupOpen, setIsTrailerPopupOpen] = useState(false);
+  const [currentTrailerMovie, setCurrentTrailerMovie] = useState(null);
+  const popupVideoRef = useRef(null);
   const dispatch = useDispatch();
   const fetchPromotions = async () => {
     try {
@@ -109,9 +111,8 @@ const LandingPage = () => {
   };
 
   useEffect(() => {
-  dispatch(resetBooking()); // reset lại state bôking
-}, []);
-
+    dispatch(resetBooking()); // reset lại state bôking
+  }, []);
 
   // Responsive breakpoints for Swiper
   const swiperBreakpoints = {
@@ -127,9 +128,13 @@ const LandingPage = () => {
       slidesPerView: 3,
       spaceBetween: 40,
     },
-    1024: {
-      slidesPerView: 4,
+    1025: {
+      slidesPerView: 3,
       spaceBetween: 50,
+    },
+    1280: {
+      slidesPerView: 4,
+      spaceBetween: 60,
     },
   };
 
@@ -174,6 +179,29 @@ const LandingPage = () => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+  };
+
+  // Trailer popup functions
+  const handleOpenTrailer = (movie) => {
+    setCurrentTrailerMovie(movie);
+    setIsTrailerPopupOpen(true);
+
+    setTimeout(() => {
+      if (popupVideoRef.current && movie.TrailerUrl) {
+        popupVideoRef.current.load();
+        popupVideoRef.current.muted = false;
+        popupVideoRef.current.play().catch(() => {});
+      }
+    }, 100);
+  };
+
+  const handleCloseTrailer = () => {
+    if (popupVideoRef.current) {
+      popupVideoRef.current.pause();
+      popupVideoRef.current.currentTime = 0;
+    }
+    setIsTrailerPopupOpen(false);
+    setCurrentTrailerMovie(null);
   };
 
   return (
@@ -330,6 +358,14 @@ const LandingPage = () => {
                     loading="lazy"
                     className="w-full h-[250px] md:h-[320px] object-cover rounded-tl-xl rounded-tr-xl"
                   />
+                  {item.AverageRating && (
+                    <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1">
+                      <FaStar size={14} className="text-yellow-400" />
+                      <span className="text-white font-semibold text-sm">
+                        {parseFloat(item.AverageRating).toFixed(1)}
+                      </span>
+                    </div>
+                  )}
                   {/* Hover Overlay */}
                   {hoveredMovie === item.MovieId && (
                     <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex flex-col justify-center items-start p-4 rounded-tl-xl rounded-tr-xl transition-all duration-300 ease-in-out">
@@ -356,7 +392,16 @@ const LandingPage = () => {
                               {formatRunningTime(item.RunningTime)}
                             </span>
                           </div>
-
+                          {item.AverageRating && (
+                            <div className="flex items-center justify-start gap-1 mt-1">
+                              <span className=" font-bold">
+                                <FaStar size={20} />
+                              </span>
+                              <span className=" font-semibold ml-1">
+                                {parseFloat(item.AverageRating).toFixed(1)}
+                              </span>
+                            </div>
+                          )}
                           <div className="flex">
                             <span className="text-gray-300 mr-1">
                               <IoMdBookmark size={24} />
@@ -381,9 +426,15 @@ const LandingPage = () => {
                 </div>
 
                 <div className="text-white text-center font-semibold text-sm md:text-base px-1">
+                  {/* Hiển thị đủ name ở mobile và desktop, rút gọn ở tablet/iPad */}
                   {item.NameOfEnglish?.length > 10 ? (
                     <h3 className="font-bold text-lg mb-3 text-white">
-                      {item.NameOfEnglish.slice(0, 10) + "..."}
+                      <span className="block md:hidden lg:block">
+                        {item.NameOfEnglish}
+                      </span>
+                      <span className="hidden md:block lg:hidden">
+                        {item.NameOfEnglish.slice(0, 10) + "..."}
+                      </span>
                     </h3>
                   ) : (
                     <h3 className="font-bold text-lg mb-3 text-white">
@@ -392,13 +443,16 @@ const LandingPage = () => {
                   )}
                 </div>
                 <div className="flex xl:flex-row md:flex-col sm:flex-row justify-evenly md:space-y-2 xl:space-y-0 sm:space-y-0 sm:space-x-1 items-center w-full px-2">
-                  <div
-                    role="button"
+                  <button
                     className="text-white flex items-center justify-center hover:bg-slate-700 p-2 rounded-4xl px-3 text-[11px] md:text-[12px] sm:w-auto"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenTrailer(item);
+                    }}
                   >
                     <FaRegCirclePlay size={16} className="mr-1" />
                     Watch Trailer
-                  </div>
+                  </button>
                   <div
                     role="button"
                     onClick={() => handleClickMovie(item.NameOfEnglish)}
@@ -450,6 +504,14 @@ const LandingPage = () => {
                     loading="lazy"
                     className="w-full h-[250px] md:h-[320px] object-cover rounded-tl-xl rounded-tr-xl"
                   />
+                  {item.AverageRating && (
+                    <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1">
+                      <FaStar size={14} className="text-yellow-400" />
+                      <span className="text-white font-semibold text-sm">
+                        {parseFloat(item.AverageRating).toFixed(1)}
+                      </span>
+                    </div>
+                  )}
                   {/* Hover Overlay for Coming Soon */}
                   {hoveredMovie === `coming-${item.MovieId}` && (
                     <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex flex-col justify-center items-start p-4 rounded-tl-xl rounded-tr-xl transition-all duration-300 ease-in-out">
@@ -500,10 +562,16 @@ const LandingPage = () => {
                   )}
                 </div>
 
-                <div className="text-white text-center font-semibold text-sm md:text-base ">
+                <div className="text-white text-center font-semibold text-sm md:text-base px-1">
+                  {/* Hiển thị đủ name ở mobile và desktop, rút gọn ở tablet/iPad */}
                   {item.NameOfEnglish?.length > 10 ? (
                     <h3 className="font-bold text-lg mb-3 text-white">
-                      {item.NameOfEnglish.slice(0, 10) + "..."}
+                      <span className="block md:hidden lg:block">
+                        {item.NameOfEnglish}
+                      </span>
+                      <span className="hidden md:block lg:hidden">
+                        {item.NameOfEnglish.slice(0, 10) + "..."}
+                      </span>
                     </h3>
                   ) : (
                     <h3 className="font-bold text-lg mb-3 text-white">
@@ -512,13 +580,16 @@ const LandingPage = () => {
                   )}
                 </div>
                 <div className="flex md:flex-col lg:flex-row sm:flex-row justify-center md:space-y-2 sm:space-y-0 sm:space-x-1 items-center w-full px-2">
-                  <div
-                    role="button"
+                  <button
                     className="text-white flex items-center justify-center hover:bg-slate-700 p-2 rounded-4xl px-3 text-[11px] md:text-[12px] w-full sm:w-auto"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenTrailer(item);
+                    }}
                   >
                     <FaRegCirclePlay size={16} className="mr-1" />
                     Watch Trailer
-                  </div>
+                  </button>
                 </div>
               </SwiperSlide>
             ))}
@@ -551,26 +622,26 @@ const LandingPage = () => {
               })
               .map((item) => (
                 <SwiperSlide
-                  key={item.idPromotion}
+                  key={item.PromotionId}
                   className="w-full flex flex-col justify-center items-center pb-2 rounded-xl space-y-2"
-                  onMouseEnter={() => setHoveredPromotion(item.idPromotion)}
+                  onMouseEnter={() => setHoveredPromotion(item.PromotionId)}
                   onMouseLeave={() => setHoveredPromotion(null)}
                 >
                   <div className="relative h-[180px] w-full md:h-[200px] lg:h-[180px]">
                     <img
                       src={item.Image}
                       alt={item.Title}
-                      className="w-full rounded-md h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      className="w-full rounded-md h-full object-cover transition-transform duration-300"
                     />
-                    {/* Hover: Show code/title */}
-                    {hoveredPromotion === item.idPromotion && (
+                    {/* Hover: Show code/title chỉ khi hoveredPromotion khớp với PromotionId của slide này */}
+                    {hoveredPromotion === item.PromotionId && (
                       <div
                         className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-md cursor-pointer transition"
                         onClick={() => {
                           navigator.clipboard.writeText(
                             item.Title || item.title || ""
                           );
-                          toast.success("Copied!");
+                          toast.success("Copy thành công!");
                         }}
                       >
                         <span className="text-white text-lg font-bold bg-black/60 px-4 py-2 rounded shadow">
@@ -581,13 +652,95 @@ const LandingPage = () => {
                     {/* Decorative circles and dashed line */}
                     <div className="absolute w-[40px] md:w-[60px] h-[40px] md:h-[60px] lg:w-[50px] lg:h-[50px] rounded-full bg-black top-[-20px] md:top-[-30px] md:right-[10%] lg:right-[20%] right-[20%] transform translate-x-1/2 md:translate-x-0"></div>
                     <div className="absolute w-[40px] md:w-[60px] h-[40px] md:h-[60px] lg:w-[50px] lg:h-[50px] rounded-full bg-black bottom-[-20px] md:bottom-[-30px] lg:right-[20%] md:right-[10%] right-[20%]  transform translate-x-1/2 md:translate-x-0"></div>
-                    <div className=" absolute h-[75%] top-[12%] border-dashed border-black  border-2 md:right-[45px] right-[70px] lg:right-[35%] xl:right-[27%]"></div>
+                    <div className="absolute h-[75%] top-[12%] border-dashed border-black border-2 md:right-[45px] right-[70px] lg:right-[35%] xl:right-[27%]"></div>
                   </div>
                 </SwiperSlide>
               ))}
           </Swiper>
         </div>
       </div>
+
+      {/* Trailer Popup Modal */}
+      {isTrailerPopupOpen && currentTrailerMovie && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="relative w-full max-w-4xl mx-auto">
+            {/* Close Button */}
+            <button
+              onClick={handleCloseTrailer}
+              className="absolute -top-12 right-0 hover:bg-white/10 text-white bg-black/50 p-2 rounded-full transition-all duration-300 hover:scale-110 z-60"
+              aria-label="Close trailer"
+            >
+              <X size={24} />
+            </button>
+            {/* Trailer Content */}
+            <div className="bg-black rounded-2xl overflow-hidden shadow-2xl">
+              {currentTrailerMovie.IframeUrl ? (
+                <iframe
+                  src={currentTrailerMovie.IframeUrl}
+                  title={`${currentTrailerMovie.NameOfEnglish} Trailer`}
+                  allow="autoplay; encrypted-media; fullscreen"
+                  allowFullScreen
+                  className="w-full aspect-video"
+                />
+              ) : currentTrailerMovie.TrailerUrl ? (
+                <video
+                  ref={popupVideoRef}
+                  className="w-full aspect-video"
+                  controls
+                  autoPlay
+                  preload="metadata"
+                >
+                  <source
+                    src={currentTrailerMovie.TrailerUrl}
+                    type="video/mp4"
+                  />
+                  Your browser does not support the video tag.
+                </video>
+              ) : (
+                <div className="w-full aspect-video flex items-center justify-center bg-slate-800 text-white">
+                  <div className="text-center">
+                    <FaRegCirclePlay
+                      size={48}
+                      className="mx-auto mb-4 text-[#6a57f5]"
+                    />
+                    <p className="text-lg">Trailer not available</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            {/* Movie Info Below Video */}
+            <div className="mt-6 text-white">
+              <h3 className="text-2xl font-bold mb-2">
+                {currentTrailerMovie.NameOfEnglish}
+              </h3>
+              <div className="flex items-center gap-4 text-sm text-gray-300">
+                {currentTrailerMovie.AverageRating && (
+                  <div className="flex items-center gap-1">
+                    <FaStar className="text-yellow-400" />
+                    <span>
+                      {parseFloat(currentTrailerMovie.AverageRating).toFixed(1)}
+                    </span>
+                  </div>
+                )}
+                {currentTrailerMovie.RunningTime && (
+                  <div className="flex items-center gap-1">
+                    <GoClockFill />
+                    <span>
+                      {formatRunningTime(currentTrailerMovie.RunningTime)}
+                    </span>
+                  </div>
+                )}
+                {currentTrailerMovie.Genres && (
+                  <div className="flex items-center gap-1">
+                    <IoMdBookmark />
+                    <span>{currentTrailerMovie.Genres}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

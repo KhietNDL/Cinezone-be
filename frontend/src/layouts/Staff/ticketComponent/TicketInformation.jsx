@@ -13,8 +13,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { resetBooking } from '../../../redux/features/sellingSlice'
 import { resetMember } from '../../../redux/features/memberSlice'
 
-
-
 const TicketInformation = () => {
   const hasRun = useRef(false);
   const navigate = useNavigate();
@@ -106,7 +104,7 @@ const TicketInformation = () => {
       hasRun.current = true;
       processPaymentResult();
     }
-  }, []);
+  }, [processPaymentResult]);
 
   useEffect(() => {
     if (!bookingData?.selectedMovie) {

@@ -38,6 +38,32 @@ router.get('/:bookingId', bookingController.getBookingById);
  *         required: true
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of bookings per page
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [CreatedAt, BookingDate, TotalAmount, Status]
+ *           default: CreatedAt
+ *         description: Field to sort by
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: desc
+ *         description: Sort order (asc or desc)
  *     responses:
  *       200:
  *         description: Bookings retrieved
@@ -176,6 +202,8 @@ router.get('/', bookingController.getAllBookings);
  *         description: Internal server error
  */
 router.get('/member/:memberId/latest', bookingController.getLatestBookingByMemberId);
+
+
 
 /**
  * @swagger

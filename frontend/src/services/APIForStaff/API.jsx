@@ -131,7 +131,7 @@ export const createBookingHold = async (
   userId,
   showtimeId,
   seatIds,
-  promotionTitle = "",
+  promotionCode = "",
   PointsToUse = 0
 ) => {
   try {
@@ -139,7 +139,7 @@ export const createBookingHold = async (
       userId,
       showtimeId,
       seatIds,
-      promotionTitle,
+      promotionCode,
       PointsToUse
     });
     return response.data;
@@ -217,10 +217,10 @@ export const createMomoPaymentForProducts = async (orderProductId, amount, retur
 };
 
 // Kiểm tra promotion
-export const checkPromotion = async (promotionTitle) => {
+export const checkPromotion = async (promotionCode) => {
   try {
     const response = await api.get(
-      `/promotions/search?title=${encodeURIComponent(promotionTitle)}`
+      `/promotions/search?code=${encodeURIComponent(promotionCode)}`
     );
     return response.data;
   } catch (error) {

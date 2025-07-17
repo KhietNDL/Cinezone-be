@@ -1,11 +1,33 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../../../assets/logoWeb.png";
-import { FaSearch, FaUser, FaBell, FaTicketAlt, FaBoxOpen, FaClock, FaRegSmileBeam } from "react-icons/fa";
+import {
+  FaSearch,
+  FaUser,
+  FaBell,
+  FaTicketAlt,
+  FaBoxOpen,
+  FaClock,
+  FaRegSmileBeam,
+  FaTimes,
+} from "react-icons/fa";
 import { useAuth } from "../../../context/AuthContext";
 import { searchMovies } from "../../../services/API";
 import { slugify } from "./Slug";
 import { io } from "socket.io-client";
+
+function getBookingMessage(status) {
+  switch (status) {
+    case 2:
+      return "Your ticket has been confirmed!";
+    case 3:
+      return "Your ticket has been checked in!";
+    case 4:
+      return "Your ticket has been cancelled!";
+    default:
+      return "Your booking status has changed!";
+  }
+}
 
 const Header = () => {
   const navigate = useNavigate();
@@ -15,6 +37,7 @@ const Header = () => {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [showNoti, setShowNoti] = useState(false);
+  const [newNotiCount, setNewNotiCount] = useState(0);
 
   const handleSearch = async (query) => {
     if (!query.trim()) {
@@ -54,19 +77,73 @@ const Header = () => {
     console.log("[FE] Join room:", user.userId || user.UserId);
 
     socket.on("notification", (data) => {
-      console.log("[FE] Received notification:", data);
-      setNotifications((prev) => [data, ...prev]);
+      setNotifications((prev) => [data, ...prev].slice(0, 8)); // Chỉ giữ 8 noti mới nhất
+      setNewNotiCount((prev) => prev + 1);
     });
 
     return () => socket.disconnect();
   }, [user]);
 
+  // Khi mở popup notification thì reset số lượng mới
+  useEffect(() => {
+    if (showNoti) setNewNotiCount(0);
+  }, [showNoti]);
+
+  // Khi user đăng nhập hoặc reload
+  useEffect(() => {
+    async function fetchBookings() {
+      const res = await fetch(
+        `http://localhost:4458/api/bookings/member/${user.userId}?page=1&limit=8&sortBy=CreatedAt&sortOrder=desc`
+      );
+      const data = await res.json();
+      // Chuyển đổi data thành notification để hiển thị
+      setNotifications(
+        data.data
+          .map((b) => ({
+            type: "booking",
+            movieNameEnglish: b.movieNameEnglish,
+            status: b.status,
+            message: getBookingMessage(b.status),
+            createdAt: b.BookingDate,
+            scoreValue: b.pointEarn || (b.pointUse ? -b.pointUse : 0),
+          }))
+          .slice(0, 8) // Chỉ lấy 8 noti mới nhất
+      );
+    }
+    if (user.userId) fetchBookings();
+  }, [user.userId]);
+
   const highlightStatus = (message) => {
     if (!message) return "";
     return message
-      .replace(/confirmed/gi, '<span class="text-green-600 font-bold">confirmed</span>')
-      .replace(/checked in/gi, '<span class="text-purple-600 font-bold">checked in</span>')
-      .replace(/cancelled/gi, '<span class="text-red-600 font-bold">cancelled</span>');
+      .replace(
+        /confirmed/gi,
+        '<span class="text-green-600 font-bold">confirmed</span>'
+      )
+      .replace(
+        /checked in/gi,
+        '<span class="text-purple-600 font-bold">checked in</span>'
+      )
+      .replace(
+        /cancelled/gi,
+        '<span class="text-red-600 font-bold">cancelled</span>'
+      );
+  };
+  const clearNotifications = () => {
+    setNotifications([]);
+  };
+  const formatTimeAgo = (timestamp) => {
+    const now = new Date();
+    const time = new Date(timestamp);
+    const diff = now - time;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return "Just now";
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
   };
 
   return (
@@ -82,7 +159,11 @@ const Header = () => {
         />
       </div>
       <div className="md:flex items-center text-[17px] font-bold space-x-8 hidden">
-        <div role="button" className="hover:underline shadow-2xl">
+        <div
+          onClick={() => navigate("/movies")}
+          role="button"
+          className="hover:underline shadow-2xl"
+        >
           Movies
         </div>
         <Link
@@ -92,6 +173,13 @@ const Header = () => {
         >
           Promotions
         </Link>
+        <div
+          onClick={() => navigate("/blog")}
+          role="button"
+          className="hover:underline shadow-2xl"
+        >
+          News
+        </div>
       </div>
       <div className="flex items-center space-x-4">
         <div className="relative flex items-center z-50">
@@ -135,62 +223,158 @@ const Header = () => {
           )}
         </div>
         {/* Notification Icon */}
-        <div className="relative">
+        <div
+          role="button"
+          className="p-2 md:p-2.5 z-20 border-solid border-[1px] border-[#6a57f5] rounded-full shadow-[#6a57f5] shadow-md hover:bg-[#6957f538] transition-all duration-300 bg-black flex-shrink-0"
+          style={{ position: "relative"}}
+        >
           <FaBell
-            size={24}
-            className="cursor-pointer"
+            size={16}
+            className="cursor-pointer md:w-5 md:h-5"
             onClick={() => setShowNoti((prev) => !prev)}
           />
-          {notifications.length > 0 && (
-            <span className="absolute -top-1 -right-1 bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-full px-2 text-xs font-bold shadow-lg animate-pulse">
-              {notifications.length}
+          {newNotiCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-full px-1.5 py-0.5 text-xs font-bold shadow-lg animate-pulse min-w-[18px] text-center">
+              {newNotiCount > 99 ? "99+" : newNotiCount}
             </span>
           )}
           {showNoti && (
-            <div className="absolute right-0 mt-3 w-100 bg-white text-black rounded-xl shadow-2xl z-50 max-h-96 overflow-y-auto border border-gray-200">
-              <div className="p-3 font-bold border-b text-lg flex items-center gap-2 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-t-xl">
-                <FaBell className="text-indigo-500" />
-                Notification
-              </div>
-              {notifications.length === 0 ? (
-                <div className="p-4 text-gray-500 text-center">
-                  <FaRegSmileBeam className="inline-block mr-2 text-xl text-gray-400" />
-                  No notifications
-                </div>
-              ) : (
-                notifications.map((noti, idx) => (
-                  <div
-                    key={idx}
-                    className="p-4 border-b last:border-b-0 flex items-start gap-3 hover:bg-indigo-50 transition-all cursor-pointer"
-                    onClick={() => navigate("/account/history")}
-                  >
-                    <div>
-                      {noti.type === "booking" && (
-                        <div className="flex items-center gap-2">
-                          <FaTicketAlt className="text-blue-500" />
-                          <span className="font-semibold text-blue-700">
-                            Ticket <b>{noti.bookingId}</b>
-                          </span>
-                        </div>
+            <>
+              {/* Overlay */}
+              <div
+                className="fixed inset-0 z-40"
+                style={{ background: "transparent" }}
+                onClick={() => setShowNoti(false)}
+              />
+              {/* Popup notification */}
+              <div className="absolute right-0 mt-5 w-80 sm:w-96 bg-gradient-to-br from-gray-900 to-black text-white rounded-xl shadow-2xl z-50 max-h-150 overflow-hidden border border-[#6a57f5]/50 backdrop-blur-sm">
+                {/* Header */}
+                <div className="p-3 md:p-4 bg-gradient-to-r from-[#6a57f5] to-[#8b5cf6] text-white rounded-t-xl">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FaBell className="text-white" size={16} />
+                      <span className="font-bold text-base md:text-lg">
+                        Notifications
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {notifications.length > 0 && (
+                        <button
+                          onClick={clearNotifications}
+                          className="text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded-full transition-all duration-200"
+                        >
+                          Clear all
+                        </button>
                       )}
-                      {noti.type === "orderProduct" && (
-                        <div className="flex items-center gap-2">
-                          <FaBoxOpen className="text-green-500" />
-                          <span className="font-semibold text-green-700">
-                            Order <b>{noti.orderProductId}</b>
-                          </span>
-                        </div>
-                      )}
-                      <div className="mt-1 text-gray-700" dangerouslySetInnerHTML={{ __html: highlightStatus(noti.message) }} />
-                      <div className="text-xs text-gray-400 mt-2 flex items-center gap-1">
-                        <FaClock className="inline-block" />
-                        {new Date().toLocaleString()}
-                      </div>
+                      <button
+                        onClick={() => setShowNoti(false)}
+                        className="p-1 hover:bg-white/20 rounded-full transition-all duration-200"
+                      >
+                        <FaTimes size={12} />
+                      </button>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
+                </div>
+
+                {/* Content */}
+                <div className="max-h-120 overflow-y-auto">
+                  {notifications.length === 0 ? (
+                    <div className="p-6 md:p-8 text-center text-gray-400">
+                      <FaRegSmileBeam className="mx-auto mb-3 text-2xl md:text-3xl text-gray-500" />
+                      <p className="text-base md:text-lg font-medium">
+                        No notifications yet
+                      </p>
+                      <p className="text-xs md:text-sm mt-1">
+                        We'll notify you when something happens
+                      </p>
+                    </div>
+                  ) : (
+                    notifications.map((noti, idx) => (
+                      <div
+                        key={idx}
+                        className="p-3 md:p-4 border-b border-gray-700/50 last:border-b-0 hover:bg-gray-800/50 transition-all duration-200 cursor-pointer group"
+                        onClick={() => navigate("/account/history")}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 mt-1">
+                            {noti.type === "booking" ? (
+                              <div className="p-1.5 md:p-2 bg-blue-500/20 rounded-full">
+                                <FaTicketAlt
+                                  className="text-blue-400"
+                                  size={12}
+                                />
+                              </div>
+                            ) : (
+                              <div className="p-1.5 md:p-2 bg-green-500/20 rounded-full">
+                                <FaBoxOpen className="text-green-400" size={12} />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              {noti.type === "booking" ? (
+                                <span className="font-semibold text-blue-400 text-sm">
+                                  Ticket #{noti.movieNameEnglish}
+                                </span>
+                              ) : (
+                                <span className="font-semibold text-green-400 text-sm">
+                                  Order #{noti.orderProductId}
+                                </span>
+                              )}
+                              <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">
+                                {noti.type}
+                              </span>
+                            </div>
+                            <div
+                              className="text-xs md:text-sm text-gray-200 mb-2 leading-relaxed"
+                              dangerouslySetInnerHTML={{
+                                __html: highlightStatus(noti.message),
+                              }}
+                            />
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                              <FaClock className="inline-block" size={10} />
+                              <span>
+                                {formatTimeAgo(noti.createdAt || new Date())}
+                              </span>
+                              {/* Hiển thị điểm nếu có */}
+                              {noti.scoreValue !== undefined &&
+                                noti.scoreValue !== 0 && (
+                                  <span
+                                    className={`
+                                ml-2 px-2 py-0.5 rounded-full font-bold
+                                ${
+                                  noti.scoreValue > 0
+                                    ? "bg-green-600/20 text-green-400"
+                                    : "bg-red-600/20 text-red-400"
+                                }`}
+                                  >
+                                    {noti.scoreValue > 0
+                                      ? `+${noti.scoreValue}`
+                                      : noti.scoreValue}
+                                    <span className="ml-1">pts</span>
+                                  </span>
+                                )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Footer */}
+                {notifications.length > 0 && (
+                  <div className="p-3 bg-gray-900/50 border-t border-gray-700/50 rounded-b-xl">
+                    <button
+                      onClick={() => navigate("/account/history")}
+                      className="w-full text-center text-sm text-[#6a57f5] hover:text-[#8b5cf6] font-medium transition-all duration-200"
+                    >
+                      View all notifications
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </div>
         {user ? (
