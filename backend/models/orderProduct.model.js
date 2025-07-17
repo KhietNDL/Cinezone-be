@@ -287,6 +287,26 @@ class OrderProduct {
       }))
     };
   }
+
+  static async getOrderProductsByMemberId(memberId, { page = 1, limit = 10, sortBy = "CreatedAt", sortOrder = "desc" } = {}) {
+    let sql = `SELECT * FROM OrderProduct WHERE MemberId = ? AND IsDeleted = 0 ORDER BY ${sortBy} ${sortOrder}`;
+    let params = [memberId];
+    let total = 0;
+
+    if (limit > 0) {
+      const [[countRow]] = await db.promise().query(
+        `SELECT COUNT(*) as total FROM OrderProduct WHERE MemberId = ? AND IsDeleted = 0`,
+        [memberId]
+      );
+      total = countRow.total;
+      const offset = (page - 1) * limit;
+      sql += ` LIMIT ? OFFSET ?`;
+      params.push(Number(limit), Number(offset));
+    }
+
+    const [rows] = await db.promise().query(sql, params);
+    return { data: rows, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+  }
 }
 
 module.exports = OrderProduct;

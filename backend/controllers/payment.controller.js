@@ -3,6 +3,8 @@ const PaymentMethod = require('../models/paymentMethod.model');
 const axios = require('axios');
 const crypto = require('crypto');
 const { BOOKING_STATUS, PAYMENT_STATUS } = require('../utils/constants');
+const Booking = require('../models/booking.model');
+const OrderProduct = require('../models/orderProduct.model');
 
 const getPaymentMethods = async (req, res) => {
   try {
@@ -38,7 +40,6 @@ const processOfflinePayment = async (req, res) => {
     // Lấy thông tin booking và orderProduct nếu có
     let booking, orderProduct;
     if (bookingId) {
-      const Booking = require('../models/booking.model');
       booking = await Booking.getBookingById(bookingId);
       if (!booking) {
         return res.status(404).json({ error: "Booking not found" });
@@ -46,7 +47,6 @@ const processOfflinePayment = async (req, res) => {
     }
     let orderTotal = 0;
     if (orderProductId) {
-      const OrderProduct = require('../models/orderProduct.model');
       orderProduct = await OrderProduct.getById(orderProductId);
       if (!orderProduct) {
         return res.status(404).json({ error: "Order product not found" });
@@ -85,7 +85,6 @@ const processOfflinePayment = async (req, res) => {
 
     // Xử lý booking nếu có
     if (bookingId) {
-      const Booking = require('../models/booking.model');
       bookingCheck = await Booking.updateStatus(bookingId, BOOKING_STATUS.PAID, booking.TotalAmount);
 
       if (bookingCheck.success && bookingCheck.updated === false) {
@@ -96,7 +95,6 @@ const processOfflinePayment = async (req, res) => {
           { PaymentReference: "Booking already paid" }
         );
         if (orderProductId) {
-          const OrderProduct = require('../models/orderProduct.model');
           await OrderProduct.cancelOrder(orderProductId);
         }
         return res.status(400).json({
@@ -114,7 +112,6 @@ const processOfflinePayment = async (req, res) => {
           { failReason: bookingCheck.message }
         );
         if (orderProductId) {
-          const OrderProduct = require('../models/orderProduct.model');
           await OrderProduct.cancelOrder(orderProductId);
         }
         return res.status(400).json({ error: bookingCheck.message });
@@ -126,7 +123,6 @@ const processOfflinePayment = async (req, res) => {
 
     // Xử lý orderProduct nếu có
     if (orderProductId) {
-      const OrderProduct = require('../models/orderProduct.model');
       try {
         await OrderProduct.confirmOrder(orderProductId);
         orderStatus = "PAID";
@@ -184,14 +180,12 @@ const initMomoPayment = async (req, res) => {
     let booking, orderProduct;
     let orderTotal = 0;
     if (bookingId) {
-      const Booking = require('../models/booking.model');
       booking = await Booking.getBookingById(bookingId);
       if (!booking) {
         return res.status(404).json({ error: "Booking not found" });
       }
     }
     if (orderProductId) {
-      const OrderProduct = require('../models/orderProduct.model');
       orderProduct = await OrderProduct.getById(orderProductId);
       if (!orderProduct) {
         return res.status(404).json({ error: "Order product not found" });
@@ -360,7 +354,6 @@ const handleMomoCallback = async (req, res) => {
         PAYMENT_STATUS.COMPLETED
       );
 
-      const Booking = require('../models/booking.model');
       const bookingCheck = await Booking.updateStatus(
         bookingId,
         BOOKING_STATUS.PAID,
@@ -381,7 +374,6 @@ const handleMomoCallback = async (req, res) => {
         PAYMENT_STATUS.FAILED
       );
 
-      const Booking = require('../models/booking.model');
       await Booking.updateStatus(bookingId, BOOKING_STATUS.PAYMENT_FAILED);
 
       res.status(200).json({
@@ -434,7 +426,6 @@ const verifyMomoPayment = async (req, res) => {
 
       // Cập nhật booking status
       if (payment.BookingId) {
-        const Booking = require('../models/booking.model');
         await Booking.updateStatus(payment.BookingId, BOOKING_STATUS.PAID, payment.Amount);
       }
     } else {
@@ -489,10 +480,30 @@ const getPaymentStatus = async (req, res) => {
   }
 };
 
+const getMemberHistory = async (req, res) => {
+  try {
+    const memberId = req.query.memberId || req.user?.UserId;
+    if (!memberId) return res.status(400).json({ error: "memberId is required" });
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const sortBy = req.query.sortBy || "CreatedAt";
+    const sortOrder = req.query.sortOrder || "desc";
+
+    const result = await Payment.getMemberHistory(memberId, { page, limit, sortBy, sortOrder });
+
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
   getPaymentMethods,
   processOfflinePayment,
   initMomoPayment,
   handleMomoCallback,
-  getPaymentStatus
+  getPaymentStatus,
+  getMemberHistory
 };
