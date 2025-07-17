@@ -22,6 +22,7 @@ const initialState = {
     discount: null,
     usedPoints: 0,
     bookingId: '',
+    paymentId: null,
 };
 
 const sellingSlice = createSlice({
@@ -73,6 +74,9 @@ const sellingSlice = createSlice({
         setCompleteBooking: (state, action) => {
             return { ...state, ...action.payload };
         },
+        setPaymentId(state, action) {
+            state.paymentId = action.payload;
+        },
         resetBooking: () => initialState,
     },
 });
@@ -89,6 +93,7 @@ export const {
     setTotalPrice,
     setCompleteBooking,
     resetBooking,
+    setPaymentId
 } = sellingSlice.actions;
 
 export default sellingSlice.reducer;

@@ -7,6 +7,8 @@ import {
   confirmBooking,
   createCashPaymentForProduct,
   createMomoPaymentForProducts,
+  createZaloPayPayment,
+  createZaloPayPaymentForProducts
 } from "../services/APIForStaff/API";
 
 // type: "ticket" hoặc "combo"
@@ -47,12 +49,28 @@ export async function processPayment({
           throw new Error("Did not receive payment URL from Momo");
         }
         window.location.href = payUrl;
-        break;
+        return momoRes;
+       
       }
       case "VNPay":
         throw new Error("VNPay payment method not yet supported");
       case "ZaloPay":
-        throw new Error("ZaloPay payment method not yet supported");
+        {
+          setIsRedirecting?.(true);
+          let zaloPayRes;
+          if (type === "ticket") {
+            zaloPayRes = await createZaloPayPayment(orderId, amount, successUrl);
+          } else if (type === "combo") {
+            zaloPayRes = await createZaloPayPaymentForProducts(orderId, amount, successUrl);
+          }
+          const order_url = zaloPayRes?.order_url || zaloPayRes?.data?.order_url;
+          if (!order_url) {
+            setIsRedirecting?.(false);
+            throw new Error("Did not receive payment URL from Momo");
+          }
+          window.location.href = order_url;
+         return zaloPayRes;
+        }
       default:
         throw new Error("Invalid payment method");
     }

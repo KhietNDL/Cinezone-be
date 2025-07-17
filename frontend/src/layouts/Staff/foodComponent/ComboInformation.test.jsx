@@ -9,6 +9,9 @@ import { BrowserRouter } from "react-router-dom";
 import * as api from "../../../services/APIForStaff/API";
 import { toast } from "react-toastify";
 
+// Biến mock để lưu giá trị search
+let mockSearch = "";
+
 // Mock window APIs
 beforeAll(() => {
   Object.defineProperty(window, "getComputedStyle", {
@@ -43,11 +46,14 @@ jest.mock("react-toastify", () => ({
   ToastContainer: () => <div />,
 }));
 
-// Mock navigate
+// Mock navigate và useLocation
 const mockNavigate = jest.fn();
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
   useNavigate: () => mockNavigate,
+  useLocation: () => ({
+    search: mockSearch, // Sử dụng mockSearch thay vì window.location.search
+  }),
 }));
 
 // Mock API
@@ -63,7 +69,6 @@ jest.mock("antd", () => {
     ...antd,
     Table: ({ dataSource, columns, rowKey, locale }) => (
       <div data-testid="mock-antd-table">
-        {/* Render header row */}
         <div data-testid="table-header" role="row">
           {columns.map((col) => (
             <div key={col.title} data-testid={`header-${col.title}`}>
@@ -71,7 +76,6 @@ jest.mock("antd", () => {
             </div>
           ))}
         </div>
-        {/* Render data rows or empty text */}
         {dataSource.length === 0 ? (
           <div data-testid="table-empty">{locale?.emptyText || "No data"}</div>
         ) : (
@@ -111,23 +115,11 @@ const renderWithProvider = (ui, preloadedState = { combo: { cart: [], orderProdu
 describe("ComboInformation", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Mock URLSearchParams trực tiếp
-    jest.spyOn(URLSearchParams.prototype, "get").mockImplementation((key) => {
-      if (window.location.search.includes("resultCode=1006")) {
-        return key === "resultCode" ? "1006" : null;
-      }
-      return key === "resultCode" ? "0" : null;
-    });
-    window.location.search = "";
-  });
-
-  afterEach(() => {
-    window.location.search = "";
-    jest.spyOn(URLSearchParams.prototype, "get").mockRestore();
+    mockSearch = ""; // Reset mockSearch trước mỗi bài kiểm tra
   });
 
   it("renders success state with cart details", async () => {
-    window.location.search = "?resultCode=0";
+    mockSearch = "?resultCode=0";
     const storeWithCart = {
       combo: {
         cart: [
@@ -145,12 +137,10 @@ describe("ComboInformation", () => {
 
     renderWithProvider(<ComboInformation />, storeWithCart);
 
-    // Kiểm tra tiêu đề và biểu tượng trạng thái
     expect(screen.getByText("Payment Successfully")).toBeInTheDocument();
     expect(screen.getByText("Payment Successfully")).toHaveClass("text-green-600");
     expect(screen.getByTestId("mock-antd-table")).toBeInTheDocument();
 
-    // Kiểm tra bảng chi tiết combo
     expect(screen.getByTestId("row-9f6cb2df-687e-4424-a125-6aa82792e38c")).toBeInTheDocument();
     expect(screen.getByTestId("cell-9f6cb2df-687e-4424-a125-6aa82792e38c-Name")).toHaveTextContent(
       "Coca-Cola Classic (Large)"
@@ -161,18 +151,16 @@ describe("ComboInformation", () => {
     );
     expect(screen.getByTestId("cell-9f6cb2df-687e-4424-a125-6aa82792e38c-Total")).toHaveTextContent("25.000 VNĐ");
 
-    // Kiểm tra tổng giá
     expect(screen.getByText(/Total Amount:/i)).toBeInTheDocument();
     expect(screen.getByText("25.000 VNĐ", { selector: ".text-green-600" })).toBeInTheDocument();
 
-    // Kiểm tra các nút
     expect(screen.getByRole("button", { name: /New Combo/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Cancel/i })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Try Again/i })).not.toBeInTheDocument();
   });
 
   it("renders error state with try again button", async () => {
-    window.location.search = "?resultCode=1006";
+    mockSearch = "?resultCode=1006";
     const storeWithCart = {
       combo: {
         cart: [
@@ -190,26 +178,24 @@ describe("ComboInformation", () => {
 
     renderWithProvider(<ComboInformation />, storeWithCart);
 
-    // Kiểm tra tiêu đề và biểu tượng trạng thái
+    screen.debug();
+
     expect(screen.getByText("Payment Failed")).toBeInTheDocument();
     expect(screen.getByText("Payment Failed")).toHaveClass("text-red-600");
 
-    // Kiểm tra bảng chi tiết combo
     expect(screen.getByTestId("mock-antd-table")).toBeInTheDocument();
     expect(screen.getByTestId("row-9f6cb2df-687e-4424-a125-6aa82792e38c")).toBeInTheDocument();
 
-    // Kiểm tra tổng giá
     expect(screen.getByText(/Total Amount:/i)).toBeInTheDocument();
     expect(screen.getByText("25.000 VNĐ", { selector: ".text-green-600" })).toBeInTheDocument();
 
-    // Kiểm tra nút Try Again
     expect(screen.getByRole("button", { name: /Try Again/i })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /New Combo/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Cancel/i })).not.toBeInTheDocument();
   });
 
   it("renders empty cart with no data in table", async () => {
-    window.location.search = "?resultCode=0";
+    mockSearch = "?resultCode=0";
     const storeWithEmptyCart = {
       combo: {
         cart: [],
@@ -219,23 +205,19 @@ describe("ComboInformation", () => {
 
     renderWithProvider(<ComboInformation />, storeWithEmptyCart);
 
-    // Kiểm tra tiêu đề
     expect(screen.getByText("Payment Successfully")).toBeInTheDocument();
 
-    // Kiểm tra bảng rỗng
     expect(screen.getByText("No combos in cart.")).toBeInTheDocument();
 
-    // Kiểm tra tổng giá
     expect(screen.getByText(/Total Amount:/i)).toBeInTheDocument();
     expect(screen.getByText("0 VNĐ", { selector: ".text-green-600" })).toBeInTheDocument();
 
-    // Kiểm tra các nút
     expect(screen.getByRole("button", { name: /New Combo/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Cancel/i })).toBeInTheDocument();
   });
 
   it("handles New Combo button click", async () => {
-    window.location.search = "?resultCode=0";
+    mockSearch = "?resultCode=0";
     const storeWithCart = {
       combo: {
         cart: [
@@ -259,7 +241,7 @@ describe("ComboInformation", () => {
   });
 
   it("handles Cancel button click", async () => {
-    window.location.search = "?resultCode=0";
+    mockSearch = "?resultCode=0";
     const storeWithCart = {
       combo: {
         cart: [
@@ -283,7 +265,7 @@ describe("ComboInformation", () => {
   });
 
   it("handles Try Again button click with successful API call", async () => {
-    window.location.search = "?resultCode=1006";
+    mockSearch = "?resultCode=1006";
     const storeWithCart = {
       combo: {
         cart: [
@@ -313,7 +295,7 @@ describe("ComboInformation", () => {
   });
 
   it("handles Try Again button click with failed API call", async () => {
-    window.location.search = "?resultCode=1006";
+    mockSearch = "?resultCode=1006";
     const storeWithCart = {
       combo: {
         cart: [

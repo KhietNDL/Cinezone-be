@@ -216,6 +216,44 @@ export const createMomoPaymentForProducts = async (orderProductId, amount, retur
   }
 };
 
+// Thanh toán bằng ZaloPay
+export const createZaloPayPayment = async (bookingId, amount, returnUrl) => {
+  try {
+    const response = await api.post("/payment/zalopay", {
+      bookingId,
+      amount,
+      returnUrl
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+// Thanh toán bằng ZaloPay cho product
+export const createZaloPayPaymentForProducts = async (orderProductId, amount, returnUrl) => {
+  try {
+    const response = await api.post("/payment/zalopay", {
+      orderProductId,
+      amount,
+      returnUrl
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+// Confirm Payment
+export const confirmPayment = async (paymentId) => {
+  try {
+    const response = await api.post(`/payment/confirm/${paymentId}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
 // Kiểm tra promotion
 export const checkPromotion = async (promotionCode) => {
   try {

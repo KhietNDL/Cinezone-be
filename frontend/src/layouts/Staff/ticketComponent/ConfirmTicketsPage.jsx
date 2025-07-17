@@ -19,7 +19,8 @@ import { useAuth } from "../../../context/AuthContext";
 import { useDispatch, useSelector } from 'react-redux';
 import {
   setCompleteBooking,
-  resetBooking
+  resetBooking,
+  setPaymentId
 } from '../../../redux/features/sellingSlice'
 import {
   setMember,
@@ -236,7 +237,7 @@ const ConfirmTicketsPage = () => {
 
       dispatch(setCompleteBooking(completeBooking));
 
-      await processPayment({
+      const paymentResult = await processPayment({
         paymentMethod: values.paymentMethod,
         orderId: bookingRes.bookingId,
         amount: finalPrice,
@@ -244,8 +245,12 @@ const ConfirmTicketsPage = () => {
         navigate,
         setIsRedirecting,
         // successUrl: `${window.location.origin}/staff/ticket-selling/ticket-information`,
-        successUrl: `${values.paymentMethod === "Cash" ? "/staff/ticket-selling/ticket-information" :`${window.location.origin}/staff/ticket-selling/ticket-information`}`,
+        successUrl: `${values.paymentMethod === "Cash" ? "/staff/ticket-selling/ticket-information" : `${window.location.origin}/staff/ticket-selling/ticket-information`}`,
       });
+
+      if (values.paymentMethod === "ZaloPay" || values.paymentMethod === "Momo" && paymentResult?.data?.paymentId) {
+        dispatch(setPaymentId(paymentResult.data.paymentId));
+      }
     } catch (error) {
       console.error("Booking error:", error);
       if (error.inner) {

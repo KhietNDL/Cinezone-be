@@ -6,7 +6,7 @@ import { FaTicket, FaCouch, FaLocationDot, FaUser, FaPhone, FaCalendarDays, FaEn
 import { IoReloadOutline, IoTicketSharp, IoTime } from "react-icons/io5";
 import { RiFilmAiFill, RiMovie2AiFill, RiDiscountPercentFill } from "react-icons/ri";
 import { FaMoneyBillWave, FaIdCard, FaRegEye } from "react-icons/fa";
-import { confirmBooking, checkInfoBookingById, cancelBookingById, getUserByPhone, getMovieById } from "../../../services/APIForStaff/API";
+import { confirmBooking, checkInfoBookingById, cancelBookingById, getUserByPhone, getMovieById, confirmPayment } from "../../../services/APIForStaff/API";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useDispatch, useSelector } from 'react-redux';
@@ -51,8 +51,9 @@ const TicketInformation = () => {
   const processPaymentResult = useCallback(async () => {
     try {
       const params = new URLSearchParams(window.location.search);
-      const resultCode = params.get('resultCode');
+      const resultCode = params.get('resultCode') || params.get('status');
       const bookingId = bookingData?.bookingId || params.get('orderId')?.split('_')[1] || params.get('bookingId');
+      const paymentId = bookingData?.paymentId
 
       if (!bookingId) {
         throw new Error("Missing booking ID");
@@ -72,8 +73,14 @@ const TicketInformation = () => {
 
       // Bước 2: Xác định trạng thái thanh toán
       if (resultCode) {
-        if (resultCode === '0') {
+        if (resultCode === '0' || resultCode === '1') {
           try {
+            // await confirmPayment();
+            if (paymentId) {
+              await confirmPayment(paymentId);
+              console.log("Payment confirmed successfully");
+            }
+            // Gọi confirmBooking
             await confirmBooking(bookingId);
             setPaymentStatus('success');
             toast.success("Payment successful!");
