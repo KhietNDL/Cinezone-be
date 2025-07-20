@@ -180,6 +180,7 @@ class Booking {
     seatIds,
     promotionCode,
     discount = 0,
+    membershipDiscount = 0, // truyền từ controller nếu có
     CreatedBy,
   }) {
 
@@ -228,12 +229,12 @@ class Booking {
       );
       let totalAmount = seatInfo.reduce((sum, seat) => sum + Number(seat.Price), 0);
 
-      if (promotionDiscount > 0) {
-      // Nếu có promotion, giảm theo phần trăm
-      totalAmount -= (totalAmount * promotionDiscount) / 100;
-      } else if (discount > 0) {
-        // Nếu có discount từ điểm, giảm trực tiếp số tiền
+      if (discount > 0) {
+        // Nếu dùng điểm đổi vé, KHÔNG áp dụng giảm giá membership
         totalAmount -= discount;
+      } else if (membershipDiscount > 0) {
+        // Nếu không dùng điểm, mới áp dụng giảm giá membership
+        totalAmount -= (totalAmount * membershipDiscount) / 100;
       }
       // Đảm bảo tổng tiền không âm
       totalAmount = Math.max(0, totalAmount);
