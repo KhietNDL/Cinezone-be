@@ -16,6 +16,7 @@ const {
 const { createUserValidator, updateUserValidator } = require('../middlewares/user.management.validator');
 const { auth, isAdmin, isAdminOrEmployee} = require("../middlewares/auth.middleware");
 const { exchangeScore } = require("../controllers/user.controller");
+const userController = require('../controllers/user.controller');
 
 // Route to get all users
 /**
@@ -360,5 +361,50 @@ router.get('/phone/:phoneNumber', auth, isAdminOrEmployee, getUserByPhoneNumber)
  *         description: Internal server error
  */
 router.post('/:userId/exchange-score', auth, exchangeScore);
+
+/**
+ * @swagger
+ * /api/user/{userId}/membership:
+ *   get:
+ *     tags:
+ *       - User Management
+ *     summary: Get membership info of a user
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID (UUID)
+ *     responses:
+ *       200:
+ *         description: Membership info
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 membership:
+ *                   type: object
+ *                   properties:
+ *                     UserId: { type: string }
+ *                     FullName: { type: string }
+ *                     Email: { type: string }
+ *                     ScoreBalance: { type: integer }
+ *                     TotalAccumulatedPoints: { type: integer }
+ *                     MembershipTypeId: { type: string }
+ *                     MembershipStartDate: { type: string }
+ *                     MembershipEndDate: { type: string }
+ *                     MembershipStatus: { type: string }
+ *                     MembershipName: { type: string }
+ *                     MinPoint: { type: integer }
+ *                     DiscountTicket: { type: number }
+ *                     PointMultiplier: { type: number }
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error
+ */
+router.get('/:userId/membership', userController.getMembershipInfo);
 
 module.exports = router;
