@@ -35,6 +35,7 @@ import OrderSummary from "../bookingComponent/OrderSummary";
 import VideoPopup from "../bookingComponent/VideoPopup";
 import FeedbackModal from "../bookingComponent/FeedbackModal";
 import RatingListModal from "../bookingComponent/RatingListModal";
+import BackButton from "../../../component/BackButton";
 
 const BookingPage = () => {
   const dispatch = useDispatch();
@@ -80,7 +81,7 @@ const BookingPage = () => {
   const [ratingsTotal, setRatingsTotal] = useState(0);
   const [ratingsPage, setRatingsPage] = useState(1);
   const [ratingsLoading, setRatingsLoading] = useState(false);
-  
+
   // Thêm state để theo dõi việc loading seat map
   const [seatMapLoading, setSeatMapLoading] = useState(false);
   const [previousDate, setPreviousDate] = useState(null);
@@ -91,7 +92,7 @@ const BookingPage = () => {
       // Reset time selection khi ngày thay đổi
       dispatch(setSelectedTime(null));
       dispatch(setSelectedShowtimeId(null));
-      
+
       // Clear seats data và set loading cho seat map
       dispatch(setSeatsData([]));
       dispatch(setSeatQuantity(0));
@@ -340,7 +341,7 @@ const BookingPage = () => {
     const fetchProducts = async () => {
       try {
         const response = await getAllProducts();
-        dispatch(setProduct(response.products || [])); 
+        dispatch(setProduct(response.products || []));
       } catch (error) {
         console.error("Lỗi khi lấy sản phẩm:", error);
         toast.error("Không thể tải danh sách sản phẩm", {
@@ -355,10 +356,14 @@ const BookingPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] text-white">
       <ToastContainer />
-      <div className="max-w-7xl mx-auto py-1 md:py-14 lg:py-18 px-4 sm:px-10 mt-0 pb-8">
-        <div className="space-y-6 mt-10">
+      <div className="max-w-7xl mx-auto py-1 md:py-14 lg:py-18 px-4 sm:px-10  pb-8">
+        <div className="sm:hidden mb-4">
+          <BackButton />
+        </div>
+        <div className="space-y-6 mt-15">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 lg:gap-8">
             <div className="lg:col-span-4 order-1 lg:order-none">
+
               <MovieInfo
                 movie={movie}
                 ratingSummary={ratingSummary}
@@ -399,7 +404,7 @@ const BookingPage = () => {
                     selectedShowtimeId={selectedShowtimeId}
                     lastRefreshTime={lastRefreshTime}
                     isRefreshing={isRefreshing}
-                    seatMapLoading={seatMapLoading} 
+                    seatMapLoading={seatMapLoading}
                     user={user}
                     onRefresh={refreshSeats}
                     dispatch={dispatch}

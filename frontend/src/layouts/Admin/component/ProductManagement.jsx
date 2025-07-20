@@ -9,15 +9,15 @@ import {
   getComboChildren,
   createComboProduct,
 } from "../../../services/API";
-import StatsCards from "../ticketComponent/StatsCards";
-import SearchAndAdd from "../ticketComponent/SearchAndAdd";
-import ProductTable from "../ticketComponent/ProductTable";
-import ProductCards from "../ticketComponent/ProductCards";
+import StatsCards from "../productComponent/StatsCards";
+import SearchAndAdd from "../productComponent/SearchAndAdd";
+import ProductTable from "../productComponent/ProductTable";
+import ProductCards from "../productComponent/ProductCards";
 import Pagination from "../movieComponent/Pagination";
-import DeletePopup from "../ticketComponent/DeletePopup";
-import ProductFormPopup from "../ticketComponent/ProductFormPopup";
-import AddItemPopup from "../ticketComponent/AddItemPopup";
-import ComboDetailPopup from "../ticketComponent/ComboDetailPopup";
+import DeletePopup from "../productComponent/DeletePopup";
+import ProductFormPopup from "../productComponent/ProductFormPopup";
+import AddItemPopup from "../productComponent/AddItemPopup";
+import ComboDetailPopup from "../productComponent/ComboDetailPopup";
 
 const ProductManagement = () => {
   const [productId, setProductId] = useState("");
@@ -237,7 +237,7 @@ const ProductManagement = () => {
             setShowFormPopup={setShowFormPopup}
             resetForm={resetForm}
           />
-          <div className="bg-white p-2 sm:p-4 rounded-md shadow-sm">
+          <div className="bg-white rounded-md shadow-sm">
             <ProductTable
               products={products}
               handleEdit={handleEdit}

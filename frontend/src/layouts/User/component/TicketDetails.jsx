@@ -166,10 +166,7 @@ const TicketDetails = () => {
               <span className="text-white/60">Phone number:</span>
               <span className="font-bold">{ticket.buyerPhone}</span>
             </li>
-            <li className="flex items-center justify-between">
-              <span className="text-white/60">Booking ID:</span>
-              <span className="font-bold truncate w-1/2 text-right">{bookingId}</span>
-            </li>
+            
           </ul>
           <div className="mt-10 border-t border-dashed border-white/30 pt-6 text-sm text-white/60">
             * Please arrive 15 minutes before showtime.

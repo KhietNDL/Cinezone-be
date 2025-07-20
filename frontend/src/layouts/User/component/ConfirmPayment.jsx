@@ -7,6 +7,9 @@ import { getPromotionByTitle, HoldingSeats, cancelBooking, holdProducts } from "
 import { useSelector } from "react-redux";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import StripeCheckoutForm from "./StripeCheckoutForm";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 
 const ConfirmPayment = () => {
   const { state } = useLocation();
@@ -14,6 +17,11 @@ const ConfirmPayment = () => {
   const { user } = useAuth();
 
   const [paymentMethod, setPaymentMethod] = useState("");
+  const [stripeCardType, setStripeCardType] = useState("VISA");
+  const [stripeClientSecret, setStripeClientSecret] = useState(null);
+  const [stripePaymentId, setStripePaymentId] = useState(null);
+  const [stripeLoading, setStripeLoading] = useState(false);
+  const [stripeError, setStripeError] = useState("");
 
   // Promotion states
   const [promoCode, setPromoCode] = useState('');
@@ -80,7 +88,50 @@ const ConfirmPayment = () => {
   console.log(" Seat PRICE:", seatPrice);
   console.log("SLECTED SEAT ID", seatIds)
   console.log("Product PRICE:", productPrice);
-  console.log( "Final PRICE:", finalPrice);
+  console.log("Final PRICE:", finalPrice);
+
+  // useEffect(() => {
+  //   if (paymentMethod === "3") {
+  //     // Gọi API lấy clientSecret khi chọn Stripe
+  //     const fetchStripeIntent = async () => {
+  //       setStripeLoading(true);
+  //       setStripeError("");
+  //       try {
+  //         const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/payment/stripe`, {
+  //           method: "POST",
+  //           headers: {
+  //             "Content-Type": "application/json",
+  //             Authorization: `Bearer ${user.token}`,
+  //           },
+  //           body: JSON.stringify({
+  //             amount: finalPrice,
+  //             bookingId: holdingResult?.bookingId, // hoặc bookingId phù hợp
+  //             orderProductId: productHoldResult?.OrderProductId,
+  //             cardType: stripeCardType,
+  //           }),
+  //         });
+  //         const data = await res.json();
+  //         console.log("Stripe API response:", data);
+  //         console.log("stripeClientSecret to set:", data.data?.clientSecret, data.data?.ClientSecret);
+  //         if (data.status === "success") {
+  //           setStripeClientSecret(data.data.clientSecret);
+  //           setStripePaymentId(data.data.paymentId);
+  //         } else {
+  //           setStripeError(data.error || "Không lấy được thông tin thanh toán Stripe");
+  //         }
+  //       } catch (err) {
+  //         setStripeError("Lỗi kết nối Stripe");
+  //       } finally {
+  //         setStripeLoading(false);
+  //       }
+  //     };
+  //     fetchStripeIntent();
+  //   } else {
+  //     setStripeClientSecret(null);
+  //     setStripePaymentId(null);
+  //   }
+  //   // eslint-disable-next-line
+  // }, [paymentMethod, stripeCardType, finalPrice]);
 
   // Handle payment method selection
   const handlePaymentMethod = (method) => {
@@ -121,7 +172,7 @@ const ConfirmPayment = () => {
       if (promotionData?.Code) {
         // *** CHỈ GIẢM GIÁ GHẾ, KHÔNG GIẢM PRODUCT ***
         const seatDiscount = seatPrice * (promotionData.DiscountValue / 100);
-        const newSeatPrice = seatPrice - seatDiscount ;
+        const newSeatPrice = seatPrice - seatDiscount;
         const newFinalPrice = newSeatPrice + productPrice; // Ghế đã giảm + Product gốc
 
         setAppliedPromotion(promotionData);
@@ -483,12 +534,12 @@ const ConfirmPayment = () => {
               {/* Movie Info Card */}
               <div className="relative bg-white/5 backdrop-blur-md rounded-3xl p-4 md:p-6 border border-white/10 shadow-2xl">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 rounded-3xl"></div>
-                
+
                 <div className="relative z-10">
                   <h2 className="text-xl md:text-2xl font-bold mb-6 bg-gradient-to-r from-white via-purple-100 to-pink-100 bg-clip-text text-transparent">
                     Movie Information
                   </h2>
-                  
+
                   <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
                     <div className="flex justify-center sm:justify-start">
                       <img
@@ -506,7 +557,7 @@ const ConfirmPayment = () => {
                         <h4 className="text-sm sm:text-base font-medium mb-4 text-center sm:text-left text-gray-300">
                           ({movie?.NameOfVietnamese})
                         </h4>
-                        
+
                         <div className="space-y-3">
                           <div className="flex items-center justify-between p-3 bg-white/5 rounded-2xl border border-white/10">
                             <div className="flex items-center gap-3">
@@ -515,7 +566,7 @@ const ConfirmPayment = () => {
                             </div>
                             <span className="text-white font-semibold text-sm">{movie?.RunningTime} min</span>
                           </div>
-                          
+
                           <div className="flex items-center justify-between p-3 bg-white/5 rounded-2xl border border-white/10">
                             <div className="flex items-center gap-3">
                               <FaCalendarAlt className="text-purple-400 text-sm" />
@@ -523,7 +574,7 @@ const ConfirmPayment = () => {
                             </div>
                             <span className="text-white font-semibold text-xs">{new Date(movie?.FromDate).toLocaleDateString("vi-VN")}</span>
                           </div>
-                          
+
                           <div className="flex items-center justify-between p-3 bg-white/5 rounded-2xl border border-white/10">
                             <div className="flex items-center gap-3">
                               <RiMovie2AiLine className="text-purple-400 text-sm" />
@@ -535,7 +586,7 @@ const ConfirmPayment = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   {movie?.ContentSynopsis && (
                     <div className="mt-4 p-3  rounded-2xl">
                       <p className="text-gray-300 text-xs leading-relaxed line-clamp-3">
@@ -549,33 +600,33 @@ const ConfirmPayment = () => {
               {/* User Info Card */}
               <div className="relative bg-white/5 backdrop-blur-md rounded-3xl p-4 md:p-6 border border-white/10 shadow-2xl">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 rounded-3xl"></div>
-                
+
                 <div className="relative z-10">
                   <h2 className="text-xl md:text-2xl font-bold mb-6 bg-gradient-to-r from-white via-purple-100 to-pink-100 bg-clip-text text-transparent">
                     Customer Information
                   </h2>
-                  
+
                   <div className="space-y-4">
                     <div className="flex items-center justify-between p-3 rounded-2xl ">
                       <span className="text-gray-300 font-medium text-sm">Full Name</span>
                       <span className="text-white font-semibold text-sm">{user?.fullName || 'N/A'}</span>
                     </div>
-                    
+
                     <div className="flex items-center justify-between p-3 rounded-2xl">
                       <span className="text-gray-300 font-medium text-sm">Email</span>
                       <span className="text-white font-semibold text-sm truncate max-w-xs">{user?.email || 'N/A'}</span>
                     </div>
-                    
+
                     <div className="flex items-center justify-between p-3 rounded-2xl ">
                       <span className="text-gray-300 font-medium text-sm">Phone</span>
                       <span className="text-white font-semibold text-sm">{user?.phoneNumber || 'N/A'}</span>
                     </div>
-                    
+
                     <div className="flex items-center justify-between p-3  rounded-2xl ">
                       <span className="text-gray-300 font-medium text-sm">Identity Card</span>
                       <span className="text-white font-semibold text-sm">{user?.cccd}</span>
                     </div>
-                    
+
                     <div className="flex items-center justify-between p-3  rounded-2xl ">
                       <span className="text-gray-300 font-medium text-sm">Available Points</span>
                       <span className="text-yellow-400 font-bold text-sm">{user?.scoreBalance || 0} points</span>
@@ -616,9 +667,9 @@ const ConfirmPayment = () => {
             <div className="xl:col-span-7 order-2 xl:order-none">
               <div className="relative bg-white/5 backdrop-blur-md rounded-3xl p-4 md:p-6 lg:p-8 border border-white/10 shadow-2xl h-full">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 rounded-3xl"></div>
-                
+
                 <div className="relative z-10 h-full flex flex-col">
-                 
+
                   {/* Booking Details */}
                   <div className="mb-6">
                     <h3 className="text-lg md:text-xl font-bold text-white mb-4">Booking Details</h3>
@@ -668,12 +719,12 @@ const ConfirmPayment = () => {
                         {/* Product Price */}
                         {product && Array.isArray(product) && product.length > 0 && (
                           <>
-                           
+
                             <div className="flex justify-between items-center text-gray-300">
-                               {product.map((item, index) => (
+                              {product.map((item, index) => (
                                 <div key={index} className="flex justify-between">
                                   <span>{item.ProductName} x{item.Quantity}</span>
-                                  
+
                                 </div>
                               ))}
                               <span className="text-white font-semibold">{formatPrice(productPrice)}</span>
@@ -805,55 +856,89 @@ const ConfirmPayment = () => {
                   </div>
 
                   {/* Payment Methods Section */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-bold text-white mb-4">Payment Methods</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {/* Stripe (Visa/MasterCard/JCB/UnionPay) */}
+                    <div>
                       <button
                         onClick={() => handlePaymentMethod("3")}
-                        className={`flex flex-col items-center justify-center rounded-2xl p-4 h-20 font-semibold transition-all duration-300 border-2 ${
-                          paymentMethod === "3" 
-                            ? "bg-purple-500/20 border-purple-400 shadow-lg transform scale-105" 
-                            : "bg-white/5 hover:bg-white/10 border-white/20 hover:border-purple-400/50"
-                        } focus:outline-none focus:ring-4 focus:ring-purple-500/50`}
+                        className={`flex flex-col items-center justify-center rounded-2xl p-4 h-20 font-semibold transition-all duration-300 border-2 ${paymentMethod === "3"
+                          ? "bg-gray/20 shadow-lg"
+                          : "bg-white hover:bg-white/10 border-white/20"
+                          } focus:outline-none focus:ring-4 focus:ring-purple-500 w-full`}
                       >
                         <img
-                          src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-VNPAY-QR-350x65.png"
-                          alt="VnPay logo"
+                          src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png"
+                          alt="Visa Logo"
                           className="w-16 h-3 mb-1"
                         />
-                       
+                        <span className="text-xs text-gray-300 mt-1">
+                          Stripe (Visa, MasterCard, JCB, UnionPay)
+                        </span>
                       </button>
-                      
+                      {/* Nếu đã chọn Stripe thì show chọn loại thẻ và hướng dẫn */}
+                      {paymentMethod === "3" && stripeClientSecret && (
+                        <>
+                        {console.log("Rendering StripeCheckoutForm with clientSecret:", stripeClientSecret)}
+                        <div className="w-full max-w-md mx-auto mt-4">
+                          <StripeCheckoutForm
+                            clientSecret={stripeClientSecret}
+                            onSuccess={(paymentIntent) => {
+                              alert("Thanh toán thành công!");
+                              // Xử lý tiếp theo
+                            }}
+                          />
+                        </div>
+                        </>
+                      )}
+                      {/* Khi đã có clientSecret thì show form Stripe */}
+                      {paymentMethod === "3" && stripeClientSecret && (
+                        <div className="w-full max-w-md mx-auto mt-4">
+                          <StripeCheckoutForm
+                            clientSecret={stripeClientSecret}
+                            onSuccess={(paymentIntent) => {
+                              alert("Thanh toán thành công!");
+                              // Xử lý tiếp theo
+                            }}
+                          />
+                        </div>
+                      )}
+                      {/* Hiển thị lỗi Stripe nếu có */}
+                      {paymentMethod === "3" && stripeError && (
+                        <div className="text-red-500 mt-2 text-center">{stripeError}</div>
+                      )}
+                    </div>
+
+                    {/* ZaloPay */}
+                    <div>
                       <button
                         onClick={() => handlePaymentMethod("4")}
-                        className={`flex flex-col items-center justify-center rounded-2xl p-4 h-20 font-semibold transition-all duration-300 border-2 ${
-                          paymentMethod === "4" 
-                            ? "bg-purple-500/20 border-purple-400 shadow-lg transform scale-105" 
-                            : "bg-white/5 hover:bg-white/10 border-white/20 hover:border-purple-400/50"
-                        } focus:outline-none focus:ring-4 focus:ring-purple-500/50`}
+                        className={`flex flex-col items-center justify-center rounded-2xl p-4 h-20 font-semibold transition-all duration-300 border-2 ${paymentMethod === "4"
+                          ? "bg-gray/20 shadow-lg"
+                          : "bg-white hover:bg-white/10 border-white/20"
+                          } focus:outline-none focus:ring-4 focus:ring-purple-500 w-full`}
                       >
                         <img
                           src="https://vectorseek.com/wp-content/uploads/2023/09/Zalopay-Logo-Vector.svg-.png"
                           alt="ZaloPay logo"
                           className="w-16 h-5 mb-1"
                         />
-                     
                       </button>
+                    </div>
 
+                    {/* Momo */}
+                    <div>
                       <button
                         onClick={() => handlePaymentMethod("2")}
-                        className={`flex flex-col items-center justify-center rounded-2xl p-4 h-20 font-semibold transition-all duration-300 border-2 ${
-                          paymentMethod === "2" 
-                            ? "bg-purple-500/20 border-purple-400 shadow-lg transform scale-105" 
-                            : "bg-white/5 hover:bg-white/10 border-white/20 hover:border-purple-400/50"
-                        } focus:outline-none focus:ring-4 focus:ring-purple-500/50`}
+                        className={`flex flex-col items-center justify-center rounded-2xl p-4 h-20 font-semibold transition-all duration-300 border-2 ${paymentMethod === "2"
+                          ? "bg-gray/20 shadow-lg"
+                          : "bg-white hover:bg-white/10 border-white/20"
+                          } focus:outline-none focus:ring-4 focus:ring-purple-500 w-full`}
                       >
                         <img
                           src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-MoMo-Transparent-1024x1024.png"
                           alt="Momo logo"
                           className="w-10 h-8 mb-1"
                         />
-                       
                       </button>
                     </div>
                   </div>
@@ -862,7 +947,7 @@ const ConfirmPayment = () => {
                   <div className="mt-auto space-y-4">
                     <button
                       type="button"
-                      className={`w-full py-4 bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 hover:from-purple-700 hover:via-purple-600 hover:to-pink-600 shadow-xl hover:shadow-2xl hover:shadow-purple-500/20 transform hover:scale-[1.02] transition-all duration-300 ease-out border border-purple-400/20 text-white font-semibold rounded-2xl text-lg ${(!paymentMethod || isConfirming) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`w-full py-4 bg-gradient-to-r via-purple-500   hover:via-purple-600  shadow-xl hover:shadow-2xl hover:shadow-purple-500/20 transform hover:scale-[1.02] transition-all duration-300 ease-out border border-purple-400/10 text-white font-semibold rounded-2xl text-lg ${(!paymentMethod || isConfirming) ? 'opacity-50 cursor-not-allowed' : ''}`}
                       onClick={handleConfirm}
                       disabled={!paymentMethod || isConfirming}
                     >
@@ -875,10 +960,10 @@ const ConfirmPayment = () => {
                         'Confirm And Payment'
                       )}
                     </button>
-                    
+
                     <button
                       type="button"
-                      className="w-full py-4 bg-transparent hover:bg-white/10 border-2 border-purple-500/70 hover:border-purple-400 text-white font-semibold rounded-2xl text-lg transition-all duration-300"
+                      className="w-full py-4 bg-transparent hover:bg-white/10 border-2 border-purple-500/50 hover:border-purple-400 text-white font-semibold rounded-2xl text-lg transition-all duration-300"
                       onClick={handleCancel}
                       disabled={isConfirming}
                     >

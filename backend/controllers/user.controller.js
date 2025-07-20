@@ -33,6 +33,8 @@ const removeSensitiveData = (user) => {
     address: user.Address,
     avatar_url: user.avatar_url,
     scoreBalance: user.ScoreBalance,
+    TotalAccumulatedPoints: user.TotalAccumulatedPoints,
+    membershipTypeId: user.MembershipTypeId,
   };
 };
 
@@ -817,6 +819,18 @@ const loginWithGoogle = async (req, res) => {
   }
 };
 
+// Thêm API lấy membership info
+const getMembershipInfo = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const info = await User.getMembershipInfo(userId);
+    if (!info) return res.status(404).json({ error: 'User not found' });
+    res.json({ membership: info });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -828,4 +842,5 @@ module.exports = {
   updateProfile,
   getUserById,
   exchangeScore,
+  getMembershipInfo,
 };

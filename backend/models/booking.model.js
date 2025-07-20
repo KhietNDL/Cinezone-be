@@ -11,11 +11,30 @@ class Booking {
     return rows[0];
   }
 
-  static async getBookingsByMemberId(memberId) {
-    // Lấy danh sách BookingId theo memberId
-    const sql = `SELECT BookingId FROM Bookings WHERE MemberId = ? AND IsDeleted = 0`;
-    const [rows] = await db.promise().query(sql, [memberId]);
-    if (!rows.length) return [];
+  static async getBookingsByMemberId(memberId, { page = 1, limit = 10, sortBy = "CreatedAt", sortOrder = "desc" } = {}) {
+    // Validate sortBy và sortOrder
+    const allowedSort = ["CreatedAt", "BookingDate", "TotalAmount", "Status"];
+    if (!allowedSort.includes(sortBy)) sortBy = "CreatedAt";
+    sortOrder = sortOrder.toLowerCase() === "asc" ? "ASC" : "DESC";
+
+    // Pagination
+    let sql = `SELECT BookingId FROM Bookings WHERE MemberId = ? AND IsDeleted = 0 ORDER BY ${sortBy} ${sortOrder}`;
+    let params = [memberId];
+    let total = 0;
+
+    if (limit > 0) {
+      const [[countRow]] = await db.promise().query(
+        `SELECT COUNT(*) as total FROM Bookings WHERE MemberId = ? AND IsDeleted = 0`,
+        [memberId]
+      );
+      total = countRow.total;
+      const offset = (page - 1) * limit;
+      sql += ` LIMIT ? OFFSET ?`;
+      params.push(Number(limit), Number(offset));
+    }
+
+    const [rows] = await db.promise().query(sql, params);
+    if (!rows.length) return { data: [], pagination: { page, limit, total, totalPages: 0 } };
 
     // Lấy chi tiết từng booking
     const bookingDetails = [];
@@ -23,7 +42,16 @@ class Booking {
       const detail = await Booking.getBookingDetail(row.BookingId);
       if (detail) bookingDetails.push(detail);
     }
-    return bookingDetails;
+
+    return {
+      data: bookingDetails,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        totalPages: limit > 0 ? Math.ceil(total / limit) : 1
+      }
+    };
   }
 
   static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrder = 'desc' } = {}) {
@@ -152,6 +180,7 @@ class Booking {
     seatIds,
     promotionCode,
     discount = 0,
+    membershipDiscount = 0, // truyền từ controller nếu có
     CreatedBy,
   }) {
 
@@ -200,12 +229,12 @@ class Booking {
       );
       let totalAmount = seatInfo.reduce((sum, seat) => sum + Number(seat.Price), 0);
 
-      if (promotionDiscount > 0) {
-      // Nếu có promotion, giảm theo phần trăm
-      totalAmount -= (totalAmount * promotionDiscount) / 100;
-      } else if (discount > 0) {
-        // Nếu có discount từ điểm, giảm trực tiếp số tiền
+      if (discount > 0) {
+        // Nếu dùng điểm đổi vé, KHÔNG áp dụng giảm giá membership
         totalAmount -= discount;
+      } else if (membershipDiscount > 0) {
+        // Nếu không dùng điểm, mới áp dụng giảm giá membership
+        totalAmount -= (totalAmount * membershipDiscount) / 100;
       }
       // Đảm bảo tổng tiền không âm
       totalAmount = Math.max(0, totalAmount);
@@ -258,8 +287,9 @@ class Booking {
     }
   }
   static async confirmBooking(bookingId) {
-    const connection = await db.promise().getConnection();
+    let connection;
     try {
+      connection = await db.promise().getConnection();
       await connection.beginTransaction();
 
       await connection.query(
@@ -274,7 +304,7 @@ class Booking {
         WHERE BookingId = ? AND Status = 'holding'`,
         [bookingId]
       );
-
+      
       // Gửi email xác nhận booking sau khi confirm thành công
       try {
         const BookingEmailService = require('../services/bookingEmailService');
@@ -328,9 +358,9 @@ class Booking {
         }
       } catch (emailError) {
         console.error('Error sending booking confirmation email:', emailError);
-        // Không fail booking nếu gửi email thất bại
       }
-          await connection.commit();
+
+      await connection.commit();
 
       // Lấy io tại đây, đảm bảo luôn lấy giá trị mới nhất
       const io = global._io;
@@ -338,19 +368,24 @@ class Booking {
         `SELECT MemberId FROM Bookings WHERE BookingId = ?`, [bookingId]
       );
       if (io && booking && booking.MemberId) {
+        // Cập nhật danh sách booking mới nhất
+        const bookingDetail = await Booking.getBookingDetail(bookingId);
         io.to(booking.MemberId).emit('notification', {
           type: 'booking',
-          bookingId,
+          movieNameEnglish: bookingDetail.movieNameEnglish, // gửi movieNameEnglish thay cho bookingId
           status: 2,
-          message: 'Your ticket has been confirmed!'
+          message: 'Your ticket has been confirmed!',
+          createdAt: bookingDetail.BookingDate, // nếu muốn gửi thời gian
+          ScoreValue: bookingDetail.pointEarn || 0, // gửi điểm thưởng nếu có
         });
       }
     } catch (err) {
-      await connection.rollback();
+      if (connection) await connection.rollback();
       throw err;
     } finally {
-      connection.release();
+      if (connection) connection.release();
     }
+    
   }
   /**
    * @param {string} bookingId - ID của booking
@@ -433,7 +468,7 @@ class Booking {
       // 2. Đổi trạng thái các ghế từ "holding" hoặc "taken" sang "available"
       await connection.query(
         `UPDATE SeatShowtime
-         SET Status = 'cancelled'
+         SET Status = 'cancelled', IsDeleted = 1
          WHERE BookingId = ? AND Status IN ('holding', 'taken')`,
         [bookingId]
       );  
@@ -455,11 +490,13 @@ class Booking {
         `SELECT MemberId FROM Bookings WHERE BookingId = ?`, [bookingId]
       );
       if (io && booking && booking.MemberId) {
+        const bookingDetail = await Booking.getBookingDetail(bookingId);
         io.to(booking.MemberId).emit('notification', {
           type: 'booking',
-          bookingId,
+          movieNameEnglish: bookingDetail.movieNameEnglish,
           status: 4,
-          message: 'Your ticket has been cancelled!'
+          message: 'Your ticket has been cancelled!',
+          createdAt: bookingDetail.BookingDate
         });
       }
       return true;
@@ -495,11 +532,14 @@ class Booking {
     const io = global._io;
     const memberId = rows[0].MemberId;
     if (io && memberId) {
+      const bookingDetail = await Booking.getBookingDetail(bookingId);
       io.to(memberId).emit('notification', {
         type: 'booking',
         bookingId,
         status: 3,
-        message: 'Your ticket has been checked in!'
+        message: 'Your ticket has been checked in!',
+        movieNameEnglish: bookingDetail.movieNameEnglish,
+        createdAt: bookingDetail.BookingDate
       });
     }
 

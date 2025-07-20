@@ -17,8 +17,15 @@ const getBookingById = async (req, res) => {
 
 const getBookingsByMemberId = async (req, res) => {
   const { memberId } = req.params;
+  // Lấy các tham số phân trang và sort từ query string
+  const { page = 1, limit = 10, sortBy = "CreatedAt", sortOrder = "desc" } = req.query;
   try {
-    const bookings = await Booking.getBookingsByMemberId(memberId);
+    const bookings = await Booking.getBookingsByMemberId(memberId, {
+      page: Number(page),
+      limit: Number(limit),
+      sortBy,
+      sortOrder
+    });
     res.json(bookings);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -90,8 +97,12 @@ const holdBooking = async (req, res) => {
     if (promotionCode && PointsToUse) {
       return res.status(400).json({ error: 'Chỉ được dùng 1 trong 2: điểm hoặc promotion!' });
     }
-    // Lấy user
-    const user = await User.findById(userId);
+    // Lấy user và quyền lợi membership
+    const user = await User.getMembershipInfo(userId);
+    let membershipDiscount = 0;
+    if (!PointsToUse && user && user.DiscountTicket !== undefined && user.DiscountTicket !== null) {
+      membershipDiscount = Number(user.DiscountTicket);
+    }
     // Lấy thông tin loại ghế từ seatIds
     const seatTypeToPoint = { normal: 90, vip: 150, Couple: 250, Normal: 90, VIP: 150, Couple: 250 };
     const seatTypes = [];
@@ -118,10 +129,17 @@ const holdBooking = async (req, res) => {
       pointsUsed = PointsToUse;
       newScoreBalance = user.ScoreBalance - PointsToUse;
     }
-    // Nếu không dùng điểm, discount = 0
-    // Gọi holdBooking ở model, truyền thêm discount để trừ vào tổng tiền
-    const result = await Booking.holdBooking({ userId, showtimeId, seatIds, productIds, promotionCode, discount });
-    
+    // Gọi holdBooking ở model, truyền thêm discount và membershipDiscount
+    const result = await Booking.holdBooking({
+      userId,
+      showtimeId,
+      seatIds,
+      productIds,
+      promotionCode,
+      discount, // discount từ điểm nếu có
+      membershipDiscount, // phần trăm giảm giá membership nếu không dùng điểm
+      CreatedBy: userId
+    });
     // Nếu dùng điểm, trừ điểm và ghi lịch sử
     if (pointsUsed > 0) {
       await User.updateScoreBalance(userId, newScoreBalance);
@@ -149,32 +167,64 @@ const confirmBooking = async (req, res) => {
   try {
     const { bookingId } = req.params;
     await Booking.confirmBooking(bookingId);
+    // Lấy thông tin booking chi tiết (bao gồm danh sách ghế và giá gốc)
+    const booking = await Booking.getBookingDetail(bookingId);
+    console.log('[DEBUG] Booking info:', booking);
 
-    // Lấy thông tin booking vừa xác nhận
-    const booking = await Booking.getBookingById(bookingId);
     if (booking) {
-      const ScoreValue = Math.floor((booking.TotalAmount || 0) / 10000);
-      if (ScoreValue > 0) {
+      // Lấy danh sách ghế và giá gốc từng ghế
+      const seatPrices = booking.seatPrices || {}; // { seatNumber: price }
+      // Tính tổng tiền gốc
+      const originalAmount = Object.values(seatPrices).reduce((sum, price) => sum + Number(price), 0);
+      console.log('[DEBUG] originalAmount:', originalAmount);
+
+      // Lấy quyền lợi membership (PointMultiplier)
+      const userInfo = await User.getMembershipInfo(booking.MemberId);
+      console.log('[DEBUG] User membership info:', userInfo);
+      const pointMultiplier = userInfo && userInfo.PointMultiplier ? Number(userInfo.PointMultiplier) : 1;
+
+      // Tính điểm dựa trên tổng tiền gốc
+      const basePoint = Math.floor((originalAmount || 0) / 10000);
+      const earnedPoint = Math.floor(basePoint * pointMultiplier);
+      console.log('[DEBUG] basePoint:', basePoint, 'pointMultiplier:', pointMultiplier, 'earnedPoint:', earnedPoint);
+
+      if (earnedPoint > 0) {
         // Ghi nhận lịch sử điểm
         await ScoreHistory.createScoreHistory({
           MemberId: booking.MemberId,
           RelatedBookingId: bookingId,
-          ScoreValue: +ScoreValue,
+          ScoreValue: +earnedPoint,
           ChangeType: '1',
           ChangeDate: new Date(),
           CreatedBy: booking.MemberId
         });
-        // Cộng điểm vào user
-        const user = await User.findById(booking.MemberId);
-        if (user) {
-          const newScoreBalance = (user.ScoreBalance || 0) + ScoreValue;
-          await User.updateScoreBalance(booking.MemberId, newScoreBalance);
+        // Cộng điểm vào user (cả ScoreBalance và TotalAccumulatedPoints)
+        await User.updateScoreAndAccumulated(booking.MemberId, earnedPoint);
+        console.log('[DEBUG] Updated user score with earnedPoint:', earnedPoint);
+        // Tự động nâng hạng nếu đủ điểm
+        const [membershipTypes] = await require('../config/database').promise().query(
+          'SELECT * FROM MembershipType WHERE IsDeleted = 0 ORDER BY MinPoint ASC'
+        );
+        let newType = null;
+        for (const type of membershipTypes) {
+          if (userInfo.TotalAccumulatedPoints + earnedPoint >= type.MinPoint) {
+            newType = type;
+          }
+        }
+        if (newType && newType.MembershipTypeId != userInfo.MembershipTypeId) {
+          await User.upgradeMembership(
+            booking.MemberId,
+            newType.MembershipTypeId,
+            new Date(),
+            null
+          );
+          console.log('[DEBUG] Upgraded membership to:', newType);
         }
       }
     }
-
     res.json({ message: 'Booking confirmed successfully' });
   } catch (err) {
+    console.error('[DEBUG] Error in confirmBooking:', err);
     res.status(400).json({ error: err.message });
   }
 };
