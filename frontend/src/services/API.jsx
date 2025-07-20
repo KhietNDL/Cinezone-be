@@ -450,8 +450,8 @@ export const createMomoPayment = async (data) => {
   return res.data;
 };
 
-export const createVnpayPayment = async (data) => {
-  const res = await api.post("/payment/vnpay", data);
+export const createStripePayment = async (data) => {
+  const res = await api.post("/payment/stripe", data);
   return res.data;
 };
 

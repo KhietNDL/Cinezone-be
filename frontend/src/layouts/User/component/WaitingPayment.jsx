@@ -4,9 +4,10 @@ import { CheckCircle, XCircle, Home } from "lucide-react";
 import logo from "../../../assets/logoWeb.svg";
 import {
   createMomoPayment,
-  createVnpayPayment,
+  createStripePayment,
   createZalopayPayment,
 } from "../../../services/API";
+import StripeCheckoutForm from "./StripeCheckoutForm";
 
 const WaitingPayment = () => {
   const { state } = useLocation();
@@ -31,6 +32,8 @@ const WaitingPayment = () => {
   } = state || {};
 
   const [paymentStatus, setPaymentStatus] = useState("waiting");
+  const [clientSecret, setClientSecret] = useState(null);
+  const [stripeError, setStripeError] = useState("");
   const returnUrl = `${window.location.origin}/ticket`;
 
   console.log("🎫 WaitingPayment received data:", {
@@ -90,29 +93,34 @@ const WaitingPayment = () => {
         let response;
 
         if (paymentMethod === "2") {
-          console.log("PAYLOAD CUA MOMO", payload);
           response = await createMomoPayment(payload);
-          console.log("📱 Momo payment response:", response);
+          const redirectUrl = response?.data?.payUrl || response?.payUrl;
+          if (redirectUrl) {
+            window.location.href = redirectUrl;
+            return;
+          }
+          setPaymentStatus("failed");
         } else if (paymentMethod === "3") {
-          response = await createVnpayPayment(payload);
-          console.log("🏦 VNPay payment response:", response);
+          response = await createStripePayment(payload);
+          const clientSecret = response?.data?.clientSecret || response?.data?.ClientSecret;
+          if (clientSecret) {
+            setClientSecret(clientSecret);
+            setPaymentStatus("stripe");
+            return;
+          }
+          setStripeError(response?.error || "Không lấy được thông tin thanh toán Stripe");
+          setPaymentStatus("failed");
         } else if (paymentMethod === "4") {
           response = await createZalopayPayment(payload);
-          console.log("💰 ZaloPay payment response:", response);
+          const redirectUrl = response?.data?.order_url || response?.order_url;
+          if (redirectUrl) {
+            window.location.href = redirectUrl;
+            return;
+          }
+          setPaymentStatus("failed");
         } else {
-          console.error("❌ Invalid payment method:", paymentMethod);
           setPaymentStatus("failed");
           return;
-        }
-
-        const redirectUrl = response?.data?.payUrl || response?.payUrl;
-
-        if (redirectUrl) {
-          console.log("🔄 Redirecting to payment gateway:", redirectUrl);
-          window.location.href = redirectUrl;
-        } else {
-          console.error("❌ No payment URL returned from server:", response);
-          setPaymentStatus("failed");
         }
       } catch (err) {
         console.error("❌ Error creating payment:", err);
@@ -140,19 +148,44 @@ const WaitingPayment = () => {
     return "Unknown";
   };
 
+  // useEffect(() => {
+  //   const createStripeSession = async () => {
+  //     const res = await fetch("http://localhost:4458/api/payment/stripe", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json", Authorization: `Bearer ${state.token}` },
+  //       body: JSON.stringify({
+  //         amount: state.finalPrice,
+  //         bookingId: state.bookingId,
+  //         orderProductId: state.OrderProductId,
+  //       }),
+  //     });
+  //     const data = await res.json();
+  //     if (data.status === "success" && (data.data?.clientSecret || data.data?.ClientSecret)) {
+  //       setClientSecret(data.data.clientSecret || data.data.ClientSecret);
+  //     } else {
+  //       setStripeError(data.error || "Không lấy được thông tin thanh toán Stripe");
+  //     }
+  //   };
+
+  //   if (state.paymentMethod === "3") {
+  //     createStripeSession();
+  //   }
+  //   // ...xử lý các phương thức khác (Momo, ZaloPay) nếu cần
+  // }, [state]);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] text-white flex items-center justify-center p-6">
-      <div className="bg-[#1E1B3A] rounded-xl shadow-xl w-full max-w-2xl p-10 text-center">
-        <img src={logo} alt="Logo" className="w-40 h-auto mb-6 mx-auto" />
+    <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] text-white flex items-center justify-center p-25">
+      <div className="bg-[#1E1B3A] rounded-xl shadow-xl w-full max-w-2xl   text-center">
+        <img src={logo} alt="Logo" className="w-40 h-auto mx-auto" />
         
         {paymentStatus === "waiting" && (
           <>
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6B59E6] mx-auto mb-6"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6B59E6] mx-auto mb-12"></div>
             <p className="text-2xl font-bold mb-4">Redirecting to payment gateway...</p>
             <p className="text-gray-300 mb-4">Please wait while we process your payment.</p>
             
             {/* Payment summary */}
-            <div className="bg-white/5 rounded-lg p-4 text-left max-w-md mx-auto">
+            <div className="bg-white/5 rounded-lg p-4 text-left max-w-md mx-auto mb-6">
               <h3 className="text-lg font-semibold mb-3 text-center">Payment Summary</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
@@ -229,6 +262,17 @@ const WaitingPayment = () => {
               </button>
             </div>
           </>
+        )}
+
+        {clientSecret && paymentMethod === "3" && (
+          <StripeCheckoutForm
+            clientSecret={clientSecret}
+            onSuccess={() => {/* xử lý sau khi thanh toán thành công */}}
+          />
+        )}
+        
+        {stripeError && (
+          <div className="text-red-500">{stripeError}</div>
         )}
       </div>
     </div>

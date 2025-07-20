@@ -374,7 +374,8 @@ class Booking {
           movieNameEnglish: bookingDetail.movieNameEnglish, // gửi movieNameEnglish thay cho bookingId
           status: 2,
           message: 'Your ticket has been confirmed!',
-          createdAt: bookingDetail.BookingDate // nếu muốn gửi thời gian
+          createdAt: bookingDetail.BookingDate, // nếu muốn gửi thời gian
+          ScoreValue: bookingDetail.pointEarn || 0, // gửi điểm thưởng nếu có
         });
       }
     } catch (err) {
@@ -383,6 +384,7 @@ class Booking {
     } finally {
       if (connection) connection.release();
     }
+    
   }
   /**
    * @param {string} bookingId - ID của booking
@@ -465,7 +467,7 @@ class Booking {
       // 2. Đổi trạng thái các ghế từ "holding" hoặc "taken" sang "available"
       await connection.query(
         `UPDATE SeatShowtime
-         SET Status = 'cancelled'
+         SET Status = 'cancelled', IsDeleted = 1
          WHERE BookingId = ? AND Status IN ('holding', 'taken')`,
         [bookingId]
       );  

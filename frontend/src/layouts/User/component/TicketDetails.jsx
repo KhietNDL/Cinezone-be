@@ -31,6 +31,16 @@ const TicketDetails = () => {
     setLoading(false);
   }
 
+  const query = new URLSearchParams(window.location.search);
+
+
+let paymentId = null;
+try {
+  const paymentId =query.get("paymentId")
+  console.log("PAYMENTID", paymentId)
+} catch (e) {
+  console.error("Không parse được embeddata:", e);
+}
   useEffect(() => {
     // Nếu thanh toán thất bại hoặc bị hủy
     if (resultCode !== "0") {
