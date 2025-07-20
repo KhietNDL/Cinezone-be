@@ -1,7 +1,8 @@
 import React from "react";
 import momo from "../../../assets/momo-seeklogo.png";
-import vnpay from "../../../assets/vnpay-seeklogo.png";
+// import vnpay from "../../../assets/vnpay-seeklogo.png";
 import zalopay from "../../../assets/zalopay-seeklogo.svg";
+import visa from "../../../assets/visa.svg"
 import { FaMoneyBillWave } from "react-icons/fa6";
 
 const PAYMENT_METHODS = [
@@ -18,9 +19,9 @@ const PAYMENT_METHODS = [
     color: "bg-[#F3E8FF] border border-pink-300 ring-4 ring-pink-400 focus:ring-4",
   },
   {
-    value: "VNPay",
-    label: "VNPay",
-    icon: <img src={vnpay} alt="VNPay" className="h-8 mx-auto mb-2" />,
+    value: "Visa",
+    label: "Visa",
+    icon: <img src={visa} alt="Visa" className="h-10 mx-auto"/>,
     color: "bg-[#F3E8FF] border border-pink-300 ring-4 ring-pink-400 focus:ring-4",
   },
   {

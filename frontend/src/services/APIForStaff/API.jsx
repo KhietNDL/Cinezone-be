@@ -244,6 +244,35 @@ export const createZaloPayPaymentForProducts = async (orderProductId, amount, re
   }
 };
 
+// Thanh toán bằng Visa 
+export const createVisaPayment = async (bookingId, amount, cardType) => {
+  try {
+    const response = await api.post("/payment/stripe", {
+      bookingId,
+      amount,
+      cardType
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+
+// Thanh toán bằng Visa cho product
+export const createVisaPaymentForProducts = async (orderProductId, amount, cardType) => {
+  try {
+    const response = await api.post("/payment/stripe", {
+      orderProductId,
+      amount,
+      cardType
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
 // Confirm Payment
 export const confirmPayment = async (paymentId) => {
   try {

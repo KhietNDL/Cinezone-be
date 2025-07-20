@@ -8,7 +8,9 @@ import {
   createCashPaymentForProduct,
   createMomoPaymentForProducts,
   createZaloPayPayment,
-  createZaloPayPaymentForProducts
+  createZaloPayPaymentForProducts,
+  createVisaPayment,
+  createVisaPaymentForProducts
 } from "../services/APIForStaff/API";
 
 // type: "ticket" hoặc "combo"
@@ -20,21 +22,26 @@ export async function processPayment({
   navigate,
   setIsRedirecting,
   successUrl,
+  cardType
 }) {
   try {
     switch (paymentMethod) {
       case "Cash":
-        if (type === "ticket") {
-          await createCashPayment(orderId, amount, `CASH-${Date.now()}`);
-          await confirmBooking(orderId);
-          toast.success("Cash payment successful!");
-          navigate(successUrl);
-        } else if (type === "combo") {
-          await createCashPaymentForProduct(orderId, amount, "Payment for combo");
-          toast.success("Payment successful!");
-          navigate(successUrl);
+        {
+          setIsRedirecting?.(true);
+          let cashRes;
+          if (type === "ticket") {
+            cashRes = await createCashPayment(orderId, amount, `CASH-${Date.now()}`);
+            await confirmBooking(orderId);
+            toast.success("Cash payment successful!");
+            navigate(successUrl);
+          } else if (type === "combo") {
+            await createCashPaymentForProduct(orderId, amount, "Payment for combo");
+            toast.success("Payment successful!");
+            navigate(successUrl);
+          }
+          return cashRes;
         }
-        break;
       case "Momo": {
         setIsRedirecting?.(true);
         let momoRes;
@@ -50,10 +57,26 @@ export async function processPayment({
         }
         window.location.href = payUrl;
         return momoRes;
-       
+
       }
       case "VNPay":
         throw new Error("VNPay payment method not yet supported");
+      case "Visa":
+        {
+          setIsRedirecting?.(true);
+          let visaRes;
+          if (type === "ticket") {
+            visaRes = await createVisaPayment(orderId, amount, cardType);
+            await confirmBooking(orderId);
+            toast.success("Visa payment successful!");
+            navigate(successUrl);
+          } else if (type === "combo") {
+            await createVisaPaymentForProducts(orderId, amount, cardType);
+            toast.success("Payment successful!");
+            navigate(successUrl);
+          }
+          return visaRes;
+        }
       case "ZaloPay":
         {
           setIsRedirecting?.(true);
@@ -66,10 +89,10 @@ export async function processPayment({
           const order_url = zaloPayRes?.order_url || zaloPayRes?.data?.order_url;
           if (!order_url) {
             setIsRedirecting?.(false);
-            throw new Error("Did not receive payment URL from Momo");
+            throw new Error("Did not receive payment URL from ZaloPay");
           }
           window.location.href = order_url;
-         return zaloPayRes;
+          return zaloPayRes;
         }
       default:
         throw new Error("Invalid payment method");

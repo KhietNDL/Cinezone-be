@@ -52,11 +52,21 @@ const TicketInformation = () => {
     try {
       const params = new URLSearchParams(window.location.search);
       const resultCode = params.get('resultCode') || params.get('status');
-      const bookingId = bookingData?.bookingId || params.get('orderId')?.split('_')[1] || params.get('bookingId');
-      const paymentId = bookingData?.paymentId
+      let bookingId = params.get('bookingId') || bookingData?.bookingId;
+      let paymentId = params.get('paymentId') || bookingData?.paymentId;
 
-      if (!bookingId) {
-        throw new Error("Missing booking ID");
+      if (!bookingId || !paymentId) {
+        const extraData = params.get('extraData');
+        if (extraData) {
+          try {
+            const decoded = decodeURIComponent(extraData);
+            const extra = JSON.parse(decoded);
+            bookingId = extra.bookingId || bookingId;
+            paymentId = extra.paymentId || paymentId;
+          } catch (e) {
+            console.error("Failed to parse extraData:", e);
+          }
+        }
       }
 
       //Bước 1: Luôn fetch thông tin booking trước
@@ -95,6 +105,11 @@ const TicketInformation = () => {
       } else {
         // Thanh toán tiền mặt hoặc truy cập trực tiếp
         setPaymentStatus(res?.status === 2 ? 'success' : 'error');
+        console.log("PaymentId:", paymentId)
+        if (paymentId) {
+          await confirmPayment(paymentId);
+          console.log("Payment confirmed successfully");
+        }
       }
 
     } catch (error) {

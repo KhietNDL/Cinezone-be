@@ -242,14 +242,14 @@ const ConfirmTicketsPage = () => {
         orderId: bookingRes.bookingId,
         amount: finalPrice,
         type: "ticket",
+        cardType: values.paymentMethod === "Visa" ? values.cardType : undefined,
         navigate,
         setIsRedirecting,
-        // successUrl: `${window.location.origin}/staff/ticket-selling/ticket-information`,
-        successUrl: `${values.paymentMethod === "Cash" ? "/staff/ticket-selling/ticket-information" : `${window.location.origin}/staff/ticket-selling/ticket-information`}`,
+        successUrl: `${values.paymentMethod === "Cash" || values.paymentMethod === "Visa" ? "/staff/ticket-selling/ticket-information" : `${window.location.origin}/staff/ticket-selling/ticket-information`}`,
       });
 
-      if (values.paymentMethod === "ZaloPay" || values.paymentMethod === "Momo" && paymentResult?.data?.paymentId) {
-        dispatch(setPaymentId(paymentResult.data.paymentId));
+      if (values.paymentMethod && paymentResult?.data?.paymentId || paymentResult?.data?.payment?.PaymentId ) {
+        dispatch(setPaymentId(paymentResult.data.paymentId || paymentResult.data.payment.PaymentId));
       }
     } catch (error) {
       console.error("Booking error:", error);
@@ -300,7 +300,14 @@ const ConfirmTicketsPage = () => {
 
     paymentMethod: Yup.string()
       .required("Please select payment method")
-      .oneOf(["Cash", "Momo", "VNPay", "ZaloPay"], "Invalid payment method"),
+      .oneOf(["Cash", "Momo", "VNPay", "ZaloPay", "Visa"], "Invalid payment method"),
+
+    cardType: Yup.string().when("paymentMethod", {
+      is: "Visa",
+      then: (schema) =>
+        schema.required("Please select a card type").oneOf(["visa", "mastercard", "jcb", "unionpay"]),
+      otherwise: (schema) => schema.notRequired(),
+    }),
   });
 
   if (isRedirecting) {
@@ -330,6 +337,7 @@ const ConfirmTicketsPage = () => {
           convertToTicket: "Disagree",
           promotionCode: "",
           paymentMethod: "",
+          cardType: "",
         }}
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
@@ -388,6 +396,14 @@ function ConfirmFormBody({
       member?.score
     ]
   );
+
+  // Các loại thẻ hỗ trợ
+  const CARD_TYPES = [
+    { value: "visa", label: "Visa" },
+    { value: "mastercard", label: "MasterCard" },
+    { value: "jcb", label: "JCB" },
+    { value: "unionpay", label: "UnionPay" },
+  ];
 
   return (
     <Form>
@@ -613,6 +629,28 @@ function ConfirmFormBody({
                 value={values.paymentMethod}
                 onChange={val => setFieldValue('paymentMethod', val)}
               />
+              {/* Nếu chọn Visa thì show lựa chọn loại thẻ */}
+              {values.paymentMethod === "Visa" && (
+                <div className="mt-4">
+                  <label className="font-semibold mb-2 block">Select Card Type: <span className="text-red-500">*</span></label>
+                  <div className="lg:flex lg:gap-4 grid grid-cols-2 gap-2">
+                    {CARD_TYPES.map(card => (
+                      <label key={card.value} className={`border rounded-lg px-4 py-2 cursor-pointer flex items-center gap-2 ${values.cardType === card.value ? "bg-purple-100 border-purple-500" : "hover:border-purple-300"}`}>
+                        <Field
+                          type="radio"
+                          name="cardType"
+                          value={card.value}
+                          checked={values.cardType === card.value}
+                          onChange={() => setFieldValue("cardType", card.value)}
+                          
+                        />
+                        {card.label}
+                      </label>
+                    ))}
+                  </div>
+                  {!values.cardType && <div className="text-red-500 text-sm mt-1">Please select a card type</div>}
+                </div>
+              )}
             </div>
             {/* PriceSummary inline */}
             <div className="bg-white p-4 rounded-lg mb-6">
