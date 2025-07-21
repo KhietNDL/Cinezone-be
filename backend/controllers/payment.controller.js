@@ -4,6 +4,8 @@ const axios = require('axios');
 const crypto = require('crypto');
 const CryptoJS = require('crypto-js');
 const { BOOKING_STATUS, PAYMENT_STATUS } = require('../utils/constants');
+const Booking = require('../models/booking.model');
+const OrderProduct = require('../models/orderProduct.model');
 const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -35,9 +37,48 @@ const confirmPayment = async (req, res) => {
 
     await Payment.updatePaymentStatus(paymentId, PAYMENT_STATUS.COMPLETED, req.user ? req.user.UserId : null);
 
+    // Cập nhật trạng thái booking nếu có
+    let bookingDetail = null;
     if (payment.BookingId) {
-      const Booking = require('../models/booking.model');
       await Booking.updateStatus(payment.BookingId, BOOKING_STATUS.PAID, payment.Amount);
+      await Booking.confirmBooking(payment.BookingId);
+      bookingDetail = await Booking.getBookingDetail(payment.BookingId);
+    }
+
+    // Cập nhật trạng thái orderProduct nếu có
+    let orderProductDetail = null;
+    if (payment.OrderProductId) {
+      await OrderProduct.confirmOrder(payment.OrderProductId);
+      orderProductDetail = await OrderProduct.getOrderProductDetail(payment.OrderProductId);
+    }
+
+    // Gửi notification realtime (chỉ 1 lần, gồm cả booking và orderProduct nếu có)
+    const io = global._io;
+    // Sử dụng MemberId từ bookingDetail nếu có, fallback về payment.CreatedBy
+    const notifyUserId = bookingDetail?.MemberId || payment.CreatedBy;
+    if (io && notifyUserId) {
+      io.to(notifyUserId).emit('notification', {
+        type: bookingDetail && orderProductDetail ? 'combo'
+          : bookingDetail ? 'booking'
+          : orderProductDetail ? 'order'
+          : 'payment',
+        paymentId: payment.PaymentId,
+        movieNameEnglish: bookingDetail?.movieNameEnglish || bookingDetail?.movieNameVN || undefined,
+        orderProductId: orderProductDetail?.orderProductId,
+        productName: orderProductDetail?.products?.[0]?.productName,
+        status: PAYMENT_STATUS.COMPLETED,
+        message: bookingDetail && orderProductDetail
+          ? `${getBookingMessage(bookingDetail.status)} & ${getOrderMessage(orderProductDetail.status)}`
+          : bookingDetail
+            ? getBookingMessage(bookingDetail.status)
+            : orderProductDetail
+              ? getOrderMessage(orderProductDetail.status)
+              : getPaymentMessage(PAYMENT_STATUS.COMPLETED),
+        createdAt: payment.CreatedAt,
+        scoreValue: bookingDetail?.pointUse ? -bookingDetail.pointUse : 0,
+        bookingStatus: bookingDetail?.status,
+        orderStatus: orderProductDetail?.status,
+      });
     }
 
     res.status(200).json({
@@ -75,7 +116,6 @@ const processOfflinePayment = async (req, res) => {
     // Lấy thông tin booking và orderProduct nếu có
     let booking, orderProduct;
     if (bookingId) {
-      const Booking = require('../models/booking.model');
       booking = await Booking.getBookingById(bookingId);
       if (!booking) {
         return res.status(404).json({ error: "Booking not found" });
@@ -83,7 +123,6 @@ const processOfflinePayment = async (req, res) => {
     }
     let orderTotal = 0;
     if (orderProductId) {
-      const OrderProduct = require('../models/orderProduct.model');
       orderProduct = await OrderProduct.getById(orderProductId);
       if (!orderProduct) {
         return res.status(404).json({ error: "Order product not found" });
@@ -122,7 +161,6 @@ const processOfflinePayment = async (req, res) => {
 
     // Xử lý booking nếu có
     if (bookingId) {
-      const Booking = require('../models/booking.model');
       bookingCheck = await Booking.updateStatus(bookingId, BOOKING_STATUS.PAID, booking.TotalAmount);
 
       if (bookingCheck.success && bookingCheck.updated === false) {
@@ -133,7 +171,6 @@ const processOfflinePayment = async (req, res) => {
           { PaymentReference: "Booking already paid" }
         );
         if (orderProductId) {
-          const OrderProduct = require('../models/orderProduct.model');
           await OrderProduct.cancelOrder(orderProductId);
         }
         return res.status(400).json({
@@ -151,7 +188,6 @@ const processOfflinePayment = async (req, res) => {
           { failReason: bookingCheck.message }
         );
         if (orderProductId) {
-          const OrderProduct = require('../models/orderProduct.model');
           await OrderProduct.cancelOrder(orderProductId);
         }
         return res.status(400).json({ error: bookingCheck.message });
@@ -163,7 +199,6 @@ const processOfflinePayment = async (req, res) => {
 
     // Xử lý orderProduct nếu có
     if (orderProductId) {
-      const OrderProduct = require('../models/orderProduct.model');
       try {
         await OrderProduct.confirmOrder(orderProductId);
         orderStatus = "PAID";
@@ -220,14 +255,12 @@ const initMomoPayment = async (req, res) => {
     let booking, orderProduct;
     let orderTotal = 0;
     if (bookingId) {
-      const Booking = require('../models/booking.model');
       booking = await Booking.getBookingById(bookingId);
       if (!booking) {
         return res.status(404).json({ error: "Booking not found" });
       }
     }
     if (orderProductId) {
-      const OrderProduct = require('../models/orderProduct.model');
       orderProduct = await OrderProduct.getById(orderProductId);
       if (!orderProduct) {
         return res.status(404).json({ error: "Order product not found" });
@@ -396,7 +429,6 @@ const handleMomoCallback = async (req, res) => {
         PAYMENT_STATUS.COMPLETED
       );
 
-      const Booking = require('../models/booking.model');
       const bookingCheck = await Booking.updateStatus(
         bookingId,
         BOOKING_STATUS.PAID,
@@ -417,7 +449,6 @@ const handleMomoCallback = async (req, res) => {
         PAYMENT_STATUS.FAILED
       );
 
-      const Booking = require('../models/booking.model');
       await Booking.updateStatus(bookingId, BOOKING_STATUS.PAYMENT_FAILED);
 
       res.status(200).json({
@@ -470,7 +501,6 @@ const verifyMomoPayment = async (req, res) => {
 
       // Cập nhật booking status
       if (payment.BookingId) {
-        const Booking = require('../models/booking.model');
         await Booking.updateStatus(payment.BookingId, BOOKING_STATUS.PAID, payment.Amount);
       }
     } else {
@@ -522,6 +552,25 @@ const getPaymentStatus = async (req, res) => {
   } catch (error) {
     console.error("Get payment status error:", error);
     res.status(500).json({ error: error.message });
+  }
+};
+
+const getMemberHistory = async (req, res) => {
+  try {
+    const memberId = req.query.memberId || req.user?.UserId;
+    if (!memberId) return res.status(400).json({ error: "memberId is required" });
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const sortBy = req.query.sortBy || "CreatedAt";
+    const sortOrder = req.query.sortOrder || "desc";
+
+    const result = await Payment.getMemberHistory(memberId, { page, limit, sortBy, sortOrder });
+
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
   }
 };
 
@@ -796,8 +845,35 @@ module.exports = {
   initMomoPayment,
   handleMomoCallback,
   getPaymentStatus,
+  getMemberHistory,
   initZaloPayPayment,
   zaloPayCallback,
   confirmPayment,
   createStripeTestPaymentIntent
 };
+
+// Helper functions (có thể đặt ở đầu file hoặc import từ utils)
+function getBookingMessage(status) {
+  switch (status) {
+    case 2: return "Your ticket has been confirmed";
+    case 3: return "Your ticket has been checked in";
+    case 4: return "Your ticket has been cancelled";
+    default: return "Your booking status has changed";
+  }
+}
+function getOrderMessage(status) {
+  switch (status) {
+    case 2: return "Your order has been completed";
+    case 3: return "Your order is being processed";
+    case 4: return "Your order has been cancelled";
+    default: return "Your order status has changed";
+  }
+}
+function getPaymentMessage(status) {
+  switch (status) {
+    case "completed": return "Payment completed successfully";
+    case "pending": return "Payment is being processed";
+    case "failed": return "Payment failed";
+    default: return "Payment status has changed";
+  }
+}

@@ -90,8 +90,8 @@ export default function ComboPage() {
      };
 
     const filteredCombos = products.filter(c =>
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        (c.description && c.description.toLowerCase().includes(search.toLowerCase()))
+        c.name.toLowerCase().includes(search.toLowerCase()) 
+        // || (c.description && c.description.toLowerCase().includes(search.toLowerCase()))
     );
 
     const handleCheckout = async () => {
@@ -120,9 +120,9 @@ export default function ComboPage() {
             width: 190,
             render: (qty, record) => (
                 <Space>
-                    <Button style={{ backgroundColor: '#7254EF', color: "white" }} icon={<MinusOutlined />} size="small" onClick={() => handleQuantity(record.id, -1)} />
+                    <Button style={{ backgroundColor: '#7254EF', color: "white" }} icon={<MinusOutlined />} size="small" onClick={() => handleQuantity(record.id, -1)} data-testid={`decrease-${record.id}`}/>
                     <span>{qty}</span>
-                    <Button style={{ backgroundColor: '#7254EF', color: "white" }} icon={<PlusOutlined />} size="small" onClick={() => handleQuantity(record.id, 1)} />
+                    <Button style={{ backgroundColor: '#7254EF', color: "white" }} icon={<PlusOutlined />} size="small" onClick={() => handleQuantity(record.id, 1)} data-testid={`increase-${record.id}`}/>
                 </Space>
             ),
         },
@@ -146,6 +146,7 @@ export default function ComboPage() {
                     danger
                     type="text"
                     onClick={() => handleRemove(record.id)}
+                    data-testid={`remove-${record.id}`}
                 />
             ),
         },
