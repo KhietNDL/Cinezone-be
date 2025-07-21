@@ -8,6 +8,7 @@ const Booking = require('../models/booking.model');
 const OrderProduct = require('../models/orderProduct.model');
 const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+const bookingController = require('./booking.controller');
 
 const getPaymentMethods = async (req, res) => {
   try {
@@ -41,7 +42,8 @@ const confirmPayment = async (req, res) => {
     let bookingDetail = null;
     if (payment.BookingId) {
       await Booking.updateStatus(payment.BookingId, BOOKING_STATUS.PAID, payment.Amount);
-      await Booking.confirmBooking(payment.BookingId);
+      // Gọi controller để xử lý logic điểm/membership/email
+      await bookingController.confirmBooking({ params: { bookingId: payment.BookingId } }, { json: () => {} });
       bookingDetail = await Booking.getBookingDetail(payment.BookingId);
     }
 
@@ -75,7 +77,11 @@ const confirmPayment = async (req, res) => {
               ? getOrderMessage(orderProductDetail.status)
               : getPaymentMessage(PAYMENT_STATUS.COMPLETED),
         createdAt: payment.CreatedAt,
-        scoreValue: bookingDetail?.pointUse ? -bookingDetail.pointUse : 0,
+        scoreValue: bookingDetail?.pointEarn
+          ? bookingDetail.pointEarn
+          : bookingDetail?.pointUse
+            ? -bookingDetail.pointUse
+            : 0,
         bookingStatus: bookingDetail?.status,
         orderStatus: orderProductDetail?.status,
       });
