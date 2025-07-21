@@ -1,5 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { BlogList } from "../../../../cosmic/blocks/blog/BlogList";
 
 const blogData = [
   {
@@ -52,35 +54,19 @@ const blogData = [
 const BlogPage = () => {
   const navigate = useNavigate();
 
+  const query = { type: "posts" };
+
   const handleBlogClick = (id) => {
     navigate(`/blog/${id}`);
   };
 
   return (
-    <div className="pt-24 pb-15 px-4 min-h-screen bg-slate-900">
-      <h1 className="text-3xl font-bold text-white mb-8 text-center">Blog</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {blogData.map((blog) => (
-          <div
-            key={blog.id}
-            className="bg-slate-800 rounded-xl shadow-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform"
-            onClick={() => handleBlogClick(blog.id)}
-          >
-            <img
-              src={blog.image}
-              alt={blog.title}
-              className="w-full h-56 object-cover"
-            />
-            <div className="p-4">
-              <h2 className="text-xl font-bold text-white mb-2">
-                {blog.title}
-              </h2>
-              <p className="text-gray-300 text-sm mb-2">{blog.summary}</p>
-              <div className="text-xs text-gray-400">{blog.date}</div>
-            </div>
-          </div>
-        ))}
-      </div>
+    <div className="container mx-auto py-8">
+      <h1 className="text-3xl font-bold mb-8 text-center">Blog</h1>
+      <BlogList 
+        query={query}
+        className="px-4"
+      />
     </div>
   );
 };
