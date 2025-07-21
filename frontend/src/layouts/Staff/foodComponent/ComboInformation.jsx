@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button, Image, Table } from 'antd';
 import { FaPlus, FaRedo, FaTimes } from "react-icons/fa";
 import { CheckCircleTwoTone, CloseCircleTwoTone } from "@ant-design/icons";
@@ -12,13 +12,11 @@ import { toast } from 'react-toastify';
 export default function ComboInformation() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { search } = useLocation();
 
-  const params = new URLSearchParams(window.location.search);
+  const params = new URLSearchParams(search);
   const momoResult = params.get('resultCode');
-  let status = "success";
-  if (momoResult) {
-    status = momoResult === "0" ? "success" : "error";
-  }
+  const status = momoResult ? momoResult === "0" ? "success" : "error" : "success";
 
   const cart = useSelector(state => state.combo.cart) || [];
   const orderProductId = useSelector(state => state.combo.orderProductId);
@@ -38,11 +36,12 @@ export default function ComboInformation() {
     }
   };
 
-  const statusInfo = statusMap[status] || statusMap.success;
+  const statusInfo = statusMap[status];
 
+  console.log("Query string:", search);
+  console.log("Result code:", momoResult);
   console.log("Combo Information:", cart, "Status:", status);
 
-  // Xử lý nút
   const handleNewCombo = () => {
     dispatch(clearComboCart());
     dispatch(clearOrderInfo());
@@ -67,7 +66,6 @@ export default function ComboInformation() {
     }
   }, [orderProductId, navigate]);
 
-  // Table columns
   const columns = [
     {
       title: 'Image',
@@ -103,15 +101,11 @@ export default function ComboInformation() {
 
   return (
     <div className="p-4 w-full mx-auto bg-white">
-      {/* Header */}
       <div className="text-center py-8">
         {statusInfo.icon}
         <h1 className={`text-3xl font-bold mt-4 ${statusInfo.color}`}>{statusInfo.title}</h1>
       </div>
-
-      {/* Main Content */}
       <div className="flex flex-col gap-6 mt-6 items-center">
-        {/* Combo Details Table */}
         <div className="rounded-xl border border-gray-300 shadow-xl bg-white p-6 w-full">
           <h2 className="text-xl font-bold mb-4">Combo Details</h2>
           <Table
@@ -127,8 +121,6 @@ export default function ComboInformation() {
             Total Amount: <span className="ml-2 text-green-600">{formatPrice(totalPrice)} VNĐ</span>
           </div>
         </div>
-
-        {/* Actions */}
         <div className="flex justify-center gap-4 mt-6">
           {status === "error" ? (
             <Button

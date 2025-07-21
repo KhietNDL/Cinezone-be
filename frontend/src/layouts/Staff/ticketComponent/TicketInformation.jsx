@@ -6,7 +6,7 @@ import { FaTicket, FaCouch, FaLocationDot, FaUser, FaPhone, FaCalendarDays, FaEn
 import { IoReloadOutline, IoTicketSharp, IoTime } from "react-icons/io5";
 import { RiFilmAiFill, RiMovie2AiFill, RiDiscountPercentFill } from "react-icons/ri";
 import { FaMoneyBillWave, FaIdCard, FaRegEye } from "react-icons/fa";
-import { confirmBooking, checkInfoBookingById, cancelBookingById, getUserByPhone, getMovieById } from "../../../services/APIForStaff/API";
+import { confirmBooking, checkInfoBookingById, cancelBookingById, getUserByPhone, getMovieById, confirmPayment } from "../../../services/APIForStaff/API";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useDispatch, useSelector } from 'react-redux';
@@ -51,11 +51,22 @@ const TicketInformation = () => {
   const processPaymentResult = useCallback(async () => {
     try {
       const params = new URLSearchParams(window.location.search);
-      const resultCode = params.get('resultCode');
-      const bookingId = bookingData?.bookingId || params.get('orderId')?.split('_')[1] || params.get('bookingId');
+      const resultCode = params.get('resultCode') || params.get('status');
+      let bookingId = params.get('bookingId') || bookingData?.bookingId;
+      let paymentId = params.get('paymentId') || bookingData?.paymentId;
 
-      if (!bookingId) {
-        throw new Error("Missing booking ID");
+      if (!bookingId || !paymentId) {
+        const extraData = params.get('extraData');
+        if (extraData) {
+          try {
+            const decoded = decodeURIComponent(extraData);
+            const extra = JSON.parse(decoded);
+            bookingId = extra.bookingId || bookingId;
+            paymentId = extra.paymentId || paymentId;
+          } catch (e) {
+            console.error("Failed to parse extraData:", e);
+          }
+        }
       }
 
       //Bước 1: Luôn fetch thông tin booking trước
@@ -72,8 +83,14 @@ const TicketInformation = () => {
 
       // Bước 2: Xác định trạng thái thanh toán
       if (resultCode) {
-        if (resultCode === '0') {
+        if (resultCode === '0' || resultCode === '1') {
           try {
+            // await confirmPayment();
+            if (paymentId) {
+              await confirmPayment(paymentId);
+              console.log("Payment confirmed successfully");
+            }
+            // Gọi confirmBooking
             await confirmBooking(bookingId);
             setPaymentStatus('success');
             toast.success("Payment successful!");
@@ -88,6 +105,11 @@ const TicketInformation = () => {
       } else {
         // Thanh toán tiền mặt hoặc truy cập trực tiếp
         setPaymentStatus(res?.status === 2 ? 'success' : 'error');
+        console.log("PaymentId:", paymentId)
+        if (paymentId) {
+          await confirmPayment(paymentId);
+          console.log("Payment confirmed successfully");
+        }
       }
 
     } catch (error) {
