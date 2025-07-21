@@ -80,13 +80,19 @@ jest.mock("antd", () => {
           <div data-testid="table-empty">{locale?.emptyText || "No data"}</div>
         ) : (
           dataSource.map((record) => (
-            <div key={record[rowKey]} data-testid={`row-${record[rowKey]}`} role="row">
+            <div
+              key={record[rowKey]}
+              data-testid={`row-${record[rowKey]}`}
+              role="row"
+            >
               {columns.map((col) => (
                 <div
                   key={`${record[rowKey]}-${col.title}`}
                   data-testid={`cell-${record[rowKey]}-${col.title}`}
                 >
-                  {col.render ? col.render(record[col.dataIndex], record) : record[col.dataIndex]}
+                  {col.render
+                    ? col.render(record[col.dataIndex], record)
+                    : record[col.dataIndex]}
                 </div>
               ))}
             </div>
@@ -97,7 +103,10 @@ jest.mock("antd", () => {
   };
 });
 
-const renderWithProvider = (ui, preloadedState = { combo: { cart: [], orderProductId: null } }) => {
+const renderWithProvider = (
+  ui,
+  preloadedState = { combo: { cart: [], orderProductId: null } }
+) => {
   const store = configureStore({
     reducer: {
       combo: comboReducer,
@@ -128,7 +137,8 @@ describe("ComboInformation", () => {
             name: "Coca-Cola Classic (Large)",
             price: 25000,
             quantity: 1,
-            image: "https://storage.googleapis.com/movie-c96b6.firebasestorage.app/products/1752475085507-images.jpg",
+            image:
+              "https://storage.googleapis.com/movie-c96b6.firebasestorage.app/products/17524750...es.jpg",
           },
         ],
         orderProductId: "order-123",
@@ -138,25 +148,39 @@ describe("ComboInformation", () => {
     renderWithProvider(<ComboInformation />, storeWithCart);
 
     expect(screen.getByText("Payment Successfully")).toBeInTheDocument();
-    expect(screen.getByText("Payment Successfully")).toHaveClass("text-green-600");
+    expect(screen.getByText("Payment Successfully")).toHaveClass(
+      "text-green-600"
+    );
     expect(screen.getByTestId("mock-antd-table")).toBeInTheDocument();
 
-    expect(screen.getByTestId("row-9f6cb2df-687e-4424-a125-6aa82792e38c")).toBeInTheDocument();
-    expect(screen.getByTestId("cell-9f6cb2df-687e-4424-a125-6aa82792e38c-Name")).toHaveTextContent(
-      "Coca-Cola Classic (Large)"
-    );
-    expect(screen.getByTestId("cell-9f6cb2df-687e-4424-a125-6aa82792e38c-Quantity")).toHaveTextContent("1");
-    expect(screen.getByTestId("cell-9f6cb2df-687e-4424-a125-6aa82792e38c-Unit Price")).toHaveTextContent(
-      "25.000 VNĐ"
-    );
-    expect(screen.getByTestId("cell-9f6cb2df-687e-4424-a125-6aa82792e38c-Total")).toHaveTextContent("25.000 VNĐ");
+    expect(
+      screen.getByTestId("row-9f6cb2df-687e-4424-a125-6aa82792e38c")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId("cell-9f6cb2df-687e-4424-a125-6aa82792e38c-Name")
+    ).toHaveTextContent("Coca-Cola Classic (Large)");
+    expect(
+      screen.getByTestId("cell-9f6cb2df-687e-4424-a125-6aa82792e38c-Quantity")
+    ).toHaveTextContent("1");
+    expect(
+      screen.getByTestId("cell-9f6cb2df-687e-4424-a125-6aa82792e38c-Unit Price")
+    ).toHaveTextContent("25.000 VNĐ");
+    expect(
+      screen.getByTestId("cell-9f6cb2df-687e-4424-a125-6aa82792e38c-Total")
+    ).toHaveTextContent("25.000 VNĐ");
 
     expect(screen.getByText(/Total Amount:/i)).toBeInTheDocument();
-    expect(screen.getByText("25.000 VNĐ", { selector: ".text-green-600" })).toBeInTheDocument();
+    expect(
+      screen.getByText("25.000 VNĐ", { selector: ".text-green-600" })
+    ).toBeInTheDocument();
 
-    expect(screen.getByRole("button", { name: /New Combo/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /New Combo/i })
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Cancel/i })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Try Again/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Try Again/i })
+    ).not.toBeInTheDocument();
   });
 
   it("renders error state with try again button", async () => {
@@ -169,7 +193,8 @@ describe("ComboInformation", () => {
             name: "Coca-Cola Classic (Large)",
             price: 25000,
             quantity: 1,
-            image: "https://storage.googleapis.com/movie-c96b6.firebasestorage.app/products/1752475085507-images.jpg",
+            image:
+              "https://storage.googleapis.com/movie-c96b6.firebasestorage.app/products/17524750...es.jpg",
           },
         ],
         orderProductId: "order-123",
@@ -184,14 +209,24 @@ describe("ComboInformation", () => {
     expect(screen.getByText("Payment Failed")).toHaveClass("text-red-600");
 
     expect(screen.getByTestId("mock-antd-table")).toBeInTheDocument();
-    expect(screen.getByTestId("row-9f6cb2df-687e-4424-a125-6aa82792e38c")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("row-9f6cb2df-687e-4424-a125-6aa82792e38c")
+    ).toBeInTheDocument();
 
     expect(screen.getByText(/Total Amount:/i)).toBeInTheDocument();
-    expect(screen.getByText("25.000 VNĐ", { selector: ".text-green-600" })).toBeInTheDocument();
+    expect(
+      screen.getByText("25.000 VNĐ", { selector: ".text-green-600" })
+    ).toBeInTheDocument();
 
-    expect(screen.getByRole("button", { name: /Try Again/i })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /New Combo/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Cancel/i })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Try Again/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /New Combo/i })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Cancel/i })
+    ).not.toBeInTheDocument();
   });
 
   it("renders empty cart with no data in table", async () => {
@@ -210,9 +245,13 @@ describe("ComboInformation", () => {
     expect(screen.getByText("No combos in cart.")).toBeInTheDocument();
 
     expect(screen.getByText(/Total Amount:/i)).toBeInTheDocument();
-    expect(screen.getByText("0 VNĐ", { selector: ".text-green-600" })).toBeInTheDocument();
+    expect(
+      screen.getByText("0 VNĐ", { selector: ".text-green-600" })
+    ).toBeInTheDocument();
 
-    expect(screen.getByRole("button", { name: /New Combo/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /New Combo/i })
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Cancel/i })).toBeInTheDocument();
   });
 
@@ -226,7 +265,8 @@ describe("ComboInformation", () => {
             name: "Coca-Cola Classic (Large)",
             price: 25000,
             quantity: 1,
-            image: "https://storage.googleapis.com/movie-c96b6.firebasestorage.app/products/1752475085507-images.jpg",
+            image:
+              "https://storage.googleapis.com/movie-c96b6.firebasestorage.app/products/17524750...es.jpg",
           },
         ],
         orderProductId: "order-123",
@@ -250,7 +290,8 @@ describe("ComboInformation", () => {
             name: "Coca-Cola Classic (Large)",
             price: 25000,
             quantity: 1,
-            image: "https://storage.googleapis.com/movie-c96b6.firebasestorage.app/products/1752475085507-images.jpg",
+            image:
+              "https://storage.googleapis.com/movie-c96b6.firebasestorage.app/products/17524750...es.jpg",
           },
         ],
         orderProductId: "order-123",
@@ -274,7 +315,8 @@ describe("ComboInformation", () => {
             name: "Coca-Cola Classic (Large)",
             price: 25000,
             quantity: 1,
-            image: "https://storage.googleapis.com/movie-c96b6.firebasestorage.app/products/1752475085507-images.jpg",
+            image:
+              "https://storage.googleapis.com/movie-c96b6.firebasestorage.app/products/17524750...es.jpg",
           },
         ],
         orderProductId: "order-123",
@@ -289,8 +331,12 @@ describe("ComboInformation", () => {
 
     await waitFor(() => {
       expect(api.cancelProductsById).toHaveBeenCalledWith("order-123");
-      expect(toast.info).toHaveBeenCalledWith("Previous booking cancelled. Please try again.");
-      expect(mockNavigate).toHaveBeenCalledWith("/staff/combo-selling/checkout");
+      expect(toast.info).toHaveBeenCalledWith(
+        "Previous booking cancelled. Please try again."
+      );
+      expect(mockNavigate).toHaveBeenCalledWith(
+        "/staff/combo-selling/checkout"
+      );
     });
   });
 
@@ -304,14 +350,17 @@ describe("ComboInformation", () => {
             name: "Coca-Cola Classic (Large)",
             price: 25000,
             quantity: 1,
-            image: "https://storage.googleapis.com/movie-c96b6.firebasestorage.app/products/1752475085507-images.jpg",
+            image:
+              "https://storage.googleapis.com/movie-c96b6.firebasestorage.app/products/17524750...es.jpg",
           },
         ],
         orderProductId: "order-123",
       },
     };
 
-    api.cancelProductsById.mockRejectedValueOnce(new Error("Cancellation failed"));
+    api.cancelProductsById.mockRejectedValueOnce(
+      new Error("Cancellation failed")
+    );
 
     renderWithProvider(<ComboInformation />, storeWithCart);
 
@@ -319,8 +368,12 @@ describe("ComboInformation", () => {
 
     await waitFor(() => {
       expect(api.cancelProductsById).toHaveBeenCalledWith("order-123");
-      expect(toast.error).toHaveBeenCalledWith("Failed to cancel previous booking");
-      expect(mockNavigate).toHaveBeenCalledWith("/staff/combo-selling/checkout");
+      expect(toast.error).toHaveBeenCalledWith(
+        "Failed to cancel previous booking"
+      );
+      expect(mockNavigate).toHaveBeenCalledWith(
+        "/staff/combo-selling/checkout"
+      );
     });
   });
   // it("shows error UI and allows retry", async () => {

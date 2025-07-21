@@ -249,7 +249,7 @@ const EditAccount = () => {
                 <div className="w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-full overflow-hidden border-4 border-white shadow-lg ring-4 ring-purple-300/30">
                   {renderProfileImage()}
                 </div>
-                <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 w-4 h-4 sm:w-6 sm:h-6 bg-green-400 rounded-full border-2 sm:border-3 border-white"></div>
+                {/* <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 w-4 h-4 sm:w-6 sm:h-6 bg-green-400 rounded-full border-2 sm:border-3 border-white"></div> */}
                 {isEditing && (
                   <button
                     type="button"
@@ -358,6 +358,14 @@ const EditAccount = () => {
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center p-3 bg-white rounded-lg shadow-sm">
                       <span className="font-semibold text-purple-700 flex-shrink-0 mr-0 sm:mr-2 mb-1 sm:mb-0 text-sm sm:text-base">
+                        Address:
+                      </span>
+                      <span className="text-gray-700 text-sm sm:text-base break-words">
+                        {profileData.address || "Not updated"}
+                      </span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center p-3 bg-white rounded-lg shadow-sm">
+                      <span className="font-semibold text-purple-700 flex-shrink-0 mr-0 sm:mr-2 mb-1 sm:mb-0 text-sm sm:text-base">
                         Date of Birth:
                       </span>
                       <span className="text-gray-700 text-sm sm:text-base">
@@ -418,6 +426,14 @@ const EditAccount = () => {
                       </span>
                       <span className="text-gray-700 text-sm sm:text-base">
                         {profileData.phoneNumber || "Not updated"}
+                      </span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center p-3 bg-white rounded-lg shadow-sm">
+                      <span className="font-semibold text-indigo-700 flex-shrink-0 mr-0 sm:mr-2 mb-1 sm:mb-0 text-sm sm:text-base">
+                        CCCD:
+                      </span>
+                      <span className="text-gray-700 text-sm sm:text-base">
+                        {profileData.cccd || "Not updated"}
                       </span>
                     </div>
                   </div>
@@ -515,18 +531,36 @@ const EditAccount = () => {
                       <label className="block text-sm font-semibold text-purple-700 mb-2">
                         Sex
                       </label>
-                      <select
-                        name="sex"
-                        value={editData.sex}
-                        onChange={handleInputChange}
-                        className="w-full p-3 sm:p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm outline-none text-sm sm:text-base"
-                        disabled={updateLoading}
-                      >
-                        <option value="">Select gender</option>
-                        <option value="2">Male</option>
-                        <option value="1">Female</option>
-                        <option value="3">Other</option>
-                      </select>
+                      <div className="relative">
+                        <select
+                          name="sex"
+                          value={editData.sex}
+                          onChange={handleInputChange}
+                          className="w-full p-3 sm:p-4 border-2 border-purple-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm outline-none text-sm sm:text-base appearance-none"
+                          disabled={updateLoading}
+                        >
+                          <option value="">Select gender</option>
+                          <option value="2">Male</option>
+                          <option value="1">Female</option>
+                          <option value="3">Other</option>
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-purple-700">
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M19 9l-7 7-7-7"
+                            ></path>
+                          </svg>
+                        </div>
+                      </div>
                     </div>
                   </div>
 

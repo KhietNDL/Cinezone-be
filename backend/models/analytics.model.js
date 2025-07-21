@@ -100,6 +100,46 @@ class Analytics {
         const [rows] = await db.promise().query(sql);
         return rows;
     }
+
+    static async countTicketsByDate({ type = 'day', year, month }) {
+        let groupBy, dateCondition = '', params = [];
+        
+        if (type === 'day') {
+            groupBy = 'DATE(b.BookingDate)';
+            dateCondition = 'YEAR(b.BookingDate) = ? AND MONTH(b.BookingDate) = ?';
+            params = [year, month];
+        } else if (type === 'month') {
+            groupBy = 'YEAR(b.BookingDate), MONTH(b.BookingDate)';
+            dateCondition = 'YEAR(b.BookingDate) = ?';
+            params = [year];
+        } else if (type === 'year') {
+            groupBy = 'YEAR(b.BookingDate)';
+            dateCondition = '1=1';
+            params = [];
+        } else {
+            throw new Error('Invalid type');
+        }
+
+        const sql = `
+            SELECT ${groupBy} as period, COUNT(t.TicketId) as total
+            FROM Tickets t
+            JOIN Bookings b ON t.BookingId = b.BookingId
+            WHERE t.IsDeleted = 0 AND b.Status IN (2,3) AND ${dateCondition}
+            GROUP BY ${groupBy}
+            ORDER BY period ASC
+        `;
+        const [rows] = await db.promise().query(sql, params);
+
+        // Chỉ normalize khi thống kê theo ngày
+        if (type === 'day') {
+            const { normalizeDate } = require("../middlewares/showtime.validator");
+            return rows.map(row => ({
+                ...row,
+                period: normalizeDate(row.period)
+            }));
+        }
+        return rows;
+    }
 }
 
 module.exports = Analytics;

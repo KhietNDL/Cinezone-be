@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, Film, Star } from "lucide-react";
 import imageLogin1 from "../../assets/imageLogin1.jpg";
@@ -11,6 +12,7 @@ import { useAuth } from "../../context/AuthContext";
 import { register } from "../../services/API";
 import { auth } from "../../config/firebase";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { getCurrentMovies } from "../../services/API";
 
 const RegistrationForm = () => {
   // eslint-disable-next-line no-unused-vars
@@ -19,6 +21,12 @@ const RegistrationForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [currentBgIndex, setCurrentBgIndex] = useState(0);
+  const [movieBackgrounds, setMovieBackgrounds] = useState([
+    imageLogin1,
+    imageLogin2,
+    imageLogin3,
+    imageLogin4,
+  ]);
   const navigate = useNavigate();
   // eslint-disable-next-line no-unused-vars
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -32,13 +40,43 @@ const RegistrationForm = () => {
     cccd: "",
   });
   const signIn = useAuth();
-  const movieBackgrounds = [imageLogin1, imageLogin2, imageLogin3, imageLogin4];
+
+  useEffect(() => {
+    const fetchPosters = async () => {
+      try {
+        const data = await getCurrentMovies();
+        // Lấy poster từ API, fallback nếu không có
+        const posters = data?.data
+          ?.map((movie) => {
+            if (!movie.PosterImage) return null;
+            if (movie.PosterImage.startsWith("http")) return movie.PosterImage;
+            return `http://cinezone:4458${movie.PosterImage}`;
+          })
+          .filter(Boolean);
+        setMovieBackgrounds(
+          posters && posters.length > 0
+            ? posters
+            : [imageLogin1, imageLogin2, imageLogin3, imageLogin4]
+        );
+      } catch (error) {
+        // eslint-disable-next-line no-unused-vars
+        setMovieBackgrounds([
+          imageLogin1,
+          imageLogin2,
+          imageLogin3,
+          imageLogin4,
+        ]);
+      }
+    };
+    fetchPosters();
+  }, []);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentBgIndex((prev) => (prev + 1) % movieBackgrounds.length);
     }, 6000);
     return () => clearInterval(interval);
-  }, []);
+  }, [movieBackgrounds.length]);
 
   const getPasswordStrength = (password) => {
     let strength = 0;

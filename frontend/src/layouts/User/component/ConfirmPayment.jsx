@@ -1,13 +1,15 @@
-import { useLocation, useNavigate } from "react-router-dom";
+import { Await, useLocation, useNavigate } from "react-router-dom";
 import { FaStar, FaRegClock, FaCalendarAlt, FaHeart } from "react-icons/fa";
 import { RiMovie2AiLine } from "react-icons/ri";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
-import { getPromotionByTitle, HoldingSeats, cancelBooking, holdProducts } from "../../../services/API";
-import { useSelector } from "react-redux";
+import { getPromotionByTitle, HoldingSeats, cancelBooking, holdProducts, getMembership } from "../../../services/API";
+import { useDispatch, useSelector } from "react-redux";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import StripeCheckoutForm from "./StripeCheckoutForm";
+import { setBookingId } from "../../../redux/features/bookingSlice";
+import MembershipProgress from "../bookingComponent/MembershipProgress";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 
@@ -22,6 +24,9 @@ const ConfirmPayment = () => {
   const [stripePaymentId, setStripePaymentId] = useState(null);
   const [stripeLoading, setStripeLoading] = useState(false);
   const [stripeError, setStripeError] = useState("");
+
+  //MEMbership 
+  const [userDiscount,setUserDiscount]=useState(0);
 
   // Promotion states
   const [promoCode, setPromoCode] = useState('');
@@ -40,10 +45,12 @@ const ConfirmPayment = () => {
   const [discountedSeatPrice, setDiscountedSeatPrice] = useState(0); // Giá ghế sau giảm
   const [finalPrice, setFinalPrice] = useState(0); // Tổng cuối = ghế đã giảm + product gốc
   const [discountAmount, setDiscountAmount] = useState(0);
-  const [discountType, setDiscountType] = useState(''); // 'promotion' or 'points'
+  const [discountType, setDiscountType] = useState('');
+  const [memberPoints, setMemberPoints] = useState(0); // 'promotion' or 'points'
 
   // Loading state for confirm button
   const [isConfirming, setIsConfirming] = useState(false);
+  const dispatch = useDispatch();
 
   const {
     movie,
@@ -54,7 +61,8 @@ const ConfirmPayment = () => {
     selectedTime,
     finalTotalPrice,
     selectedShowtimeId,
-    product, // Product data from Redux
+    product,
+    bookingId,
   } = useSelector((state) => state.booking);
 
   // Calculate product total for display
@@ -66,15 +74,20 @@ const ConfirmPayment = () => {
   useEffect(() => {
     console.log("Final total price from Redux:", finalTotalPrice);
     console.log("Product total calculated:", productTotal);
+    console.log("USER DISCOUNT", userDiscount)
 
     // Tách giá ghế và product
-    const calculatedSeatPrice = finalTotalPrice - productTotal;
+    const calculatedSeatPrice = (finalTotalPrice - productTotal)*(100-userDiscount)/100;
     const calculatedProductPrice = productTotal;
+    const priceAfterMembership=calculatedSeatPrice+calculatedProductPrice;
+    
+    
+
 
     setSeatPrice(calculatedSeatPrice);
     setProductPrice(calculatedProductPrice);
     setDiscountedSeatPrice(calculatedSeatPrice); // Ban đầu chưa giảm
-    setFinalPrice(finalTotalPrice); // Tổng ban đầu
+    setFinalPrice(priceAfterMembership); // Tổng ban đầu
 
     console.log("💰 Price breakdown:", {
       seatPrice: calculatedSeatPrice,
@@ -82,7 +95,7 @@ const ConfirmPayment = () => {
       totalPrice: finalTotalPrice
     });
 
-  }, [finalTotalPrice, productTotal]);
+  }, [finalTotalPrice, productTotal,userDiscount]);
 
   console.log(" Products from Redux:", product);
   console.log(" Seat PRICE:", seatPrice);
@@ -136,7 +149,7 @@ const ConfirmPayment = () => {
   // Handle payment method selection
   const handlePaymentMethod = (method) => {
     setPaymentMethod(method);
- 
+
   };
   console.log("METHOD SELECTED", paymentMethod);
 
@@ -181,7 +194,7 @@ const ConfirmPayment = () => {
         setDiscountedSeatPrice(newSeatPrice);
         setFinalPrice(newFinalPrice);
         setPromoCode('');
-        
+
         toast.success(`Promotion "${promotionData.Code}" applied successfully! Save ${formatPrice(seatDiscount)}`, {
           duration: 4000,
           position: "top-center",
@@ -213,6 +226,27 @@ const ConfirmPayment = () => {
     }
   };
 
+  useEffect(() => {
+    const fetchMembership = async () => {
+      try {
+        const res = await getMembership(user.userId);
+        const memberPoints = res.TotalAccumulatedPoints;
+
+        setMemberPoints(res.TotalAccumulatedPoints);
+        console.log("MEMBER POINTS", memberPoints)
+      } catch (error) {
+        console.error("Error fetching membership", error);
+      }
+    };
+
+    if (user?.userId) {
+      fetchMembership();
+    }
+  }, [user]);
+
+
+
+
   const handleRemovePromotion = () => {
     const savedAmount = discountAmount;
     setAppliedPromotion(null);
@@ -222,7 +256,7 @@ const ConfirmPayment = () => {
     setDiscountType('');
     setDiscountedSeatPrice(seatPrice); // Reset về giá ghế gốc
     setFinalPrice(seatPrice + productPrice); // Reset về tổng gốc
-    
+
     toast.info(`Promotion removed. Added back ${formatPrice(savedAmount)}`, {
       duration: 3000,
       position: "top-center",
@@ -284,7 +318,7 @@ const ConfirmPayment = () => {
     setDiscountedSeatPrice(newSeatPrice);
     setFinalPrice(newFinalPrice);
     setPointsError('');
-    
+
     toast.success(`${points.toLocaleString()} points applied successfully! Save ${formatPrice(seatDiscount)}`, {
       duration: 4000,
       position: "top-center",
@@ -303,7 +337,7 @@ const ConfirmPayment = () => {
   const handleRemovePoints = () => {
     const savedAmount = discountAmount;
     const usedPoints = pointsToUse;
-    
+
     setIsUsingPoints(false);
     setPointsToUse('');
     setPointsError('');
@@ -311,7 +345,7 @@ const ConfirmPayment = () => {
     setDiscountType('');
     setDiscountedSeatPrice(seatPrice); // Reset về giá ghế gốc
     setFinalPrice(seatPrice + productPrice); // Reset về tổng gốc
-    
+
     toast.info(`${parseInt(usedPoints).toLocaleString()} points removed. Added back ${formatPrice(savedAmount)}`, {
       duration: 3000,
       position: "top-center",
@@ -358,6 +392,9 @@ const ConfirmPayment = () => {
         appliedPromotion?.Code || '',
         isUsingPoints ? parseInt(pointsToUse) : 0
       );
+      console.log("BOOKING ID TRUOC KHI SET REDUX", holdingResult.bookingId)
+      dispatch(setBookingId(holdingResult.bookingId))
+      console.log("BOOKING ID FROM REDUX:", bookingId)
 
       console.log("✅ Seats held successfully:", holdingResult);
 
@@ -397,7 +434,7 @@ const ConfirmPayment = () => {
       //   autoClose: 2000,
       //   position: "top-center",
       // });
-    
+
 
       // 3. Navigate to waiting page with all data
       const waitingData = {
@@ -445,17 +482,6 @@ const ConfirmPayment = () => {
 
     } catch (error) {
       console.error("❌ Error during confirmation process:", error);
-
-      // Update loading toast to error
-      // toast.update(loadingToastId, {
-      //   render: error.message && error.message.includes('product') 
-      //     ? "Error holding products. Please try again!"
-      //     : "Error processing booking. Please try again!",
-      //   type: "error",
-      //   isLoading: false,
-      //   autoClose: 4000,
-      //   position: "top-center",
-      // });
     } finally {
       setIsConfirming(false);
     }
@@ -471,6 +497,12 @@ const ConfirmPayment = () => {
       navigate("/");
     }, 1000);
   };
+
+  const handleTierChange = useCallback((tierInfo) => {
+  console.log(" Setting userDiscount to:", tierInfo.discount);
+  setUserDiscount(tierInfo.discount);
+ 
+}, []);
 
   useEffect(() => {
     console.log("==CURRENT FINAL PRICE:", finalPrice);
@@ -513,7 +545,7 @@ const ConfirmPayment = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] text-white">
-      <ToastContainer 
+      <ToastContainer
         position="top-center"
         autoClose={4000}
         hideProgressBar={false}
@@ -587,14 +619,19 @@ const ConfirmPayment = () => {
                     </div>
                   </div>
 
-                  {movie?.ContentSynopsis && (
+                  {/* {movie?.ContentSynopsis && (
                     <div className="mt-4 p-3  rounded-2xl">
                       <p className="text-gray-300 text-xs leading-relaxed line-clamp-3">
                         {movie?.ContentSynopsis}
                       </p>
                     </div>
-                  )}
+                  )} */}
                 </div>
+                <MembershipProgress
+                
+                  points={memberPoints}
+                 onTierChange={handleTierChange}
+                />
               </div>
 
               {/* User Info Card */}
@@ -812,12 +849,12 @@ const ConfirmPayment = () => {
                           placeholder="Enter points to use on seats (1 point = 1,000 VND)"
                           value={pointsToUse}
                           onChange={handlePointsChange}
-                          disabled={isUsingPoints || appliedPromotion}
+                          disabled={isUsingPoints || appliedPromotion||userDiscount!==0}
                         />
                         <button
                           className={`px-6 py-3 bg-gradient-to-r from-purple-600 via-purple-500 to-purple-700 hover:from-purple-700 hover:via-purple-600 hover:to-purple-800 text-white  rounded-xl text-sm transition-all duration-300 whitespace-nowrap ${isUsingPoints || appliedPromotion ? 'opacity-50 cursor-not-allowed' : ''}`}
                           onClick={handleUsePoints}
-                          disabled={isUsingPoints || appliedPromotion}
+                          disabled={isUsingPoints || appliedPromotion||userDiscount!==0}
                         >
                           Use Points
                         </button>
@@ -851,12 +888,12 @@ const ConfirmPayment = () => {
                         </div>
                       )}
 
-                    
+
                     </div>
                   </div>
 
                   {/* Payment Methods Section */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                     {/* Stripe (Visa/MasterCard/JCB/UnionPay) */}
                     <div>
                       <button
@@ -878,16 +915,16 @@ const ConfirmPayment = () => {
                       {/* Nếu đã chọn Stripe thì show chọn loại thẻ và hướng dẫn */}
                       {paymentMethod === "3" && stripeClientSecret && (
                         <>
-                        {console.log("Rendering StripeCheckoutForm with clientSecret:", stripeClientSecret)}
-                        <div className="w-full max-w-md mx-auto mt-4">
-                          <StripeCheckoutForm
-                            clientSecret={stripeClientSecret}
-                            onSuccess={(paymentIntent) => {
-                              alert("Thanh toán thành công!");
-                              // Xử lý tiếp theo
-                            }}
-                          />
-                        </div>
+                          {console.log("Rendering StripeCheckoutForm with clientSecret:", stripeClientSecret)}
+                          <div className="w-full max-w-md mx-auto mt-4">
+                            <StripeCheckoutForm
+                              clientSecret={stripeClientSecret}
+                              onSuccess={(paymentIntent) => {
+                                alert("Thanh toán thành công!");
+                                // Xử lý tiếp theo
+                              }}
+                            />
+                          </div>
                         </>
                       )}
                       {/* Khi đã có clientSecret thì show form Stripe */}
