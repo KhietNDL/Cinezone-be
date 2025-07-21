@@ -110,8 +110,8 @@ const Header = () => {
           .slice(0, 8) // Chỉ lấy 8 noti mới nhất
       );
     }
-    if (user.userId) fetchBookings();
-  }, [user.userId]);
+    if (user?.userId) fetchBookings();
+  }, [user?.userId]);
 
   const highlightStatus = (message) => {
     if (!message) return "";
@@ -226,7 +226,7 @@ const Header = () => {
         <div
           role="button"
           className="p-2 md:p-2.5 z-20 border-solid border-[1px] border-[#6a57f5] rounded-full shadow-[#6a57f5] shadow-md hover:bg-[#6957f538] transition-all duration-300 bg-black flex-shrink-0"
-          style={{ position: "relative"}}
+          style={{ position: "relative" }}
         >
           <FaBell
             size={16}
@@ -306,7 +306,10 @@ const Header = () => {
                               </div>
                             ) : (
                               <div className="p-1.5 md:p-2 bg-green-500/20 rounded-full">
-                                <FaBoxOpen className="text-green-400" size={12} />
+                                <FaBoxOpen
+                                  className="text-green-400"
+                                  size={12}
+                                />
                               </div>
                             )}
                           </div>
@@ -377,25 +380,17 @@ const Header = () => {
             </>
           )}
         </div>
-        {user ? (
+        {user && user.avatar_url ? (
           <div className="flex items-center space-x-2">
-            {user.avatar_url ? (
-              <div className="relative">
-                <div className="absolute inset-0 rounded-full border-2 border-white shadow-lg"></div>
-                <img
-                  src={user.avatar_url}
-                  alt="User Avatar"
-                  className="w-10 h-10 rounded-full object-cover cursor-pointer border-solid border-[1px] border-[#6a57f5] shadow-[#6a57f5] shadow-md hover:shadow-lg transition-all duration-300 relative z-10"
-                  onClick={() => navigate("/account")}
-                />
-              </div>
-            ) : (
-              <FaUser
-                size={25}
-                className="cursor-pointer text-white"
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full border-2 border-white shadow-lg"></div>
+              <img
+                src={user.avatar_url}
+                alt="User Avatar"
+                className="w-10 h-10 rounded-full object-cover cursor-pointer border-solid border-[1px] border-[#6a57f5] shadow-[#6a57f5] shadow-md hover:shadow-lg transition-all duration-300 relative z-10"
                 onClick={() => navigate("/account")}
               />
-            )}
+            </div>
           </div>
         ) : (
           <div
