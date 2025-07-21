@@ -132,22 +132,22 @@ class OrderProduct {
       [orderProductId]
     );
 
-    // Lấy io tại đây, đảm bảo luôn lấy giá trị mới nhất
-    const io = global._io;
-    const [[order]] = await db.promise().query(
-      `SELECT MemberId FROM OrderProduct WHERE OrderProductId = ?`, [orderProductId]
-    );
-    if (io && order && order.MemberId) {
-      console.log("[BE] Emit notification to:", order.MemberId, orderProductId);
-      io.to(order.MemberId).emit('notification', {
-        type: 'orderProduct',
-        orderProductId,
-        status: 2,
-        message: 'Your order has been confirmed!'
-      });
-    } else {
-      console.log("[BE] Không emit được notification", io, order);
-    }
+    // XÓA PHẦN WEBSOCKET NOTIFICATION SAU KHI CONFIRM ORDERPRODUCT
+    // const io = global._io;
+    // const [[order]] = await db.promise().query(
+    //   `SELECT MemberId FROM OrderProduct WHERE OrderProductId = ?`, [orderProductId]
+    // );
+    // if (io && order && order.MemberId) {
+    //   console.log("[BE] Emit notification to:", order.MemberId, orderProductId);
+    //   io.to(order.MemberId).emit('notification', {
+    //     type: 'orderProduct',
+    //     orderProductId,
+    //     status: 2,
+    //     message: 'Your order has been confirmed!'
+    //   });
+    // } else {
+    //   console.log("[BE] Không emit được notification", io, order);
+    // }
     return result.affectedRows > 0;
   }
 
