@@ -37,13 +37,19 @@ div[role="button"] {
   padding-left: 50px !important;
   width: 100% !important;
 }
+.landingPage .swiper-slide {
+  height: 580px !important;
+}
+.landingPage .landingPage-promotion .swiper-slide {
+  height: 200px !important;
+}
 @media (max-width: 768.5px) {
   .landingPage .swiper {
     padding-right: 35px !important;
     padding-left: 35px !important;
   }
-  .swiper-button-next,
-  .swiper-button-prev {
+  .landingPage .swiper-button-next,
+  .landingPage .swiper-button-prev {
     display: none !important;
   }
 }

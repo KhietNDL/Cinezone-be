@@ -1,34 +1,31 @@
-import { useState, useEffect } from "react"
-import { BlogCard, PostType } from "./BlogCard"
-import { cosmic } from "../../client"
+import { useState, useEffect } from "react";
+import { BlogCard, PostType } from "./BlogCard";
+import { cosmic } from "../../client";
 
 // Khai báo component dạng client component React
 export function BlogList({
-  query,
-  sort,
-  limit,
-  skip,
   className,
-  status,
+
   noWrap = false,
 }: {
-  query: any
-  sort?: string
-  limit?: number
-  skip?: number
-  className?: string
-  status?: "draft" | "published" | "any"
-  noWrap?: boolean
+  query: any;
+  sort?: string;
+  limit?: number;
+  skip?: number;
+  className?: string;
+  status?: "draft" | "published" | "any";
+  noWrap?: boolean;
 }) {
-  const [movies, setMovies] = useState<PostType[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<null | Error>(null)
+  const [movies, setMovies] = useState<PostType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<null | Error>(null);
 
   // IDs của các movies bạn muốn hiển thị
   const movieIds = [
-    "6879e3ecd5e8b76ec441b701",
+    "687dc178d5e8b76ec441ba89",
+    "687e0313d5e8b76ec441ba9b",
     // Thêm các ID khác nếu có
-  ]
+  ];
 
   useEffect(() => {
     async function fetchMovies() {
@@ -41,42 +38,42 @@ export function BlogList({
                 id: id,
               })
               .props("id,slug,title,metadata")
-              .depth(1)
+              .depth(1);
 
-            return object
+            return object;
           })
-        )
+        );
 
-        setMovies(moviesData)
+        setMovies(moviesData);
       } catch (err) {
-        console.error("Error fetching movies:", err)
-        setError(err)
+        console.error("Error fetching movies:", err);
+        setError(err);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
 
-    fetchMovies()
-  }, [])
+    fetchMovies();
+  }, []);
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div>Error loading data</div>
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error loading data</div>;
 
   function MoviePosts({ posts }: { posts: PostType[] }) {
     return (
       <>
         {posts.map((post: PostType) => {
-          return <BlogCard key={post.id} post={post} />
+          return <BlogCard key={post.id} post={post} />;
         })}
       </>
-    )
+    );
   }
 
-  if (noWrap) return <MoviePosts posts={movies} />
+  if (noWrap) return <MoviePosts posts={movies} />;
 
   return (
     <div className={`m-auto grid max-w-[900px] grid-cols-2 gap-4 ${className}`}>
       <MoviePosts posts={movies} />
     </div>
-  )
+  );
 }

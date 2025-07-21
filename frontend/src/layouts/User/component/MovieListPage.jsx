@@ -334,11 +334,11 @@ const MovieListPage = () => {
             </div>
 
             {/* Skeleton Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full mt-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-screen mt-8">
               {Array.from({ length: 8 }, (_, i) => (
                 <div
                   key={i}
-                  className="bg-slate-800 rounded-xl overflow-hidden shadow-lg animate-pulse"
+                  className="bg-slate-800 w-full rounded-xl overflow-hidden shadow-lg animate-pulse"
                 >
                   <div className="w-full h-64 bg-slate-700"></div>
                   <div className="p-4 space-y-3">

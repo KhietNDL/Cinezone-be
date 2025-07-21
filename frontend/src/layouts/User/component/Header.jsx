@@ -64,6 +64,7 @@ const Header = () => {
   const [notifications, setNotifications] = useState([]);
   const [showNoti, setShowNoti] = useState(false);
   const [newNotiCount, setNewNotiCount] = useState(0);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   const handleSearch = async (query) => {
     if (!query.trim()) {
@@ -87,6 +88,17 @@ const Header = () => {
     }, 300);
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
+
+  // Scroll event listener for header background
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      setIsScrolled(scrollTop > 50); // Change background after scrolling 50px
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const handleMovieSelect = (MovieName) => {
     const slug = slugify(MovieName);
@@ -122,14 +134,14 @@ const Header = () => {
         const res = await fetch(
           `http://localhost:4458/api/payment/history?memberId=${user.userId}&page=1&limit=8&sortBy=CreatedAt&sortOrder=desc`
         );
-        
+
         // Kiểm tra response status
         if (!res.ok) {
           console.error(`HTTP error! status: ${res.status}`);
           setNotifications([]);
           return;
         }
-        
+
         // Kiểm tra content type
         const contentType = res.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
@@ -139,9 +151,9 @@ const Header = () => {
           setNotifications([]);
           return;
         }
-        
+
         const data = await res.json();
-        
+
         // Kiểm tra cấu trúc data
         if (!data || !data.data || !Array.isArray(data.data)) {
           console.error("Invalid data structure:", data);
@@ -156,26 +168,34 @@ const Header = () => {
           // Helper để lấy điểm cộng/trừ
           const getScoreValue = (booking) => {
             if (!booking) return 0;
-            if (booking.pointEarn && booking.pointEarn > 0) return booking.pointEarn;
-            if (booking.pointUse && booking.pointUse > 0) return -booking.pointUse;
+            if (booking.pointEarn && booking.pointEarn > 0)
+              return booking.pointEarn;
+            if (booking.pointUse && booking.pointUse > 0)
+              return -booking.pointUse;
             return 0;
           };
 
           if (booking && orderProduct) {
             // Có cả booking và orderProduct
             // Lấy tên sản phẩm từ products array
-            const productName = orderProduct.products && orderProduct.products.length > 0 
-              ? orderProduct.products[0].productName 
-              : "Unknown Product";
-            
+            const productName =
+              orderProduct.products && orderProduct.products.length > 0
+                ? orderProduct.products[0].productName
+                : "Unknown Product";
+
             return {
               type: "combo",
               paymentId: payment.PaymentId,
-              movieNameEnglish: booking.movieNameEnglish || booking.movieNameVN || "Unknown Movie",
+              movieNameEnglish:
+                booking.movieNameEnglish ||
+                booking.movieNameVN ||
+                "Unknown Movie",
               orderProductId: orderProduct.orderProductId,
               productName: productName,
               status: payment.Status,
-              message: `${getBookingMessage(booking.status)} & ${getOrderMessage(orderProduct.status)}`,
+              message: `${getBookingMessage(
+                booking.status
+              )} & ${getOrderMessage(orderProduct.status)}`,
               createdAt: payment.CreatedAt,
               scoreValue: getScoreValue(booking),
               bookingStatus: booking.status,
@@ -186,7 +206,10 @@ const Header = () => {
             return {
               type: "booking",
               paymentId: payment.PaymentId,
-              movieNameEnglish: booking.movieNameEnglish || booking.movieNameVN || "Unknown Movie",
+              movieNameEnglish:
+                booking.movieNameEnglish ||
+                booking.movieNameVN ||
+                "Unknown Movie",
               status: booking.status,
               message: getBookingMessage(booking.status),
               createdAt: payment.CreatedAt,
@@ -195,10 +218,11 @@ const Header = () => {
           } else if (orderProduct) {
             // Chỉ có orderProduct
             // Lấy tên sản phẩm từ products array
-            const productName = orderProduct.products && orderProduct.products.length > 0 
-              ? orderProduct.products[0].productName 
-              : "Unknown Product";
-              
+            const productName =
+              orderProduct.products && orderProduct.products.length > 0
+                ? orderProduct.products[0].productName
+                : "Unknown Product";
+
             return {
               type: "order",
               paymentId: payment.PaymentId,
@@ -236,11 +260,14 @@ const Header = () => {
               fallbackData.data
                 .map((b) => ({
                   type: "booking",
-                  movieNameEnglish: b.movieNameEnglish || b.NameOfEnglish || "Unknown Movie",
+                  movieNameEnglish:
+                    b.movieNameEnglish || b.NameOfEnglish || "Unknown Movie",
                   status: b.status || b.Status,
                   message: getBookingMessage(b.status || b.Status),
                   createdAt: b.BookingDate || b.CreatedAt,
-                  scoreValue: (b.pointEarn || b.PointEarn || 0) - (b.pointUse || b.PointUse || 0),
+                  scoreValue:
+                    (b.pointEarn || b.PointEarn || 0) -
+                    (b.pointUse || b.PointUse || 0),
                 }))
                 .slice(0, 8)
             );
@@ -303,7 +330,11 @@ const Header = () => {
   };
 
   return (
-    <div className="p-2 fixed md:px-5 bg-black/40 text-white flex items-center justify-between select-none w-[100%] top-0 left-0 z-50">
+    <div
+      className={`p-2 fixed md:px-5 ${
+        isScrolled ? "bg-black" : "bg-black/40"
+      } text-white flex items-center justify-between select-none w-[100%] top-0 left-0 z-50 transition-all duration-300`}
+    >
       <div role="button" className="flex items-center">
         <img
           src={logo}
@@ -462,11 +493,17 @@ const Header = () => {
                               </div>
                             ) : noti.type === "order" ? (
                               <div className="p-1.5 md:p-2 bg-green-500/20 rounded-full">
-                                <FaBoxOpen className="text-green-400" size={12} />
+                                <FaBoxOpen
+                                  className="text-green-400"
+                                  size={12}
+                                />
                               </div>
                             ) : noti.type === "combo" ? (
                               <div className="p-1.5 md:p-2 bg-purple-500/20 rounded-full">
-                                <FaTicketAlt className="text-purple-400" size={12} />
+                                <FaTicketAlt
+                                  className="text-purple-400"
+                                  size={12}
+                                />
                               </div>
                             ) : (
                               <div className="p-1.5 md:p-2 bg-gray-500/20 rounded-full">
@@ -549,26 +586,17 @@ const Header = () => {
             </>
           )}
         </div>
-        {user ? (
+        {user && user.avatar_url ? (
           <div className="flex items-center space-x-2">
-            {user.avatar_url ? (
-              <div className="relative">
-                <div className="absolute inset-0 rounded-full border-2 border-white shadow-lg"></div>
-                <img
-                  src={user.avatar_url}
-                  alt="User Avatar"
-                  className="w-10 h-10 rounded-full object-cover cursor-pointer border-solid border-[1px] border-[#6a57f5] shadow-[#6a57f5] shadow-md hover:shadow-lg transition-all duration-300 relative z-10"
-                  onClick={() => navigate("/account")}
-                />
-              </div>
-            ) : (
-              <FaUser
-                size={25}
-                className="cursor-pointer text-white"
-                data-testid="user-icon"
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full border-2 border-white shadow-lg"></div>
+              <img
+                src={user.avatar_url}
+                alt="User Avatar"
+                className="w-10 h-10 rounded-full object-cover cursor-pointer border-solid border-[1px] border-[#6a57f5] shadow-[#6a57f5] shadow-md hover:shadow-lg transition-all duration-300 relative z-10"
                 onClick={() => navigate("/account")}
               />
-            )}
+            </div>
           </div>
         ) : (
           <div

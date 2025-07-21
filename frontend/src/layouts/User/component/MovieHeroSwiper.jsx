@@ -284,7 +284,7 @@ const MovieHeroSwiper = ({ movieData }) => {
   };
 
   return (
-    <div className="relative h-[500px] md:h-[600px] lg:h-[700px] w-full ">
+    <div className="relative h-[500px] md:h-[600px] lg:h-[640px] w-full ">
       {/* Background Image/Video */}
       <div className="absolute inset-0">
         <div className="relative w-full h-full">
