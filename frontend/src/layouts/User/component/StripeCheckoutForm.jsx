@@ -24,6 +24,7 @@ function CheckoutForm({ clientSecret, onSuccess, totalAmount }) {
     if (result.error) {
       setError(result.error.message);
     } else if (result.paymentIntent && result.paymentIntent.status === "succeeded") {
+      console.log("PAYMENT BY VISA SUCCESS !")
       onSuccess(result.paymentIntent);
     }
     setProcessing(false);

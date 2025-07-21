@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { cancelBooking, cancelProduct, ConfirmBooking, confirmProduct, getBookingById, getProductByOderProductId } from "../../../services/API";
+import { cancelBooking, cancelProduct, ConfirmBooking, ConfirmPayment, confirmProduct, getBookingById, getProductByOderProductId } from "../../../services/API";
 import { useDispatch, useSelector} from "react-redux"
 import {  setProductDetail } from "../../../redux/features/bookingSlice";
 
@@ -18,12 +18,14 @@ const TicketDetails = () => {
 
   let bookingId = null;
   let orderProductId = null;
+  let paymentId = null;
   
   try {
     if (!extraDataRaw) throw new Error("Missing extraData");
     const decoded = decodeURIComponent(extraDataRaw);
     const extraData = JSON.parse(decoded);
     bookingId = extraData.bookingId;
+    paymentId=extraData.paymentId;
     orderProductId = extraData.orderProductId;
   } catch (err) {
     console.error("❌ Failed to parse extraData:", err);
@@ -34,13 +36,8 @@ const TicketDetails = () => {
   const query = new URLSearchParams(window.location.search);
 
 
-let paymentId = null;
-try {
-  const paymentId =query.get("paymentId")
-  console.log("PAYMENTID", paymentId)
-} catch (e) {
-  console.error("Không parse được embeddata:", e);
-}
+
+
   useEffect(() => {
     // Nếu thanh toán thất bại hoặc bị hủy
     if (resultCode !== "0") {
@@ -53,6 +50,7 @@ try {
             console.log("Đang hủy booking...");
             await cancelBooking(bookingId);
             console.log("Booking đã bị hủy.");
+            console.log("PAYMENTID bi huy",paymentId)
           }
 
           // Hủy product nếu có
@@ -82,7 +80,7 @@ try {
     const fetchSuccessfulPayment = async () => {
       try {
         // Xác nhận và lấy thông tin booking
-        await ConfirmBooking(bookingId);
+        await ConfirmPayment(paymentId);
         const ticketResponse = await getBookingById(bookingId);
         setTicket(ticketResponse);
         console.log("Ticket details fetched successfully:", ticketResponse);
@@ -105,7 +103,7 @@ try {
     };
 
     fetchSuccessfulPayment();
-  }, [bookingId, orderProductId, resultCode, dispatch]);
+  }, [bookingId, paymentId, orderProductId, resultCode, dispatch]);
 
   if (loading) return <div className="text-white p-6">Đang tải thông tin vé...</div>;
   if (error) return <div className="text-red-400 p-6">{error}</div>;

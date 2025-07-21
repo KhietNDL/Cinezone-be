@@ -1,10 +1,11 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-const initialState = {
+const initialState = {  
   selectedSeats: [],
   seatIds: [],
   setProducts: [],
   orderProductsId: [],
+  bookingId: [],
   calculatedTotalPrice: 0,
   selectedRoom: "",
   selectedDate: "",
@@ -62,6 +63,10 @@ const bookingSlice = createSlice({
     setProduct(state, action) {
       state.product = action.payload;
     },
+    setBookingId(state, action) {
+      state.bookingId = action.payload;
+    } ,
+
     setOrderProductsId(state, action) {
       state.orderProductsId = action.payload;
     } ,
@@ -89,6 +94,7 @@ export const {
   setMovie,
   setProduct,
   setProductDetail,
+  setBookingId,
   setOrderProductsId,
   setFinalTotalPrice,
   resetBooking,
