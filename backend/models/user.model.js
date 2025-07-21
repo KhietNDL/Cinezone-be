@@ -13,37 +13,45 @@ class User {
   static async findByUsername(username) {
     const [rows] = await db
       .promise()
-      .query("SELECT * FROM Users WHERE Username = ? AND IsDeleted = 0", [
-        username,
-      ]);
+      .query("SELECT * FROM Users WHERE Username = ? AND IsDeleted = 0", [username]);
     return rows[0];
   }
 
   static async create(userData) {
     try {
-      const { password, fullName, dateOfBirth, sex, email, phoneNumber, cccd } =
-        userData;
-
-      const userId = uuidv4();
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(password, salt);
-      const now = new Date();
-
-      console.log("Creating user with data:", {
-        userId,
+      const {
+        password,
         fullName,
         dateOfBirth,
         sex,
         email,
         phoneNumber,
         cccd,
-      });
+        membershipTypeId // truyền vào hoặc lấy mặc định
+      } = userData;
+
+      const userId = uuidv4();
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+      const now = new Date();
+      let finalMembershipTypeId = membershipTypeId;
+      // Nếu không truyền membershipTypeId thì tự lấy UUID của hạng Bronze
+      if (!finalMembershipTypeId) {
+        const [rows] = await db.promise().query(
+          "SELECT MembershipTypeId FROM MembershipType WHERE Name = 'Bronze' AND IsDeleted = 0 LIMIT 1"
+        );
+        if (rows.length > 0) {
+          finalMembershipTypeId = rows[0].MembershipTypeId;
+        } else {
+          throw new Error("Cannot find 'Bronze' tier in MembershipType");
+        }
+      }
 
       const [result] = await db.promise().query(
         `INSERT INTO Users (
           UserId, Password, FullName, DateOfBirth, Sex, 
-          Email, CreatedAt, PhoneNumber, Role, IsEmailVerified, IsDeleted, CCCD
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          Email, CreatedAt, PhoneNumber, Role, IsEmailVerified, IsDeleted, CCCD, MembershipTypeId, TotalAccumulatedPoints, MembershipStartDate, MembershipEndDate, MembershipStatus
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           userId,
           hashedPassword,
@@ -57,6 +65,11 @@ class User {
           false,
           0,
           cccd,
+          finalMembershipTypeId,
+          0, // TotalAccumulatedPoints
+          now, // MembershipStartDate
+          null, // MembershipEndDate
+          'active' // MembershipStatus
         ]
       );
 
@@ -128,9 +141,6 @@ class User {
       const query = `UPDATE Users SET ${setClauses}, UpdatedAt = NOW() WHERE UserId = ? AND IsDeleted = 0`;
       const values = [...updateValues, userId];
 
-      console.log("Update query:", query);
-      console.log("Update values:", values);
-
       const [result] = await db.promise().query(query, values);
 
       return result.affectedRows > 0;
@@ -180,6 +190,41 @@ class User {
         "SELECT * FROM Users WHERE reset_code = ? AND reset_code_expires > NOW() AND IsDeleted = 0",
         [resetCode]
       );
+    return rows[0];
+  }
+
+  static async updateScoreAndAccumulated(userId, addScore) {
+    // Cộng điểm vào cả ScoreBalance và TotalAccumulatedPoints
+    const [user] = await db.promise().query("SELECT ScoreBalance, TotalAccumulatedPoints FROM Users WHERE UserId = ?", [userId]);
+    if (!user[0]) return false;
+    const newScore = (user[0].ScoreBalance || 0) + addScore;
+    const newAccum = (user[0].TotalAccumulatedPoints || 0) + addScore;
+    const [result] = await db.promise().query(
+      "UPDATE Users SET ScoreBalance = ?, TotalAccumulatedPoints = ? WHERE UserId = ?",
+      [newScore, newAccum, userId]
+    );
+    return result.affectedRows > 0;
+  }
+
+  static async upgradeMembership(userId, newMembershipTypeId, startDate, endDate) {
+    // Nâng hạng thành viên
+    const [result] = await db.promise().query(
+      `UPDATE Users SET MembershipTypeId = ?, MembershipStartDate = ?, MembershipEndDate = ?, MembershipStatus = 'active', UpdatedAt = NOW() WHERE UserId = ? AND IsDeleted = 0`,
+      [newMembershipTypeId, startDate, endDate, userId]
+    );
+    return result.affectedRows > 0;
+  }
+
+  static async getMembershipInfo(userId) {
+    // Lấy thông tin membership của user (JOIN MembershipType)
+    const [rows] = await db.promise().query(
+      `SELECT u.UserId, u.FullName, u.Email, u.ScoreBalance, u.TotalAccumulatedPoints, u.MembershipTypeId, u.MembershipStartDate, u.MembershipEndDate, u.MembershipStatus,
+        m.Name as MembershipName, m.MinPoint, m.DiscountTicket, m.PointMultiplier
+      FROM Users u
+      LEFT JOIN MembershipType m ON u.MembershipTypeId = m.MembershipTypeId
+      WHERE u.UserId = ? AND u.IsDeleted = 0`,
+      [userId]
+    );
     return rows[0];
   }
 

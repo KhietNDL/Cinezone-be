@@ -120,19 +120,19 @@ describe("CheckOutComboPage", () => {
     beforeEach(() => {
         jest.clearAllMocks();
     });
-// 1
+
+    const mockCartItem = {
+        id: "9f6cb2df-687e-4424-a125-6aa82792e38c",
+        name: "Coca-Cola Classic (Large)",
+        price: 25000,
+        quantity: 1,
+        image: "https://storage.googleapis.com/movie-c96b6.firebasestorage.app/products/1752475085507-images.jpg",
+    };
+    // 1
     it("renders checkout page with cart table and payment method", () => {
         const storeWithCart = {
             combo: {
-                cart: [
-                    {
-                        id: "9f6cb2df-687e-4424-a125-6aa82792e38c",
-                        name: "Coca-Cola Classic (Large)",
-                        price: 25000,
-                        quantity: 1,
-                        image: "https://storage.googleapis.com/movie-c96b6.firebasestorage.app/products/1752475085507-images.jpg",
-                    },
-                ],
+                cart: [mockCartItem],
             },
         };
 
@@ -164,7 +164,7 @@ describe("CheckOutComboPage", () => {
         expect(screen.getByRole("button", { name: /Confirm/i })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: /Cancel/i })).toBeInTheDocument();
     });
-// 2
+    // 2
     it("shows warning if cart is empty on confirm", async () => {
         renderWithProvider(<CheckOutComboPage />, { combo: { cart: [] } });
 
@@ -174,7 +174,7 @@ describe("CheckOutComboPage", () => {
             expect(toast.warning).toHaveBeenCalledWith("Cart is empty or missing order number.");
         });
     });
-// 3
+    // 3
     it("shows error if user information is missing", async () => {
         jest.mock("../../../context/AuthContext", () => ({
             useAuth: () => ({ user: null }),
@@ -182,15 +182,7 @@ describe("CheckOutComboPage", () => {
 
         const storeWithCart = {
             combo: {
-                cart: [
-                    {
-                        id: "9f6cb2df-687e-4424-a125-6aa82792e38c",
-                        name: "Coca-Cola Classic (Large)",
-                        price: 25000,
-                        quantity: 1,
-                        image: "https://storage.googleapis.com/movie-c96b6.firebasestorage.app/products/1752475085507-images.jpg",
-                    },
-                ],
+                cart: [mockCartItem],
             },
         };
 
@@ -202,19 +194,11 @@ describe("CheckOutComboPage", () => {
             expect(toast.error).toHaveBeenCalledWith("Payment failed.");
         });
     });
-// 4
+    // 4
     it("calls createProductHold and processPayment on valid confirm", async () => {
         const storeWithCart = {
             combo: {
-                cart: [
-                    {
-                        id: "9f6cb2df-687e-4424-a125-6aa82792e38c",
-                        name: "Coca-Cola Classic (Large)",
-                        price: 25000,
-                        quantity: 1,
-                        image: "https://storage.googleapis.com/movie-c96b6.firebasestorage.app/products/1752475085507-images.jpg",
-                    },
-                ],
+                cart: [mockCartItem],
             },
         };
 
@@ -242,19 +226,11 @@ describe("CheckOutComboPage", () => {
             });
         });
     });
-// 5
+    // 5
     it("navigates back to combo-selling on cancel", async () => {
         const storeWithCart = {
             combo: {
-                cart: [
-                    {
-                        id: "9f6cb2df-687e-4424-a125-6aa82792e38c",
-                        name: "Coca-Cola Classic (Large)",
-                        price: 25000,
-                        quantity: 1,
-                        image: "https://storage.googleapis.com/movie-c96b6.firebasestorage.app/products/1752475085507-images.jpg",
-                    },
-                ],
+                cart: [mockCartItem],
             },
         };
 
@@ -264,19 +240,11 @@ describe("CheckOutComboPage", () => {
 
         expect(mockNavigate).toHaveBeenCalledWith("/staff/combo-selling");
     });
-// 6
+    // 6
     it("shows error if payment fails", async () => {
         const storeWithCart = {
             combo: {
-                cart: [
-                    {
-                        id: "9f6cb2df-687e-4424-a125-6aa82792e38c",
-                        name: "Coca-Cola Classic (Large)",
-                        price: 25000,
-                        quantity: 1,
-                        image: "https://storage.googleapis.com/movie-c96b6.firebasestorage.app/products/1752475085507-images.jpg",
-                    },
-                ],
+                cart: [mockCartItem],
             },
         };
 
@@ -290,4 +258,78 @@ describe("CheckOutComboPage", () => {
             expect(toast.error).toHaveBeenCalledWith("Payment failed.");
         });
     });
+    // 7
+    it("updates payment method and uses it in processPayment", async () => {
+        const storeWithCart = {
+            combo: {
+                cart: [mockCartItem],
+            },
+        };
+    
+        api.createProductHold.mockResolvedValue({ OrderProductId: "order-456" });
+        processPayment.mockResolvedValue();
+    
+        renderWithProvider(<CheckOutComboPage />, storeWithCart);
+    
+        // Click the Momo payment method
+        fireEvent.click(screen.getByText("Momo"));
+        fireEvent.click(screen.getByRole("button", { name: /Confirm/i }));
+    
+        await waitFor(() => {
+            expect(processPayment).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    paymentMethod: "Momo",
+                })
+            );
+        });
+    });
+    // 8
+    it("renders multiple items in table and calculates total correctly", () => {
+        const secondItem = {
+            id: "item-2",
+            name: "Popcorn (Large)",
+            price: 30000,
+            quantity: 2,
+            image: "https://example.com/popcorn.jpg",
+        };
+        const storeWithCart = {
+            combo: {
+                cart: [mockCartItem, secondItem],
+            },
+        };
+
+        renderWithProvider(<CheckOutComboPage />, storeWithCart);
+
+        // Both rows present
+        expect(screen.getByTestId("row-9f6cb2df-687e-4424-a125-6aa82792e38c")).toBeInTheDocument();
+        expect(screen.getByTestId("row-item-2")).toBeInTheDocument();
+
+        // Check total calculation: 25,000 + 30,000*2 = 85,000
+        expect(screen.getByTestId("total-amount")).toHaveTextContent("85.000 VNĐ");
+    });
+    // 9
+    // it("disables Confirm button while loading", async () => {
+    //     const storeWithCart = {
+    //         combo: {
+    //             cart: [mockCartItem],
+    //         },
+    //     };
+    
+    //     // Make processPayment hang until we resolve it
+    //     let resolvePayment;
+    //     processPayment.mockImplementation(() => new Promise((resolve) => { resolvePayment = resolve; }));
+    
+    //     renderWithProvider(<CheckOutComboPage />, storeWithCart);
+    
+    //     fireEvent.click(screen.getByRole("button", { name: /Confirm/i }));
+    
+    //     // Button should be loading/disabled
+    //     expect(screen.getByRole("button", { name: /Confirm/i })).toHaveAttribute("disabled");
+    
+    //     // Finish payment
+    //     resolvePayment();
+    //     await waitFor(() => {
+    //         expect(processPayment).toHaveBeenCalled();
+    //     });
+    // });
 });

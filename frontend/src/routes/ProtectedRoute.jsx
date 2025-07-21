@@ -108,26 +108,28 @@ const ProtectedRoute = ({ allowedRoles }) => {
 
   // If logged in, check token and access permissions
   if (user && token) {
-    // Allow everyone to access landing page
-    if (isLandingRoute) {
-      // Let everyone access the landing page, use UserLayout for consistent experience
-      return <Outlet context={{ LayoutComponent: "UserLayout" }} />;
+    // If landing route "/" and role is not 1 (user)
+    if (isLandingRoute && decoded.role !== 1) {
+      if (decoded.role === 3) return <Navigate to="/admin/dashboard" replace />;
+      if (decoded.role === 2) return <Navigate to="/staff" replace />;
+      return <Navigate to="/" replace />;
     }
-
     // If not landing route and role doesn't match
     if (!isLandingRoute && !allowedRoles.includes(decoded.role)) {
       if (decoded.role === 3) return <Navigate to="/admin/dashboard" replace />;
       if (decoded.role === 2) return <Navigate to="/staff" replace />;
       return <Navigate to="/" replace />;
     }
-  } // Determine layout component based on role
+  }
+
+  // Determine layout component based on role
   let LayoutComponent;
-  if (user && token && decoded.role) {
+  if (user) {
     if (decoded.role === 3) LayoutComponent = "AdminLayout";
     else if (decoded.role === 2) LayoutComponent = "StaffLayout";
-    else if (decoded.role === 1) LayoutComponent = "UserLayout";
+    else if (decoded.role === 1 || isLandingRoute)
+      LayoutComponent = "UserLayout";
   } else {
-    // Default to UserLayout for guests or users without valid token
     LayoutComponent = "UserLayout";
   }
 

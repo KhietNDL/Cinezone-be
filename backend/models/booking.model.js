@@ -180,6 +180,7 @@ class Booking {
     seatIds,
     promotionCode,
     discount = 0,
+    membershipDiscount = 0, // truyền từ controller nếu có
     CreatedBy,
   }) {
 
@@ -227,13 +228,17 @@ class Booking {
         [seatIds]
       );
       let totalAmount = seatInfo.reduce((sum, seat) => sum + Number(seat.Price), 0);
-
       if (promotionDiscount > 0) {
       // Nếu có promotion, giảm theo phần trăm
       totalAmount -= (totalAmount * promotionDiscount) / 100;
-      } else if (discount > 0) {
-        // Nếu có discount từ điểm, giảm trực tiếp số tiền
+      }
+
+      if (discount > 0) {
+        // Nếu dùng điểm đổi vé, KHÔNG áp dụng giảm giá membership
         totalAmount -= discount;
+      } else if (membershipDiscount > 0) {
+        // Nếu không dùng điểm, mới áp dụng giảm giá membership
+        totalAmount -= (totalAmount * membershipDiscount) / 100;
       }
       // Đảm bảo tổng tiền không âm
       totalAmount = Math.max(0, totalAmount);
@@ -361,28 +366,29 @@ class Booking {
 
       await connection.commit();
 
-      // Lấy io tại đây, đảm bảo luôn lấy giá trị mới nhất
-      const io = global._io;
-      const [[booking]] = await db.promise().query(
-        `SELECT MemberId FROM Bookings WHERE BookingId = ?`, [bookingId]
-      );
-      if (io && booking && booking.MemberId) {
-        // Cập nhật danh sách booking mới nhất
-        const bookingDetail = await Booking.getBookingDetail(bookingId);
-        io.to(booking.MemberId).emit('notification', {
-          type: 'booking',
-          movieNameEnglish: bookingDetail.movieNameEnglish, // gửi movieNameEnglish thay cho bookingId
-          status: 2,
-          message: 'Your ticket has been confirmed!',
-          createdAt: bookingDetail.BookingDate // nếu muốn gửi thời gian
-        });
-      }
+      // XÓA PHẦN WEBSOCKET NOTIFICATION SAU KHI CONFIRM BOOKING
+      // const io = global._io;
+      // const [[booking]] = await db.promise().query(
+      //   `SELECT MemberId FROM Bookings WHERE BookingId = ?`, [bookingId]
+      // );
+      // if (io && booking && booking.MemberId) {
+      //   const bookingDetail = await Booking.getBookingDetail(bookingId);
+      //   io.to(booking.MemberId).emit('notification', {
+      //     type: 'booking',
+      //     movieNameEnglish: bookingDetail.movieNameEnglish,
+      //     status: 2,
+      //     message: 'Your ticket has been confirmed!',
+      //     createdAt: bookingDetail.BookingDate,
+      //     ScoreValue: bookingDetail.pointEarn || 0,
+      //   });
+      // }
     } catch (err) {
       if (connection) await connection.rollback();
       throw err;
     } finally {
       if (connection) connection.release();
     }
+    
   }
   /**
    * @param {string} bookingId - ID của booking
@@ -465,7 +471,7 @@ class Booking {
       // 2. Đổi trạng thái các ghế từ "holding" hoặc "taken" sang "available"
       await connection.query(
         `UPDATE SeatShowtime
-         SET Status = 'cancelled'
+         SET Status = 'cancelled', IsDeleted = 1
          WHERE BookingId = ? AND Status IN ('holding', 'taken')`,
         [bookingId]
       );  

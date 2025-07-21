@@ -19,13 +19,39 @@ import { io } from "socket.io-client";
 function getBookingMessage(status) {
   switch (status) {
     case 2:
-      return "Your ticket has been confirmed!";
+      return "Your ticket has been confirmed";
     case 3:
-      return "Your ticket has been checked in!";
+      return "Your ticket has been checked in";
     case 4:
-      return "Your ticket has been cancelled!";
+      return "Your ticket has been cancelled";
     default:
-      return "Your booking status has changed!";
+      return "Your booking status has changed";
+  }
+}
+
+function getOrderMessage(status) {
+  switch (status) {
+    case 2:
+      return "Your order has been completed";
+    case 3:
+      return "Your order is being processed";
+    case 4:
+      return "Your order has been cancelled";
+    default:
+      return "Your order status has changed";
+  }
+}
+
+function getPaymentMessage(status) {
+  switch (status) {
+    case "completed":
+      return "Payment completed successfully";
+    case "pending":
+      return "Payment is being processed";
+    case "failed":
+      return "Payment failed";
+    default:
+      return "Payment status has changed";
   }
 }
 
@@ -38,6 +64,7 @@ const Header = () => {
   const [notifications, setNotifications] = useState([]);
   const [showNoti, setShowNoti] = useState(false);
   const [newNotiCount, setNewNotiCount] = useState(0);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   const handleSearch = async (query) => {
     if (!query.trim()) {
@@ -61,6 +88,17 @@ const Header = () => {
     }, 300);
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
+
+  // Scroll event listener for header background
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      setIsScrolled(scrollTop > 50); // Change background after scrolling 50px
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const handleMovieSelect = (MovieName) => {
     const slug = slugify(MovieName);
@@ -91,26 +129,149 @@ const Header = () => {
 
   // Khi user đăng nhập hoặc reload
   useEffect(() => {
-    async function fetchBookings() {
-      const res = await fetch(
-        `http://localhost:4458/api/bookings/member/${user.userId}?page=1&limit=8&sortBy=CreatedAt&sortOrder=desc`
-      );
-      const data = await res.json();
-      // Chuyển đổi data thành notification để hiển thị
-      setNotifications(
-        data.data
-          .map((b) => ({
-            type: "booking",
-            movieNameEnglish: b.movieNameEnglish,
-            status: b.status,
-            message: getBookingMessage(b.status),
-            createdAt: b.BookingDate,
-            scoreValue: b.pointEarn || (b.pointUse ? -b.pointUse : 0),
-          }))
-          .slice(0, 8) // Chỉ lấy 8 noti mới nhất
-      );
+    async function fetchMemberHistory() {
+      try {
+        const res = await fetch(
+          `http://localhost:4458/api/payment/history?memberId=${user.userId}&page=1&limit=8&sortBy=CreatedAt&sortOrder=desc`
+        );
+
+        // Kiểm tra response status
+        if (!res.ok) {
+          console.error(`HTTP error! status: ${res.status}`);
+          setNotifications([]);
+          return;
+        }
+
+        // Kiểm tra content type
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          console.error("Response is not JSON:", contentType);
+          const text = await res.text();
+          console.error("Response text:", text);
+          setNotifications([]);
+          return;
+        }
+
+        const data = await res.json();
+
+        // Kiểm tra cấu trúc data
+        if (!data || !data.data || !Array.isArray(data.data)) {
+          console.error("Invalid data structure:", data);
+          setNotifications([]);
+          return;
+        }
+
+        // Chuyển đổi data thành notification để hiển thị
+        const notifications = data.data.map((item) => {
+          const { payment, booking, orderProduct } = item;
+
+          if (booking && orderProduct) {
+            // Có cả booking và orderProduct
+            // Lấy tên sản phẩm từ products array
+            const productName =
+              orderProduct.products && orderProduct.products.length > 0
+                ? orderProduct.products[0].productName
+                : "Unknown Product";
+
+            return {
+              type: "combo",
+              paymentId: payment.PaymentId,
+              movieNameEnglish:
+                booking.movieNameEnglish ||
+                booking.movieNameVN ||
+                "Unknown Movie",
+              orderProductId: orderProduct.orderProductId,
+              productName: productName,
+              status: payment.Status,
+              message: `${getBookingMessage(
+                booking.status
+              )} & ${getOrderMessage(orderProduct.status)}`,
+              createdAt: payment.CreatedAt,
+              scoreValue: (booking.pointUse || 0) * -1, // pointUse là điểm trừ nên nhân -1
+              bookingStatus: booking.status,
+              orderStatus: orderProduct.status,
+            };
+          } else if (booking) {
+            // Chỉ có booking
+            return {
+              type: "booking",
+              paymentId: payment.PaymentId,
+              movieNameEnglish:
+                booking.movieNameEnglish ||
+                booking.movieNameVN ||
+                "Unknown Movie",
+              status: booking.status,
+              message: getBookingMessage(booking.status),
+              createdAt: payment.CreatedAt,
+              scoreValue: (booking.pointUse || 0) * -1, // pointUse là điểm trừ nên nhân -1
+            };
+          } else if (orderProduct) {
+            // Chỉ có orderProduct
+            // Lấy tên sản phẩm từ products array
+            const productName =
+              orderProduct.products && orderProduct.products.length > 0
+                ? orderProduct.products[0].productName
+                : "Unknown Product";
+
+            return {
+              type: "order",
+              paymentId: payment.PaymentId,
+              orderProductId: orderProduct.orderProductId,
+              productName: productName,
+              status: orderProduct.status,
+              message: getOrderMessage(orderProduct.status),
+              createdAt: payment.CreatedAt,
+              scoreValue: 0,
+            };
+          } else {
+            // Chỉ có payment
+            return {
+              type: "payment",
+              paymentId: payment.PaymentId,
+              status: payment.Status,
+              message: getPaymentMessage(payment.Status),
+              createdAt: payment.CreatedAt,
+              scoreValue: 0,
+            };
+          }
+        });
+
+        setNotifications(notifications.slice(0, 8)); // Chỉ lấy 8 noti mới nhất
+      } catch (error) {
+        console.error("Error fetching member history:", error);
+        // Fallback: thử gọi API booking cũ
+        try {
+          const fallbackRes = await fetch(
+            `http://localhost:4458/api/bookings/member/${user.userId}?page=1&limit=8&sortBy=CreatedAt&sortOrder=desc`
+          );
+          if (fallbackRes.ok) {
+            const fallbackData = await fallbackRes.json();
+            setNotifications(
+              fallbackData.data
+                .map((b) => ({
+                  type: "booking",
+                  movieNameEnglish:
+                    b.movieNameEnglish || b.NameOfEnglish || "Unknown Movie",
+                  status: b.status || b.Status,
+                  message: getBookingMessage(b.status || b.Status),
+                  createdAt: b.BookingDate || b.CreatedAt,
+                  scoreValue:
+                    (b.pointEarn || b.PointEarn || 0) -
+                    (b.pointUse || b.PointUse || 0),
+                }))
+                .slice(0, 8)
+            );
+          } else {
+            setNotifications([]);
+          }
+        } catch (fallbackError) {
+          console.error("Fallback API also failed:", fallbackError);
+          setNotifications([]);
+        }
+      }
     }
-    if (user?.userId) fetchBookings();
+
+    if (user?.userId) fetchMemberHistory();
   }, [user?.userId]);
 
   const highlightStatus = (message) => {
@@ -127,6 +288,18 @@ const Header = () => {
       .replace(
         /cancelled/gi,
         '<span class="text-red-600 font-bold">cancelled</span>'
+      )
+      .replace(
+        /completed/gi,
+        '<span class="text-green-600 font-bold">completed</span>'
+      )
+      .replace(
+        /pending/gi,
+        '<span class="text-yellow-600 font-bold">pending</span>'
+      )
+      .replace(
+        /failed/gi,
+        '<span class="text-red-600 font-bold">failed</span>'
       );
   };
   const clearNotifications = () => {
@@ -147,7 +320,11 @@ const Header = () => {
   };
 
   return (
-    <div className="p-2 fixed md:px-5 bg-black/40 text-white flex items-center justify-between select-none w-[100%] top-0 left-0 z-50">
+    <div
+      className={`p-2 fixed md:px-5 ${
+        isScrolled ? "bg-black" : "bg-black/40"
+      } text-white flex items-center justify-between select-none w-[100%] top-0 left-0 z-50 transition-all duration-300`}
+    >
       <div role="button" className="flex items-center">
         <img
           src={logo}
@@ -304,12 +481,23 @@ const Header = () => {
                                   size={12}
                                 />
                               </div>
-                            ) : (
+                            ) : noti.type === "order" ? (
                               <div className="p-1.5 md:p-2 bg-green-500/20 rounded-full">
                                 <FaBoxOpen
                                   className="text-green-400"
                                   size={12}
                                 />
+                              </div>
+                            ) : noti.type === "combo" ? (
+                              <div className="p-1.5 md:p-2 bg-purple-500/20 rounded-full">
+                                <FaTicketAlt
+                                  className="text-purple-400"
+                                  size={12}
+                                />
+                              </div>
+                            ) : (
+                              <div className="p-1.5 md:p-2 bg-gray-500/20 rounded-full">
+                                <FaClock className="text-gray-400" size={12} />
                               </div>
                             )}
                           </div>
@@ -319,9 +507,17 @@ const Header = () => {
                                 <span className="font-semibold text-blue-400 text-sm">
                                   Ticket #{noti.movieNameEnglish}
                                 </span>
-                              ) : (
+                              ) : noti.type === "order" ? (
                                 <span className="font-semibold text-green-400 text-sm">
-                                  Order #{noti.orderProductId}
+                                  Order #{noti.productName}
+                                </span>
+                              ) : noti.type === "combo" ? (
+                                <span className="font-semibold text-purple-400 text-sm">
+                                  {noti.movieNameEnglish} + {noti.productName}
+                                </span>
+                              ) : (
+                                <span className="font-semibold text-gray-400 text-sm">
+                                  Payment #{noti.paymentId.slice(-8)}
                                 </span>
                               )}
                               <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">

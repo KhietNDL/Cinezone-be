@@ -356,7 +356,7 @@ const LandingPage = () => {
                     src={item.PosterImage}
                     alt={item.NameOfEnglish}
                     loading="lazy"
-                    className="w-full h-[250px] md:h-[320px] object-cover rounded-tl-xl rounded-tr-xl"
+                    className="w-full h-full object-cover rounded-tl-xl rounded-tr-xl"
                   />
                   {item.AverageRating && (
                     <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1">
@@ -426,9 +426,8 @@ const LandingPage = () => {
                 </div>
 
                 <div className="text-white text-center font-semibold text-sm md:text-base px-1">
-                  {/* Hiển thị đủ name ở mobile và desktop, rút gọn ở tablet/iPad */}
                   {item.NameOfEnglish?.length > 10 ? (
-                    <h3 className="font-bold text-lg mb-3 text-white">
+                    <h3 className="font-bold text-lg my-3 text-white">
                       <span className="block md:hidden lg:block">
                         {item.NameOfEnglish}
                       </span>
@@ -502,7 +501,7 @@ const LandingPage = () => {
                     src={item.PosterImage}
                     alt={item.NameOfEnglish}
                     loading="lazy"
-                    className="w-full h-[250px] md:h-[320px] object-cover rounded-tl-xl rounded-tr-xl"
+                    className="w-full h-full object-cover rounded-tl-xl rounded-tr-xl"
                   />
                   {item.AverageRating && (
                     <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1">
@@ -565,7 +564,7 @@ const LandingPage = () => {
                 <div className="text-white text-center font-semibold text-sm md:text-base px-1">
                   {/* Hiển thị đủ name ở mobile và desktop, rút gọn ở tablet/iPad */}
                   {item.NameOfEnglish?.length > 10 ? (
-                    <h3 className="font-bold text-lg mb-3 text-white">
+                    <h3 className="font-bold text-lg my-3 text-white">
                       <span className="block md:hidden lg:block">
                         {item.NameOfEnglish}
                       </span>
@@ -598,7 +597,7 @@ const LandingPage = () => {
       </div>
 
       {/* PROMOTION SECTION */}
-      <div className="py-[30px] md:py-[40px] px-4 md:px-[30px] w-full space-y-8">
+      <div className="landingPage-promotion py-[30px] md:py-[40px] px-4 md:px-[30px] w-full space-y-8">
         <div className="text-white font-bold text-[24px] md:text-[30px]">
           Special Promotions
         </div>

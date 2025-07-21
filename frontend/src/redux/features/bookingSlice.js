@@ -59,9 +59,9 @@ const bookingSlice = createSlice({
     setFinalTotalPrice(state, action) {
       state.finalTotalPrice = action.payload; 
     },
-    setProduct(state, action) {
-      state.product = action.payload;
-    },
+    // setProduct(state, action) {
+    //   state.product = action.payload;
+    // },
     setOrderProductsId(state, action) {
       state.orderProductsId = action.payload;
     } ,
