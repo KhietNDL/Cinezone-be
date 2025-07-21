@@ -228,6 +228,10 @@ class Booking {
         [seatIds]
       );
       let totalAmount = seatInfo.reduce((sum, seat) => sum + Number(seat.Price), 0);
+      if (promotionDiscount > 0) {
+      // Nếu có promotion, giảm theo phần trăm
+      totalAmount -= (totalAmount * promotionDiscount) / 100;
+      }
 
       if (discount > 0) {
         // Nếu dùng điểm đổi vé, KHÔNG áp dụng giảm giá membership

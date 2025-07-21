@@ -11,35 +11,47 @@ const ShowtimeSelector = ({
   setDateIndex,
   dispatch,
 }) => {
+  // Helper function để validate và format date
+  const isValidDate = (date) => {
+    return date instanceof Date && !isNaN(date.getTime());
+  };
+
+  const safeCreateDate = (dateString) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return isValidDate(date) ? date : null;
+  };
+
   const handleChangeDate = (direction) => {
-    const currentIdx = showtimes.findIndex((d) => {
-      const dDate = new Date(d.Day).toISOString().split("T")[0];
-      const sDate = new Date(selectedDate).toISOString().split("T")[0];
-      return dDate === sDate;
-    });
+    if (!showtimes || !Array.isArray(showtimes) || showtimes.length === 0) {
+      console.warn('Invalid showtimes data');
+      return;
+    }
 
-    if (currentIdx === -1) return;
-
-    const newIndex = currentIdx + direction;
-
-    if (newIndex >= 0 && newIndex < showtimes.length) {
-      dispatch({
-        type: "booking/setSelectedDate",
-        payload: showtimes[newIndex].Day,
-      });
-      if (direction === -1 && newIndex < dateIndex) {
-        setDateIndex(Math.max(0, dateIndex - 1));
-      } else if (direction === 1 && newIndex >= dateIndex + 3) {
-        setDateIndex(Math.min(showtimes.length - 3, dateIndex + 1));
-      } else if (newIndex < dateIndex) {
-        setDateIndex(newIndex);
-      } else if (newIndex >= dateIndex + 3) {
-        setDateIndex(Math.max(0, newIndex - 2));
-      }
+    // Chỉ di chuyển dateIndex để scroll danh sách, không thay đổi selectedDate
+    const newDateIndex = dateIndex + direction;
+    
+    if (newDateIndex >= 0 && newDateIndex <= showtimes.length - 3) {
+      setDateIndex(newDateIndex);
     }
   };
 
-  const visibleDates = showtimes.slice(dateIndex, dateIndex + 3);
+  // Kiểm tra có thể scroll trái/phải danh sách không
+  const canGoLeft = dateIndex > 0;
+  const canGoRight = dateIndex < (showtimes?.length || 0) - 3;
+
+  const visibleDates = showtimes ? showtimes.slice(dateIndex, dateIndex + 3) : [];
+
+  // Early return nếu không có dữ liệu hợp lệ
+  if (!showtimes || !Array.isArray(showtimes) || showtimes.length === 0) {
+    return (
+      <div className="mb-6 md:mb-8">
+        <div className="text-center text-white/60">
+          <p>No showtime data available</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mb-6 md:mb-8">
@@ -50,18 +62,43 @@ const ShowtimeSelector = ({
           </label>
           <div className="flex items-center gap-2 md:gap-3">
             <button
-              className="p-2 text-purple-400 hover:text-purple-300 hover:bg-white/10 rounded-xl transition-all flex-shrink-0"
+              className={`p-2 rounded-xl transition-all flex-shrink-0 ${
+                canGoLeft
+                  ? "text-purple-400 hover:text-purple-300 hover:bg-white/10"
+                  : "text-gray-500 cursor-not-allowed"
+              }`}
               onClick={() => handleChangeDate(-1)}
-              disabled={dateIndex === 0}
+              disabled={!canGoLeft}
             >
               <FaChevronLeft />
             </button>
             <div className="flex gap-2 md:gap-3 overflow-x-auto flex-1 scrollbar-hide justify-center">
               {visibleDates.map((d, idx) => {
+                if (!d || !d.Day) {
+                  return (
+                    <div
+                      key={idx}
+                      className="flex flex-col items-center justify-center w-16 md:w-20 h-12 md:h-16 rounded-2xl md:rounded-4xl text-xs md:text-sm bg-gray-600/20 text-gray-500"
+                    >
+                      <span>Invalid</span>
+                    </div>
+                  );
+                }
+
+                const dayObj = safeCreateDate(d.Day);
+                if (!dayObj) {
+                  return (
+                    <div
+                      key={idx}
+                      className="flex flex-col items-center justify-center w-16 md:w-20 h-12 md:h-16 rounded-2xl md:rounded-4xl text-xs md:text-sm bg-gray-600/20 text-gray-500"
+                    >
+                      <span>Invalid Date</span>
+                    </div>
+                  );
+                }
+
                 const isSelected = d.Day === selectedDate;
-                const dayObj = new Date(d.Day);
                 const today = new Date();
-                
                 
                 const dateToCheck = new Date(dayObj.getFullYear(), dayObj.getMonth(), dayObj.getDate());
                 const todayForComparison = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -74,7 +111,7 @@ const ShowtimeSelector = ({
                     className={`flex flex-col items-center justify-center w-16 md:w-20 h-12 md:h-16 rounded-2xl md:rounded-4xl text-xs md:text-sm transition-all duration-200
                       ${
                         isPastDate
-                          ? "bg-gray-600/40 text-gray-400   opacity-50"
+                          ? "bg-gray-600/40 text-gray-400 opacity-50"
                           : isSelected
                           ? "bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 text-white shadow-lg cursor-pointer"
                           : "bg-white/10 hover:bg-white/20 text-white/80 cursor-pointer"
@@ -106,9 +143,13 @@ const ShowtimeSelector = ({
               })}
             </div>
             <button
-              className="p-2 text-purple-400 hover:text-purple-300 hover:bg-white/10 rounded-xl transition-all flex-shrink-0"
+              className={`p-2 rounded-xl transition-all flex-shrink-0 ${
+                canGoRight
+                  ? "text-purple-400 hover:text-purple-300 hover:bg-white/10"
+                  : "text-gray-500 cursor-not-allowed"
+              }`}
               onClick={() => handleChangeDate(+1)}
-              disabled={dateIndex >= showtimes.length }
+              disabled={!canGoRight}
             >
               <FaChevronRight />
             </button>
