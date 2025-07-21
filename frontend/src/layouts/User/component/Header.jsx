@@ -307,7 +307,7 @@ const Header = () => {
       <div role="button" className="flex items-center">
         <img
           src={logo}
-          alt=""
+          alt="logo"
           loading="lazy"
           role="button"
           onClick={() => navigate("/")}
@@ -565,6 +565,7 @@ const Header = () => {
               <FaUser
                 size={25}
                 className="cursor-pointer text-white"
+                data-testid="user-icon"
                 onClick={() => navigate("/account")}
               />
             )}

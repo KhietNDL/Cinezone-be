@@ -1,12 +1,13 @@
+/* eslint-disable no-unused-vars */
 import { useState, useEffect } from "react";
 import { Eye, EyeOff, Mail, Lock, Film, Star } from "lucide-react";
 import logoWeb from "../../assets/logoWeb.png";
-import imageLogin1 from "../../assets/imageLogin1.jpg";
+import imageLogin6 from "../../assets/imageLogin6.webp";
 import imageLogin2 from "../../assets/imageLogin2.jpg";
 import imageLogin3 from "../../assets/imageLogin3.jpg";
 import imageLogin4 from "../../assets/imageLogin4.jpg";
 import { Link, useNavigate } from "react-router-dom";
-import { login } from "../../services/API";
+import { getCurrentMovies, login } from "../../services/API";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 
@@ -23,11 +24,37 @@ const MovieTheaterLogin = () => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   // eslint-disable-next-line no-unused-vars
   const [focusedField, setFocusedField] = useState("");
+  const [movieBackgrounds, setMovieBackgrounds] = useState([]);
 
   const [currentBgIndex, setCurrentBgIndex] = useState(0);
   const navigate = useNavigate();
 
-  const movieBackgrounds = [imageLogin1, imageLogin2, imageLogin3, imageLogin4];
+  useEffect(() => {
+    const fetchPosters = async () => {
+      try {
+        const data = await getCurrentMovies();
+        console.log("Current movies data:", data);
+        // Giả sử mỗi phim có trường posterImage là URL ảnh
+        const posters = data?.data
+          ?.map((movie) => {
+            if (!movie.PosterImage) return null;
+            // Nếu là đường dẫn tương đối thì thêm host
+            if (movie.PosterImage.startsWith("http")) return movie.PosterImage;
+            return `http://cinezone:4458${movie.PosterImage}`;
+          })
+          .filter(Boolean);
+        setMovieBackgrounds(
+          posters && posters.length > 0
+            ? posters.slice(0, 3)
+            : [imageLogin6, imageLogin2, imageLogin3]
+        );
+      } catch (error) {
+        // Nếu lỗi thì fallback về ảnh cũ
+        setMovieBackgrounds([imageLogin6, imageLogin2, imageLogin3]);
+      }
+    };
+    fetchPosters();
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -38,6 +65,10 @@ const MovieTheaterLogin = () => {
 
     return () => clearInterval(interval);
   }, [movieBackgrounds.length]);
+
+  useEffect(() => {
+    console.log("movieBackgrounds:", movieBackgrounds);
+  }, [movieBackgrounds]);
 
   const validateEmail = (email) => {
     return email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
@@ -82,7 +113,18 @@ const MovieTheaterLogin = () => {
       } catch (error) {
         console.error("Login error:", error.message);
         setIsLoading(false);
-        setErrors({ api: error.message || "Login failed. Please try again." });
+        // Kiểm tra lỗi 401 hoặc message liên quan xác thực
+        if (
+          error?.response?.status === 401 ||
+          error?.message?.toLowerCase().includes("401") ||
+          error?.message?.toLowerCase().includes("unauthorized")
+        ) {
+          setErrors({ api: "Invalid email or password" });
+        } else {
+          setErrors({
+            api: error.message || "Login failed. Please try again.",
+          });
+        }
       }
     }
   };
@@ -98,11 +140,12 @@ const MovieTheaterLogin = () => {
         {movieBackgrounds.map((bg, index) => (
           <div
             key={index}
-            className={`absolute inset-0 object-cover bg-cover bg-center bg-no-repeat transition-opacity duration-1000 ${
+            className={`absolute inset-0 h-screen bg-repeat transition-opacity duration-1000 ${
               index === currentBgIndex ? "opacity-100" : "opacity-0"
             }`}
             style={{
               backgroundImage: `url(${bg})`,
+              backgroundSize: "auto 103.33vh",
             }}
           />
         ))}
@@ -216,7 +259,7 @@ const MovieTheaterLogin = () => {
                     <Mail className="h-5 w-5" />
                   </div>
                   <input
-                    type="email"
+                    type="text"
                     className="block w-full pl-12 pr-4 py-3 text-base border-2 rounded-xl bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-purple-500 focus:border-transparent transition-all duration-300 border-white/10 hover:border-white/40 backdrop-blur-sm"
                     placeholder="Enter your email"
                     value={formData.email}
