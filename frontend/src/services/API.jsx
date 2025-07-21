@@ -484,6 +484,23 @@ export const ConfirmBooking = async (bookingId) => {
     throw error;
   }
 };
+
+
+export const ConfirmPayment = async (paymentId) => {
+  try {
+    const response = await api.post(`/payment/confirm/${paymentId}`);
+    console.log("CONFIRM BY PAYMENTID SUCCESS :", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi Confirm Booking BY PAYMENTID :", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+
+
+
 export const getAllBookings = async (params = {}) => {
   try {
     const response = await api.get("/bookings", { params });
@@ -550,6 +567,18 @@ export const getBookingHistory = async (memberId) => {
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy lịch sử đặt vé:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const getMembership = async (userId) => {
+  try {
+    const response = await api.get(`/user/${userId}/membership`);
+    console.log("MEMBERSHIP DATA:", response.data.membership);
+    return response.data.membership;
+  } catch (error) {
+    console.error("Lỗi khi lấy membership :", error);
     handleError(error);
     throw error;
   }
