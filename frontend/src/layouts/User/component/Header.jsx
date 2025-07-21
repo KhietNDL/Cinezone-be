@@ -153,6 +153,14 @@ const Header = () => {
         const notifications = data.data.map((item) => {
           const { payment, booking, orderProduct } = item;
 
+          // Helper để lấy điểm cộng/trừ
+          const getScoreValue = (booking) => {
+            if (!booking) return 0;
+            if (booking.pointEarn && booking.pointEarn > 0) return booking.pointEarn;
+            if (booking.pointUse && booking.pointUse > 0) return -booking.pointUse;
+            return 0;
+          };
+
           if (booking && orderProduct) {
             // Có cả booking và orderProduct
             // Lấy tên sản phẩm từ products array
@@ -169,7 +177,7 @@ const Header = () => {
               status: payment.Status,
               message: `${getBookingMessage(booking.status)} & ${getOrderMessage(orderProduct.status)}`,
               createdAt: payment.CreatedAt,
-              scoreValue: (booking.pointUse || 0) * -1, // pointUse là điểm trừ nên nhân -1
+              scoreValue: getScoreValue(booking),
               bookingStatus: booking.status,
               orderStatus: orderProduct.status,
             };
@@ -182,7 +190,7 @@ const Header = () => {
               status: booking.status,
               message: getBookingMessage(booking.status),
               createdAt: payment.CreatedAt,
-              scoreValue: (booking.pointUse || 0) * -1, // pointUse là điểm trừ nên nhân -1
+              scoreValue: getScoreValue(booking),
             };
           } else if (orderProduct) {
             // Chỉ có orderProduct

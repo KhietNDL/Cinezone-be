@@ -69,3 +69,15 @@ exports.getUserAgeGroups = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+exports.getTicketStats = async (req, res) => {
+  try {
+    const { type = 'day', year, month } = req.query;
+    if (!year || (type === 'day' && !month)) {
+      return res.status(400).json({ error: 'Missing year or month' });
+    }
+    const stats = await Analytics.countTicketsByDate({ type, year, month });
+    res.json(stats);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
