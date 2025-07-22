@@ -38,11 +38,21 @@ div[role="button"] {
   width: 100% !important;
 }
 .landingPage .swiper-slide {
-  height: 580px !important;
+  height: 550px !important;
 }
 .landingPage .landingPage-promotion .swiper-slide {
   height: 200px !important;
 }
+.landingPage .landingPage-commingSoon .swiper-slide {
+  height: 550px !important;
+}
+
+@media (max-width: 1024.5px) {
+  .landingPage .swiper-slide {
+    height: 580px !important;
+  }
+}
+
 @media (max-width: 768.5px) {
   .landingPage .swiper {
     padding-right: 35px !important;
@@ -57,6 +67,9 @@ div[role="button"] {
   .landingPage .swiper {
     padding-right: 20px !important;
     padding-left: 20px !important;
+  }
+  .landingPage .swiper-slide {
+    height: 500px !important;
   }
 }
 

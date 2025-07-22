@@ -73,28 +73,6 @@ const EnhancedSearchForm = ({ searchTerm, onSearchChange, onSubmit }) => {
             }`}
           ></div>
         </div>
-
-        {/* Search Button */}
-        <button
-          type="submit"
-          className={`ml-3 px-6 py-4 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 relative overflow-hidden group ${
-            searchTerm.trim()
-              ? "bg-[#6a57f5] text-white hover:bg-[#5543c6] hover:shadow-lg hover:shadow-[#6a57f5]/25"
-              : "bg-slate-700 text-gray-400 cursor-not-allowed"
-          }`}
-          disabled={!searchTerm.trim()}
-        >
-          {/* Button background animation */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#6a57f5] to-[#8b5cf6] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-          <div className="relative flex items-center gap-2">
-            <FaSearch
-              className="transition-transform duration-200 group-hover:scale-110"
-              size={14}
-            />
-            <span>Search</span>
-          </div>
-        </button>
       </div>
     </form>
   );

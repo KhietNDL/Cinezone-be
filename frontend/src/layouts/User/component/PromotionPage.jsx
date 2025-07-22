@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getPromotion, searchPromotion } from "../../../services/API";
+import { useNavigate } from "react-router-dom";
 
 const Copy = ({ className }) => (
   <svg
@@ -67,6 +68,22 @@ const Tag = ({ className }) => (
   </svg>
 );
 
+const ArrowLeft = ({ className }) => (
+  <svg
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M15 19l-7-7 7-7"
+    />
+  </svg>
+);
+
 const ArrowRight = ({ className }) => (
   <svg
     className={className}
@@ -106,11 +123,11 @@ const Gift = ({ className }) => (
 );
 
 const MoviePromotions = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   // eslint-disable-next-line no-unused-vars
   const [sortBy] = useState("startDate");
 
-  const [showSearch, setShowSearch] = useState(false);
   const [promotions, setPromotions] = useState([]);
   const [allPromotions, setAllPromotions] = useState([]); // Store all promotions for reset
   const [loading, setLoading] = useState(true);
@@ -176,14 +193,7 @@ const MoviePromotions = () => {
         // Reset to all promotions if search is empty
         const sorted = sortPromotions(allPromotions);
         setPromotions(sorted);
-        // Debug trạng thái
-        console.log(
-          "[RESET] Promotion status order:",
-          sorted.map((p) => ({
-            id: p.PromotionId,
-            status: getPromotionStatus(p),
-          }))
-        );
+
         setSearching(false);
       } else {
         handleSearch(searchTerm);
@@ -193,34 +203,18 @@ const MoviePromotions = () => {
     return () => clearTimeout(delayedSearch);
   }, [searchTerm, allPromotions]);
 
-  const handleSearch = async (title) => {
+  const handleSearch = async (code) => {
     try {
       setSearching(true);
-      const data = await searchPromotion(title);
-      console.log("Search results: ", data);
-      const sorted = sortPromotions(data.promotions || []);
+      const data = await searchPromotion(code);
+
+      const sorted = sortPromotions(data.promotions);
       setPromotions(sorted);
-      // Debug trạng thái
-      console.log(
-        "[SEARCH] Promotion status order:",
-        sorted.map((p) => ({
-          id: p.PromotionId,
-          status: getPromotionStatus(p),
-        }))
-      );
     } catch (error) {
       console.error("Failed to search promotions:", error);
       // On error, show all promotions
       const sorted = sortPromotions(allPromotions);
       setPromotions(sorted);
-      // Debug trạng thái
-      console.log(
-        "[ERROR] Promotion status order:",
-        sorted.map((p) => ({
-          id: p.PromotionId,
-          status: getPromotionStatus(p),
-        }))
-      );
     } finally {
       setSearching(false);
     }
@@ -233,7 +227,6 @@ const MoviePromotions = () => {
   };
 
   const handleSearchClose = () => {
-    setShowSearch(false);
     setSearchTerm("");
     const sorted = sortPromotions(allPromotions);
     setPromotions(sorted); // Reset to all promotions
@@ -280,61 +273,68 @@ const MoviePromotions = () => {
       </div>
 
       {/* Search Toggle - Fixed at Top Right */}
-      <div className="absolute top-[100px] right-8 z-20">
-        {!showSearch ? (
-          <button
-            onClick={() => setShowSearch(true)}
-            className="group relative flex items-center justify-center w-16 h-16 rounded-2xl hover:scale-110 hover:rotate-12 transition-all duration-500 transform shadow-2xl border border-purple-400/30"
-            style={{
-              backgroundColor: "#6957f5ea",
-            }}
-            aria-label="Open search"
+      <div className="absolute top-[100px] left-6 z-20">
+        {/* Back to Home Button */}
+        <button
+          onClick={() => navigate("/")}
+          className="group relative flex items-center gap-3 bg-slate-800/80 backdrop-blur-sm hover:bg-slate-700/80 
+                   border border-slate-700/50 hover:border-[#6a57f5]/30 
+                   rounded-xl px-4 py-3 transition-all duration-300
+                   shadow-lg hover:shadow-xl hover:shadow-[#6a57f5]/10 mb-4"
+        >
+          <div
+            className="flex items-center justify-center w-8 h-8 rounded-lg 
+                        bg-[#6a57f5]/20 group-hover:bg-[#6a57f5]/30 
+                        transition-all duration-300"
           >
-            <Search className="w-7 h-7 text-white group-hover:scale-125 transition-all duration-300" />
-            <div
-              className="absolute inset-0 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"
-              style={{ backgroundColor: "rgba(105, 87, 245, 0.5)" }}
-            ></div>
-          </button>
-        ) : (
-          <div className="relative w-96 animate-in slide-in-from-right-5 duration-500">
-            <div className="relative">
-              <Search
-                className="absolute left-5 top-1/2 transform -translate-y-1/2 text-purple-300 z-10"
-                size={22}
-              />
-              <input
-                type="text"
-                placeholder="Search magical deals..."
-                className="w-full pl-14 pr-14 py-5 rounded-2xl border-2 border-purple-500/30 bg-black/60 backdrop-blur-xl text-white placeholder-purple-200/60 focus:outline-none focus:ring-4 focus:ring-purple-400/30 focus:border-purple-400 transition-all duration-300 shadow-2xl text-lg"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                autoFocus
-              />
-              <button
-                onClick={handleSearchClose}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 w-8 h-8 rounded-full text-purple-200 hover:text-white transition-all duration-200 flex items-center justify-center hover:bg-opacity-40"
-                style={{ backgroundColor: "rgba(105, 87, 245, 0.2)" }}
-                aria-label="Close search"
-              >
-                <span className="text-xl">×</span>
-              </button>
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-violet-600/20 rounded-2xl blur-xl -z-10"></div>
-            </div>
-            {/* Search Status Indicator */}
-            {searching && (
-              <div className="absolute -bottom-8 left-0 text-purple-300 text-sm animate-pulse">
-                Searching...
-              </div>
-            )}
+            <ArrowLeft
+              size={16}
+              className="text-[#6a57f5] group-hover:translate-x-[-2px] transition-transform duration-300"
+            />
           </div>
-        )}
+          <span className="text-white font-medium group-hover:text-[#6a57f5] transition-colors duration-300">
+            Back to Home
+          </span>
+        </button>
       </div>
 
-      <div className="relative z-10 p-6 md:p-12 pt-32 md:pt-40">
+      <div className="relative z-10 p-6 md:p-12 pt-48 lg:pt-50 md:pt-45 ">
         <div className="max-w-7xl mx-auto">
           {/* Enhanced Hero Section */}
           <div className="text-center mb-20">
+            {/* Search Bar - Integrated into Hero */}
+            <div className="relative max-w-2xl mx-auto mb-12">
+              <div className="relative">
+                <Search
+                  className="absolute left-6 top-1/2 transform -translate-y-1/2 text-purple-300 z-10"
+                  size={24}
+                />
+                <input
+                  type="text"
+                  placeholder="Search for amazing movie deals..."
+                  className="w-full pl-16 pr-6 py-5 rounded-3xl border-2 border-purple-500/30 bg-black/40 backdrop-blur-xl text-white placeholder-purple-200/60 focus:outline-none focus:ring-4 focus:ring-purple-400/30 focus:border-purple-400 transition-all duration-300 shadow-2xl text-lg font-medium"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                {searchTerm && (
+                  <button
+                    onClick={handleSearchClose}
+                    className="absolute right-6 top-1/2 transform -translate-y-1/2 w-8 h-8 rounded-full text-purple-200 hover:text-white transition-all duration-200 flex items-center justify-center hover:bg-purple-500/20"
+                    aria-label="Clear search"
+                  >
+                    <span className="text-xl">×</span>
+                  </button>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 to-violet-600/10 rounded-3xl blur-xl -z-10"></div>
+              </div>
+              {/* Search Status Indicator */}
+              {searching && (
+                <div className="mt-2 text-purple-300 text-sm animate-pulse">
+                  🔍 Searching for promotions...
+                </div>
+              )}
+            </div>
+
             <div className="relative inline-block mb-8">
               <h1 className="text-6xl md:text-8xl font-black mb-4 bg-gradient-to-r from-white via-purple-200  to-pink-200 bg-clip-text text-transparent leading-tight">
                 Movie Promotions
