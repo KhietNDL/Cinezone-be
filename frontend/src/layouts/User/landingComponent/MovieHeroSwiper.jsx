@@ -9,11 +9,12 @@ import {
   Star,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { slugify } from "./Slug";
+import { slugify } from "../component/Slug";
 
 const MovieHeroSwiper = ({ movieData }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  // eslint-disable-next-line no-unused-vars
   const [videoProgress, setVideoProgress] = useState(0);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [pausedByScroll, setPausedByScroll] = useState(false);
@@ -51,6 +52,10 @@ const MovieHeroSwiper = ({ movieData }) => {
       try {
         videoRef.current.pause();
         videoRef.current.currentTime = 0;
+        // Force reload on mobile to ensure video starts from beginning
+        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+          videoRef.current.load();
+        }
       } catch (error) {
         console.error("Error pausing video:", error);
       }
@@ -284,55 +289,43 @@ const MovieHeroSwiper = ({ movieData }) => {
   };
 
   return (
-    <div className="relative h-[500px] md:h-[600px] lg:h-[640px] w-full ">
+    <div className="relative h-[100vh] sm:h-[500px] md:h-[700px] lg:h-[760px] w-full -mt-21 md:-mt-23 ">
       {/* Background Image/Video */}
-      <div className="absolute inset-0">
-        <div className="relative w-full h-full">
-          <video
-            key={currentMovie.TrailerUrl}
-            ref={videoRef}
-            className="w-full h-full object-cover"
-            playsInline
-            muted
-            onEnded={handleStopVideo}
-          >
-            <source src={currentMovie.TrailerUrl} type="video/mp4" />
-          </video>
-
-          {/* Video Progress Bar */}
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-black/70">
-            <div
-              className="h-full bg-[#6a57f5] transition-all duration-100"
-              style={{ width: `${videoProgress}%` }}
-            />
-          </div>
-        </div>
+      <div className="relative w-full h-full ">
+        <div className="bg-gradient-to-b from-transparent to-black h-full w-full absolute inset-0"></div>
+        <video
+          key={currentMovie.TrailerUrl}
+          ref={videoRef}
+          className="w-full h-full object-cover"
+          playsInline
+          muted
+          onEnded={handleStopVideo}
+        >
+          <source src={currentMovie.TrailerUrl} type="video/mp4" />
+        </video>
       </div>
-
       {/* Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black" />
-
       {/* Navigation Arrows */}
       <div
         role="button"
         onClick={handlePrevSlide}
-        className="absolute left-1 top-1/2 -translate-y-1/2 hover:text-[#6a57f5] text-white p-3 rounded-full transition-all duration-300 z-20 hover:scale-110"
+        className="absolute md:mt-[50px] hidden md:block left-1 top-1/2 -translate-y-1/2 hover:text-[#6a57f5] text-white p-3 rounded-full transition-all duration-300 z-20 hover:scale-110"
         aria-label="Previous slide"
       >
         <ChevronLeft size={50} />
       </div>
-
       <div
         role="button"
         onClick={handleNextSlide}
-        className="absolute right-1 top-1/2 -translate-y-1/2 hover:text-[#6a57f5] text-white p-3 rounded-full transition-all duration-300 z-20 hover:scale-110"
+        className="absolute hidden md:mt-[50px] md:block right-1 top-1/2 -translate-y-1/2 hover:text-[#6a57f5] text-white p-3 rounded-full transition-all duration-300 z-20 hover:scale-110"
         aria-label="Next slide"
       >
         <ChevronRight size={50} />
       </div>
 
-      <div className="absolute inset-0 flex items-center justify-center h-full w-full z-10 p-4 md:p-8 ">
-        <div className="flex flex-col md:flex-row items-center h-full w-full md:px-10 gap-6 md:gap-8">
+      <div className="absolute md:mt-[50px] inset-0 flex items-center justify-center h-full w-full z-10 p-4 md:p-8  ">
+        <div className="flex flex-col md:flex-row items-center   h-full w-full md:px-10 gap-6 md:gap-8">
           <div className="hidden md:block flex-shrink-0 w-[150px] sm:w-[150px] md:w-[200px] lg:w-[250px]">
             <div className="relative group">
               <img
@@ -343,7 +336,6 @@ const MovieHeroSwiper = ({ movieData }) => {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#6a57f5]/30 to-transparent rounded-2xl opacity-75 group-hover:opacity-100 transition-opacity duration-300" />
 
-              {/* Rating Badge on Poster */}
               {currentMovie.AverageRating && (
                 <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-sm rounded-xl px-3 py-2 flex items-center gap-2 shadow-lg">
                   <Star size={16} className="text-yellow-400 fill-yellow-400" />
@@ -354,9 +346,7 @@ const MovieHeroSwiper = ({ movieData }) => {
               )}
             </div>
           </div>
-
-          <div className="flex flex-col justify-center mt-auto mb-[20px] md:mb-0 md:mt-0 w-full space-y-6 md:w-1/2 lg:w-3/5">
-            {/* Genre Tags */}
+          <div className="flex flex-col justify-center mt-auto mb-[100px] md:mb-0 md:mt-0 w-full space-y-6 md:w-1/2 lg:w-3/5">
             {currentMovie.Genres && (
               <div className="flex flex-wrap gap-2">
                 {currentMovie.Genres.split(",").map((genre, index) => (
@@ -370,13 +360,11 @@ const MovieHeroSwiper = ({ movieData }) => {
               </div>
             )}
 
-            {/* Movie Title */}
             <div className="space-y-3">
               <h1 className="text-2xl sm:text-4xl font-extrabold text-white leading-tight tracking-tight">
                 {currentMovie.NameOfEnglish}
               </h1>
 
-              {/* Rating Section for Mobile/Below Title */}
               {currentMovie.AverageRating && (
                 <div className="flex items-center gap-3 md:hidden">
                   <div className="flex items-center gap-1 bg-black/50 backdrop-blur-sm rounded-lg px-3 py-1.5">
@@ -390,24 +378,8 @@ const MovieHeroSwiper = ({ movieData }) => {
                   </div>
                 </div>
               )}
-
-              {/* Rating Section for Desktop */}
-              {currentMovie.AverageRating && (
-                <div className="hidden md:flex items-center gap-4">
-                  <div className="flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-xl px-4 py-2">
-                    <Star
-                      size={20}
-                      className="text-yellow-400 fill-yellow-400"
-                    />
-                    <span className="text-white font-bold text-lg">
-                      {parseFloat(currentMovie.AverageRating).toFixed(1)}
-                    </span>
-                  </div>
-                </div>
-              )}
             </div>
 
-            {/* Synopsis */}
             {currentMovie.ContentSynopsis?.length > 100 ? (
               <p className="text-white/85 text-sm hidden md:block sm:text-base md:text-[18px] max-w-xl leading-relaxed line-clamp-4">
                 {currentMovie.ContentSynopsis.slice(0, 100) + "..."}
@@ -418,29 +390,29 @@ const MovieHeroSwiper = ({ movieData }) => {
               </p>
             )}
 
-            {/* Action Buttons */}
             <div className="flex flex-row gap-3 w-full sm:w-auto">
-              <button
+              <div
+                role="button"
                 onClick={() => handleClickMovie(currentMovie.NameOfEnglish)}
                 className="bg-[#6a57f5] hover:bg-[#5a47e5] text-white px-6 py-2.5 rounded-full font-semibold text-sm sm:text-base transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg shadow-[#6a57f5]/40 focus:outline-none focus:ring-2 focus:ring-[#6a57f5]/50"
                 aria-label={`Book tickets for ${currentMovie.NameOfEnglish}`}
               >
                 Book Now
-              </button>
-              <button
+              </div>
+              <div
+                role="button"
                 onClick={handleOpenPopup}
                 className="bg-transparent border-2 border-white/40 hover:border-white/70 hover:bg-white/10 text-white px-6 py-2.5 rounded-full font-semibold text-sm sm:text-base transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-white/50"
                 aria-label={`Watch trailer for ${currentMovie.NameOfEnglish}`}
               >
                 <Play size={18} className="mr-2" />
                 Watch Trailer
-              </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Slide Indicators */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-10">
         {movieData.map((_, index) => (
           <div
@@ -459,7 +431,6 @@ const MovieHeroSwiper = ({ movieData }) => {
         ))}
       </div>
 
-      {/* Full-Screen Trailer Popup */}
       {isPopupOpen && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="relative w-full max-w-4xl rounded-2xl">

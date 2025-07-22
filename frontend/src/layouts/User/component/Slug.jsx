@@ -1,5 +1,5 @@
 export const slugify = (str) => {
-  if (!str) return ""; 
+  if (!str) return "";
   return str
     .toLowerCase()
     .normalize("NFD")

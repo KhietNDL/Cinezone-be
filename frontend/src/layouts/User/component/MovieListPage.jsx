@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { getMovies, searchMovies } from "../../../services/API";
+import MovieCard from "../landingComponent/MovieCard";
 
 import {
   FaRegCalendarCheck,
@@ -363,148 +364,20 @@ const MovieListPage = () => {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
             {movies.map((movie) => (
-              <div
+              <MovieCard
                 key={movie.MovieId}
-                className="bg-slate-800 rounded-xl overflow-hidden shadow-lg flex flex-col relative group cursor-pointer transition-transform duration-300 hover:scale-105"
-                onMouseEnter={() => setHoveredMovie(movie.MovieId)}
+                item={movie}
+                isHovered={hoveredMovie === movie.MovieId}
+                onMouseEnter={setHoveredMovie}
                 onMouseLeave={() => setHoveredMovie(null)}
-                onClick={() => handleClickMovie(movie.NameOfEnglish)}
-                tabIndex={0}
-                role="button"
-              >
-                <div className="relative">
-                  <img
-                    src={movie.PosterImage}
-                    alt={movie.NameOfEnglish}
-                    className="w-full h-64 object-cover"
-                  />
-
-                  {/* Rating badge */}
-                  {movie.AverageRating && (
-                    <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1">
-                      <FaStar6 size={14} className="text-yellow-400" />
-                      <span className="text-white font-semibold text-sm">
-                        {parseFloat(movie.AverageRating).toFixed(1)}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Hover Overlay */}
-                  {hoveredMovie === movie.MovieId && (
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col justify-center items-start p-4 transition-all duration-300 ease-in-out z-10">
-                      <div className="text-white space-y-3 w-full">
-                        <h3 className="font-bold text-lg mb-3 text-white">
-                          {movie.NameOfEnglish}
-                        </h3>
-
-                        <div className="space-y-3 text-sm">
-                          <div className="flex items-center">
-                            <span className="text-gray-300">
-                              <FaRegCalendarCheck size={16} />
-                            </span>
-                            <span className="ml-2">
-                              {formatDateRange(movie.FromDate, movie.ToDate)}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center">
-                            <span className="text-gray-300">
-                              <GoClockFill size={16} />
-                            </span>
-                            <span className="ml-2">
-                              {formatRunningTime(movie.RunningTime)}
-                            </span>
-                          </div>
-
-                          {movie.AverageRating && (
-                            <div className="flex items-center gap-1">
-                              <FaStar className="text-yellow-400" size={16} />
-                              <span className="font-semibold">
-                                {parseFloat(movie.AverageRating).toFixed(1)}
-                              </span>
-                            </div>
-                          )}
-
-                          <div className="flex items-start">
-                            <span className="text-gray-300 mr-2 mt-1">
-                              <IoMdBookmark size={16} />
-                            </span>
-                            {movie.Genres && (
-                              <div className="flex flex-wrap gap-1">
-                                {movie.Genres.split(", ").map(
-                                  (genre, index) => (
-                                    <span
-                                      key={index}
-                                      className="text-white text-xs font-medium"
-                                    >
-                                      {genre}
-                                    </span>
-                                  )
-                                )}
-                              </div>
-                            )}
-                          </div>
-
-                          <p className="text-gray-300 text-sm line-clamp-2">
-                            {movie.Description?.slice(0, 100) || ""}
-                            {movie.Description &&
-                              movie.Description.length > 100 &&
-                              "..."}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Card Content */}
-                <div className="p-4 flex-1 flex flex-col">
-                  <h2 className="text-lg font-bold text-white mb-2 line-clamp-1">
-                    {movie.NameOfEnglish}
-                  </h2>
-
-                  <div className="flex items-center gap-2 mb-3">
-                    <FaStar className="text-yellow-400" />
-                    <span className="text-yellow-300 font-semibold">
-                      {movie.AverageRating
-                        ? parseFloat(movie.AverageRating).toFixed(1)
-                        : "N/A"}
-                    </span>
-                  </div>
-
-                  <p className="text-gray-300 text-sm flex-1 line-clamp-2 mb-4">
-                    {movie.Description?.slice(0, 80) || ""}
-                    {movie.Description &&
-                      movie.Description.length > 80 &&
-                      "..."}
-                  </p>
-
-                  {/* Action buttons */}
-                  <div className="flex flex-col gap-2 mt-auto">
-                    <button
-                      className="text-white flex items-center justify-center hover:bg-slate-700 p-2 rounded-lg transition-colors text-sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenTrailer(movie);
-                      }}
-                    >
-                      <FaRegCirclePlay size={16} className="mr-2" />
-                      Watch Trailer
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleClickMovie(movie.NameOfEnglish);
-                      }}
-                      className="bg-[#6a57f5] rounded-lg px-4 py-2 text-white hover:bg-[#5543c6] text-sm font-semibold transition-colors shadow-sm"
-                    >
-                      Book Now
-                    </button>
-                  </div>
-                </div>
-              </div>
+                onClickMovie={handleClickMovie}
+                onOpenTrailer={handleOpenTrailer}
+                formatDateRange={formatDateRange}
+                formatRunningTime={formatRunningTime}
+                showBookButton={true}
+              />
             ))}
           </div>
 
