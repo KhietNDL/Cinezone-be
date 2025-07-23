@@ -9,7 +9,7 @@ import { FaCheck, FaTimes } from "react-icons/fa";
 import { FaArrowLeft, FaMoneyBillWave } from "react-icons/fa6";
 import './ComboPage.css';
 import { useSelector, useDispatch } from "react-redux";
-import { clearComboCart, clearOrderInfo, setOrderInfo } from "../../../redux/features/comboSlice";
+import { clearComboCart, clearOrderInfo, setOrderInfo, setStripeClientSecret, setPaymentId } from "../../../redux/features/comboSlice";
 import PaymentMethod from '../component/PaymentMethod';
 import { processPayment } from '../../../hooks/useProcessPayment';
 
@@ -21,6 +21,7 @@ export default function CheckOutComboPage() {
   const cart = useSelector(state => state.combo.cart);
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("Cash");
+  const [cardType, setCardType] = useState("");
   const dispatch = useDispatch();
 
   const formatPrice = (price) => price?.toLocaleString('vi-VN');
@@ -32,6 +33,11 @@ export default function CheckOutComboPage() {
   const handlePayment = async () => {
     if (!Array.isArray(cart) || cart.length === 0) {
       toast.warning("Cart is empty or missing order number.");
+      return;
+    }
+
+    if (paymentMethod === "Visa" && !cardType) {
+      toast.error("Please select a card type for Visa payment.");
       return;
     }
 
@@ -55,15 +61,34 @@ export default function CheckOutComboPage() {
         totalAmount: totalPrice,
       }));
 
-      await processPayment({
+      const paymentResult =  await processPayment({
         paymentMethod,
         orderId: holdResponse.OrderProductId,
         amount: totalPrice,
         type: "combo",
         navigate,
         setIsRedirecting: null,
-        successUrl: `${paymentMethod === "Cash" ? "/staff/combo-selling/combo-information" :`${window.location.origin}/staff/combo-selling/combo-information`}`,
+        // successUrl: `${paymentMethod === "Cash" ? "/staff/combo-selling/combo-information" :`${window.location.origin}/staff/combo-selling/combo-information`}`,
+        successUrl: paymentMethod === "Cash"
+          ? "/staff/combo-selling/combo-information"
+          : paymentMethod === "Visa"
+            ? "/staff/combo-selling/waiting-payment"
+            : `${window.location.origin}/staff/combo-selling/combo-information`,
+        cardType: paymentMethod === "Visa" ? cardType : undefined,
       });
+      console.log("paymentResult:", paymentResult);
+      console.log("paymentResult.data:", paymentResult?.data);
+
+      if (
+        paymentMethod === "Visa" &&
+        (paymentResult?.data?.clientSecret || paymentResult?.clientSecret)
+      ) {
+        dispatch(setStripeClientSecret(paymentResult.data || paymentResult));
+      }
+
+      if (paymentMethod && paymentResult?.data?.paymentId || paymentResult?.data?.payment?.PaymentId) {
+        dispatch(setPaymentId(paymentResult.data.paymentId || paymentResult.data.payment.PaymentId));
+      }
 
     } catch (error) {
       toast.error("Payment failed.");
@@ -138,7 +163,14 @@ export default function CheckOutComboPage() {
 
         <PaymentMethod
           value={paymentMethod}
-          onChange={setPaymentMethod}
+          onChange={val => {
+            setPaymentMethod(val);
+            if (val !== "Visa") setCardType("");
+          }}
+          showCardType={paymentMethod === "Visa"}
+          cardType={cardType}
+          onCardTypeChange={setCardType}
+          cardTypeError={paymentMethod === "Visa" && !cardType ? "Please select a card type" : ""}
         />
 
       </div>

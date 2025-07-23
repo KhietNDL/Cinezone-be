@@ -559,7 +559,7 @@ export const getAllProducts = async (params) => {
   try {
     const response = await api.get("/products", { params });
     return response.data;
-    console.log("DATA PRODCUT",response.data)
+    // console.log("DATA PRODCUT",response.data);
   } catch (error) {
     console.error("Lỗi khi lấy danh sách sản phẩm owr API:", error);
     handleError(error);

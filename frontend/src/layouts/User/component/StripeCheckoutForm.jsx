@@ -41,21 +41,21 @@ function CheckoutForm({ clientSecret, onSuccess }) {
   );
 }
 
-export default function StripeCheckoutForm({ clientSecret, onSuccess }) {
+export default function StripeCheckoutForm({ clientSecret, onSuccess, theme = 'stripe' }) {
   if (!clientSecret) return null;
   const appearance = {
-    theme: 'stripe', // hoặc 'night', 'flat', 'none'
+    theme, // hoặc 'night', 'flat', 'none'
     variables: {
-      colorPrimary: '#a259ff',
-      colorBackground: '#1a005f',
-      colorText: '#fff',
+      colorPrimary:  theme === 'night' ? 'black' : '#a259ff',
+      colorBackground: theme === 'night' ? '#fff' : '#1a005f',
+      colorText:  theme === 'night' ? '#222' : '#fff',
       colorDanger: '#ff3860',
       fontFamily: 'inherit',
       borderRadius: '12px',
     },
     rules: {
       '.Input': {
-        border: '1px solid #a259ff',
+        border: theme === 'night' ? '1px solid lightgray' : '1px solid #a259ff',
       },
       '.Label': {
         color: '#fff',

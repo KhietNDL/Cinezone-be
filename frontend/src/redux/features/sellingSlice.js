@@ -23,6 +23,8 @@ const initialState = {
     usedPoints: 0,
     bookingId: '',
     paymentId: null,
+    stripeClientSecret: null,
+    visaResponse: null,
 };
 
 const sellingSlice = createSlice({
@@ -77,6 +79,12 @@ const sellingSlice = createSlice({
         setPaymentId(state, action) {
             state.paymentId = action.payload;
         },
+        setStripeClientSecret(state, action) {
+            state.stripeClientSecret = action.payload;
+        },
+        setVisaResponse(state, action) {
+            state.visaResponse = action.payload;
+        },
         resetBooking: () => initialState,
     },
 });
@@ -93,7 +101,9 @@ export const {
     setTotalPrice,
     setCompleteBooking,
     resetBooking,
-    setPaymentId
+    setPaymentId,
+    setStripeClientSecret,
+    setVisaResponse
 } = sellingSlice.actions;
 
 export default sellingSlice.reducer;
