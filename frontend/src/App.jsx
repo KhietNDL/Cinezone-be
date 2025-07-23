@@ -53,6 +53,7 @@ import BlogPage from "./layouts/User/component/BlogPage";
 import BlogDetail from "./layouts/User/component/BlogDetail";
 import BlogManagement from "./layouts/Admin/component/BlogManagement";
 import WaitingPaymentStaff from "./layouts/Staff/ticketComponent/WaitingPaymentStaff";
+import NotFound from "../cosmic/blocks/blog/NotFound";
 
 function App() {
   return (
@@ -76,7 +77,8 @@ function App() {
             <Route path="/waiting" element={<WaitingPayment />} />
             <Route path="/movies" element={<MovieListPage />} />
             <Route path="/blog" element={<BlogPage />} />
-            <Route path="/blog/:id" element={<BlogDetail />} />
+            <Route path="/blog/:slug" element={<BlogDetail />} />
+            <Route path="*" element={<NotFound />} />
             <Route path="/account" element={<AccountImformation />}>
               <Route path="*" element={<AccountImformation />} />
               <Route path="personal" element={<EditAccount />} />

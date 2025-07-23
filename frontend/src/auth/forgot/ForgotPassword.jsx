@@ -7,6 +7,7 @@ import imageLogin3 from "../../assets/imageLogin3.jpg";
 import imageLogin4 from "../../assets/imageLogin4.jpg";
 import { useNavigate } from "react-router-dom";
 import { forgot } from "../../services/API";
+import { getCurrentMovies } from "../../services/API";
 
 const MovieForgotPassword = () => {
   const navigate = useNavigate();
@@ -19,8 +20,40 @@ const MovieForgotPassword = () => {
   const [focusedField, setFocusedField] = useState("");
   const [currentBgIndex, setCurrentBgIndex] = useState(0);
   const [apiError, setApiError] = useState("");
+  const [movieBackgrounds, setMovieBackgrounds] = useState([
+    imageLogin1,
+    imageLogin2,
+    imageLogin3,
+    imageLogin4,
+  ]);
 
-  const movieBackgrounds = [imageLogin1, imageLogin2, imageLogin3, imageLogin4];
+  useEffect(() => {
+    const fetchPosters = async () => {
+      try {
+        const data = await getCurrentMovies();
+        const posters = data?.data
+          ?.map((movie) => {
+            if (!movie.PosterImage) return null;
+            if (movie.PosterImage.startsWith("http")) return movie.PosterImage;
+            return `http://cinezone:4458${movie.PosterImage}`;
+          })
+          .filter(Boolean);
+        setMovieBackgrounds(
+          posters && posters.length > 0
+            ? posters
+            : [imageLogin1, imageLogin2, imageLogin3, imageLogin4]
+        );
+      } catch {
+        setMovieBackgrounds([
+          imageLogin1,
+          imageLogin2,
+          imageLogin3,
+          imageLogin4,
+        ]);
+      }
+    };
+    fetchPosters();
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {

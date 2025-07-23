@@ -1,6 +1,12 @@
 // Landing.jsx - Cách tích hợp component
-import React, { useEffect, useState, useRef } from "react";
-import { FaRegCalendarCheck, FaRegCirclePlay, FaStar } from "react-icons/fa6";
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
+import { FaRegCirclePlay, FaStar } from "react-icons/fa6";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/pagination";
@@ -9,141 +15,47 @@ import { IoMdBookmark } from "react-icons/io";
 import { GoClockFill } from "react-icons/go";
 import { Pagination, Navigation } from "swiper/modules";
 import { useNavigate } from "react-router-dom";
-import MovieHeroSwiper from "./MovieHeroSwiper";
 import { slugify } from "./Slug";
-import {
-  getCurrentMovies,
-  getMovies,
-  getPromotion,
-  getUpcomingMovies,
-} from "../../../services/API";
+import { useMovieData } from "../../../hooks/useMovieData";
 import { toast } from "react-toastify";
 import { useDispatch } from "react-redux";
 import { resetBooking } from "../../../redux/features/bookingSlice";
 import { X } from "lucide-react";
+import MovieHeroSwiper from "../landingComponent/MovieHeroSwiper";
+import SkeletonLoader from "../landingComponent/SkeletonLoader";
+import StatsSection from "../landingComponent/StatsSection";
+import TrendingSection from "../landingComponent/TrendingSection";
+import MovieCard from "../landingComponent/MovieCard";
+import PromotionCard from "../landingComponent/PromotionCard";
 
 const LandingPage = () => {
-  const [movieData, setMovieData] = useState([]);
-  // eslint-disable-next-line no-unused-vars
-  const [itemsPerPage, setItemsPerPage] = useState(7);
-  const [currentPage, setCurrentPage] = useState(1);
-  // eslint-disable-next-line no-unused-vars
-  const [totalPages, setTotalPages] = useState(0);
+  const [itemsPerPage] = useState(5);
+  const [currentPage] = useState(1);
   const [hoveredMovie, setHoveredMovie] = useState(null);
-  // eslint-disable-next-line no-unused-vars
-  const [isHovered, setIsHovered] = useState(false);
-  const [currentMovies, setCurrentMovies] = useState([]);
-  const [upcomingMovies, setUpcomingMovies] = useState([]);
-  const [promotionData, setPromotionData] = useState([]);
   const [hoveredPromotion, setHoveredPromotion] = useState(null);
   const [isTrailerPopupOpen, setIsTrailerPopupOpen] = useState(false);
   const [currentTrailerMovie, setCurrentTrailerMovie] = useState(null);
   const popupVideoRef = useRef(null);
-  const dispatch = useDispatch();
-  const fetchPromotions = async () => {
-    try {
-      const res = await getPromotion();
-      if (res.data) {
-        setPromotionData(res.data);
-      }
-    } catch (error) {
-      console.error("Error fetching promotions:", error);
-      setPromotionData([]);
-    }
-  };
-  const getMovie = async () => {
-    try {
-      const response = await getMovies({
-        limit: itemsPerPage,
-        page: currentPage,
-      });
-      if (response.data) {
-        setMovieData(response.data);
-        setTotalPages(
-          response.data.totalPages ||
-            Math.ceil(response.data.total / itemsPerPage)
-        );
-      }
-    } catch (error) {
-      console.error("Error fetching movies:", error);
-    }
-  };
-
-  const getCurrentMovie = async () => {
-    try {
-      const response = await getCurrentMovies({
-        limit: itemsPerPage,
-        page: currentPage,
-      });
-      if (response.data) {
-        setCurrentMovies(response.data);
-      }
-    } catch (error) {
-      console.error("Error fetching current movies:", error);
-    }
-  };
-
-  const getUpcomingMovie = async () => {
-    try {
-      const response = await getUpcomingMovies({
-        limit: itemsPerPage,
-        page: currentPage,
-      });
-      if (response.data) {
-        setUpcomingMovies(response.data);
-      }
-    } catch (error) {
-      console.error("Error fetching upcoming movies:", error);
-    }
-  };
-
-  useEffect(() => {
-    getCurrentMovie();
-    getUpcomingMovie();
-    getMovie();
-    fetchPromotions();
-  }, [itemsPerPage, currentPage]);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  const handleClickMovie = (movieTitle) => {
-    const slug = slugify(movieTitle);
-    navigate(`/${slug}`);
-  };
+  // Sử dụng custom hook để quản lý data
+  const {
+    movieData,
+    currentMovies,
+    upcomingMovies,
+    promotionData,
+    isLoading,
+    error,
+  } = useMovieData(itemsPerPage, currentPage);
 
+  // Chỉ reset booking một lần khi component mount
   useEffect(() => {
-    dispatch(resetBooking()); // reset lại state bôking
-  }, []);
+    dispatch(resetBooking());
+  }, [dispatch]);
 
-  // Responsive breakpoints for Swiper
-  const swiperBreakpoints = {
-    320: {
-      slidesPerView: 1,
-      spaceBetween: 20,
-    },
-    640: {
-      slidesPerView: 2,
-      spaceBetween: 30,
-    },
-    768: {
-      slidesPerView: 3,
-      spaceBetween: 40,
-    },
-    1025: {
-      slidesPerView: 3,
-      spaceBetween: 50,
-    },
-    1280: {
-      slidesPerView: 4,
-      spaceBetween: 60,
-    },
-  };
-
-  // eslint-disable-next-line no-unused-vars
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  const formatDate = (dateString) => {
+  // Memoize các hàm format để tránh re-render không cần thiết
+  const formatDate = useCallback((dateString) => {
     const date = new Date(dateString);
     const months = [
       "JAN",
@@ -159,30 +71,64 @@ const LandingPage = () => {
       "NOV",
       "DEC",
     ];
-
     const day = String(date.getDate()).padStart(2, "0");
     const month = months[date.getMonth()];
     const year = date.getFullYear();
-
     return `${day} ${month} ${year}`;
-  };
+  }, []);
 
-  // Format date range
-  const formatDateRange = (fromDate, toDate) => {
-    if (!fromDate || !toDate) return "Coming Soon";
-    return `${formatDate(fromDate)} - ${formatDate(toDate)}`;
-  };
+  const formatDateRange = useCallback(
+    (fromDate, toDate) => {
+      if (!fromDate || !toDate) return "Coming Soon";
+      return `${formatDate(fromDate)} - ${formatDate(toDate)}`;
+    },
+    [formatDate]
+  );
 
-  // Format running time
-  const formatRunningTime = (minutes) => {
+  const formatRunningTime = useCallback((minutes) => {
     if (!minutes) return "N/A";
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-  };
+  }, []);
 
-  // Trailer popup functions
-  const handleOpenTrailer = (movie) => {
+  // Sử dụng useMemo cho swiperBreakpoints để tránh tạo lại object
+  const swiperBreakpoints = useMemo(
+    () => ({
+      320: {
+        slidesPerView: 1,
+        spaceBetween: 20,
+      },
+      640: {
+        slidesPerView: 2,
+        spaceBetween: 30,
+      },
+      768: {
+        slidesPerView: 3,
+        spaceBetween: 50,
+      },
+      1024: {
+        slidesPerView: 3,
+        spaceBetween: 60,
+      },
+      1280: {
+        slidesPerView: 4,
+        spaceBetween: 60,
+      },
+    }),
+    []
+  );
+
+  const handleClickMovie = useCallback(
+    (movieTitle) => {
+      const slug = slugify(movieTitle);
+      navigate(`/${slug}`);
+    },
+    [navigate]
+  );
+
+  // Optimized trailer functions
+  const handleOpenTrailer = useCallback((movie) => {
     setCurrentTrailerMovie(movie);
     setIsTrailerPopupOpen(true);
 
@@ -193,23 +139,51 @@ const LandingPage = () => {
         popupVideoRef.current.play().catch(() => {});
       }
     }, 100);
-  };
+  }, []);
 
-  const handleCloseTrailer = () => {
+  const handleCloseTrailer = useCallback(() => {
     if (popupVideoRef.current) {
       popupVideoRef.current.pause();
       popupVideoRef.current.currentTime = 0;
     }
     setIsTrailerPopupOpen(false);
     setCurrentTrailerMovie(null);
-  };
+  }, []);
+
+  // Mouse event handlers
+  const handleMovieMouseEnter = useCallback((movieId) => {
+    setHoveredMovie(movieId);
+  }, []);
+
+  const handleMovieMouseLeave = useCallback(() => {
+    setHoveredMovie(null);
+  }, []);
+
+  const handleComingMovieMouseEnter = useCallback((movieId) => {
+    setHoveredMovie(`coming-${movieId}`);
+  }, []);
+
+  const handleCopyPromotion = useCallback((item) => {
+    navigator.clipboard.writeText(item.Title || item.title || "");
+    toast.success("Copy thành công!");
+  }, []);
+
+  // Filter active promotions với useMemo
+  const activePromotions = useMemo(() => {
+    const now = new Date();
+    return promotionData.filter((item) => {
+      const start = new Date(item.StartTime || item.startTime);
+      const end = new Date(item.EndTime || item.endTime);
+      return start <= now && now <= end;
+    });
+  }, [promotionData]);
 
   return (
     <div className="w-full select-none landingPage">
       {/* HERO SECTION - Replace with MovieHeroSwiper */}
       <MovieHeroSwiper movieData={movieData} />
 
-      {/* Screen 3D Effect */}
+      {/* Screen 3D Effect - Enhanced for Mobile/Tablet only */}
       <div className="w-full mt-10 px-4">
         <div className="w-full h-[40px] relative overflow-hidden group">
           {/* SVG for gradient curve */}
@@ -217,7 +191,9 @@ const LandingPage = () => {
             width="100%"
             height="100%"
             viewBox="0 0 800 40"
-            className="absolute inset-0 transition-transform duration-500 group-hover:scale-110"
+            className="absolute inset-0 transition-transform duration-500 
+                       group-hover:scale-110
+                       animate-pulse lg:animate-none"
             preserveAspectRatio="none"
             style={{ background: "transparent" }}
           >
@@ -284,381 +260,253 @@ const LandingPage = () => {
                 <stop offset="50%" stopColor="#c9c2ff" stopOpacity="0.1" />
                 <stop offset="100%" stopColor="#c9c2ff" stopOpacity="0" />
               </linearGradient>
+
+              {/* Mobile animation gradients */}
+              <linearGradient
+                id="purpleGlowMobile"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="0%"
+              >
+                <stop offset="0%" stopColor="#b0a8ff" stopOpacity="0.2">
+                  <animate
+                    attributeName="stop-opacity"
+                    values="0.2;0.8;0.2"
+                    dur="3s"
+                    repeatCount="indefinite"
+                  />
+                </stop>
+                <stop offset="25%" stopColor="#b0a8ff" stopOpacity="0.6">
+                  <animate
+                    attributeName="stop-opacity"
+                    values="0.6;1;0.6"
+                    dur="3s"
+                    repeatCount="indefinite"
+                  />
+                </stop>
+                <stop offset="50%" stopColor="#c9c2ff" stopOpacity="1">
+                  <animate
+                    attributeName="stop-opacity"
+                    values="1;0.8;1"
+                    dur="3s"
+                    repeatCount="indefinite"
+                  />
+                </stop>
+                <stop offset="75%" stopColor="#b0a8ff" stopOpacity="0.6">
+                  <animate
+                    attributeName="stop-opacity"
+                    values="0.6;1;0.6"
+                    dur="3s"
+                    repeatCount="indefinite"
+                  />
+                </stop>
+                <stop offset="100%" stopColor="#b0a8ff" stopOpacity="0.2">
+                  <animate
+                    attributeName="stop-opacity"
+                    values="0.2;0.8;0.2"
+                    dur="3s"
+                    repeatCount="indefinite"
+                  />
+                </stop>
+              </linearGradient>
             </defs>
 
-            {/* Curve with glow effect */}
+            {/* Curve with glow effect - Mobile/tablet shows enhanced glow */}
             <path
               d="M 0 20 Q 400 0 800 20"
               stroke="url(#purpleGlow)"
               strokeWidth="6"
               strokeLinecap="round"
               fill="none"
-              className="blur-[1px] transition-all duration-500 group-hover:blur-[0px] group-hover:stroke-[7px] group-hover:[stroke:url(#purpleGlowHover)]"
+              className="blur-[1px] transition-all duration-500 
+                         group-hover:blur-[0px] group-hover:stroke-[7px] group-hover:[stroke:url(#purpleGlowHover)]
+                         lg:blur-[1px] lg:[stroke:url(#purpleGlow)]
+                         md:blur-[0px] md:stroke-[7px] md:[stroke:url(#purpleGlowMobile)]"
             />
 
-            {/* Main curve */}
+            {/* Main curve - Enhanced for mobile/tablet only */}
             <path
               d="M 0 20 Q 400 0 800 20"
               stroke="url(#purpleGradient)"
               strokeWidth="4"
               strokeLinecap="round"
               fill="none"
-              className="transition-all duration-500 group-hover:stroke-[6px] group-hover:[stroke:url(#purpleGradientHover)]"
+              className="transition-all duration-500 
+                         group-hover:stroke-[6px] group-hover:[stroke:url(#purpleGradientHover)]
+                         lg:stroke-[4px] lg:[stroke:url(#purpleGradient)]
+                         md:stroke-[5px] md:[stroke:url(#purpleGradientHover)]"
             />
 
-            {/* Soft light below on hover */}
+            {/* Soft light below - Mobile/tablet always visible, desktop on hover */}
             <path
               d="M 0 25 Q 400 5 800 25"
               stroke="url(#lightGlowBelow)"
               strokeWidth="12"
               strokeLinecap="round"
               fill="none"
-              className="opacity-0 blur-[2px] transition-opacity duration-500 group-hover:opacity-100"
+              className="blur-[2px] transition-opacity duration-500 
+                         group-hover:opacity-100
+                         lg:opacity-0
+                         md:opacity-60 sm:opacity-40"
+            />
+
+            {/* Mobile/tablet-only animated stroke */}
+            <path
+              d="M 0 20 Q 400 0 800 20"
+              stroke="url(#purpleGlowMobile)"
+              strokeWidth="3"
+              strokeLinecap="round"
+              fill="none"
+              className="lg:hidden blur-[0.5px]"
             />
           </svg>
         </div>
       </div>
 
+      {/* Stats Section */}
+      {!isLoading && (
+        <StatsSection
+          movieData={movieData}
+          currentMovies={currentMovies}
+          upcomingMovies={upcomingMovies}
+        />
+      )}
+
+      {/* Trending Section */}
+      {!isLoading && movieData.length > 0 && (
+        <TrendingSection
+          movieData={movieData}
+          onClickMovie={handleClickMovie}
+          onOpenTrailer={handleOpenTrailer}
+          formatDateRange={formatDateRange}
+          formatRunningTime={formatRunningTime}
+        />
+      )}
+
+      {/* Error handling */}
+      {error && (
+        <div className="w-full px-[30px] py-4">
+          <div className="bg-red-600/20 border border-red-600 rounded-lg p-4 text-red-200 text-center">
+            Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại sau.
+          </div>
+        </div>
+      )}
+
+      {/* Loading state */}
+      {isLoading && <SkeletonLoader />}
+
       {/* NOW SHOWING */}
-      <div className="w-full px-[30px] pt-[40px] space-y-3 ">
-        <div className="flex justify-center items-center text-white">
-          <p className="font-bold pb-[30px] text-center text-[30px]">
-            Now Showing
-          </p>
-        </div>
-        <div className="flex items-center justify-center mt-[20px] ">
-          <Swiper
-            breakpoints={swiperBreakpoints}
-            slidesPerView={5}
-            spaceBetween={50}
-            pagination={{
-              clickable: true,
-            }}
-            navigation={true}
-            modules={[Pagination, Navigation]}
-            className="mySwiper"
-          >
-            {currentMovies.map((item) => (
-              <SwiperSlide
-                onMouseEnter={() => {
-                  setIsHovered(true);
-                  setHoveredMovie(item.MovieId);
-                }}
-                onMouseLeave={() => {
-                  setIsHovered(false);
-                  setHoveredMovie(null);
-                }}
-                key={item.idMovie}
-                className="bg-slate-800 flex flex-col justify-center items-center pb-2 rounded-xl space-y-2"
-              >
-                <div role="button" className="relative w-full">
-                  <img
-                    src={item.PosterImage}
-                    alt={item.NameOfEnglish}
-                    loading="lazy"
-                    className="w-full h-[250px] md:h-[320px] object-cover rounded-tl-xl rounded-tr-xl"
+      {!isLoading && currentMovies.length > 0 && (
+        <div className="w-full px-4 md:px-[30px] pt-[30px] md:pt-[40px] space-y-3">
+          <div className="flex justify-center items-center text-white">
+            <p className="font-bold pb-[30px] text-center text-[30px]">
+              Now Showing
+            </p>
+          </div>
+          <div className="flex items-center justify-center mt-[20px]">
+            <Swiper
+              breakpoints={swiperBreakpoints}
+              slidesPerView={5}
+              spaceBetween={50}
+              navigation={true}
+              modules={[Navigation]}
+              className="mySwiper"
+              lazy={true}
+              style={{ height: "auto" }}
+            >
+              {currentMovies.map((item) => (
+                <SwiperSlide key={item.idMovie} className="h-auto">
+                  <MovieCard
+                    item={item}
+                    isHovered={hoveredMovie === item.MovieId}
+                    onMouseEnter={handleMovieMouseEnter}
+                    onMouseLeave={handleMovieMouseLeave}
+                    onClickMovie={handleClickMovie}
+                    onOpenTrailer={handleOpenTrailer}
+                    formatDateRange={formatDateRange}
+                    formatRunningTime={formatRunningTime}
+                    showBookButton={true}
                   />
-                  {item.AverageRating && (
-                    <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1">
-                      <FaStar size={14} className="text-yellow-400" />
-                      <span className="text-white font-semibold text-sm">
-                        {parseFloat(item.AverageRating).toFixed(1)}
-                      </span>
-                    </div>
-                  )}
-                  {/* Hover Overlay */}
-                  {hoveredMovie === item.MovieId && (
-                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex flex-col justify-center items-start p-4 rounded-tl-xl rounded-tr-xl transition-all duration-300 ease-in-out">
-                      <div className="text-white space-y-3">
-                        <h3 className="font-bold text-lg mb-3 text-white">
-                          {item.NameOfEnglish}
-                        </h3>
-
-                        <div className="space-y-3 text-sm">
-                          <div className="flex items-center">
-                            <span className="text-gray-300">
-                              <FaRegCalendarCheck size={20} />{" "}
-                            </span>
-                            <span className="ml-1">
-                              {formatDateRange(item.FromDate, item.ToDate)}
-                            </span>
-                          </div>
-
-                          <div className="flex ">
-                            <span className="text-gray-300 mr-1">
-                              <GoClockFill size={20} />
-                            </span>
-                            <span className="ml-1">
-                              {formatRunningTime(item.RunningTime)}
-                            </span>
-                          </div>
-                          {item.AverageRating && (
-                            <div className="flex items-center justify-start gap-1 mt-1">
-                              <span className=" font-bold">
-                                <FaStar size={20} />
-                              </span>
-                              <span className=" font-semibold ml-1">
-                                {parseFloat(item.AverageRating).toFixed(1)}
-                              </span>
-                            </div>
-                          )}
-                          <div className="flex">
-                            <span className="text-gray-300 mr-1">
-                              <IoMdBookmark size={24} />
-                            </span>
-                            {item.Genres && (
-                              <div className="flex items-center space-x-3">
-                                {item.Genres.split(", ").map((genre, index) => (
-                                  <span
-                                    key={index}
-                                    className=" text-white rounded-xl text-md font-medium"
-                                  >
-                                    {genre}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="text-white text-center font-semibold text-sm md:text-base px-1">
-                  {/* Hiển thị đủ name ở mobile và desktop, rút gọn ở tablet/iPad */}
-                  {item.NameOfEnglish?.length > 10 ? (
-                    <h3 className="font-bold text-lg mb-3 text-white">
-                      <span className="block md:hidden lg:block">
-                        {item.NameOfEnglish}
-                      </span>
-                      <span className="hidden md:block lg:hidden">
-                        {item.NameOfEnglish.slice(0, 10) + "..."}
-                      </span>
-                    </h3>
-                  ) : (
-                    <h3 className="font-bold text-lg mb-3 text-white">
-                      {item.NameOfEnglish}
-                    </h3>
-                  )}
-                </div>
-                <div className="flex xl:flex-row md:flex-col sm:flex-row justify-evenly md:space-y-2 xl:space-y-0 sm:space-y-0 sm:space-x-1 items-center w-full px-2">
-                  <button
-                    className="text-white flex items-center justify-center hover:bg-slate-700 p-2 rounded-4xl px-3 text-[11px] md:text-[12px] sm:w-auto"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleOpenTrailer(item);
-                    }}
-                  >
-                    <FaRegCirclePlay size={16} className="mr-1" />
-                    Watch Trailer
-                  </button>
-                  <div
-                    role="button"
-                    onClick={() => handleClickMovie(item.NameOfEnglish)}
-                    className="bg-[#6a57f5] rounded-4xl px-6 py-2 text-white hover:bg-[#6957f5ea] text-[12px]  shadow-[#6a57f5]  shadow-sm sm:w-auto "
-                  >
-                    Book Now
-                  </div>
-                </div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
-        </div>
-      </div>
-
-      {/* COMING SOON SECTION */}
-      <div className="w-full px-4 md:px-[30px] pt-[30px] md:pt-[40px] space-y-3">
-        <div className="flex justify-center items-center text-white">
-          <p className="font-bold pb-[20px] md:pb-[30px] text-[24px] md:text-[30px]">
-            Coming Soon
-          </p>
-        </div>
-        <div className="flex items-center justify-center mt-[15px] md:mt-[20px]">
-          <Swiper
-            breakpoints={swiperBreakpoints}
-            slidesPerView={5}
-            spaceBetween={50}
-            pagination={{
-              clickable: true,
-            }}
-            navigation={true}
-            modules={[Pagination, Navigation]}
-            className="mySwiper"
-          >
-            {upcomingMovies.map((item) => (
-              <SwiperSlide
-                onMouseEnter={() => {
-                  setHoveredMovie(`coming-${item.MovieId}`);
-                }}
-                onMouseLeave={() => {
-                  setHoveredMovie(null);
-                }}
-                key={item.MovieId}
-                className="bg-slate-800 flex flex-col justify-center items-center pb-2 rounded-xl space-y-2"
-              >
-                <div className="relative ww-full">
-                  <img
-                    src={item.PosterImage}
-                    alt={item.NameOfEnglish}
-                    loading="lazy"
-                    className="w-full h-[250px] md:h-[320px] object-cover rounded-tl-xl rounded-tr-xl"
-                  />
-                  {item.AverageRating && (
-                    <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1">
-                      <FaStar size={14} className="text-yellow-400" />
-                      <span className="text-white font-semibold text-sm">
-                        {parseFloat(item.AverageRating).toFixed(1)}
-                      </span>
-                    </div>
-                  )}
-                  {/* Hover Overlay for Coming Soon */}
-                  {hoveredMovie === `coming-${item.MovieId}` && (
-                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex flex-col justify-center items-start p-4 rounded-tl-xl rounded-tr-xl transition-all duration-300 ease-in-out">
-                      <div className="text-white space-y-3">
-                        <h3 className="font-bold text-lg mb-3 text-white">
-                          {item.NameOfEnglish}
-                        </h3>
-
-                        <div className="space-y-3 text-sm">
-                          <div className="flex items-center">
-                            <span className="text-gray-300">
-                              <FaRegCalendarCheck size={20} />{" "}
-                            </span>
-                            <span className="ml-1">
-                              {formatDateRange(item.FromDate, item.ToDate)}
-                            </span>
-                          </div>
-
-                          <div className="flex ">
-                            <span className="text-gray-300 mr-1">
-                              <GoClockFill size={20} />
-                            </span>
-                            <span className="ml-1">
-                              {formatRunningTime(item.RunningTime)}
-                            </span>
-                          </div>
-
-                          <div className="flex">
-                            <span className="text-gray-300 mr-1">
-                              <IoMdBookmark size={24} />
-                            </span>
-                            {item.Genres && (
-                              <div className="flex items-center space-x-3">
-                                {item.Genres.split(", ").map((genre, index) => (
-                                  <span
-                                    key={index}
-                                    className=" text-white rounded-xl text-md font-medium"
-                                  >
-                                    {genre}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="text-white text-center font-semibold text-sm md:text-base px-1">
-                  {/* Hiển thị đủ name ở mobile và desktop, rút gọn ở tablet/iPad */}
-                  {item.NameOfEnglish?.length > 10 ? (
-                    <h3 className="font-bold text-lg mb-3 text-white">
-                      <span className="block md:hidden lg:block">
-                        {item.NameOfEnglish}
-                      </span>
-                      <span className="hidden md:block lg:hidden">
-                        {item.NameOfEnglish.slice(0, 10) + "..."}
-                      </span>
-                    </h3>
-                  ) : (
-                    <h3 className="font-bold text-lg mb-3 text-white">
-                      {item.NameOfEnglish}
-                    </h3>
-                  )}
-                </div>
-                <div className="flex md:flex-col lg:flex-row sm:flex-row justify-center md:space-y-2 sm:space-y-0 sm:space-x-1 items-center w-full px-2">
-                  <button
-                    className="text-white flex items-center justify-center hover:bg-slate-700 p-2 rounded-4xl px-3 text-[11px] md:text-[12px] w-full sm:w-auto"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleOpenTrailer(item);
-                    }}
-                  >
-                    <FaRegCirclePlay size={16} className="mr-1" />
-                    Watch Trailer
-                  </button>
-                </div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
-        </div>
-      </div>
-
-      {/* PROMOTION SECTION */}
-      <div className="py-[30px] md:py-[40px] px-4 md:px-[30px] w-full space-y-8">
-        <div className="text-white font-bold text-[24px] md:text-[30px]">
-          Special Promotions
-        </div>
-
-        <div className="flex w-full items-center justify-center mt-[15px] md:mt-[20px]">
-          <Swiper
-            breakpoints={swiperBreakpoints}
-            pagination={{
-              clickable: true,
-            }}
-            navigation={true}
-            modules={[Pagination, Navigation]}
-            className="mySwiper"
-          >
-            {promotionData
-              .filter((item) => {
-                const now = new Date();
-                const start = new Date(item.StartTime || item.startTime);
-                const end = new Date(item.EndTime || item.endTime);
-                return start <= now && now <= end;
-              })
-              .map((item) => (
-                <SwiperSlide
-                  key={item.PromotionId}
-                  className="w-full flex flex-col justify-center items-center pb-2 rounded-xl space-y-2"
-                  onMouseEnter={() => setHoveredPromotion(item.PromotionId)}
-                  onMouseLeave={() => setHoveredPromotion(null)}
-                >
-                  <div className="relative h-[180px] w-full md:h-[200px] lg:h-[180px]">
-                    <img
-                      src={item.Image}
-                      alt={item.Title}
-                      className="w-full rounded-md h-full object-cover transition-transform duration-300"
-                    />
-                    {/* Hover: Show code/title chỉ khi hoveredPromotion khớp với PromotionId của slide này */}
-                    {hoveredPromotion === item.PromotionId && (
-                      <div
-                        className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-md cursor-pointer transition"
-                        onClick={() => {
-                          navigator.clipboard.writeText(
-                            item.Title || item.title || ""
-                          );
-                          toast.success("Copy thành công!");
-                        }}
-                      >
-                        <span className="text-white text-lg font-bold bg-black/60 px-4 py-2 rounded shadow">
-                          {item.Title || item.title}
-                        </span>
-                      </div>
-                    )}
-                    {/* Decorative circles and dashed line */}
-                    <div className="absolute w-[40px] md:w-[60px] h-[40px] md:h-[60px] lg:w-[50px] lg:h-[50px] rounded-full bg-black top-[-20px] md:top-[-30px] md:right-[10%] lg:right-[20%] right-[20%] transform translate-x-1/2 md:translate-x-0"></div>
-                    <div className="absolute w-[40px] md:w-[60px] h-[40px] md:h-[60px] lg:w-[50px] lg:h-[50px] rounded-full bg-black bottom-[-20px] md:bottom-[-30px] lg:right-[20%] md:right-[10%] right-[20%]  transform translate-x-1/2 md:translate-x-0"></div>
-                    <div className="absolute h-[75%] top-[12%] border-dashed border-black border-2 md:right-[45px] right-[70px] lg:right-[35%] xl:right-[27%]"></div>
-                  </div>
                 </SwiperSlide>
               ))}
-          </Swiper>
+            </Swiper>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* COMING SOON SECTION */}
+      {!isLoading && upcomingMovies.length > 0 && (
+        <div className="landingPage-commingSoon w-full px-4 md:px-[30px] pt-[30px] md:pt-[40px] space-y-3">
+          <div className="flex justify-center items-center text-white">
+            <p className="font-bold pb-[20px] md:pb-[30px] text-[24px] md:text-[30px]">
+              Coming Soon
+            </p>
+          </div>
+          <div className="flex items-center justify-center mt-[15px] md:mt-[20px]">
+            <Swiper
+              breakpoints={swiperBreakpoints}
+              slidesPerView={5}
+              spaceBetween={50}
+              navigation={true}
+              modules={[Navigation]}
+              className="mySwiper"
+              lazy={true}
+              style={{ height: "auto" }}
+            >
+              {upcomingMovies.map((item) => (
+                <SwiperSlide key={item.MovieId} className="h-auto">
+                  <MovieCard
+                    item={item}
+                    isHovered={hoveredMovie === `coming-${item.MovieId}`}
+                    onMouseEnter={handleComingMovieMouseEnter}
+                    onMouseLeave={handleMovieMouseLeave}
+                    onClickMovie={handleClickMovie}
+                    onOpenTrailer={handleOpenTrailer}
+                    formatDateRange={formatDateRange}
+                    formatRunningTime={formatRunningTime}
+                    showBookButton={false}
+                  />
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          </div>
+        </div>
+      )}
+
+      {/* PROMOTION SECTION */}
+      {!isLoading && activePromotions.length > 0 && (
+        <div className="landingPage-promotion py-[30px] md:py-[40px] px-4 md:px-[30px] w-full space-y-8">
+          <div className="flex justify-center items-center text-white">
+            <p className="font-bold pb-[30px] text-center text-[30px]">
+              Promotions
+            </p>
+          </div>
+
+          <div className="flex w-full items-center justify-center mt-[15px] md:mt-[20px]">
+            <Swiper
+              breakpoints={swiperBreakpoints}
+              pagination={{ clickable: true }}
+              navigation={true}
+              modules={[Pagination, Navigation]}
+              className="mySwiper"
+              lazy={true}
+            >
+              {activePromotions.map((item) => (
+                <SwiperSlide key={item.PromotionId}>
+                  <PromotionCard
+                    item={item}
+                    isHovered={hoveredPromotion === item.PromotionId}
+                    onMouseEnter={setHoveredPromotion}
+                    onMouseLeave={() => setHoveredPromotion(null)}
+                    onCopyPromotion={handleCopyPromotion}
+                  />
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          </div>
+        </div>
+      )}
 
       {/* Trailer Popup Modal */}
       {isTrailerPopupOpen && currentTrailerMovie && (

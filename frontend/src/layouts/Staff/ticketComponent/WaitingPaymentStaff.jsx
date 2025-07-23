@@ -40,7 +40,7 @@ export default function WaitingPaymentStaff() {
                                 }, 1000);
                             }
                         }}
-                        theme='night'
+                        // theme='stripe'
                     />
                 )}
             </div>

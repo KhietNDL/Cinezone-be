@@ -61,25 +61,12 @@ const deleteTicket = async (req, res) => {
   }
 };
 
-const getTicketStats = async (req, res) => {
-  try {
-    const { type = 'day', year, month } = req.query;
-    if (!year || (type === 'day' && !month)) {
-      return res.status(400).json({ error: 'Missing year or month' });
-    }
-    const stats = await Ticket.countTicketsByDate({ type, year, month });
-    res.json(stats);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
 module.exports = {
   getAllTickets,
   getTicketById,
   getTicketsByBookingId,
   createTicket,
   updateTicket,
-  deleteTicket,
-  getTicketStats
+  deleteTicket
 };
+

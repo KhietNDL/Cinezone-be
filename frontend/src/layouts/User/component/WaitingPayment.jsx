@@ -112,7 +112,7 @@ const WaitingPayment = () => {
           setPaymentStatus("failed");
         } else if (paymentMethod === "4") {
           response = await createZalopayPayment(payload);
-          const redirectUrl = response?.data?.payUrl || response?.payUrl;
+          const redirectUrl = response?.data?.order_url || response?.order_url;
           if (redirectUrl) {
             window.location.href = redirectUrl;
             return;
@@ -174,18 +174,18 @@ const WaitingPayment = () => {
   // }, [state]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] text-white flex items-center justify-center p-6">
-      <div className="bg-[#1E1B3A] rounded-xl shadow-xl w-full max-w-2xl p-10 text-center">
-        <img src={logo} alt="Logo" className="w-40 h-auto mb-6 mx-auto" />
+    <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] text-white flex items-center justify-center p-25">
+      <div className="bg-[#1E1B3A] rounded-xl shadow-xl w-full max-w-2xl   text-center">
+        <img src={logo} alt="Logo" className="w-40 h-auto mx-auto" />
         
         {paymentStatus === "waiting" && (
           <>
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6B59E6] mx-auto mb-6"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6B59E6] mx-auto mb-12"></div>
             <p className="text-2xl font-bold mb-4">Redirecting to payment gateway...</p>
             <p className="text-gray-300 mb-4">Please wait while we process your payment.</p>
             
             {/* Payment summary */}
-            <div className="bg-white/5 rounded-lg p-4 text-left max-w-md mx-auto">
+            <div className="bg-white/5 rounded-lg p-4 text-left max-w-md mx-auto mb-6">
               <h3 className="text-lg font-semibold mb-3 text-center">Payment Summary</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">

@@ -1,8 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { cancelBooking, cancelProduct, ConfirmBooking, confirmProduct, getBookingById, getProductByOderProductId } from "../../../services/API";
-import { useDispatch, useSelector} from "react-redux"
-import {  setProductDetail } from "../../../redux/features/bookingSlice"; // THÊM IMPORT NÀY
+import {
+  cancelBooking,
+  cancelProduct,
+  ConfirmBooking,
+  ConfirmPayment,
+  confirmProduct,
+  getBookingById,
+  getProductByOderProductId,
+} from "../../../services/API";
+import { useDispatch, useSelector } from "react-redux";
+import { setProductDetail } from "../../../redux/features/bookingSlice";
 
 const TicketDetails = () => {
   const [searchParams] = useSearchParams();
@@ -18,18 +26,22 @@ const TicketDetails = () => {
 
   let bookingId = null;
   let orderProductId = null;
-  
+  let paymentId = null;
+
   try {
     if (!extraDataRaw) throw new Error("Missing extraData");
     const decoded = decodeURIComponent(extraDataRaw);
     const extraData = JSON.parse(decoded);
     bookingId = extraData.bookingId;
+    paymentId = extraData.paymentId;
     orderProductId = extraData.orderProductId;
   } catch (err) {
     console.error("❌ Failed to parse extraData:", err);
     setError("Không thể lấy thông tin vé.");
     setLoading(false);
   }
+
+  const query = new URLSearchParams(window.location.search);
 
   useEffect(() => {
     // Nếu thanh toán thất bại hoặc bị hủy
@@ -43,6 +55,7 @@ const TicketDetails = () => {
             console.log("Đang hủy booking...");
             await cancelBooking(bookingId);
             console.log("Booking đã bị hủy.");
+            console.log("PAYMENTID bi huy", paymentId);
           }
 
           // Hủy product nếu có
@@ -72,17 +85,18 @@ const TicketDetails = () => {
     const fetchSuccessfulPayment = async () => {
       try {
         // Xác nhận và lấy thông tin booking
-        await ConfirmBooking(bookingId);
+        await ConfirmPayment(paymentId);
         const ticketResponse = await getBookingById(bookingId);
         setTicket(ticketResponse);
         console.log("Ticket details fetched successfully:", ticketResponse);
-        console.log("ORDER PRODUCT ID", orderProductId)
+        console.log("ORDER PRODUCT ID", orderProductId);
 
         // Xác nhận và lấy thông tin product nếu có
         if (orderProductId) {
-          
           // await confirmProduct(orderProductId);
-          const productResponse = await getProductByOderProductId(orderProductId);
+          const productResponse = await getProductByOderProductId(
+            orderProductId
+          );
           dispatch(setProductDetail(productResponse));
           console.log("Product details fetched successfully:", productDetail);
         }
@@ -95,18 +109,22 @@ const TicketDetails = () => {
     };
 
     fetchSuccessfulPayment();
-  }, [bookingId, orderProductId, resultCode, dispatch]);
+  }, [bookingId, paymentId, orderProductId, resultCode, dispatch]);
 
-  if (loading) return <div className="text-white p-6">Đang tải thông tin vé...</div>;
+  if (loading)
+    return <div className="text-white p-6">Đang tải thông tin vé...</div>;
   if (error) return <div className="text-red-400 p-6">{error}</div>;
 
   // Nếu thanh toán bị hủy
   if (isCancelled) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] flex flex-col items-center justify-center text-center text-white p-10">
-        <h1 className="text-4xl font-bold text-red-500 mb-4">Ticket Cancelled</h1>
+        <h1 className="text-4xl font-bold text-red-500 mb-4">
+          Ticket Cancelled
+        </h1>
         <p className="text-white/70 text-lg mb-6">
-          The transaction was cancelled or failed. Your booking has been cancelled.
+          The transaction was cancelled or failed. Your booking has been
+          cancelled.
         </p>
         <a
           href="/"
@@ -121,7 +139,8 @@ const TicketDetails = () => {
   }
 
   // Nếu thanh toán thành công nhưng không có thông tin vé
-  if (!ticket) return <div className="text-gray-400 p-6">Không tìm thấy vé.</div>;
+  if (!ticket)
+    return <div className="text-gray-400 p-6">Không tìm thấy vé.</div>;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] flex items-center justify-center py-10 px-4">
@@ -129,29 +148,54 @@ const TicketDetails = () => {
         {/* Left Side - Ticket Info */}
         <div className="w-1/2 bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] p-8 flex flex-col justify-between">
           <div>
-            <h2 className="text-white text-2xl font-bold mb-2">🎟️Your Ticket</h2>
-            <p className="text-sm text-white/70 mb-6">Enjoy your movie experience!</p>
+            <h2 className="text-white text-2xl font-bold mb-2">
+              🎟️Your Ticket
+            </h2>
+            <p className="text-sm text-white/70 mb-6">
+              Enjoy your movie experience!
+            </p>
 
             <div className="text-white space-y-3">
-              <div><span className="text-white/60">Movie: </span><span className="font-bold">{ticket.movieNameEnglish}</span></div>
-              <div><span className="text-white/60">Time: </span><span className="font-bold">{ticket.showTime}</span></div>
-              <div><span className="text-white/60">Date: </span><span className="font-bold">{new Date(ticket.showDate).toLocaleDateString("en-GB")}</span></div>
-              <div><span className="text-white/60">Room: </span><span className="font-bold">{ticket.room}</span></div>
-              <div><span className="text-white/60">Seats: </span>
+              <div>
+                <span className="text-white/60">Movie: </span>
+                <span className="font-bold">{ticket.movieNameEnglish}</span>
+              </div>
+              <div>
+                <span className="text-white/60">Time: </span>
+                <span className="font-bold">{ticket.showTime}</span>
+              </div>
+              <div>
+                <span className="text-white/60">Date: </span>
                 <span className="font-bold">
-                  {Array.isArray(ticket.seats) ? ticket.seats.join(", ") : ticket.seats}
+                  {new Date(ticket.showDate).toLocaleDateString("en-GB")}
+                </span>
+              </div>
+              <div>
+                <span className="text-white/60">Room: </span>
+                <span className="font-bold">{ticket.room}</span>
+              </div>
+              <div>
+                <span className="text-white/60">Seats: </span>
+                <span className="font-bold">
+                  {Array.isArray(ticket.seats)
+                    ? ticket.seats.join(", ")
+                    : ticket.seats}
                 </span>
               </div>
               {/* <div><span className="text-white/60">Price: </span><span className="font-bold">{ticket.totalAmount?.toLocaleString()} đ</span></div> */}
-              
+
               {/* Hiển thị thông tin product nếu có */}
               {productDetail && (
-                <div><span className="text-white/60">Product: </span><span className="font-bold"> {productDetail.map(p => p.productName).join(", ")}</span></div>
+                <div>
+                  <span className="text-white/60">Product: </span>
+                  <span className="font-bold">
+                    {" "}
+                    {productDetail.map((p) => p.productName).join(", ")}
+                  </span>
+                </div>
               )}
             </div>
           </div>
-
-         
         </div>
 
         {/* Right Side - Customer Info */}
@@ -166,7 +210,6 @@ const TicketDetails = () => {
               <span className="text-white/60">Phone number:</span>
               <span className="font-bold">{ticket.buyerPhone}</span>
             </li>
-            
           </ul>
           <div className="mt-10 border-t border-dashed border-white/30 pt-6 text-sm text-white/60">
             * Please arrive 15 minutes before showtime.

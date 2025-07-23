@@ -292,6 +292,7 @@ const TicketBookingManagement = () => {
           }`}
         >
           <div
+            data-testid="booking-modal"
             className={`bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden transform transition-all duration-300 ${
               isOpen ? "scale-100 opacity-100" : "scale-95 opacity-0"
             }`}
@@ -313,6 +314,7 @@ const TicketBookingManagement = () => {
                   </div>
                   <button
                     onClick={onClose}
+                    aria-label="Close"
                     className="text-white hover:bg-white/20 rounded-full p-2 transition-all duration-200"
                   >
                     <svg

@@ -187,10 +187,10 @@ export const updatePromotion = async (id, formData) => {
     handleError(error);
   }
 };
-export const searchPromotion = async (title) => {
+export const searchPromotion = async (code) => {
   try {
     const response = await api.get("/promotions/search", {
-      params: { title },
+      params: { code },
     });
     return response.data;
   } catch (error) {
@@ -484,6 +484,19 @@ export const ConfirmBooking = async (bookingId) => {
     throw error;
   }
 };
+
+export const ConfirmPayment = async (paymentId) => {
+  try {
+    const response = await api.post(`/payment/confirm/${paymentId}`);
+    console.log("CONFIRM BY PAYMENTID SUCCESS :", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi Confirm Booking BY PAYMENTID :", error);
+    handleError(error);
+    throw error;
+  }
+};
+
 export const getAllBookings = async (params = {}) => {
   try {
     const response = await api.get("/bookings", { params });
@@ -555,11 +568,22 @@ export const getBookingHistory = async (memberId) => {
   }
 };
 
+export const getMembership = async (userId) => {
+  try {
+    const response = await api.get(`/user/${userId}/membership`);
+    console.log("MEMBERSHIP DATA:", response.data.membership);
+    return response.data.membership;
+  } catch (error) {
+    console.error("Lỗi khi lấy membership :", error);
+    handleError(error);
+    throw error;
+  }
+};
+
 export const getAllProducts = async (params) => {
   try {
     const response = await api.get("/products", { params });
     return response.data;
-    // console.log("DATA PRODCUT",response.data);
   } catch (error) {
     console.error("Lỗi khi lấy danh sách sản phẩm owr API:", error);
     handleError(error);
@@ -689,8 +713,6 @@ export const getScoreHistoryByMemberId = async (MemberId) => {
   }
 };
 
-
-
 // API Analytics
 export const getRevenueByMonth = async (year) => {
   try {
@@ -702,8 +724,6 @@ export const getRevenueByMonth = async (year) => {
     handleError(error);
   }
 };
-
-
 
 export const getRevenueByQuarter = async (year) => {
   try {

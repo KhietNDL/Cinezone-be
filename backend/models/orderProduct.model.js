@@ -132,22 +132,22 @@ class OrderProduct {
       [orderProductId]
     );
 
-    // Lấy io tại đây, đảm bảo luôn lấy giá trị mới nhất
-    const io = global._io;
-    const [[order]] = await db.promise().query(
-      `SELECT MemberId FROM OrderProduct WHERE OrderProductId = ?`, [orderProductId]
-    );
-    if (io && order && order.MemberId) {
-      console.log("[BE] Emit notification to:", order.MemberId, orderProductId);
-      io.to(order.MemberId).emit('notification', {
-        type: 'orderProduct',
-        orderProductId,
-        status: 2,
-        message: 'Your order has been confirmed!'
-      });
-    } else {
-      console.log("[BE] Không emit được notification", io, order);
-    }
+    // XÓA PHẦN WEBSOCKET NOTIFICATION SAU KHI CONFIRM ORDERPRODUCT
+    // const io = global._io;
+    // const [[order]] = await db.promise().query(
+    //   `SELECT MemberId FROM OrderProduct WHERE OrderProductId = ?`, [orderProductId]
+    // );
+    // if (io && order && order.MemberId) {
+    //   console.log("[BE] Emit notification to:", order.MemberId, orderProductId);
+    //   io.to(order.MemberId).emit('notification', {
+    //     type: 'orderProduct',
+    //     orderProductId,
+    //     status: 2,
+    //     message: 'Your order has been confirmed!'
+    //   });
+    // } else {
+    //   console.log("[BE] Không emit được notification", io, order);
+    // }
     return result.affectedRows > 0;
   }
 
@@ -286,6 +286,26 @@ class OrderProduct {
         totalPrice: d.TotalPrice
       }))
     };
+  }
+
+  static async getOrderProductsByMemberId(memberId, { page = 1, limit = 10, sortBy = "CreatedAt", sortOrder = "desc" } = {}) {
+    let sql = `SELECT * FROM OrderProduct WHERE MemberId = ? AND IsDeleted = 0 ORDER BY ${sortBy} ${sortOrder}`;
+    let params = [memberId];
+    let total = 0;
+
+    if (limit > 0) {
+      const [[countRow]] = await db.promise().query(
+        `SELECT COUNT(*) as total FROM OrderProduct WHERE MemberId = ? AND IsDeleted = 0`,
+        [memberId]
+      );
+      total = countRow.total;
+      const offset = (page - 1) * limit;
+      sql += ` LIMIT ? OFFSET ?`;
+      params.push(Number(limit), Number(offset));
+    }
+
+    const [rows] = await db.promise().query(sql, params);
+    return { data: rows, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 }
 

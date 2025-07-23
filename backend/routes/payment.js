@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { auth, isAdmin, isAdminOrEmployee } = require('../middlewares/auth.middleware');
 const paymentController = require('../controllers/payment.controller');
+const { getMemberHistory } = require('../controllers/payment.controller');
 
 /**
  * @swagger
@@ -463,5 +464,66 @@ router.post('/stripe', auth, paymentController.createStripeTestPaymentIntent);
  *         description: Internal server error
  */
 router.post('/confirm/:paymentId', auth, paymentController.confirmPayment);
+
+/**
+ * @swagger
+ * /api/payment/history:
+ *   get:
+ *     summary: Get member's booking and order product history
+ *     tags: [Payments]
+ *     parameters:
+ *       - in: query
+ *         name: memberId
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: Member ID (nếu không truyền sẽ lấy từ token)
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         required: false
+ *         description: Page number (pagination)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         required: false
+ *         description: Items per page
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           default: CreatedAt
+ *         required: false
+ *         description: Sort by field (CreatedAt, etc.)
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: desc
+ *         required: false
+ *         description: Sort order
+ *     responses:
+ *       200:
+ *         description: List of bookings and order products
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 bookings:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *       401:
+ *         description: Authentication required
+ *       500:
+ *         description: Server error
+ */
+router.get('/history', getMemberHistory);
 
 module.exports = router;
