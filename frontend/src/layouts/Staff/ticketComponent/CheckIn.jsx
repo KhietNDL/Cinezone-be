@@ -4,24 +4,31 @@ import { checkIn } from "../../../services/APIForStaff/API";
 import { toast } from "react-toastify";
 
 const CheckIn = () => {
-    const handleQRResult = async (data) => {
-        console.log(`Mã QR đã quét được: ${data}`);
-        try {
-            await checkIn(data); // Gửi dữ liệu lên API
-            console.log("Check-in thành công!");
-            toast.success("Check-in thành công!");
-        } catch (error) {
-            console.error("Lỗi xử lý mã QR:", error);
-            toast.error("Lỗi khi check-in. Vui lòng thử lại.");
-        }
-    };
+  const handleQRResult = async (data) => {
+    console.log(`Mã QR đã quét được: ${data}`);
+    try {
+      await checkIn(data);
+      console.log("Check-in thành công!");
+      toast.success("Check-in thành công!");
+    } catch (error) {
+      console.error("Lỗi xử lý mã QR:", error);
+      toast.error("Lỗi khi check-in. Vui lòng thử lại.");
+    }
+  };
 
-    return (
-        <div style={{ padding: 20 }}>
-            <h2>Ứng dụng quét mã QR với React</h2>
-            <QRScanner onScanSuccess={handleQRResult} />
-        </div>
-    );
+  return (
+    <div
+      style={{
+        padding: "40px 20px",
+        display: "flex",
+        justifyContent: "center",
+      }}
+    >
+      <div style={{ maxWidth: 500, width: "100%" }}>
+        <QRScanner onScanSuccess={handleQRResult} />
+      </div>
+    </div>
+  );
 };
 
 export default CheckIn;
