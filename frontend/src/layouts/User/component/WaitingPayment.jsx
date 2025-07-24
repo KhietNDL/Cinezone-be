@@ -8,6 +8,7 @@ import {
   createZalopayPayment,
 } from "../../../services/API";
 import StripeCheckoutForm from "./StripeCheckoutForm";
+import { useSelector } from "react-redux";
 
 const WaitingPayment = () => {
   const { state } = useLocation();
@@ -23,13 +24,18 @@ const WaitingPayment = () => {
     seatIds,
     promotionId,
     userId,
-    bookingId,
+    
     finalPrice = 0,
     // Product related data from ConfirmPayment
-    OrderProductId = null,
+    
     products = [],
     productHoldResult = null,
   } = state || {};
+
+  const {
+    bookingId,
+    orderProductsId=null,
+  }=useSelector((state) => state.booking);
 
   const [paymentStatus, setPaymentStatus] = useState("waiting");
   const [clientSecret, setClientSecret] = useState(null);
@@ -38,7 +44,7 @@ const WaitingPayment = () => {
 
   console.log("🎫 WaitingPayment received data:", {
     bookingId,
-    OrderProductId,
+    orderProductsId,
     products: products.length,
     finalPrice,
     paymentMethod
@@ -50,17 +56,17 @@ const WaitingPayment = () => {
         let payload = {};
 
         // Determine payment scenario and build appropriate payload
-        if (bookingId && OrderProductId) {
+        if (bookingId && orderProductsId) {
           // Case 1: Mua cả ghế và bắp nước (Pay for both booking and order product)
           payload = {
             bookingId: bookingId,
-            orderProductId: OrderProductId,
+            orderProductId: orderProductsId,
             amount: finalPrice,
             returnUrl,
             userId,
           };
           console.log("💳 Case 1: Pay for both booking and order product");
-        } else if (bookingId && !OrderProductId) {
+        } else if (bookingId && !orderProductsId) {
           // Case 2: Chỉ mua ghế (Pay for booking only)
           payload = {
             bookingId: bookingId,
@@ -69,10 +75,10 @@ const WaitingPayment = () => {
             userId,
           };
           console.log("🎫 Case 2: Pay for booking only");
-        } else if (!bookingId && OrderProductId) {
+        } else if (!bookingId && orderProductsId) {
           // Case 3: Chỉ mua bắp nước (Pay for order product only)
           payload = {
-            orderProductId: OrderProductId,
+            orderProductId: orderProductsId,
             amount: finalPrice,
             returnUrl,
             userId,
@@ -86,7 +92,7 @@ const WaitingPayment = () => {
 
         console.log("💳 Payment payload:", payload);
         console.log("🎫 Seat Booking ID:", bookingId || "None");
-        console.log("🛍️ Product Order ID:", OrderProductId || "None");
+        console.log("🛍️ Product Order ID:", orderProductsId || "None");
         console.log("💰 Final Price:", finalPrice);
         console.log("🔄 Payment Method:", paymentMethod);
 
@@ -128,23 +134,23 @@ const WaitingPayment = () => {
       }
     };
 
-    if (paymentMethod && (bookingId || OrderProductId)) {
+    if (paymentMethod && (bookingId || orderProductsId)) {
       processPayment();
     } else {
       console.error("❌ Missing required data:", { 
         paymentMethod, 
         bookingId, 
-        OrderProductId 
+        orderProductsId
       });
       setPaymentStatus("failed");
     }
-  }, [paymentMethod, bookingId, OrderProductId]);
+  }, [paymentMethod, bookingId, orderProductsId]);
 
   // Helper function to determine payment type
   const getPaymentType = () => {
-    if (bookingId && OrderProductId) return "Both seats and products";
-    if (bookingId && !OrderProductId) return "Seats only";
-    if (!bookingId && OrderProductId) return "Products only";
+    if (bookingId && orderProductsId) return "Both seats and products";
+    if (bookingId && !orderProductsId) return "Seats only";
+    if (!bookingId && orderProductsId) return "Products only";
     return "Unknown";
   };
 
@@ -156,7 +162,7 @@ const WaitingPayment = () => {
   //       body: JSON.stringify({
   //         amount: state.finalPrice,
   //         bookingId: state.bookingId,
-  //         orderProductId: state.OrderProductId,
+  //         orderProductId: state.orderProductId,
   //       }),
   //     });
   //     const data = await res.json();
@@ -200,10 +206,10 @@ const WaitingPayment = () => {
                   </div>
                 )}
                 
-                {OrderProductId && (
+                {orderProductsId && (
                   <div className="flex justify-between">
                     <span>Product Order ID:</span>
-                    <span className="font-mono">{OrderProductId.slice(0, 8)}...</span>
+                    <span className="font-mono">{orderProductsId.slice(0, 8)}...</span>
                   </div>
                 )}
                 
@@ -214,7 +220,7 @@ const WaitingPayment = () => {
                   </div>
                 )}
                 
-                {OrderProductId && products.length > 0 && (
+                {orderProductsId && products.length > 0 && (
                   <div className="flex justify-between">
                     <span>Products:</span>
                     <span>{products.length} item{products.length > 1 ? 's' : ''}</span>
@@ -241,7 +247,7 @@ const WaitingPayment = () => {
               <h4 className="font-semibold text-red-400 mb-2">Error Details:</h4>
               <div className="text-sm text-gray-300">
                 {!paymentMethod && <p>• Payment method not selected</p>}
-                {!bookingId && !OrderProductId && <p>• No booking or product order found</p>}
+                {!bookingId && !orderProductsId && <p>• No booking or product order found</p>}
                 {!finalPrice && <p>• Amount is invalid</p>}
               </div>
             </div>
@@ -267,7 +273,7 @@ const WaitingPayment = () => {
         {clientSecret && paymentMethod === "3" && (
           <StripeCheckoutForm
             clientSecret={clientSecret}
-            onSuccess={() => {/* xử lý sau khi thanh toán thành công */}}
+            onSuccess={() => {navigate("/ticket");}}
           />
         )}
         

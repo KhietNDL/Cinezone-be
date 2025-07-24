@@ -874,14 +874,14 @@ const handleTabChange = (tab) => {
                 </div>
 
                 {/* Ticket Code */}
-                <div className="text-center py-3">
+                {/* <div className="text-center py-3">
                   <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2">Ticket Code</p>
                   <div className="bg-gray-50 rounded-lg py-3 px-4 border border-gray-200">
                     <p className="text-lg font-mono font-bold text-gray-900 tracking-wider">
                       {selectedBooking.BookingId}
                     </p>
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
 

@@ -8,7 +8,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import StripeCheckoutForm from "./StripeCheckoutForm";
-import { setBookingId } from "../../../redux/features/bookingSlice";
+import { setBookingId, setOrderProductsId } from "../../../redux/features/bookingSlice";
 import MembershipProgress from "../bookingComponent/MembershipProgress";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -421,6 +421,8 @@ const ConfirmPayment = () => {
           productHoldPayload.products,
           productHoldPayload.Notes
         );
+        dispatch(setOrderProductsId(productHoldResult.OrderProductId));
+
 
         console.log("✅ Products held successfully:", productHoldResult);
       } else {
@@ -462,12 +464,12 @@ const ConfirmPayment = () => {
         finalPrice, // Tổng cuối = ghế đã giảm + product gốc
 
         // Hold results
-        bookingId: holdingResult.bookingId,
+        // bookingId: holdingResult.bookingId,
         holdingSeats: holdingResult,
 
         // Product data
         products: product || [],
-        OrderProductId: productHoldResult?.OrderProductId || null,
+        // OrderProductId: productHoldResult?.OrderProductId || null,
         productHoldResult: productHoldResult,
       };
 
@@ -729,6 +731,7 @@ const ConfirmPayment = () => {
                           {selectedSeats.length > 0 ? selectedSeats.join(", ") : "None selected"}
                         </p>
                       </div>
+                    
                     </div>
                   </div>
 
@@ -751,7 +754,12 @@ const ConfirmPayment = () => {
                               <span className="text-white font-semibold">{formatPrice(seatPrice)}</span>
                             )}
                           </div>
+                           
+                    
                         </div>
+                         <div>
+                        <p className="flex justify-end text-sm text-green-400">Member Discount {userDiscount}%</p>
+                      </div>
 
                         {/* Product Price */}
                         {product && Array.isArray(product) && product.length > 0 && (

@@ -1,8 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { cancelBooking, cancelProduct, ConfirmBooking, ConfirmPayment, confirmProduct, getBookingById, getProductByOderProductId } from "../../../services/API";
-import { useDispatch, useSelector} from "react-redux"
-import {  setProductDetail } from "../../../redux/features/bookingSlice";
+import {
+  cancelBooking,
+  cancelProduct,
+  ConfirmBooking,
+  ConfirmPayment,
+  confirmProduct,
+  getBookingById,
+  getProductByOderProductId
+} from "../../../services/API";
+import { useDispatch, useSelector } from "react-redux";
+import { setProductDetail } from "../../../redux/features/bookingSlice";
 
 const TicketDetails = () => {
   const [searchParams] = useSearchParams();
@@ -14,101 +22,97 @@ const TicketDetails = () => {
 
   const resultCode = searchParams.get("resultCode");
   const extraDataRaw = searchParams.get("extraData");
-  const { productDetail } = useSelector((state) => state.booking);
+  const { productDetail, bookingId: reduxBookingId, orderProductsId: reduxOrderProductId } = useSelector(
+    (state) => state.booking
+  );
 
   let bookingId = null;
   let orderProductId = null;
   let paymentId = null;
-  
+
   try {
-    if (!extraDataRaw) throw new Error("Missing extraData");
-    const decoded = decodeURIComponent(extraDataRaw);
-    const extraData = JSON.parse(decoded);
-    bookingId = extraData.bookingId;
-    paymentId=extraData.paymentId;
-    orderProductId = extraData.orderProductId;
+    const isMomo = resultCode !== null;
+    if (isMomo) {
+      if (!extraDataRaw) throw new Error("Thiếu extraData từ Momo");
+      const decoded = decodeURIComponent(extraDataRaw);
+      const extraData = JSON.parse(decoded);
+      bookingId = extraData.bookingId;
+      paymentId = extraData.paymentId;
+      orderProductId = extraData.orderProductId;
+    } else {
+      bookingId = reduxBookingId;
+      orderProductId = reduxOrderProductId;
+      paymentId = "visa"; 
+    }
   } catch (err) {
-    console.error("❌ Failed to parse extraData:", err);
+    console.error("Failed to parse payment data:", err);
     setError("Không thể lấy thông tin vé.");
     setLoading(false);
   }
 
-  const query = new URLSearchParams(window.location.search);
+useEffect(() => {
+  const isMomo = resultCode !== null;
+  const isSuccess = isMomo ? resultCode === "0" : true;
 
-
-
-
-  useEffect(() => {
-    // Nếu thanh toán thất bại hoặc bị hủy
-    if (resultCode !== "0") {
-      setIsCancelled(true);
-
-      const handleCancellation = async () => {
-        try {
-          // Hủy booking nếu có
-          if (bookingId) {
-            console.log("Đang hủy booking...");
-            await cancelBooking(bookingId);
-            console.log("Booking đã bị hủy.");
-            console.log("PAYMENTID bi huy",paymentId)
-          }
-
-          // Hủy product nếu có
-          if (orderProductId) {
-            console.log("Đang hủy product...");
-            await cancelProduct(orderProductId);
-            console.log("Product đã bị hủy.");
-          }
-        } catch (err) {
-          console.error("Lỗi khi hủy:", err);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      handleCancellation();
-      return;
-    }
-
-    // Nếu thanh toán thành công
-    if (!bookingId) {
-      setError("Không có thông tin booking.");
-      setLoading(false);
-      return;
-    }
-
-    const fetchSuccessfulPayment = async () => {
+  // Nếu thất bại thì hủy booking
+  if (!isSuccess) {
+    setIsCancelled(true);
+    const handleCancellation = async () => {
       try {
-        // Xác nhận và lấy thông tin booking
-        await ConfirmPayment(paymentId);
-        const ticketResponse = await getBookingById(bookingId);
-        setTicket(ticketResponse);
-        console.log("Ticket details fetched successfully:", ticketResponse);
-        console.log("ORDER PRODUCT ID", orderProductId)
-
-        // Xác nhận và lấy thông tin product nếu có
-        if (orderProductId) {
-          
-          // await confirmProduct(orderProductId);
-          const productResponse = await getProductByOderProductId(orderProductId);
-          dispatch(setProductDetail(productResponse));
-          console.log("Product details fetched successfully:", productDetail);
-        }
+        if (bookingId) await cancelBooking(bookingId);
+        if (orderProductId) await cancelProduct(orderProductId);
       } catch (err) {
-        console.error("Lỗi khi tải thông tin:", err);
-        setError("Không thể tải thông tin vé.");
+        console.error("Lỗi khi hủy:", err);
       } finally {
         setLoading(false);
       }
     };
+    handleCancellation();
+    return;
+  }
 
-    fetchSuccessfulPayment();
-  }, [bookingId, paymentId, orderProductId, resultCode, dispatch]);
+  if (!bookingId) {
+    setError("Không có thông tin booking.");
+    setLoading(false);
+    return;
+  }
+
+  const fetchPayment = async () => {
+    try {
+      if (isMomo) {
+        // Thanh toán qua Momo -> confirm bằng paymentId
+        await ConfirmPayment(paymentId);
+      } else {
+        // Thanh toán khác (Visa, etc.) -> confirm bằng bookingId + productId
+        console.log("Oder Product ID:", orderProductId);
+         await ConfirmBooking(bookingId);
+         await confirmProduct(orderProductId);
+      }
+
+      // Lấy thông tin vé
+      const ticketResponse = await getBookingById(bookingId);
+      setTicket(ticketResponse);
+
+      // Nếu có sản phẩm thì load thông tin
+      if (orderProductId) {
+        const productResponse = await getProductByOderProductId(orderProductId);
+        dispatch(setProductDetail(productResponse));
+      }
+    } catch (err) {
+      console.error("Lỗi khi tải thông tin:", err);
+      setError("Không thể tải thông tin vé.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchPayment();
+}, [bookingId, paymentId, orderProductId, resultCode, dispatch]);
+
 
   if (loading) return <div className="text-white p-6">Đang tải thông tin vé...</div>;
   if (error) return <div className="text-red-400 p-6">{error}</div>;
 
-  // Nếu thanh toán bị hủy
   if (isCancelled) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] flex flex-col items-center justify-center text-center text-white p-10">
@@ -128,13 +132,11 @@ const TicketDetails = () => {
     );
   }
 
-  // Nếu thanh toán thành công nhưng không có thông tin vé
   if (!ticket) return <div className="text-gray-400 p-6">Không tìm thấy vé.</div>;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] flex items-center justify-center py-10 px-4">
       <div className="flex w-full max-w-4xl rounded-2xl overflow-hidden border-2 border-white/60 shadow-2xl">
-        {/* Left Side - Ticket Info */}
         <div className="w-1/2 bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] p-8 flex flex-col justify-between">
           <div>
             <h2 className="text-white text-2xl font-bold mb-2">🎟️Your Ticket</h2>
@@ -145,24 +147,14 @@ const TicketDetails = () => {
               <div><span className="text-white/60">Time: </span><span className="font-bold">{ticket.showTime}</span></div>
               <div><span className="text-white/60">Date: </span><span className="font-bold">{new Date(ticket.showDate).toLocaleDateString("en-GB")}</span></div>
               <div><span className="text-white/60">Room: </span><span className="font-bold">{ticket.room}</span></div>
-              <div><span className="text-white/60">Seats: </span>
-                <span className="font-bold">
-                  {Array.isArray(ticket.seats) ? ticket.seats.join(", ") : ticket.seats}
-                </span>
-              </div>
-              {/* <div><span className="text-white/60">Price: </span><span className="font-bold">{ticket.totalAmount?.toLocaleString()} đ</span></div> */}
-              
-              {/* Hiển thị thông tin product nếu có */}
+              <div><span className="text-white/60">Seats: </span><span className="font-bold">{Array.isArray(ticket.seats) ? ticket.seats.join(", ") : ticket.seats}</span></div>
               {productDetail && (
-                <div><span className="text-white/60">Product: </span><span className="font-bold"> {productDetail.map(p => p.productName).join(", ")}</span></div>
+                <div><span className="text-white/60">Product: </span><span className="font-bold">{productDetail.map(p => p.productName).join(", ")}</span></div>
               )}
             </div>
           </div>
-
-         
         </div>
 
-        {/* Right Side - Customer Info */}
         <div className="w-1/2 bg-[#0e012a] p-8 text-white">
           <h3 className="text-xl font-semibold mb-4">Customer Information</h3>
           <ul className="space-y-4 text-sm">
@@ -174,7 +166,6 @@ const TicketDetails = () => {
               <span className="text-white/60">Phone number:</span>
               <span className="font-bold">{ticket.buyerPhone}</span>
             </li>
-            
           </ul>
           <div className="mt-10 border-t border-dashed border-white/30 pt-6 text-sm text-white/60">
             * Please arrive 15 minutes before showtime.
