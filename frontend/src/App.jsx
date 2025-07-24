@@ -50,7 +50,7 @@ import ComboInformation from "./layouts/Staff/foodComponent/ComboInformation";
 import MovieListPage from "./layouts/User/component/MovieListPage";
 import BlogPage from "./layouts/User/component/BlogPage";
 import BlogDetail from "./layouts/User/component/BlogDetail";
-import BlogManagement from "./layouts/Admin/component/BlogManagement";
+
 import NotFound from "../cosmic/blocks/blog/NotFound";
 
 function App() {
@@ -94,7 +94,6 @@ function App() {
             <Route path="promotions" element={<PromotionManagement />} />
             <Route path="users" element={<UserManagement />} />
             <Route path="products" element={<ProductManagement />} />
-            <Route path="blogs" element={<BlogManagement />} />
           </Route>
         </Route>
 

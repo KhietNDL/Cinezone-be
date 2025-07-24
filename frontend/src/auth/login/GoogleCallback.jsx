@@ -26,9 +26,11 @@ const GoogleCallback = () => {
         try {
           const userObj = JSON.parse(decodeURIComponent(userParam));
           const success = await signIn(token, userObj.UserId);
-          
+
           if (success) {
-            toast.success("Login with Google Successfully!", { toastId: "google-login-success" });
+            toast.success("Login with Google Successfully!", {
+              toastId: "google-login-success",
+            });
             navigate("/");
           } else {
             toast.error("Failed to authenticate user!");
@@ -46,7 +48,7 @@ const GoogleCallback = () => {
         setIsProcessing(false);
         return;
       }
-      
+
       setIsProcessing(false);
     };
 

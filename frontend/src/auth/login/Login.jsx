@@ -131,7 +131,7 @@ const MovieTheaterLogin = () => {
 
   const handleGoogleLogin = () => {
     // window.location.href = "http://localhost:4458/api/auth/login-google";
-    window.location.href = "http://cinezone:4458/api/auth/login-google";
+    window.location.href = "http://cinezone.info:4458/api/auth/login-google";
   };
 
   return (
