@@ -40,7 +40,7 @@ const MovieTheaterLogin = () => {
             if (!movie.PosterImage) return null;
             // Nếu là đường dẫn tương đối thì thêm host
             if (movie.PosterImage.startsWith("http")) return movie.PosterImage;
-            return `http://cinezone:4458${movie.PosterImage}`;
+            return `http://cinezone.info:4458${movie.PosterImage}`;
           })
           .filter(Boolean);
         setMovieBackgrounds(
@@ -131,7 +131,7 @@ const MovieTheaterLogin = () => {
 
   const handleGoogleLogin = () => {
     // window.location.href = "http://localhost:4458/api/auth/login-google";
-    window.location.href = "http://cinezone:4458/api/auth/login-google";
+    window.location.href = "http://cinezone.info:4458/api/auth/login-google";
   };
 
   return (

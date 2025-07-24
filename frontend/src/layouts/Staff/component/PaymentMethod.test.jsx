@@ -24,7 +24,7 @@ describe("PaymentMethod", () => {
     expect(screen.getByText("Cash")).toBeInTheDocument();
     expect(screen.getByText("Momo")).toBeInTheDocument();
     // expect(screen.getByText("VNPay")).toBeInTheDocument();
-    expect(screen.getByText("Visa")).toBeInTheDocument();
+    expect(screen.getByText("Stripe")).toBeInTheDocument();
     expect(screen.getByText("ZaloPay")).toBeInTheDocument();
   });
 
@@ -34,8 +34,8 @@ describe("PaymentMethod", () => {
 
     // fireEvent.click(screen.getByText("VNPay").closest("label"));
     // expect(onChange).toHaveBeenCalledWith("VNPay");
-    fireEvent.click(screen.getByText("Visa").closest("label"));
-    expect(onChange).toHaveBeenCalledWith("Visa");
+    fireEvent.click(screen.getByText("Stripe").closest("label"));
+    expect(onChange).toHaveBeenCalledWith("Stripe");
 
     fireEvent.click(screen.getByText("Momo").closest("label"));
     expect(onChange).toHaveBeenCalledWith("Momo");

@@ -12,6 +12,8 @@ import { resetBooking } from '../../../redux/features/sellingSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import VersionCard from '../component/VersionCard';
 import { getMovieById } from '../../../services/APIForStaff/API';
+import BackButton from '../component/BackButton';
+import { resetMember } from '../../../redux/features/memberSlice';
 
 export default function PrintTicket() {
     const componentRef = useRef();
@@ -42,6 +44,7 @@ export default function PrintTicket() {
 
     const handleCancel = () => {
         dispatch(resetBooking());
+        dispatch(resetMember());
         navigate("/staff/ticket-selling");
     };
 
@@ -89,14 +92,18 @@ export default function PrintTicket() {
     }
     return (
         <div className='p-4 mx-auto w-full'>
+            <div className="fixed top-20 right-4 z-50">
+                <BackButton />
+            </div>
             <h1 className="text-3xl font-bold mb-4 text-fuchsia-700">Tickets</h1>
+
             <div className='flex flex-col items-center justify-center h-full space-y-4'>
                 <div ref={componentRef}>
                     <div className='flex flex-col items-center justify-center'>
                         <div className="w-full flex flex-col justify-center items-center rounded-xl space-y-2 bg-[linear-gradient(to_right,_#6366F1,_#8B5CF6,_#4F46E5)] mt-6 mb-6">
                             <div className="relative flex h-[180px] w-[1000px] md:h-[200px] lg:h-[300px] p-5">
                                 <div className='w-[63%] h-full'>
-                                    <div className="flex items-start gap-4 border-b border-white pb-2 w-[95%] text-white">                                   
+                                    <div className="flex items-start gap-4 border-b border-white pb-2 w-[95%] text-white">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2">
                                                 <img
@@ -114,12 +121,12 @@ export default function PrintTicket() {
                                                 >
                                                     <p className="font-bold p-2 text-sm"
                                                         style={{
-                                                           
+
                                                             lineHeight: "1rem",
                                                             textShadow: "0 1px 2px Orange"
                                                         }}>Now Showing</p>
                                                 </div>
-                                                
+
                                                 <VersionCard
                                                     version={version}
                                                     readonly={true}
