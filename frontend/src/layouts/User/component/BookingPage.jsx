@@ -64,6 +64,7 @@ const BookingPage = () => {
   const [showtimes, setShowtimes] = useState([]);
   const [timeOptions, setTimeOptions] = useState([]);
   const [dateIndex, setDateIndex] = useState(0);
+  // eslint-disable-next-line no-unused-vars
   const [loading, setLoading] = useState(true);
   const [lastRefreshTime, setLastRefreshTime] = useState(Date.now());
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -79,6 +80,7 @@ const BookingPage = () => {
   const [isRatingListOpen, setIsRatingListOpen] = useState(false);
   const [ratingsList, setRatingsList] = useState([]);
   const [ratingsTotal, setRatingsTotal] = useState(0);
+  // eslint-disable-next-line no-unused-vars
   const [ratingsPage, setRatingsPage] = useState(1);
   const [ratingsLoading, setRatingsLoading] = useState(false);
 
@@ -364,7 +366,6 @@ const BookingPage = () => {
         <div className="space-y-6 mt-15">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 lg:gap-8">
             <div className="lg:col-span-4 order-1 lg:order-none">
-
               <MovieInfo
                 movie={movie}
                 ratingSummary={ratingSummary}
