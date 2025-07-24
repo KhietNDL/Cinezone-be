@@ -161,15 +161,15 @@ class User {
 
   static async createGoogleUser(userData) {
     try {
-      const { googleId, fullName, email, refreshToken, accessToken } = userData;
+      const { googleId, fullName, email, refreshToken, accessToken, avatar_url } = userData;
       const userId = uuidv4();
       const now = new Date();
 
       const [result] = await db.promise().query(
         `INSERT INTO Users (
-          UserId, GoogleId, FullName, Email, CreatedAt, Role, IsEmailVerified, IsDeleted, RefreshToken, AccessToken
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [userId, googleId, fullName, email, now, 1, true, 0, refreshToken, accessToken]
+          UserId, GoogleId, FullName, Email, CreatedAt, Role, IsEmailVerified, IsDeleted, RefreshToken, AccessToken, avatar_url
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [userId, googleId, fullName, email, now, 1, true, 0, refreshToken, accessToken, avatar_url]
       );
 
       if (result.affectedRows === 0) {

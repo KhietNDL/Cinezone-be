@@ -349,13 +349,14 @@ class Booking {
             );
 
             if (showtimeInfo[0]) {
-              const emailResult = await BookingEmailService.sendBookingConfirmationEmail(
+              // Gửi mail xác nhận booking KHÔNG await để không block API
+              BookingEmailService.sendBookingConfirmationEmail(
                 user,
                 bookingDetail,
                 showtimeInfo[0],
                 { NameOfVietnamese: showtimeInfo[0].NameOfVietnamese, NameOfEnglish: showtimeInfo[0].NameOfEnglish },
                 seats
-              );
+              ).catch(err => console.error('Error sending booking confirmation email:', err));
             } else {
             }
           }

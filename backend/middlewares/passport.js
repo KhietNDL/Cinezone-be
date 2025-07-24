@@ -11,8 +11,13 @@ passport.use(new GoogleStrategy(googleConfig,
       // 1. Tìm người dùng theo GoogleId. Nếu tìm thấy, đăng nhập.
       console.log('Google profile:', profile);
       let user = await User.findByGoogleId(profile.id);
+      const newAvatar = profile.photos && profile.photos[0] ? profile.photos[0].value : null;
       if (user) {
-        console.log('User found by GoogleId:', user);
+        // Nếu avatar_url khác, update lại
+        if (newAvatar && user.avatar_url !== newAvatar) {
+          await User.update(user.UserId, { avatar_url: newAvatar });
+          user.avatar_url = newAvatar;
+        }
         return done(null, user);
       }
 
@@ -31,8 +36,10 @@ passport.use(new GoogleStrategy(googleConfig,
         email: email,
         refreshToken: refreshToken,
         accessToken: accessToken,
-        // có thể thêm các trường khác nếu cần
+        avatar_url: profile.photos && profile.photos[0] ? profile.photos[0].value : null, // LẤY AVATAR GOOGLE
       };
+      console.log('Google profile.photos:', profile.photos);
+      console.log('Google avatar_url to save:', userData.avatar_url);
       const userId = await User.createGoogleUser(userData);
       user = await User.findById(userId);
       console.log('Created new Google user:', user);
