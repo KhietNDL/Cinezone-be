@@ -5,7 +5,6 @@ import logoWeb from "../../assets/logoWeb.png";
 import imageLogin6 from "../../assets/imageLogin6.webp";
 import imageLogin2 from "../../assets/imageLogin2.jpg";
 import imageLogin3 from "../../assets/imageLogin3.jpg";
-import imageLogin4 from "../../assets/imageLogin4.jpg";
 import { Link, useNavigate } from "react-router-dom";
 import { getCurrentMovies, login } from "../../services/API";
 import { useAuth } from "../../context/AuthContext";

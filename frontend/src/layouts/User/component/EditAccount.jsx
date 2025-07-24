@@ -214,7 +214,7 @@ const EditAccount = () => {
                 Loading Information
               </h3>
               <p className="text-sm sm:text-base text-purple-500">
-                Please wait a moment...
+                Please wait a moment....
               </p>
             </div>
           </div>
