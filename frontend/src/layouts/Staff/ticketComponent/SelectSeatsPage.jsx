@@ -8,6 +8,7 @@ import React, {
 import { useNavigate, Link } from "react-router-dom";
 import { Button, Tag, Spin, message } from "antd";
 import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
+import { FaCalendarDays, FaClock, FaCouch, FaLocationDot } from "react-icons/fa6";
 import { LayoutSelectSeat } from "../../../component/LayoutSelectSeat";
 import {
   getMovieById,
@@ -22,13 +23,14 @@ import {
 } from "../../../redux/features/sellingSlice";
 import { resetMember } from "../../../redux/features/memberSlice";
 import VersionCard from "../component/VersionCard";
+import BackButton from "../component/BackButton";
 
 const SelectSeatsPage = () => {
-    const navigate = useNavigate();
-    const dispatch = useDispatch();
-    const bookingData = useSelector((state) => state.selling);
-    const seatData = bookingData.seatData;
-    const selectedSeats = bookingData.selectedSeats;
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const bookingData = useSelector((state) => state.selling);
+  const seatData = bookingData.seatData;
+  const selectedSeats = bookingData.selectedSeats;
 
   const [movieInfo, setMovieInfo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -62,14 +64,14 @@ const SelectSeatsPage = () => {
       }
     };
 
-        fetchData();
-    }, [
-        bookingData?.selectedMovie,
-        bookingData?.selectedMovie?.MovieId,
-        bookingData?.showtimeId,
-        navigate,
-        dispatch
-    ]);
+    fetchData();
+  }, [
+    bookingData?.selectedMovie,
+    bookingData?.selectedMovie?.MovieId,
+    bookingData?.showtimeId,
+    navigate,
+    dispatch
+  ]);
 
   useEffect(() => {
     return () => {
@@ -161,10 +163,17 @@ const SelectSeatsPage = () => {
     );
 
   return (
+
     <div className="p-4 mx-auto w-full bg-[#fafbfc]">
-      <h1 className="text-3xl font-bold mb-4 text-[#9810FA] flex justify-between items-center">
-        Select Seats
-      </h1>
+      <div className="flex flex-col items-start justify-center gap-4 mb-6">
+        {/* <div className="fixed top-20 left-4 z-50"> */}
+        <div>
+          <BackButton />
+        </div>
+        <h1 className="text-3xl font-bold text-[#9810FA] flex lg:items-start items-center lg:justify-start justify-center flex-col">
+          Select Seats
+        </h1>
+      </div>
 
       {/* Movie Info */}
       <div className="flex items-center sm:items-start gap-4 border-b border-gray-300 pb-4 flex-col sm:flex-row">
@@ -200,18 +209,23 @@ const SelectSeatsPage = () => {
             )}
           </div>
           <p className="text-sm mt-1 flex gap-4">
+            {bookingData.selectedDay && (
+              <span className="py-2 flex items-center justify-center gap-1">
+                <FaCalendarDays className="text-lg" /> <p className="text-lg">{bookingData.selectedDay}</p>
+              </span>
+            )}
             {bookingData.selectedTime && (
-              <span className="py-2">
-                <i className="fa-solid fa-clock"></i> {bookingData.selectedTime}
+              <span className="py-2 flex items-center justify-center gap-1">
+                <FaClock className="text-lg" /> <p className="text-lg">{bookingData.selectedTime}</p>
               </span>
             )}
             {bookingData.room && (
-              <span className="py-2">
-                <i className="fa-solid fa-location-dot"></i> {bookingData.room}
+              <span className="py-2 flex items-center justify-center gap-1">
+                <FaLocationDot className="text-lg" /> <p className="text-lg">{bookingData.room}</p>
               </span>
             )}
-            <span className="py-2">
-              <i className="fa-solid fa-couch"></i> Row: A-J
+            <span className="py-2 flex items-center justify-center gap-1">
+              <FaCouch className="text-lg" /> <p className="text-lg"> Row: A-J</p>
             </span>
           </p>
         </div>

@@ -15,6 +15,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { useDispatch, useSelector } from 'react-redux';
 import { resetBooking } from '../../../redux/features/sellingSlice'
 import { resetMember } from '../../../redux/features/memberSlice'
+import BackButton from "../component/BackButton";
 
 const TicketInformation = () => {
   const hasRun = useRef(false);
@@ -52,6 +53,14 @@ const TicketInformation = () => {
     return price?.toLocaleString('vi-VN');
   }, []);
 
+  // useEffect(() => async () => {
+  //   if (memberData?.member?.phone) {
+  //     const customerData = await getUserByPhone(memberData?.member?.phone);
+  //     setApiCustomerData(customerData);
+  //     console.log("Customer data from API:", customerData);
+  //   }
+  // }), [memberData?.member?.phone];
+
   const processPaymentResult = useCallback(async () => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -82,7 +91,7 @@ const TicketInformation = () => {
       if (memberData?.member?.phone) {
         const customerData = await getUserByPhone(memberData?.member?.phone);
         setApiCustomerData(customerData);
-        // console.log("Customer data from API:", customerData);
+        console.log("Customer data from API:", customerData);
       }
 
       // Bước 2: Xác định trạng thái thanh toán
@@ -159,9 +168,9 @@ const TicketInformation = () => {
     try {
       await cancelBookingById(bookingData?.bookingId);
       toast.info("Previous booking cancelled. Please try again.");
-    } catch (err) {
+    } catch (error) {
       toast.error("Failed to cancel previous booking");
-      console.error(err);
+      console.error(error);
     } finally {
       navigate("/staff/ticket-selling/confirm-ticket");
     }
@@ -216,6 +225,9 @@ const TicketInformation = () => {
   return (
     <div className="p-4 w-full mx-auto bg-white rounded-lg shadow-sm">
       {/* Header */}
+      <div className="fixed top-20 right-4 z-50">
+        <BackButton />
+      </div>
       <div className="text-center py-8">
         {status.icon}
         <h1 className={`text-3xl font-bold mt-4 ${status.color}`}>{status.title}</h1>

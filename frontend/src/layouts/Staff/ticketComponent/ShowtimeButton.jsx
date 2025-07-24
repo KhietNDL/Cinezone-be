@@ -11,46 +11,57 @@ const ShowtimeButton = ({
   showTime,
   parentVersion
 }) => {
-  // Lấy ngày hiện tại (yyyy-mm-dd)
-//  const todayStr = new Date().toISOString().slice(0, 10);
 
+  const parseDateFromDDMMYYYY = (str) => {
+    const [day, month, year] = str.split("/").map(Number);
+    return new Date(year, month - 1, day);
+  };
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
   return (
     <Space direction="vertical" className="w-full">
       {showDay && (
         <div className="px-4 flex items-center justify-start">
           <Space wrap className="py-2 w-full">
-            {days.map((day) => {
-              const dayStr = typeof day === "string" ? day : (day?.date || "");
+            {days
+              .filter(day => {
+                const dayStr = typeof day === "string" ? day : (day?.date || "");
+                const dateObj = parseDateFromDDMMYYYY(dayStr);
+                dateObj.setHours(0, 0, 0, 0);
+                return dateObj >= today; // chỉ giữ lại ngày hiện tại hoặc ngày tương lai
+              }).map((day) => {
+                const dayStr = typeof day === "string" ? day : (day?.date || "");
 
-              const parseDateFromDDMMYYYY = (str) => {
-                const [day, month, year] = str.split("/").map(Number);
-                return new Date(year, month - 1, day);
-              };
+                const parseDateFromDDMMYYYY = (str) => {
+                  const [day, month, year] = str.split("/").map(Number);
+                  return new Date(year, month - 1, day);
+                };
 
-              const today = new Date();
-              today.setHours(0, 0, 0, 0);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
 
-              const dateObj = parseDateFromDDMMYYYY(dayStr);
-              dateObj.setHours(0, 0, 0, 0);
+                const dateObj = parseDateFromDDMMYYYY(dayStr);
+                dateObj.setHours(0, 0, 0, 0);
 
-              const isPast = dateObj < today;
+                const isPast = dateObj < today;
 
-              return (
-                <Button
-                  key={dayStr}
-                  type={selectedDay === dayStr ? "primary" : "default"}
-                  disabled={isPast}
-                  style={isPast ? { opacity: 0.5, cursor: "not-allowed" } : {}}
-                  onClick={() => {
-                    if (isPast) return;
-                    onSelectDay(dayStr);
-                    onSelectTime && onSelectTime(null);
-                  }}
-                >
-                  {dayStr}
-                </Button>
-              );
-            })}
+                return (
+                  <Button
+                    key={dayStr}
+                    type={selectedDay === dayStr ? "primary" : "default"}
+                    disabled={isPast}
+                    style={isPast ? { opacity: 0.5, cursor: "not-allowed" } : {}}
+                    onClick={() => {
+                      if (isPast) return;
+                      onSelectDay(dayStr);
+                      onSelectTime && onSelectTime(null);
+                    }}
+                  >
+                    {dayStr}
+                  </Button>
+                );
+              })}
           </Space>
         </div>
       )}

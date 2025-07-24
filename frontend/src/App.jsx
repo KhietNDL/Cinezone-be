@@ -24,6 +24,7 @@ import MoviePage from "./layouts/Staff/movieComponent/MoviePage";
 import MovieDetail from "./layouts/Staff/movieComponent/MovieDetail";
 import CheckOutComboPage from "./layouts/Staff/foodComponent/CheckOutComboPage";
 import ComboInformation from "./layouts/Staff/foodComponent/ComboInformation";
+import CheckIn from "./layouts/Staff/ticketComponent/CheckIn";
 
 import MoviePromotions from "./layouts/User/component/PromotionPage";
 import MovieManagement from "./layouts/Admin/component/MovieManagement";
@@ -152,6 +153,7 @@ function App() {
               path="combo-selling/combo-information"
               element={<ComboInformation />}
             />
+             <Route path="check-in" element={<CheckIn />} />
           </Route>
         </Route>
       </Routes>

@@ -12,7 +12,6 @@ import { IoMdCash } from "react-icons/io";
 import { FiLoader } from "react-icons/fi";
 import {
   getMovieById, getUserByEmail, getUserByCCCD, getUserByPhone, cancelBookingById,
-  // checkPromotion, createBookingHold, createMomoPayment, createCashPayment, confirmBooking
   checkPromotion, createBookingHold, checkMemberShip
 } from "../../../services/APIForStaff/API";
 import { useAuth } from "../../../context/AuthContext";
@@ -36,6 +35,7 @@ import PaymentMethod from '../component/PaymentMethod'
 import { processPayment } from '../../../hooks/useProcessPayment';
 import StripeCheckoutForm from "../../User/component/StripeCheckoutForm";
 import MemberRank from "../component/MemberRank";
+import BackButton from "../component/BackButton";
 
 const formatPrice = (price) => price?.toLocaleString("vi-VN");
 
@@ -60,8 +60,6 @@ const calculatePointsAndPrice = (selectedSeats, seatData, memberChecked, convert
       PointsToUse = 0;
       finalPrice = totalAmount;
     }
-  } else if (memberChecked && convertToTicket === "Disagree" && discount) {
-    finalPrice = Math.round(totalPrice * (1 - discount / 100));
   } else {
     // Áp dụng giảm giá thành viên trước nếu có
     if (memberChecked && discountTicket && Number(discountTicket) > 0) {
@@ -69,7 +67,7 @@ const calculatePointsAndPrice = (selectedSeats, seatData, memberChecked, convert
       finalPrice = finalPrice - membershipDiscountAmount;
     }
     // Sau đó áp dụng tiếp mã khuyến mãi nếu có
-    if (discount && Number(discount) > 0) {
+    if (discount && convertToTicket === "Disagree") {
       promotionDiscountAmount = Math.round(finalPrice * Number(discount) / 100);
       finalPrice = finalPrice - promotionDiscountAmount;
     }
@@ -86,6 +84,7 @@ const ConfirmTicketsPage = () => {
   const { member, memberChecked } = useSelector((state) => state.member);
 
   const [discount, setDiscount] = useState(null);
+  // const [memberDiscount, setMemberDiscount] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [movieInfo, setMovieInfo] = useState(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
@@ -154,16 +153,17 @@ const ConfirmTicketsPage = () => {
 
       // Tự động áp dụng giảm giá thành viên nếu có DiscountTicket > 0
       if (memberData.discountTicket && Number(memberData.discountTicket) > 0) {
-        setDiscount(Number(memberData.discountTicket));
+        // setMemberDiscount(Number(memberData.discountTicket));
         toast.success(`Member found! Applied membership discount (${memberData.discountTicket}%)`);
       } else {
+        // setMemberDiscount(null);
         setDiscount(null);
         toast.success("Member found!");
       }
     } catch (error) {
       dispatch(resetMember());
       setDiscount(null);
-      toast.error(error.message || "Search error");
+      toast.error(error || "Search error");
     } finally {
       setIsSearching(false);
     }
@@ -191,7 +191,7 @@ const ConfirmTicketsPage = () => {
     } catch (error) {
       setDiscount(null);
       setFieldValue("promotionCode", "");
-      toast.error(error.message);
+      toast.error(error);
     }
   }, [setDiscount]);
 
@@ -275,18 +275,18 @@ const ConfirmTicketsPage = () => {
         orderId: bookingRes.bookingId,
         amount: finalPrice,
         type: "ticket",
-        cardType: values.paymentMethod === "Visa" ? values.cardType : undefined,
+        cardType: values.paymentMethod === "Stripe" ? values.cardType : undefined,
         navigate,
         setIsRedirecting,
         successUrl: values.paymentMethod === "Cash"
           ? "/staff/ticket-selling/ticket-information"
-          : values.paymentMethod === "Visa"
+          : values.paymentMethod === "Stripe"
             ? "/staff/ticket-selling/waiting-payment"
             : `${window.location.origin}/staff/ticket-selling/ticket-information`,
       });
 
       // Nếu là Visa, lưu clientSecret để render StripeCheckoutForm
-      if (values.paymentMethod === "Visa" && paymentResult?.data?.clientSecret) {
+      if (values.paymentMethod === "Stripe" && paymentResult?.data?.clientSecret) {
         dispatch(setStripeClientSecret(paymentResult.data));
       }
 
@@ -295,11 +295,7 @@ const ConfirmTicketsPage = () => {
       }
     } catch (error) {
       console.error("Booking error:", error);
-      if (error.inner) {
-        error.inner.forEach((e) => toast.error(`${e.path}: ${e.message}`));
-      } else {
-        toast.error(error.message || "Error processing booking");
-      }
+      toast.error(error || "Error processing booking");
     } finally {
       setSubmitting(false);
     }
@@ -311,7 +307,7 @@ const ConfirmTicketsPage = () => {
         await cancelBookingById(bookingData.bookingId);
       }
     } catch (error) {
-      console.error("Failed to cancel booking:", error);
+      console.error("Failed to cancel booking:", error || error);
       toast.error("Failed to cancel booking");
     }
     dispatch(resetBooking());
@@ -343,10 +339,10 @@ const ConfirmTicketsPage = () => {
 
     paymentMethod: Yup.string()
       .required("Please select payment method")
-      .oneOf(["Cash", "Momo", "VNPay", "ZaloPay", "Visa"], "Invalid payment method"),
+      .oneOf(["Cash", "Momo", "VNPay", "ZaloPay", "Stripe"], "Invalid payment method"),
 
     cardType: Yup.string().when("paymentMethod", {
-      is: "Visa",
+      is: "Stripe",
       then: (schema) =>
         schema.required("Please select a card type").oneOf(["visa", "mastercard", "jcb", "unionpay"]),
       otherwise: (schema) => schema.notRequired(),
@@ -384,9 +380,13 @@ const ConfirmTicketsPage = () => {
 
   return (
     <div className="p-4 mx-auto w-full bg-[#fafbfc]">
+      <div className="fixed top-20 right-4 z-50">
+        <BackButton />
+      </div>
       <h1 className="text-3xl font-bold mb-4 text-[#9810FA] justify-between items-center flex flex-col sm:flex-row">
         Confirm Tickets
       </h1>
+
       <Formik
         initialValues={{
           memberSearch: "",
@@ -473,6 +473,7 @@ function ConfirmFormBody({
     <Form>
       <div className="flex flex-col gap-3">
         <div className=" flex lg:flex-row flex-col gap-3">
+
           <div className="lg:w-2/3">
             {/* MovieInfoSection inline */}
             <div className="bg-white border border-gray-300 rounded-lg shadow-md p-6">
@@ -701,7 +702,7 @@ function ConfirmFormBody({
               <PaymentMethod
                 value={values.paymentMethod}
                 onChange={val => setFieldValue('paymentMethod', val)}
-                showCardType={values.paymentMethod === "Visa"}
+                showCardType={values.paymentMethod === "Stripe"}
                 cardType={values.cardType}
                 onCardTypeChange={val => setFieldValue("cardType", val)}
                 cardTypeError={!values.cardType ? "Please select a card type" : ""}

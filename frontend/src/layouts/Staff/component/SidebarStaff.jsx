@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { PiPopcornDuotone } from "react-icons/pi";
+import { BsQrCodeScan } from "react-icons/bs";
 import { FaBars } from "react-icons/fa6";
 
 const SidebarStaff = () => {
@@ -21,6 +22,11 @@ const SidebarStaff = () => {
       label: "Combo Food",
       icon: <PiPopcornDuotone />,
       to: "/staff/combo-selling",
+    },
+     {
+      label: "Check In",
+      icon: <BsQrCodeScan />,
+      to: "/staff/check-in",
     },
   ];
 
