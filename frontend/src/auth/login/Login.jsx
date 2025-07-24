@@ -5,7 +5,6 @@ import logoWeb from "../../assets/logoWeb.png";
 import imageLogin6 from "../../assets/imageLogin6.webp";
 import imageLogin2 from "../../assets/imageLogin2.jpg";
 import imageLogin3 from "../../assets/imageLogin3.jpg";
-import imageLogin4 from "../../assets/imageLogin4.jpg";
 import { Link, useNavigate } from "react-router-dom";
 import { getCurrentMovies, login } from "../../services/API";
 import { useAuth } from "../../context/AuthContext";
@@ -40,7 +39,7 @@ const MovieTheaterLogin = () => {
             if (!movie.PosterImage) return null;
             // Nếu là đường dẫn tương đối thì thêm host
             if (movie.PosterImage.startsWith("http")) return movie.PosterImage;
-            return `http://cinezone:4458${movie.PosterImage}`;
+            return `http://cinezone.info:4458${movie.PosterImage}`;
           })
           .filter(Boolean);
         setMovieBackgrounds(

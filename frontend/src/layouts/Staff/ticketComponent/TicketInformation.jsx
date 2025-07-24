@@ -6,12 +6,16 @@ import { FaTicket, FaCouch, FaLocationDot, FaUser, FaPhone, FaCalendarDays, FaEn
 import { IoReloadOutline, IoTicketSharp, IoTime } from "react-icons/io5";
 import { RiFilmAiFill, RiMovie2AiFill, RiDiscountPercentFill } from "react-icons/ri";
 import { FaMoneyBillWave, FaIdCard, FaRegEye } from "react-icons/fa";
-import { confirmBooking, checkInfoBookingById, cancelBookingById, getUserByPhone, getMovieById, confirmPayment } from "../../../services/APIForStaff/API";
+import {
+  //  confirmBooking,
+  checkInfoBookingById, cancelBookingById, getUserByPhone, getMovieById, confirmPayment
+} from "../../../services/APIForStaff/API";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useDispatch, useSelector } from 'react-redux';
 import { resetBooking } from '../../../redux/features/sellingSlice'
 import { resetMember } from '../../../redux/features/memberSlice'
+import BackButton from "../component/BackButton";
 
 const TicketInformation = () => {
   const hasRun = useRef(false);
@@ -24,9 +28,10 @@ const TicketInformation = () => {
   const [movieInfo, setMovieInfo] = useState(null);
   const [apiBookingData, setApiBookingData] = useState(null);
   const [apiCustomerData, setApiCustomerData] = useState(null);
+  const visaResponse = useSelector(state => state.selling.visaResponse);
 
   const statusMap = useMemo(() => ({
-    success: {
+    succeeded: {
       icon: <CheckCircleTwoTone twoToneColor="#52c41a" className="text-8xl" />,
       title: "Payment Successful",
       color: "text-green-500",
@@ -47,6 +52,14 @@ const TicketInformation = () => {
   const formatPrice = useCallback((price) => {
     return price?.toLocaleString('vi-VN');
   }, []);
+
+  // useEffect(() => async () => {
+  //   if (memberData?.member?.phone) {
+  //     const customerData = await getUserByPhone(memberData?.member?.phone);
+  //     setApiCustomerData(customerData);
+  //     console.log("Customer data from API:", customerData);
+  //   }
+  // }), [memberData?.member?.phone];
 
   const processPaymentResult = useCallback(async () => {
     try {
@@ -78,7 +91,7 @@ const TicketInformation = () => {
       if (memberData?.member?.phone) {
         const customerData = await getUserByPhone(memberData?.member?.phone);
         setApiCustomerData(customerData);
-        // console.log("Customer data from API:", customerData);
+        console.log("Customer data from API:", customerData);
       }
 
       // Bước 2: Xác định trạng thái thanh toán
@@ -88,23 +101,29 @@ const TicketInformation = () => {
             // await confirmPayment();
             if (paymentId) {
               await confirmPayment(paymentId);
+              console.log("PaymentId:", paymentId)
               console.log("Payment confirmed successfully");
             }
             // Gọi confirmBooking
-            await confirmBooking(bookingId);
-            setPaymentStatus('success');
+            // await confirmBooking(bookingId);
+            setPaymentStatus('succeeded');
             toast.success("Payment successful!");
           } catch (error) {
-            setPaymentStatus('success'); // vẫn success nếu confirm thất bại
+            setPaymentStatus('succeeded'); // vẫn success nếu confirm thất bại
             toast.success("Payment successful (confirm failed)", error.message);
           }
         } else {
           setPaymentStatus('error'); //vẫn hiển thị vé nhưng báo thất bại
           toast.error("Payment failed");
         }
+
       } else {
         // Thanh toán tiền mặt hoặc truy cập trực tiếp
-        setPaymentStatus(res?.status === 2 ? 'success' : 'error');
+        if (visaResponse && visaResponse.status) {
+          setPaymentStatus(visaResponse.status === 'succeeded' ? 'succeeded' : 'error');
+        } else {
+          setPaymentStatus(res?.status === 2 ? 'succeeded' : 'error');
+        }
         console.log("PaymentId:", paymentId)
         if (paymentId) {
           await confirmPayment(paymentId);
@@ -119,7 +138,7 @@ const TicketInformation = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [bookingData, memberData]);
+  }, [bookingData, memberData, visaResponse]);
 
   useEffect(() => {
     if (!hasRun.current) {
@@ -149,9 +168,9 @@ const TicketInformation = () => {
     try {
       await cancelBookingById(bookingData?.bookingId);
       toast.info("Previous booking cancelled. Please try again.");
-    } catch (err) {
+    } catch (error) {
       toast.error("Failed to cancel previous booking");
-      console.error(err);
+      console.error(error);
     } finally {
       navigate("/staff/ticket-selling/confirm-ticket");
     }
@@ -206,6 +225,9 @@ const TicketInformation = () => {
   return (
     <div className="p-4 w-full mx-auto bg-white rounded-lg shadow-sm">
       {/* Header */}
+      <div className="fixed top-20 right-4 z-50">
+        <BackButton />
+      </div>
       <div className="text-center py-8">
         {status.icon}
         <h1 className={`text-3xl font-bold mt-4 ${status.color}`}>{status.title}</h1>
@@ -271,7 +293,6 @@ const TicketInformation = () => {
                   {bookingData?.paymentMethod === bookingData?.paymentMethod ? bookingData?.paymentMethod : "Convert points to tickets"}
                 </span>
               </div>
-
               {/* {apiBookingData && ( */}
 
               {/* Thêm phần hiển thị giá từng ghế */}
@@ -397,7 +418,7 @@ const TicketInformation = () => {
                 </Button>
               )}
 
-              {paymentStatus === 'success' && (
+              {paymentStatus === 'succeeded' && (
                 <Link to={`/staff/ticket-selling/view-ticket/${bookingData?.bookingId}`}>
                   <Button
                     className="view-btn hover:bg-white hover:text-purple-600"

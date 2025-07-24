@@ -760,6 +760,7 @@ const loginWithGoogle = async (req, res) => {
         email: email,
         refreshToken: null,
         accessToken: null,
+        avatar_url: picture || null,
       };
 
       const userId = await User.createGoogleUser(userData);

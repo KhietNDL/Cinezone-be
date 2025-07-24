@@ -12,15 +12,15 @@ import { IoMdCash } from "react-icons/io";
 import { FiLoader } from "react-icons/fi";
 import {
   getMovieById, getUserByEmail, getUserByCCCD, getUserByPhone, cancelBookingById,
-  // checkPromotion, createBookingHold, createMomoPayment, createCashPayment, confirmBooking
-  checkPromotion, createBookingHold
+  checkPromotion, createBookingHold, checkMemberShip
 } from "../../../services/APIForStaff/API";
 import { useAuth } from "../../../context/AuthContext";
 import { useDispatch, useSelector } from 'react-redux';
 import {
   setCompleteBooking,
   resetBooking,
-  setPaymentId
+  setPaymentId,
+  setStripeClientSecret
 } from '../../../redux/features/sellingSlice'
 import {
   setMember,
@@ -33,12 +33,18 @@ import { Formik, Form, Field } from "formik";
 import VersionCard from "../component/VersionCard";
 import PaymentMethod from '../component/PaymentMethod'
 import { processPayment } from '../../../hooks/useProcessPayment';
+import StripeCheckoutForm from "../../User/component/StripeCheckoutForm";
+import MemberRank from "../component/MemberRank";
+import BackButton from "../component/BackButton";
 
 const formatPrice = (price) => price?.toLocaleString("vi-VN");
 
-const calculatePointsAndPrice = (selectedSeats, seatData, memberChecked, convertToTicket, discount, totalPrice, memberScore) => {
+// Sửa hàm calculatePointsAndPrice để cộng dồn DiscountTicket và discount (promotion)
+const calculatePointsAndPrice = (selectedSeats, seatData, memberChecked, convertToTicket, discount, totalPrice, memberScore, discountTicket) => {
   let PointsToUse = 0;
   let finalPrice = totalPrice;
+  let membershipDiscountAmount = 0;
+  let promotionDiscountAmount = 0;
 
   if (memberChecked && convertToTicket === "Agree") {
     const totalAmount = selectedSeats.reduce((total, seatNumber) => {
@@ -54,11 +60,20 @@ const calculatePointsAndPrice = (selectedSeats, seatData, memberChecked, convert
       PointsToUse = 0;
       finalPrice = totalAmount;
     }
-  } else if (memberChecked && convertToTicket === "Disagree" && discount) {
-    finalPrice = Math.round(totalPrice * (1 - discount / 100));
+  } else {
+    // Áp dụng giảm giá thành viên trước nếu có
+    if (memberChecked && discountTicket && Number(discountTicket) > 0) {
+      membershipDiscountAmount = Math.round(finalPrice * Number(discountTicket) / 100);
+      finalPrice = finalPrice - membershipDiscountAmount;
+    }
+    // Sau đó áp dụng tiếp mã khuyến mãi nếu có
+    if (discount && convertToTicket === "Disagree") {
+      promotionDiscountAmount = Math.round(finalPrice * Number(discount) / 100);
+      finalPrice = finalPrice - promotionDiscountAmount;
+    }
   }
 
-  return { PointsToUse, finalPrice };
+  return { PointsToUse, finalPrice, membershipDiscountAmount, promotionDiscountAmount };
 };
 
 const ConfirmTicketsPage = () => {
@@ -69,6 +84,7 @@ const ConfirmTicketsPage = () => {
   const { member, memberChecked } = useSelector((state) => state.member);
 
   const [discount, setDiscount] = useState(null);
+  // const [memberDiscount, setMemberDiscount] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [movieInfo, setMovieInfo] = useState(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
@@ -115,6 +131,9 @@ const ConfirmTicketsPage = () => {
       }
 
       const user = res.data?.user || res.user || res.data;
+      const memberShip = await checkMemberShip(user?.UserId || user?.id);
+      console.log("MemberShip:", memberShip);
+
       if (!user?.UserId) throw new Error("Member not found");
 
       const memberData = {
@@ -124,14 +143,27 @@ const ConfirmTicketsPage = () => {
         identityCard: user.CCCD || user.IdentityCard || "Not updated",
         score: user.ScoreBalance || user.Score,
         email: user.Email || searchValue,
+        rank: memberShip?.membership?.MembershipName,
+        pointsMemberShip: memberShip?.membership?.TotalAccumulatedPoints,
+        discountTicket: memberShip?.membership?.DiscountTicket,
       };
 
       dispatch(setMember(memberData));
       dispatch(setMemberChecked(true));
-      toast.success("Member found!");
+
+      // Tự động áp dụng giảm giá thành viên nếu có DiscountTicket > 0
+      if (memberData.discountTicket && Number(memberData.discountTicket) > 0) {
+        // setMemberDiscount(Number(memberData.discountTicket));
+        toast.success(`Member found! Applied membership discount (${memberData.discountTicket}%)`);
+      } else {
+        // setMemberDiscount(null);
+        setDiscount(null);
+        toast.success("Member found!");
+      }
     } catch (error) {
       dispatch(resetMember());
-      toast.error(error.message || "Search error");
+      setDiscount(null);
+      toast.error(error || "Search error");
     } finally {
       setIsSearching(false);
     }
@@ -159,7 +191,7 @@ const ConfirmTicketsPage = () => {
     } catch (error) {
       setDiscount(null);
       setFieldValue("promotionCode", "");
-      toast.error(error.message);
+      toast.error(error);
     }
   }, [setDiscount]);
 
@@ -188,7 +220,8 @@ const ConfirmTicketsPage = () => {
         values.convertToTicket,
         discount,
         bookingData.totalPrice,
-        member?.score || 0
+        member?.score || 0,
+        discountTicket
       );
 
       if (values.convertToTicket === "Agree" && memberChecked && PointsToUse > (member?.score || 0)) {
@@ -242,22 +275,27 @@ const ConfirmTicketsPage = () => {
         orderId: bookingRes.bookingId,
         amount: finalPrice,
         type: "ticket",
-        cardType: values.paymentMethod === "Visa" ? values.cardType : undefined,
+        cardType: values.paymentMethod === "Stripe" ? values.cardType : undefined,
         navigate,
         setIsRedirecting,
-        successUrl: `${values.paymentMethod === "Cash" || values.paymentMethod === "Visa" ? "/staff/ticket-selling/ticket-information" : `${window.location.origin}/staff/ticket-selling/ticket-information`}`,
+        successUrl: values.paymentMethod === "Cash"
+          ? "/staff/ticket-selling/ticket-information"
+          : values.paymentMethod === "Stripe"
+            ? "/staff/ticket-selling/waiting-payment"
+            : `${window.location.origin}/staff/ticket-selling/ticket-information`,
       });
 
-      if (values.paymentMethod && paymentResult?.data?.paymentId || paymentResult?.data?.payment?.PaymentId ) {
+      // Nếu là Visa, lưu clientSecret để render StripeCheckoutForm
+      if (values.paymentMethod === "Stripe" && paymentResult?.data?.clientSecret) {
+        dispatch(setStripeClientSecret(paymentResult.data));
+      }
+
+      if (values.paymentMethod && paymentResult?.data?.paymentId || paymentResult?.data?.payment?.PaymentId) {
         dispatch(setPaymentId(paymentResult.data.paymentId || paymentResult.data.payment.PaymentId));
       }
     } catch (error) {
       console.error("Booking error:", error);
-      if (error.inner) {
-        error.inner.forEach((e) => toast.error(`${e.path}: ${e.message}`));
-      } else {
-        toast.error(error.message || "Error processing booking");
-      }
+      toast.error(error || "Error processing booking");
     } finally {
       setSubmitting(false);
     }
@@ -269,7 +307,7 @@ const ConfirmTicketsPage = () => {
         await cancelBookingById(bookingData.bookingId);
       }
     } catch (error) {
-      console.error("Failed to cancel booking:", error);
+      console.error("Failed to cancel booking:", error || error);
       toast.error("Failed to cancel booking");
     }
     dispatch(resetBooking());
@@ -278,6 +316,7 @@ const ConfirmTicketsPage = () => {
   }, [bookingData?.bookingId, dispatch, navigate]);
 
   const validationSchema = Yup.object().shape({
+
     convertToTicket: Yup.string().when([], {
       is: () => memberChecked,
       then: (schema) =>
@@ -300,14 +339,24 @@ const ConfirmTicketsPage = () => {
 
     paymentMethod: Yup.string()
       .required("Please select payment method")
-      .oneOf(["Cash", "Momo", "VNPay", "ZaloPay", "Visa"], "Invalid payment method"),
+      .oneOf(["Cash", "Momo", "VNPay", "ZaloPay", "Stripe"], "Invalid payment method"),
 
     cardType: Yup.string().when("paymentMethod", {
-      is: "Visa",
+      is: "Stripe",
       then: (schema) =>
         schema.required("Please select a card type").oneOf(["visa", "mastercard", "jcb", "unionpay"]),
       otherwise: (schema) => schema.notRequired(),
     }),
+
+    cashGiven: Yup.number()
+      .transform((value, originalValue) => originalValue === "" ? undefined : value)
+      .when("paymentMethod", {
+        is: (val) => val === "Cash",
+        then: (schema) =>
+          schema.required("Please enter cash given"),
+        otherwise: (schema) => schema.notRequired(),
+      }),
+
   });
 
   if (isRedirecting) {
@@ -326,11 +375,18 @@ const ConfirmTicketsPage = () => {
     );
   }
 
+  // Lấy discountTicket từ member nếu có
+  const discountTicket = memberChecked && member && member.discountTicket ? Number(member.discountTicket) : 0;
+
   return (
     <div className="p-4 mx-auto w-full bg-[#fafbfc]">
+      <div className="fixed top-20 right-4 z-50">
+        <BackButton />
+      </div>
       <h1 className="text-3xl font-bold mb-4 text-[#9810FA] justify-between items-center flex flex-col sm:flex-row">
         Confirm Tickets
       </h1>
+
       <Formik
         initialValues={{
           memberSearch: "",
@@ -338,23 +394,27 @@ const ConfirmTicketsPage = () => {
           promotionCode: "",
           paymentMethod: "",
           cardType: "",
+          cashGiven: "",
         }}
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
       >
         {(formikProps) => (
-          <ConfirmFormBody
-            {...formikProps}
-            bookingData={bookingData}
-            memberChecked={memberChecked}
-            member={member}
-            discount={discount}
-            isSearching={isSearching}
-            handleMemberSearch={handleMemberSearch}
-            handleAddPromotion={handleAddPromotion}
-            handleCancel={handleCancel}
-            movieInfo={movieInfo}
-          />
+          <>
+            <ConfirmFormBody
+              {...formikProps}
+              bookingData={bookingData}
+              memberChecked={memberChecked}
+              member={member}
+              discount={discount}
+              discountTicket={discountTicket}
+              isSearching={isSearching}
+              handleMemberSearch={handleMemberSearch}
+              handleAddPromotion={handleAddPromotion}
+              handleCancel={handleCancel}
+              movieInfo={movieInfo}
+            />
+          </>
         )}
       </Formik>
     </div>
@@ -370,13 +430,16 @@ function ConfirmFormBody({
   memberChecked,
   member,
   discount,
+  discountTicket,
   isSearching,
   handleMemberSearch,
   handleAddPromotion,
   handleCancel,
-  movieInfo
+  movieInfo,
+  errors,
+  touched
 }) {
-  const { PointsToUse, finalPrice } = useMemo(
+  const { PointsToUse, finalPrice, membershipDiscountAmount, promotionDiscountAmount } = useMemo(
     () => calculatePointsAndPrice(
       bookingData.selectedSeats,
       bookingData.seatData,
@@ -384,7 +447,8 @@ function ConfirmFormBody({
       values.convertToTicket,
       discount,
       bookingData.totalPrice,
-      member?.score || 0
+      member?.score || 0,
+      discountTicket
     ),
     [
       bookingData.selectedSeats,
@@ -393,22 +457,23 @@ function ConfirmFormBody({
       values.convertToTicket,
       discount,
       bookingData.totalPrice,
-      member?.score
+      member?.score,
+      discountTicket
     ]
   );
 
+  const cashChange = values.paymentMethod === "Cash" && values.cashGiven
+    ? values.cashGiven - finalPrice
+    : 0;
+
   // Các loại thẻ hỗ trợ
-  const CARD_TYPES = [
-    { value: "visa", label: "Visa" },
-    { value: "mastercard", label: "MasterCard" },
-    { value: "jcb", label: "JCB" },
-    { value: "unionpay", label: "UnionPay" },
-  ];
+
 
   return (
     <Form>
       <div className="flex flex-col gap-3">
         <div className=" flex lg:flex-row flex-col gap-3">
+
           <div className="lg:w-2/3">
             {/* MovieInfoSection inline */}
             <div className="bg-white border border-gray-300 rounded-lg shadow-md p-6">
@@ -554,6 +619,12 @@ function ConfirmFormBody({
                       </p>
                       <p className="font-medium">{member.phone}</p>
                     </div>
+                    <div>
+                      <MemberRank
+                        rank={member.rank}
+                        pointsMemberShip={member.pointsMemberShip}
+                      />
+                    </div>
                     <div className="flex items-center justify-between">
                       <p className="text-gray-600 flex items-center gap-2">
                         <FaStar /> Points:
@@ -605,8 +676,11 @@ function ConfirmFormBody({
                         <IoAddOutline className="text-xl" /> Add
                       </button>
                     </div>
+                    {discountTicket > 0 && (
+                      <p className="mt-2 text-blue-600">Membership discount applied: {discountTicket}%</p>
+                    )}
                     {discount && values.convertToTicket === "Disagree" && (
-                      <p className="mt-2 text-green-600">Applied {discount}% discount</p>
+                      <p className="mt-2 text-green-600">Promotion code discount applied: {discount}%</p>
                     )}
                   </div>
                 </div>
@@ -628,29 +702,11 @@ function ConfirmFormBody({
               <PaymentMethod
                 value={values.paymentMethod}
                 onChange={val => setFieldValue('paymentMethod', val)}
+                showCardType={values.paymentMethod === "Stripe"}
+                cardType={values.cardType}
+                onCardTypeChange={val => setFieldValue("cardType", val)}
+                cardTypeError={!values.cardType ? "Please select a card type" : ""}
               />
-              {/* Nếu chọn Visa thì show lựa chọn loại thẻ */}
-              {values.paymentMethod === "Visa" && (
-                <div className="mt-4">
-                  <label className="font-semibold mb-2 block">Select Card Type: <span className="text-red-500">*</span></label>
-                  <div className="lg:flex lg:gap-4 grid grid-cols-2 gap-2">
-                    {CARD_TYPES.map(card => (
-                      <label key={card.value} className={`border rounded-lg px-4 py-2 cursor-pointer flex items-center gap-2 ${values.cardType === card.value ? "bg-purple-100 border-purple-500" : "hover:border-purple-300"}`}>
-                        <Field
-                          type="radio"
-                          name="cardType"
-                          value={card.value}
-                          checked={values.cardType === card.value}
-                          onChange={() => setFieldValue("cardType", card.value)}
-                          
-                        />
-                        {card.label}
-                      </label>
-                    ))}
-                  </div>
-                  {!values.cardType && <div className="text-red-500 text-sm mt-1">Please select a card type</div>}
-                </div>
-              )}
             </div>
             {/* PriceSummary inline */}
             <div className="bg-white p-4 rounded-lg mb-6">
@@ -660,12 +716,16 @@ function ConfirmFormBody({
                   <span>Total ticket price:</span>
                   <span>{formatPrice(bookingData.totalPrice)} VNĐ</span>
                 </div>
-                {memberChecked && values.convertToTicket === "Disagree" && discount && (
+                {membershipDiscountAmount > 0 && (
                   <div className="flex justify-between">
-                    <span>Discount {discount}%:</span>
-                    <span className="text-green-600">
-                      -{formatPrice(bookingData.totalPrice * discount / 100)} VNĐ
-                    </span>
+                    <span>Membership discount ({discountTicket}%):</span>
+                    <span className="text-blue-600">-{formatPrice(membershipDiscountAmount)} VNĐ</span>
+                  </div>
+                )}
+                {promotionDiscountAmount > 0 && (
+                  <div className="flex justify-between">
+                    <span>Promotion code discount ({discount}%):</span>
+                    <span className="text-green-600">-{formatPrice(promotionDiscountAmount)} VNĐ</span>
                   </div>
                 )}
                 {memberChecked && values.convertToTicket === "Agree" && (
@@ -684,8 +744,11 @@ function ConfirmFormBody({
                     </div>
                     <div className="flex justify-between">
                       <span>Total amount:</span>
-                      <span className="text-gray-700">{formatPrice(bookingData.totalPrice)} VNĐ</span>
+                      <span className="text-gray-700">
+                        {formatPrice(bookingData.totalPrice)} VNĐ
+                      </span>
                     </div>
+
                     <div className="flex justify-between">
                       <span>Points needed:</span>
                       <span className="text-orange-500 flex items-center gap-1">
@@ -705,6 +768,29 @@ function ConfirmFormBody({
                     {formatPrice(finalPrice)} VNĐ
                   </span>
                 </div>
+                {values.paymentMethod === "Cash" && (
+                  <div className="mt-4">
+                    <label className="font-semibold mb-2 block">
+                      Cash given by customer: <span className="text-red-500">*</span>
+                    </label>
+                    <Field
+                      name="cashGiven"
+                      type="number"
+                      min={finalPrice}
+                      placeholder={`At least ${finalPrice}`}
+                      className="border border-gray-300 rounded-lg px-4 py-2 w-full"
+                      onChange={e => setFieldValue("cashGiven", Number(e.target.value))}
+                    />
+                    {errors?.cashGiven && touched?.cashGiven && (
+                      <div className="text-red-500 text-sm mt-1">{errors.cashGiven}</div>
+                    )}
+                    {values.cashGiven && values.cashGiven >= finalPrice && (
+                      <div className="mt-2 text-green-600 font-semibold">
+                        Change: {formatPrice(cashChange)} VNĐ
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
             {/* ActionButtons inline */}

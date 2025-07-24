@@ -21,9 +21,10 @@ const handleError = (error) => {
       }
     } else if (error.response.data?.message) {
       errorMessage = error.response.data.message;
-    } else if (error.response.data?.errors) {
+    } else if (error.response.data?.error) {
       // Preserve backend validation errors
-      throw error.response.data; // Pass through for handleCreateMovie to process
+      errorMessage = error.response.data.error;
+      throw error.response.data.error; // Pass through for handleCreateMovie to process
     }
   } else if (error.request) {
     errorMessage = "No response from server";
@@ -369,6 +370,24 @@ export const convertScoreToMoney = async (userId, pointsToExchange, bookingId) =
       pointsToExchange,
       bookingId
     });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const checkMemberShip = async (userId) => {
+  try {
+    const response = await api.get(`/user/${userId}/membership`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const checkIn = async (bookingId) => {
+  try {
+    const response = await api.get(`/bookings/checkin/${bookingId}`);
     return response.data;
   } catch (error) {
     handleError(error);

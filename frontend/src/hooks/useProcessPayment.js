@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import {
   createCashPayment,
   createMomoPayment,
-  confirmBooking,
+  // confirmBooking,
   createCashPaymentForProduct,
   createMomoPaymentForProducts,
   createZaloPayPayment,
@@ -32,12 +32,12 @@ export async function processPayment({
           let cashRes;
           if (type === "ticket") {
             cashRes = await createCashPayment(orderId, amount, `CASH-${Date.now()}`);
-            await confirmBooking(orderId);
+            // await confirmBooking(orderId);
             toast.success("Cash payment successful!");
             navigate(successUrl);
           } else if (type === "combo") {
-            await createCashPaymentForProduct(orderId, amount, "Payment for combo");
-            toast.success("Payment successful!");
+            cashRes = await createCashPaymentForProduct(orderId, amount, `Payment for combo CASH-${Date.now()}`);
+            toast.success("Cash payment successful!");
             navigate(successUrl);
           }
           return cashRes;
@@ -61,22 +61,24 @@ export async function processPayment({
       }
       case "VNPay":
         throw new Error("VNPay payment method not yet supported");
-      case "Visa":
+
+      case "Stripe":
         {
           setIsRedirecting?.(true);
           let visaRes;
           if (type === "ticket") {
             visaRes = await createVisaPayment(orderId, amount, cardType);
-            await confirmBooking(orderId);
-            toast.success("Visa payment successful!");
+            // await confirmBooking(orderId);
+            // toast.success("Visa payment successful!");
             navigate(successUrl);
           } else if (type === "combo") {
-            await createVisaPaymentForProducts(orderId, amount, cardType);
-            toast.success("Payment successful!");
+            visaRes = await createVisaPaymentForProducts(orderId, amount, cardType);
+            // toast.success("Payment successful!");
             navigate(successUrl);
           }
           return visaRes;
         }
+
       case "ZaloPay":
         {
           setIsRedirecting?.(true);
