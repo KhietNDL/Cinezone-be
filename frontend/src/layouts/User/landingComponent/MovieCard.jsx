@@ -39,18 +39,12 @@ const MovieCard = memo(
         onMouseLeave={onMouseLeave}
         onClick={handleMovieClick}
       >
-        {/* Glassmorphism Card */}
         <div
           className="bg-slate-800/30 backdrop-blur-lg border border-slate-700/30 flex flex-col h-full rounded-2xl transition-all duration-700 ease-out
-                       md:hover:scale-[1.02] md:hover:shadow-xl md:hover:shadow-[#6a57f5]/15 
-                       md:hover:-translate-y-1 md:hover:bg-slate-800/50 md:hover:border-[#6a57f5]/40
-                       lg:hover:scale-[1.03] lg:hover:shadow-2xl lg:hover:shadow-[#6a57f5]/20
-                       lg:hover:-translate-y-2 lg:hover:border-[#6a57f5]/50
-                       relative z-10 md:hover:z-20 lg:hover:z-30
+                       relative z-10 
                        before:absolute before:inset-0 before:rounded-2xl before:bg-gradient-to-br before:from-[#6a57f5]/5 before:to-transparent 
                        before:opacity-0 before:transition-opacity before:duration-700 md:hover:before:opacity-100"
         >
-          {/* Enhanced Image Container */}
           <div
             role="button"
             className="relative w-full h-[400px] overflow-hidden rounded-t-2xl"
@@ -62,28 +56,21 @@ const MovieCard = memo(
               className="w-full h-[400px] object-cover rounded-t-2xl transition-all duration-700 ease-out
                          md:group-hover:scale-105 md:group-hover:brightness-105 md:group-hover:contrast-110"
             />
-
-            {/* Subtle Gradient Overlays */}
             <div
               className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent 
                             opacity-0 md:group-hover:opacity-100 transition-opacity duration-700 ease-out 
                             rounded-t-2xl"
             />
-
             <div
               className="absolute inset-0 bg-gradient-to-br from-[#6a57f5]/8 via-transparent to-blue-500/6
                             opacity-0 md:group-hover:opacity-100 transition-opacity duration-900 ease-out 
                             rounded-t-2xl"
             />
-
-            {/* Subtle Glow effect border */}
             <div
               className="absolute inset-0 rounded-t-2xl border border-transparent
                             md:group-hover:border-[#6a57f5]/30 transition-all duration-700 ease-out 
                             md:group-hover:shadow-inner md:group-hover:shadow-[#6a57f5]/10"
             />
-
-            {/* Subtle floating particles effect */}
             <div className="absolute inset-0 opacity-0 md:group-hover:opacity-60 transition-opacity duration-1200">
               {[...Array(4)].map((_, i) => (
                 <div
@@ -98,8 +85,6 @@ const MovieCard = memo(
                 />
               ))}
             </div>
-
-            {/* Enhanced Rating Badge */}
             {item.AverageRating && (
               <div
                 className="absolute top-3 right-3 bg-black/40 backdrop-blur-md rounded-xl px-3 py-2 flex items-center gap-2
@@ -121,7 +106,6 @@ const MovieCard = memo(
               </div>
             )}
 
-            {/* Enhanced Hover Overlay with Glassmorphism */}
             {isHovered && (
               <div
                 className="absolute hidden w-full h-full inset-0 lg:flex flex-col justify-center items-start p-4 rounded-t-2xl transition-all duration-500 ease-in-out overflow-hidden
@@ -204,7 +188,6 @@ const MovieCard = memo(
             )}
           </div>
 
-          {/* Movie Title - Enhanced with hover effects */}
           <div
             className="text-white text-center font-semibold text-sm md:text-base px-2 py-2 h-16 flex items-center justify-center mt-[10px]
                         transition-all duration-500 ease-out md:group-hover:text-[#6a57f5] md:group-hover:scale-[1.02]"
@@ -225,7 +208,6 @@ const MovieCard = memo(
             )}
           </div>
 
-          {/* Buttons - Enhanced with hover effects */}
           <div
             className="flex xl:flex-row md:flex-col sm:flex-row justify-evenly md:space-y-2 xl:space-y-0 sm:space-y-0 sm:space-x-1 items-center w-full px-2 pb-4 h-20
                         transition-all duration-500 ease-out md:group-hover:pb-5"

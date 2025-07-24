@@ -1064,7 +1064,7 @@ const MovieManagement = () => {
                               </div>
                               <div>
                                 <h4 className="font-semibold text-gray-800 text-lg">
-                                  {room.Name}
+                                  {room.Name} - ( {room.SeatQuantity} Seats )
                                 </h4>
                                 <p className="text-gray-600 text-sm">
                                   Room ID: {room.CinemaRoomId}
