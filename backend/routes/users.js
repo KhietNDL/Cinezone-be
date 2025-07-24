@@ -67,7 +67,7 @@ router.get('/', auth, isAdmin, getAllUsers);
  * @swagger
  * /api/user/searchByName:
  *   get:
- *     summary: Search users by name
+ *     summary: Search users by name (supports partial match, pagination, and sorting)
  *     tags: [User Management]
  *     security:
  *       - bearerAuth: []
@@ -77,7 +77,33 @@ router.get('/', auth, isAdmin, getAllUsers);
  *         required: true
  *         schema:
  *           type: string
- *         description: Name of the user to search for
+ *         description: Partial or full name of the user to search for
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of users per page (0 = all)
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [FullName, DateOfBirth, Email, PhoneNumber, CreatedAt]
+ *           default: FullName
+ *         description: Field to sort by
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: asc
+ *         description: Sort order (asc or desc)
  *     responses:
  *       200:
  *         description: Successfully retrieved users matching the search criteria
@@ -117,7 +143,7 @@ router.get('/:userId', auth, isAdmin, getUserById);
  * @swagger
  * /api/user/email/{email}:
  *   get:
- *     summary: Get user by email
+ *     summary: Search users by email (supports partial match, pagination, and sorting)
  *     tags: [User Management]
  *     security:
  *       - bearerAuth: []
@@ -127,12 +153,36 @@ router.get('/:userId', auth, isAdmin, getUserById);
  *         required: true
  *         schema:
  *           type: string
- *         description: Email of the user to retrieve
+ *         description: Partial or full email of the user to search for
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of users per page (0 = all)
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [FullName, DateOfBirth, Email, PhoneNumber, CreatedAt]
+ *           default: FullName
+ *         description: Field to sort by
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: asc
+ *         description: Sort order (asc or desc)
  *     responses:
  *       200:
- *         description: Successfully retrieved user details
- *       404:
- *         description: User not found
+ *         description: Successfully retrieved users matching the search criteria
  *       500:
  *         description: Internal server error
  */

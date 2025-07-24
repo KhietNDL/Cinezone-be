@@ -80,14 +80,40 @@ class UserManagement {
     return rows[0];
   }
 
-  static async getUserByEmail(email) {
-    const [rows] = await db
-      .promise()
-      .query(
-        "SELECT * FROM Users WHERE Email = ? AND Role = 1 AND IsDeleted = 0",
-        [email]
+  static async getUserByEmail(email, page = 1, limit = 0, sortBy = 'FullName', sortOrder = 'asc') {
+    const allowedSortFields = ['FullName', 'DateOfBirth', 'Email', 'PhoneNumber', 'CreatedAt'];
+    if (!allowedSortFields.includes(sortBy)) sortBy = 'FullName';
+    sortOrder = sortOrder.toLowerCase() === 'desc' ? 'DESC' : 'ASC';
+
+    let usersQuery = `SELECT * FROM Users WHERE LOWER(Email) LIKE LOWER(?) AND Role = 1 AND IsDeleted = 0 ORDER BY ${sortBy} ${sortOrder}`;
+    let usersParams = [`%${email}%`];
+
+    if (limit > 0) {
+      const offset = (page - 1) * limit;
+      usersQuery += " LIMIT ? OFFSET ?";
+      usersParams.push(limit, offset);
+    }
+
+    const [users] = await db.promise().query(usersQuery, usersParams);
+
+    let totalUsers = users.length;
+    if (limit > 0) {
+      const [countResult] = await db.promise().query(
+        "SELECT COUNT(*) as total FROM Users WHERE LOWER(Email) LIKE LOWER(?) AND Role = 1 AND IsDeleted = 0",
+        [`%${email}%`]
       );
-    return rows[0];
+      totalUsers = countResult[0].total;
+    }
+
+    return {
+      users,
+      pagination: {
+        total: totalUsers,
+        currentPage: page,
+        totalPages: limit > 0 ? Math.ceil(totalUsers / limit) : 1,
+        limit: limit > 0 ? limit : users.length,
+      },
+    };
   }
 
   static async createUser(userData) {

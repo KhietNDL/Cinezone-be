@@ -2,6 +2,7 @@ const Employee = require("../models/employee.model");
 const jwt = require("jsonwebtoken");
 const User = require('../models/user.model');
 const bucket = require("../config/firebase"); // Thêm dòng này ở đầu file
+const { blacklistUserId } = require('../middlewares/auth.middleware');
 // Get all employees
 const getAllEmployees = async (req, res) => {
   try {
@@ -184,6 +185,7 @@ const deleteEmployee = async (req, res) => {
   try {
     const result = await Employee.deleteEmployee(userId);
     if (result) {
+      blacklistUserId(userId); // Force logout for deleted employee
       res.status(200).json({ message: "Employee deleted successfully" });
     } else {
       res
