@@ -1,4 +1,3 @@
-// useDebounce.js
 import { useState, useEffect } from "react";
 
 export function useDebounce(value, delay) {
@@ -7,7 +6,7 @@ export function useDebounce(value, delay) {
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedValue(value), delay);
 
-    return () => clearTimeout(timer); // Cleanup nếu value thay đổi trước timeout
+    return () => clearTimeout(timer);
   }, [value, delay]);
 
   return debouncedValue;

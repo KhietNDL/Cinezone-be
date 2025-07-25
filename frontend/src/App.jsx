@@ -52,9 +52,8 @@ import ProductManagement from "./layouts/Admin/component/ProductManagement";
 import MovieListPage from "./layouts/User/component/MovieListPage";
 import BlogPage from "./layouts/User/component/BlogPage";
 import BlogDetail from "./layouts/User/component/BlogDetail";
-import BlogManagement from "./layouts/Admin/component/BlogManagement";
-import WaitingPaymentStaff from "./layouts/Staff/ticketComponent/WaitingPaymentStaff";
 import NotFound from "../cosmic/blocks/blog/NotFound";
+import WaitingPaymentStaff from "./layouts/Staff/ticketComponent/WaitingPaymentStaff";
 
 function App() {
   return (
@@ -97,7 +96,6 @@ function App() {
             <Route path="promotions" element={<PromotionManagement />} />
             <Route path="users" element={<UserManagement />} />
             <Route path="products" element={<ProductManagement />} />
-            <Route path="blogs" element={<BlogManagement />} />
           </Route>
         </Route>
 
@@ -145,7 +143,7 @@ function App() {
               path="combo-selling/checkout"
               element={<CheckOutComboPage />}
             />
-             <Route
+            <Route
               path="combo-selling/waiting-payment"
               element={<WaitingPaymentStaff />}
             />
@@ -153,7 +151,7 @@ function App() {
               path="combo-selling/combo-information"
               element={<ComboInformation />}
             />
-             <Route path="check-in" element={<CheckIn />} />
+            <Route path="check-in" element={<CheckIn />} />
           </Route>
         </Route>
       </Routes>

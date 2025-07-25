@@ -1,10 +1,10 @@
-// Landing.jsx - Cách tích hợp component
 import React, {
   useEffect,
   useState,
   useRef,
   useCallback,
   useMemo,
+  lazy,
 } from "react";
 import { FaRegCirclePlay, FaStar } from "react-icons/fa6";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -16,21 +16,26 @@ import { GoClockFill } from "react-icons/go";
 import { Pagination, Navigation } from "swiper/modules";
 import { useNavigate } from "react-router-dom";
 import { slugify } from "./Slug";
-import { useMovieData } from "../../../hooks/useMovieData";
+import { useIntersectionObserver } from "../../../hooks/useIntersectionObserver";
+import {
+  useHeroMovies,
+  useCurrentMovies,
+  useUpcomingMovies,
+} from "../../../hooks/useLazyMovies";
+import { usePromotions } from "../../../hooks/useLazyPromotions";
 import { toast } from "react-toastify";
 import { useDispatch } from "react-redux";
 import { resetBooking } from "../../../redux/features/bookingSlice";
 import { X } from "lucide-react";
 import MovieHeroSwiper from "../landingComponent/MovieHeroSwiper";
 import SkeletonLoader from "../landingComponent/SkeletonLoader";
+import SectionLoadingSkeleton from "../landingComponent/SectionLoadingSkeleton";
 import StatsSection from "../landingComponent/StatsSection";
 import TrendingSection from "../landingComponent/TrendingSection";
 import MovieCard from "../landingComponent/MovieCard";
 import PromotionCard from "../landingComponent/PromotionCard";
 
 const LandingPage = () => {
-  const [itemsPerPage] = useState(5);
-  const [currentPage] = useState(1);
   const [hoveredMovie, setHoveredMovie] = useState(null);
   const [hoveredPromotion, setHoveredPromotion] = useState(null);
   const [isTrailerPopupOpen, setIsTrailerPopupOpen] = useState(false);
@@ -39,22 +44,61 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // Sử dụng custom hook để quản lý data
+  // Intersection observers for each section
   const {
-    movieData,
-    currentMovies,
-    upcomingMovies,
-    promotionData,
-    isLoading,
-    error,
-  } = useMovieData(itemsPerPage, currentPage);
+    targetRef: currentMoviesRef,
+    hasIntersected: shouldLoadCurrentMovies,
+  } = useIntersectionObserver();
+  const {
+    targetRef: upcomingMoviesRef,
+    hasIntersected: shouldLoadUpcomingMovies,
+  } = useIntersectionObserver();
+  const { targetRef: promotionsRef, hasIntersected: shouldLoadPromotions } =
+    useIntersectionObserver();
 
-  // Chỉ reset booking một lần khi component mount
+  // API calls with lazy loading
+  const {
+    movieData: heroMovies,
+    isLoading: heroLoading,
+    error: heroError,
+  } = useHeroMovies();
+  const {
+    currentMovies,
+    isLoading: currentLoading,
+    error: currentError,
+  } = useCurrentMovies(shouldLoadCurrentMovies);
+  const {
+    upcomingMovies,
+    isLoading: upcomingLoading,
+    error: upcomingError,
+  } = useUpcomingMovies(shouldLoadUpcomingMovies);
+  const {
+    promotionData,
+    isLoading: promotionsLoading,
+    error: promotionsError,
+  } = usePromotions(shouldLoadPromotions);
+
+  // Suppress ESLint warnings for variables used in development/debugging
+  // eslint-disable-next-line no-unused-vars
+  const debugVars = {
+    heroLoading,
+    heroError,
+    currentLoading,
+    currentError,
+    upcomingLoading,
+    upcomingError,
+    promotionsLoading,
+    promotionsError,
+  };
+
+  // Reset booking only once when component mounts
+
+  // Reset booking only once when component mounts
   useEffect(() => {
     dispatch(resetBooking());
   }, [dispatch]);
 
-  // Memoize các hàm format để tránh re-render không cần thiết
+  // Memoize format functions to avoid unnecessary re-renders
   const formatDate = useCallback((dateString) => {
     const date = new Date(dateString);
     const months = [
@@ -92,7 +136,7 @@ const LandingPage = () => {
     return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   }, []);
 
-  // Sử dụng useMemo cho swiperBreakpoints để tránh tạo lại object
+  // Use useMemo for swiperBreakpoints to avoid recreating object
   const swiperBreakpoints = useMemo(
     () => ({
       320: {
@@ -165,23 +209,13 @@ const LandingPage = () => {
 
   const handleCopyPromotion = useCallback((item) => {
     navigator.clipboard.writeText(item.Title || item.title || "");
-    toast.success("Copy thành công!");
+    toast.success("Copy successful!");
   }, []);
-
-  // Filter active promotions với useMemo
-  const activePromotions = useMemo(() => {
-    const now = new Date();
-    return promotionData.filter((item) => {
-      const start = new Date(item.StartTime || item.startTime);
-      const end = new Date(item.EndTime || item.endTime);
-      return start <= now && now <= end;
-    });
-  }, [promotionData]);
 
   return (
     <div className="w-full select-none landingPage">
-      {/* HERO SECTION - Replace with MovieHeroSwiper */}
-      <MovieHeroSwiper movieData={movieData} />
+      {/* HERO SECTION - Load immediately */}
+      <MovieHeroSwiper movieData={heroMovies} />
 
       {/* Screen 3D Effect - Enhanced for Mobile/Tablet only */}
       <div className="w-full mt-10 px-4">
@@ -364,19 +398,19 @@ const LandingPage = () => {
         </div>
       </div>
 
-      {/* Stats Section */}
-      {!isLoading && (
+      {/* Stats Section - Use hero movies */}
+      {heroMovies.length > 0 && (
         <StatsSection
-          movieData={movieData}
+          movieData={heroMovies}
           currentMovies={currentMovies}
           upcomingMovies={upcomingMovies}
         />
       )}
 
-      {/* Trending Section */}
-      {!isLoading && movieData.length > 0 && (
+      {/* Trending Section - Use hero movies */}
+      {heroMovies.length > 0 && (
         <TrendingSection
-          movieData={movieData}
+          movieData={heroMovies}
           onClickMovie={handleClickMovie}
           onOpenTrailer={handleOpenTrailer}
           formatDateRange={formatDateRange}
@@ -384,129 +418,150 @@ const LandingPage = () => {
         />
       )}
 
-      {/* Error handling */}
-      {error && (
+      {/* Error handling for hero section */}
+      {heroError && (
         <div className="w-full px-[30px] py-4">
           <div className="bg-red-600/20 border border-red-600 rounded-lg p-4 text-red-200 text-center">
-            Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại sau.
+            An error occurred while loading hero data. Please try again later.
           </div>
         </div>
       )}
 
-      {/* Loading state */}
-      {isLoading && <SkeletonLoader />}
+      {/* Loading state for hero */}
+      {heroLoading && <SkeletonLoader />}
 
-      {/* NOW SHOWING */}
-      {!isLoading && currentMovies.length > 0 && (
-        <div className="w-full px-4 md:px-[30px] pt-[30px] md:pt-[40px] space-y-3">
-          <div className="flex justify-center items-center text-white">
-            <p className="font-bold pb-[30px] text-center text-[30px]">
-              Now Showing
-            </p>
+      {/* NOW SHOWING - Lazy load */}
+      <div ref={currentMoviesRef} className="w-full">
+        {shouldLoadCurrentMovies && currentMovies.length > 0 && (
+          <div className="w-full px-4 md:px-[30px] pt-[30px] md:pt-[40px] space-y-3">
+            <div className="flex justify-center items-center text-white">
+              <p className="font-bold pb-[30px] text-center text-[30px]">
+                Now Showing
+              </p>
+            </div>
+            <div className="flex items-center justify-center mt-[20px]">
+              <Swiper
+                breakpoints={swiperBreakpoints}
+                slidesPerView={5}
+                spaceBetween={50}
+                navigation={true}
+                modules={[Navigation, lazy]}
+                className="mySwiper"
+                lazy={true}
+                style={{ height: "auto" }}
+              >
+                {currentMovies.map((item) => (
+                  <SwiperSlide key={item.idMovie} className="h-auto">
+                    <MovieCard
+                      item={item}
+                      isHovered={hoveredMovie === item.MovieId}
+                      onMouseEnter={handleMovieMouseEnter}
+                      onMouseLeave={handleMovieMouseLeave}
+                      onClickMovie={handleClickMovie}
+                      onOpenTrailer={handleOpenTrailer}
+                      formatDateRange={formatDateRange}
+                      formatRunningTime={formatRunningTime}
+                      showBookButton={true}
+                    />
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+            </div>
           </div>
-          <div className="flex items-center justify-center mt-[20px]">
-            <Swiper
-              breakpoints={swiperBreakpoints}
-              slidesPerView={5}
-              spaceBetween={50}
-              navigation={true}
-              modules={[Navigation]}
-              className="mySwiper"
-              lazy={true}
-              style={{ height: "auto" }}
-            >
-              {currentMovies.map((item) => (
-                <SwiperSlide key={item.idMovie} className="h-auto">
-                  <MovieCard
-                    item={item}
-                    isHovered={hoveredMovie === item.MovieId}
-                    onMouseEnter={handleMovieMouseEnter}
-                    onMouseLeave={handleMovieMouseLeave}
-                    onClickMovie={handleClickMovie}
-                    onOpenTrailer={handleOpenTrailer}
-                    formatDateRange={formatDateRange}
-                    formatRunningTime={formatRunningTime}
-                    showBookButton={true}
-                  />
-                </SwiperSlide>
-              ))}
-            </Swiper>
-          </div>
-        </div>
-      )}
+        )}
 
-      {/* COMING SOON SECTION */}
-      {!isLoading && upcomingMovies.length > 0 && (
-        <div className="landingPage-commingSoon w-full px-4 md:px-[30px] pt-[30px] md:pt-[40px] space-y-3">
-          <div className="flex justify-center items-center text-white">
-            <p className="font-bold pb-[20px] md:pb-[30px] text-[24px] md:text-[30px]">
-              Coming Soon
-            </p>
-          </div>
-          <div className="flex items-center justify-center mt-[15px] md:mt-[20px]">
-            <Swiper
-              breakpoints={swiperBreakpoints}
-              slidesPerView={5}
-              spaceBetween={50}
-              navigation={true}
-              modules={[Navigation]}
-              className="mySwiper"
-              lazy={true}
-              style={{ height: "auto" }}
-            >
-              {upcomingMovies.map((item) => (
-                <SwiperSlide key={item.MovieId} className="h-auto">
-                  <MovieCard
-                    item={item}
-                    isHovered={hoveredMovie === `coming-${item.MovieId}`}
-                    onMouseEnter={handleComingMovieMouseEnter}
-                    onMouseLeave={handleMovieMouseLeave}
-                    onClickMovie={handleClickMovie}
-                    onOpenTrailer={handleOpenTrailer}
-                    formatDateRange={formatDateRange}
-                    formatRunningTime={formatRunningTime}
-                    showBookButton={false}
-                  />
-                </SwiperSlide>
-              ))}
-            </Swiper>
-          </div>
-        </div>
-      )}
+        {/* Loading state for current movies */}
+        {shouldLoadCurrentMovies && currentLoading && (
+          <SectionLoadingSkeleton title="Now Showing" itemCount={4} />
+        )}
+      </div>
 
-      {/* PROMOTION SECTION */}
-      {!isLoading && activePromotions.length > 0 && (
-        <div className="landingPage-promotion py-[30px] md:py-[40px] px-4 md:px-[30px] w-full space-y-8">
-          <div className="flex justify-center items-center text-white">
-            <p className="font-bold pb-[30px] text-center text-[30px]">
-              Promotions
-            </p>
+      {/* COMING SOON SECTION - Lazy load */}
+      <div ref={upcomingMoviesRef} className="w-full">
+        {shouldLoadUpcomingMovies && upcomingMovies.length > 0 && (
+          <div className="landingPage-commingSoon w-full px-4 md:px-[30px] pt-[30px] md:pt-[40px] space-y-3">
+            <div className="flex justify-center items-center text-white">
+              <p className="font-bold pb-[20px] md:pb-[30px] text-[24px] md:text-[30px]">
+                Coming Soon
+              </p>
+            </div>
+            <div className="flex items-center justify-center mt-[15px] md:mt-[20px]">
+              <Swiper
+                breakpoints={swiperBreakpoints}
+                slidesPerView={5}
+                spaceBetween={50}
+                navigation={true}
+                modules={[Navigation, lazy]}
+                className="mySwiper"
+                lazy={true}
+                style={{ height: "auto" }}
+              >
+                {upcomingMovies.map((item) => (
+                  <SwiperSlide key={item.MovieId} className="h-auto">
+                    <MovieCard
+                      item={item}
+                      isHovered={hoveredMovie === `coming-${item.MovieId}`}
+                      onMouseEnter={handleComingMovieMouseEnter}
+                      onMouseLeave={handleMovieMouseLeave}
+                      onClickMovie={handleClickMovie}
+                      onOpenTrailer={handleOpenTrailer}
+                      formatDateRange={formatDateRange}
+                      formatRunningTime={formatRunningTime}
+                      showBookButton={false}
+                    />
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+            </div>
           </div>
+        )}
 
-          <div className="flex w-full items-center justify-center mt-[15px] md:mt-[20px]">
-            <Swiper
-              breakpoints={swiperBreakpoints}
-              pagination={{ clickable: true }}
-              navigation={true}
-              modules={[Pagination, Navigation]}
-              className="mySwiper"
-              lazy={true}
-            >
-              {activePromotions.map((item) => (
-                <SwiperSlide key={item.PromotionId}>
-                  <PromotionCard
-                    item={item}
-                    isHovered={hoveredPromotion === item.PromotionId}
-                    onMouseEnter={setHoveredPromotion}
-                    onMouseLeave={() => setHoveredPromotion(null)}
-                    onCopyPromotion={handleCopyPromotion}
-                  />
-                </SwiperSlide>
-              ))}
-            </Swiper>
+        {/* Loading state for upcoming movies */}
+        {shouldLoadUpcomingMovies && upcomingLoading && (
+          <SectionLoadingSkeleton title="Coming Soon" itemCount={4} />
+        )}
+      </div>
+
+      {/* PROMOTION SECTION - Lazy load */}
+      <div ref={promotionsRef} className="w-full">
+        {shouldLoadPromotions && promotionData.length > 0 && (
+          <div className="landingPage-promotion py-[30px] md:py-[40px] px-4 md:px-[30px] w-full space-y-8">
+            <div className="flex justify-center items-center text-white">
+              <p className="font-bold pb-[30px] text-center text-[30px]">
+                Promotions
+              </p>
+            </div>
+
+            <div className="flex w-full items-center justify-center mt-[15px] md:mt-[20px]">
+              <Swiper
+                breakpoints={swiperBreakpoints}
+                pagination={{ clickable: true }}
+                navigation={true}
+                modules={[Pagination, Navigation, lazy]}
+                className="mySwiper"
+                lazy={true}
+              >
+                {promotionData.map((item) => (
+                  <SwiperSlide key={item.PromotionId}>
+                    <PromotionCard
+                      item={item}
+                      isHovered={hoveredPromotion === item.PromotionId}
+                      onMouseEnter={setHoveredPromotion}
+                      onMouseLeave={() => setHoveredPromotion(null)}
+                      onCopyPromotion={handleCopyPromotion}
+                    />
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Loading state for promotions */}
+        {shouldLoadPromotions && promotionsLoading && (
+          <SectionLoadingSkeleton title="Promotions" itemCount={3} />
+        )}
+      </div>
 
       {/* Trailer Popup Modal */}
       {isTrailerPopupOpen && currentTrailerMovie && (
