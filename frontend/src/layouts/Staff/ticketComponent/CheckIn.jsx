@@ -5,14 +5,14 @@ import { toast } from "react-toastify";
 
 const CheckIn = () => {
   const handleQRResult = async (data) => {
-    console.log(`Mã QR đã quét được: ${data}`);
+    console.log(`Scanned QR code: ${data}`);
     try {
       await checkIn(data);
-      console.log("Check-in thành công!");
-      toast.success("Check-in thành công!");
+      console.log("Check-in successful!");
+      toast.success("Check-in successful!");
     } catch (error) {
-      console.error("Lỗi xử lý mã QR:", error);
-      toast.error("Lỗi khi check-in. Vui lòng thử lại.");
+      console.error("Error processing QR code:", error);
+      toast.error("Check-in failed. Please try again.");
     }
   };
 

@@ -1,7 +1,6 @@
 import React from "react";
 import momo from "../../../assets/momo-seeklogo.png";
 import zalopay from "../../../assets/zalopay-seeklogo.svg";
-// import visa from "../../../assets/visa.svg"
 import stripe from "../../../assets/Stripe-Symbol.png"
 import { FaMoneyBillWave } from "react-icons/fa6";
 

@@ -8,6 +8,7 @@ import { clearComboCart, clearOrderInfo, resetCart } from "../../../redux/featur
 import './ComboPage.css';
 import { cancelProductsById, confirmPayment } from '../../../services/APIForStaff/API';
 import { toast } from 'react-toastify';
+import BackButton from '../component/BackButton';
 
 export default function ComboInformation() {
   const navigate = useNavigate();
@@ -134,6 +135,9 @@ export default function ComboInformation() {
 
   return (
     <div className="p-4 w-full mx-auto bg-white">
+        <div>
+          <BackButton />
+        </div>
       <div className="text-center py-8">
         {statusInfo.icon}
         <h1 className={`text-3xl font-bold mt-4 ${statusInfo.color}`}>{statusInfo.title}</h1>
