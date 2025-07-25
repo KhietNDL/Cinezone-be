@@ -92,10 +92,14 @@ export default function PrintTicket() {
     }
     return (
         <div className='p-4 mx-auto w-full'>
-            <div className="fixed top-20 right-4 z-50">
-                <BackButton />
+            <div className="flex flex-col items-start justify-center gap-4 mb-6">
+                <div>
+                    <BackButton />
+                </div>
+                <h1 className="text-3xl font-bold text-[#9810FA] flex lg:items-start items-center lg:justify-start justify-center flex-col">
+                    Tickets
+                </h1>
             </div>
-            <h1 className="text-3xl font-bold mb-4 text-fuchsia-700">Tickets</h1>
 
             <div className='flex flex-col items-center justify-center h-full space-y-4'>
                 <div ref={componentRef}>
@@ -154,7 +158,6 @@ export default function PrintTicket() {
                                 </div>
                                 <div className='w-[37%] h-full'>
                                     <div className='flex flex-col items-start justify-center h-full text-white p-4 space-y-2 w-[100%]'>
-                                        {/* <p className='flex w-full'><strong className='w-[40%]'>ID Ticket:</strong><span>{bookingId || "N/A"}</span></p> */}
                                         <p className='flex w-full'><strong className='w-[40%]'>Screen:</strong><span>{version || "Standard"}</span></p>
                                         <p className='flex w-full'><strong className='w-[40%]'>Showtime:</strong><span>{day} - {time || "N/A"}</span></p>
                                         <p className='flex w-full'><strong className='w-[40%]'>Room:</strong><span>{room || "N/A"}</span></p>
@@ -165,7 +168,6 @@ export default function PrintTicket() {
                                     </div>
                                 </div>
 
-                                {/* Decorative circles and dashed line */}
                                 <div className="absolute w-[40px] md:w-[60px] h-[40px] md:h-[60px] lg:w-[50px] 
                                 lg:h-[50px] rounded-full bg-white top-[-20px] md:top-[-30px] md:right-[10%] 
                                 lg:right-[35%] right-[20%] transform translate-x-1/2 md:translate-x-0"></div>

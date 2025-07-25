@@ -380,12 +380,14 @@ const ConfirmTicketsPage = () => {
 
   return (
     <div className="p-4 mx-auto w-full bg-[#fafbfc]">
-      <div className="fixed top-20 right-4 z-50">
-        <BackButton />
+      <div className="flex flex-col items-start justify-center gap-4 mb-6">
+        <div>
+          <BackButton />
+        </div>
+        <h1 className="text-3xl font-bold text-[#9810FA] flex lg:items-start items-center lg:justify-start justify-center flex-col">
+          Confirm Tickets
+        </h1>
       </div>
-      <h1 className="text-3xl font-bold mb-4 text-[#9810FA] justify-between items-center flex flex-col sm:flex-row">
-        Confirm Tickets
-      </h1>
 
       <Formik
         initialValues={{

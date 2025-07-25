@@ -24,7 +24,7 @@ const SidebarStaff = () => {
       to: "/staff/combo-selling",
     },
      {
-      label: "Check In",
+      label: "Check-in",
       icon: <BsQrCodeScan />,
       to: "/staff/check-in",
     },
@@ -78,7 +78,7 @@ const SidebarStaff = () => {
                     : "text-gray-800 hover:bg-gray-100"
                 }`
               }
-              onClick={() => setOpen(false)} // Đóng sidebar khi chọn menu trên mobile
+              onClick={() => setOpen(false)} 
             >
               <div className="mr-2">{item.icon}</div> {item.label}
             </NavLink>

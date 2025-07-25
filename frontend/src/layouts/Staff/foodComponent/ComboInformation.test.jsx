@@ -376,12 +376,4 @@ describe("ComboInformation", () => {
       );
     });
   });
-  // it("shows error UI and allows retry", async () => {
-  //   window.history.pushState({}, "Test", "/staff/combo-selling/combo-information?resultCode=1");
-  //   api.cancelProductsById.mockResolvedValue({});
-  //   renderWithProvider(<ComboInformation />);
-  //   expect(screen.getByText(/Payment Failed/i)).toBeInTheDocument();
-  //   fireEvent.click(screen.getByRole("button", { name: /Try Again/i }));
-  //   expect(api.cancelProductsById).toHaveBeenCalledWith("order-1");
-  // });
 });

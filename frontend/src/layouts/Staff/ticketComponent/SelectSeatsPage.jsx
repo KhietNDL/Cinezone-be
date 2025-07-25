@@ -208,7 +208,7 @@ const SelectSeatsPage = () => {
               </p>
             )}
           </div>
-          <p className="text-sm mt-1 flex gap-4">
+          <div className="text-sm mt-1 flex gap-4">
             {bookingData.selectedDay && (
               <span className="py-2 flex items-center justify-center gap-1">
                 <FaCalendarDays className="text-lg" /> <p className="text-lg">{bookingData.selectedDay}</p>
@@ -227,7 +227,7 @@ const SelectSeatsPage = () => {
             <span className="py-2 flex items-center justify-center gap-1">
               <FaCouch className="text-lg" /> <p className="text-lg"> Row: A-J</p>
             </span>
-          </p>
+          </div>
         </div>
       </div>
 
