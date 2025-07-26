@@ -8,11 +8,13 @@ import {
   createZalopayPayment,
 } from "../../../services/API";
 import StripeCheckoutForm from "./StripeCheckoutForm";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { setOrderProductsId, setPaymentId } from "../../../redux/features/bookingSlice";
 
 const WaitingPayment = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const {
     selectedSeats = [],
@@ -27,9 +29,10 @@ const WaitingPayment = () => {
     
     finalPrice = 0,
     // Product related data from ConfirmPayment
-    
+    OrderProductId = null,
     products = [],
     productHoldResult = null,
+    stripeCardType ,
   } = state || {};
 
   const {
@@ -47,7 +50,8 @@ const WaitingPayment = () => {
     orderProductsId,
     products: products.length,
     finalPrice,
-    paymentMethod
+    paymentMethod,
+    stripeCardType,
   });
 
   useEffect(() => {
@@ -56,45 +60,53 @@ const WaitingPayment = () => {
         let payload = {};
 
         // Determine payment scenario and build appropriate payload
-        if (bookingId && orderProductsId) {
+        if (bookingId && OrderProductId) {
           // Case 1: Mua cả ghế và bắp nước (Pay for both booking and order product)
+          dispatch(setOrderProductsId(OrderProductId));
           payload = {
+            
             bookingId: bookingId,
-            orderProductId: orderProductsId,
+            orderProductId: OrderProductId,
             amount: finalPrice,
             returnUrl,
             userId,
           };
-          console.log("💳 Case 1: Pay for both booking and order product");
-        } else if (bookingId && !orderProductsId) {
+         
+        } else if (bookingId && !OrderProductId) {
           // Case 2: Chỉ mua ghế (Pay for booking only)
+          dispatch(setOrderProductsId(null));
           payload = {
             bookingId: bookingId,
             amount: finalPrice,
             returnUrl,
             userId,
           };
-          console.log("🎫 Case 2: Pay for booking only");
-        } else if (!bookingId && orderProductsId) {
+          
+        } else if (!bookingId && OrderProductId) {
           // Case 3: Chỉ mua bắp nước (Pay for order product only)
+          dispatch(setOrderProductsId(OrderProductId));
           payload = {
-            orderProductId: orderProductsId,
+            orderProductId: OrderProductId,
             amount: finalPrice,
             returnUrl,
             userId,
           };
-          console.log("🛍️ Case 3: Pay for order product only");
+         
         } else {
           console.error("❌ No valid booking or product order found");
           setPaymentStatus("failed");
           return;
         }
 
-        console.log("💳 Payment payload:", payload);
-        console.log("🎫 Seat Booking ID:", bookingId || "None");
-        console.log("🛍️ Product Order ID:", orderProductsId || "None");
-        console.log("💰 Final Price:", finalPrice);
-        console.log("🔄 Payment Method:", paymentMethod);
+        // console.log("Payment payload:", payload);
+        // console.log("Seat Booking ID:", bookingId || "None");
+        // console.log("Product Order ID:", orderProductsId || "None");
+        // console.log("" Final Price:", finalPrice);
+        // console.log("Payment Method:", paymentMethod);
+
+        if (paymentMethod === "3") {
+        payload.cardType = stripeCardType; // stripeCardType là state/prop bạn đã có sẵn
+      }
 
         let response;
 
@@ -107,7 +119,9 @@ const WaitingPayment = () => {
           }
           setPaymentStatus("failed");
         } else if (paymentMethod === "3") {
+          
           response = await createStripePayment(payload);
+          dispatch(setPaymentId(response?.data?.paymentId || response?.paymentId));
           const clientSecret = response?.data?.clientSecret || response?.data?.ClientSecret;
           if (clientSecret) {
             setClientSecret(clientSecret);
@@ -119,6 +133,7 @@ const WaitingPayment = () => {
         } else if (paymentMethod === "4") {
           response = await createZalopayPayment(payload);
           const redirectUrl = response?.data?.order_url || response?.order_url;
+          dispatch(setPaymentId(response?.data?.paymentId || response?.paymentId));
           if (redirectUrl) {
             window.location.href = redirectUrl;
             return;
@@ -260,7 +275,9 @@ const WaitingPayment = () => {
                 Go Back
               </button>
               <button
-                onClick={() => navigate("/")}
+                onClick={() => navigate("/",
+                  
+                )}
                 className="bg-[#6B59E6] hover:bg-[#534a89] text-white px-6 py-3 rounded-lg font-semibold transition flex items-center gap-2"
               >
                 <Home size={20} />

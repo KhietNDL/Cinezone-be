@@ -71,7 +71,11 @@ const SidebarAdmin = ({ onClose }) => {
       {/* Mobile: Header with close button */}
       <div className="lg:hidden flex items-center justify-between border-gray-200 p-4 border-b w-full">
         <h2 className="text-lg font-semibold text-gray-800">Menu</h2>
-        <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100">
+        <button
+          onClick={onClose}
+          className="p-2 rounded-lg hover:bg-gray-100"
+          aria-label="close menu"
+        >
           <X size={20} />
         </button>
       </div>

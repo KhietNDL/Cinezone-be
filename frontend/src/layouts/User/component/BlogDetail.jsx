@@ -3,19 +3,15 @@ import { SingleBlog } from "../../../../cosmic/blocks/blog/SingleBlog";
 
 function BlogDetail() {
   const { slug } = useParams();
-  
+
   // Query để lấy blog theo slug
-  const query = { 
-    type: "Movies",
-    slug: slug
+  const query = {
+    slug: slug,
   };
 
   return (
-    <div className="container mx-auto py-8">
-      <SingleBlog 
-        query={query}
-        className="mx-auto"
-      />
+    <div className="min-h-screen">
+      <SingleBlog query={query} className="mx-auto" />
     </div>
   );
 }

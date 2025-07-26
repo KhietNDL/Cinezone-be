@@ -1,55 +1,69 @@
-import { useEffect, useState } from "react";
-import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { jwtDecode } from "jwt-decode";
+import { useEffect, useCallback } from "react";
 
 const ProtectedRoute = ({ allowedRoles }) => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, signOut } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
-  // eslint-disable-next-line no-unused-vars
-  const [showNoAccess, setShowNoAccess] = useState(false);
 
-  // Kiểm tra nếu là route "/"
+  // Check if it's landing route "/"
   const isLandingRoute = location.pathname === "/";
+  const token = localStorage.getItem("token");
+  let decoded = {};
 
-  useEffect(() => {
-    if (!isLoading && user) {
-      const token = localStorage.getItem("token");
-      if (token) {
-        try {
-          const decoded = jwtDecode(token);
-          // Nếu là "/" và role không phải 1 (user), chuyển hướng
-          if (isLandingRoute && decoded.role !== 1) {
-            setShowNoAccess(true);
-            const timer = setTimeout(() => {
-              if (decoded.role === 3)
-                navigate("/admin/dashboard", { replace: true });
-              else if (decoded.role === 2)
-                navigate("/staff", { replace: true });
-            }, 2000);
-            return () => clearTimeout(timer);
-          }
-          // Kiểm tra role cho các route khác
-          if (!isLandingRoute && !allowedRoles.includes(decoded.role)) {
-            setShowNoAccess(true);
-            const timer = setTimeout(() => {
-              if (decoded.role === 3)
-                navigate("/admin/dashboard", { replace: true });
-              else if (decoded.role === 2)
-                navigate("/staff", { replace: true });
-              else navigate("/", { replace: true });
-            }, 2000);
-            return () => clearTimeout(timer);
-          }
-        } catch (error) {
-          console.error("Invalid token:", error);
-          localStorage.removeItem("token");
-          localStorage.removeItem("userId");
+  // Function to check token expiration
+  const checkTokenExpiration = useCallback(() => {
+    const currentToken = localStorage.getItem("token");
+    if (currentToken) {
+      try {
+        const decodedToken = jwtDecode(currentToken);
+        const currentTime = Date.now() / 1000;
+
+        if (decodedToken.exp && decodedToken.exp < currentTime) {
+          console.log("Token has expired, logging out...");
+          signOut();
+          return true; // Token expired
         }
+      } catch (error) {
+        console.error("Token validation failed:", error);
+        signOut();
+        return true; // Invalid token
       }
     }
-  }, [isLoading, user, allowedRoles, navigate, isLandingRoute]);
+    return false; // Token is valid or doesn't exist
+  }, [signOut]);
+
+  // Set up periodic token check (every 5 minutes)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      checkTokenExpiration();
+    }, 5 * 60 * 1000); // Check every 5 minutes
+
+    // Also check when component mounts
+    checkTokenExpiration();
+
+    return () => clearInterval(interval);
+  }, [checkTokenExpiration]);
+
+  if (token) {
+    try {
+      decoded = jwtDecode(token);
+
+      // Check if token is expired
+      const currentTime = Date.now() / 1000; // Current time in seconds
+      if (decoded.exp && decoded.exp < currentTime) {
+        console.log("Token has expired, logging out...");
+        // Token expired, perform logout
+        signOut();
+        return <Navigate to="/login" replace />;
+      }
+    } catch (error) {
+      console.error("Token decoding failed:", error);
+      signOut();
+      return <Navigate to="/login" replace />;
+    }
+  }
 
   if (isLoading) {
     return (
@@ -82,65 +96,41 @@ const ProtectedRoute = ({ allowedRoles }) => {
     );
   }
 
+  // If not logged in and not landing page, redirect to login
   if (!user && !isLandingRoute) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  const token = localStorage.getItem("token");
-  if (token) {
-    try {
-      const decoded = jwtDecode(token);
-      // Kiểm tra nếu là "/" và role không phải 1
-      if (isLandingRoute && decoded.role !== 1) {
-        return (
-          <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
-            <div className="bg-white rounded-lg shadow-lg p-8 max-w-sm w-full text-center">
-              <div className="text-2xl font-bold text-red-500 mb-2">
-                Access Denied
-              </div>
-              <div className="text-gray-700 mb-4">
-                Only users can access the landing page.
-                <br />
-                Redirecting you to your dashboard...
-              </div>
-            </div>
-          </div>
-        );
-      }
-      // Kiểm tra role cho các route khác
-      if (!isLandingRoute && !allowedRoles.includes(decoded.role)) {
-        return (
-          <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
-            <div className="bg-white rounded-lg shadow-lg p-8 max-w-sm w-full text-center">
-              <div className="text-2xl font-bold text-red-500 mb-2">
-                Access Denied
-              </div>
-              <div className="text-gray-700 mb-4">
-                You do not have permission to access this page.
-                <br />
-                Redirecting you to your dashboard...
-              </div>
-            </div>
-          </div>
-        );
-      }
-    } catch (error) {
-      console.error("Invalid token:", error);
-      localStorage.removeItem("token");
-      localStorage.removeItem("userId");
-      return <Navigate to="/login" replace />;
+  // If not logged in but on landing page, allow access
+  if (!user && isLandingRoute) {
+    return <Outlet context={{ LayoutComponent: "UserLayout" }} />;
+  }
+
+  // If logged in, check token and access permissions
+  if (user && token) {
+    // If landing route "/" and role is not 1 (user)
+    if (isLandingRoute && decoded.role !== 1) {
+      if (decoded.role === 3) return <Navigate to="/admin/dashboard" replace />;
+      if (decoded.role === 2) return <Navigate to="/staff" replace />;
+      return <Navigate to="/" replace />;
+    }
+    // If not landing route and role doesn't match
+    if (!isLandingRoute && !allowedRoles.includes(decoded.role)) {
+      if (decoded.role === 3) return <Navigate to="/admin/dashboard" replace />;
+      if (decoded.role === 2) return <Navigate to="/staff" replace />;
+      return <Navigate to="/" replace />;
     }
   }
 
+  // Determine layout component based on role
   let LayoutComponent;
   if (user) {
-    const decoded = jwtDecode(token);
     if (decoded.role === 3) LayoutComponent = "AdminLayout";
     else if (decoded.role === 2) LayoutComponent = "StaffLayout";
     else if (decoded.role === 1 || isLandingRoute)
       LayoutComponent = "UserLayout";
   } else {
-    LayoutComponent = "UserLayout"; // Sử dụng UserLayout cho khách vãn lai trên "/"
+    LayoutComponent = "UserLayout";
   }
 
   return <Outlet context={{ LayoutComponent }} />;

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
+import { useDispatch } from "react-redux";
+import { cancelBooking } from "../../../services/API";
 
 const stripePromise = loadStripe("pk_test_51RihUMQ1nvt86rfmgAyf52c8e3iUK1gd3PuGxth8Cgng0hxm1dhdvj1B5fCK3zZnXXPVAdc2Qyaq6H9NgxD1Pwdt006VPZkX34");
 
@@ -9,6 +11,7 @@ function CheckoutForm({ clientSecret, onSuccess, totalAmount }) {
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
+  const dispatch = useDispatch();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,16 +23,19 @@ function CheckoutForm({ clientSecret, onSuccess, totalAmount }) {
       confirmParams: {},
       redirect: "if_required",
     });
-    
+    console.log("Payment result:", result);
     if (result.error) {
       setError(result.error.message);
     } else if (result.paymentIntent && result.paymentIntent.status === "succeeded") {
+      
       console.log("PAYMENT SUCCESS !", result.paymentIntent);
       console.log("PAYMENT BY VISA SUCCESS !")
       onSuccess(result.paymentIntent);
     }
     setProcessing(false);
   };
+
+ 
 
   return (
     <div className="relative mb-10">
@@ -234,6 +240,7 @@ export default function StripeCheckoutForm({ clientSecret, onSuccess, totalAmoun
 
   return (
     <div className="w-full max-w-md mx-auto">
+      
       <Elements
         stripe={stripePromise}
         options={{

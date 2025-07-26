@@ -3,7 +3,7 @@ import { FaStar, FaRegClock, FaCalendarAlt, FaHeart } from "react-icons/fa";
 import { RiMovie2AiLine } from "react-icons/ri";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
-import { getPromotionByTitle, HoldingSeats, cancelBooking, holdProducts, getMembership } from "../../../services/API";
+import { getPromotionByTitle, HoldingSeats, cancelBooking, holdProducts, getMembership, createStripePayment } from "../../../services/API";
 import { useDispatch, useSelector } from "react-redux";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -65,6 +65,35 @@ const ConfirmPayment = () => {
     bookingId,
   } = useSelector((state) => state.booking);
 
+  // Danh sách các loại thẻ hỗ trợ
+  const cardTypes = [
+    {
+      value: "VISA",
+      name: "Visa",
+      logo: "https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png"
+    },
+    {
+      value: "MASTERCARD",
+      name: "MasterCard",
+      logo: "https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg"
+    },
+    {
+      value: "JCB",
+      name: "JCB",
+      logo: "https://upload.wikimedia.org/wikipedia/commons/4/40/JCB_logo.svg"
+    },
+    {
+      value: "UNIONPAY",
+      name: "UnionPay",
+      logo: "https://upload.wikimedia.org/wikipedia/commons/1/1b/UnionPay_logo.svg"
+    },
+    {
+      value: "American Express",
+      name: "American Express",
+      logo: "https://upload.wikimedia.org/wikipedia/commons/f/fa/American_Express_logo_%282018%29.svg"
+    }
+  ];
+
   // Calculate product total for display
   const productTotal = product && Array.isArray(product)
     ? product.reduce((sum, p) => sum + (parseFloat(p.Price || 0) * parseInt(p.Quantity || 0)), 0)
@@ -81,77 +110,81 @@ const ConfirmPayment = () => {
     const calculatedProductPrice = productTotal;
     const priceAfterMembership=calculatedSeatPrice+calculatedProductPrice;
     
-    
-
-
     setSeatPrice(calculatedSeatPrice);
     setProductPrice(calculatedProductPrice);
     setDiscountedSeatPrice(calculatedSeatPrice); // Ban đầu chưa giảm
     setFinalPrice(priceAfterMembership); // Tổng ban đầu
 
-    console.log("💰 Price breakdown:", {
-      seatPrice: calculatedSeatPrice,
-      productPrice: calculatedProductPrice,
-      totalPrice: finalTotalPrice
-    });
-
   }, [finalTotalPrice, productTotal,userDiscount]);
 
-  console.log(" Products from Redux:", product);
-  console.log(" Seat PRICE:", seatPrice);
-  console.log("SLECTED SEAT ID", seatIds)
-  console.log("Product PRICE:", productPrice);
-  console.log("Final PRICE:", finalPrice);
+  // Stripe integration effect - MODIFIED: Only reset state, don't create intent
+  useEffect(() => {
+    // Chỉ reset state khi thay đổi payment method, không tạo intent ngay
+    if (paymentMethod !== "3") {
+      setStripeClientSecret(null);
+      setStripePaymentId(null);
+      setStripeError("");
+      setStripeLoading(false);
+    }
+  }, [paymentMethod, stripeCardType]);
 
-  // useEffect(() => {
-  //   if (paymentMethod === "3") {
-  //     // Gọi API lấy clientSecret khi chọn Stripe
-  //     const fetchStripeIntent = async () => {
-  //       setStripeLoading(true);
-  //       setStripeError("");
-  //       try {
-  //         const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/payment/stripe`, {
-  //           method: "POST",
-  //           headers: {
-  //             "Content-Type": "application/json",
-  //             Authorization: `Bearer ${user.token}`,
-  //           },
-  //           body: JSON.stringify({
-  //             amount: finalPrice,
-  //             bookingId: holdingResult?.bookingId, // hoặc bookingId phù hợp
-  //             orderProductId: productHoldResult?.OrderProductId,
-  //             cardType: stripeCardType,
-  //           }),
-  //         });
-  //         const data = await res.json();
-  //         console.log("Stripe API response:", data);
-  //         console.log("stripeClientSecret to set:", data.data?.clientSecret, data.data?.ClientSecret);
-  //         if (data.status === "success") {
-  //           setStripeClientSecret(data.data.clientSecret);
-  //           setStripePaymentId(data.data.paymentId);
-  //         } else {
-  //           setStripeError(data.error || "Không lấy được thông tin thanh toán Stripe");
-  //         }
-  //       } catch (err) {
-  //         setStripeError("Lỗi kết nối Stripe");
-  //       } finally {
-  //         setStripeLoading(false);
-  //       }
+  // NEW: Function to create Stripe payment intent after holding
+  // const createStripePaymentIntent = async (bookingId, orderProductId = null) => {
+  //   setStripeLoading(true);
+  //   setStripeError("");
+
+  //   try {
+  //     const payload = {
+  //       amount: finalPrice,
+  //       bookingId: bookingId,
+  //       orderProductId: orderProductId,
+  //       cardType: stripeCardType,
   //     };
-  //     fetchStripeIntent();
-  //   } else {
-  //     setStripeClientSecret(null);
-  //     setStripePaymentId(null);
+  //     console.log("Creating Stripe payment with payload:", payload);
+
+  //     const res = await createStripePayment(payload);
+  //     console.log("Stripe API response:", res);
+
+  //     if (res.status === "success") {
+  //       const clientSecret = res.data.clientSecret || res.data.ClientSecret;
+  //       const paymentId = res.data.paymentId || res.data.PaymentId;
+        
+  //       setStripeClientSecret(clientSecret);
+  //       setStripePaymentId(paymentId);
+        
+  //       return { clientSecret, paymentId };
+  //     } else {
+  //       setStripeError(res.error || "Không lấy được thông tin thanh toán Stripe");
+  //       return null;
+  //     }
+  //   } catch (error) {
+  //     console.error("Stripe API error:", error);
+  //     setStripeError(error.message || "Lỗi kết nối Stripe");
+  //     return null;
+  //   } finally {
+  //     setStripeLoading(false);
   //   }
-  //   // eslint-disable-next-line
-  // }, [paymentMethod, stripeCardType, finalPrice]);
+  // };
 
   // Handle payment method selection
   const handlePaymentMethod = (method) => {
     setPaymentMethod(method);
-
+    // Reset Stripe states khi chuyển sang phương thức khác
+    if (method !== "3") {
+      setStripeClientSecret(null);
+      setStripePaymentId(null);
+      setStripeError("");
+      setStripeLoading(false);
+    }
   };
+
+  // Handle card type selection
+  const handleCardTypeChange = (cardType) => {
+    setStripeCardType(cardType);
+  };
+
   console.log("METHOD SELECTED", paymentMethod);
+  console.log("CARD TYPE SELECTED", stripeCardType);
 
   // Promotion handling - CHỈ ÁP DỤNG CHO GHẾ
   const handleInputPromoCode = (event) => {
@@ -180,13 +213,18 @@ const ConfirmPayment = () => {
 
     try {
       const response = await getPromotionByTitle(promoCode);
+      console.log("Promotion response:", response);
       let promotionData = Array.isArray(response.promotions) ? response.promotions[0] : response.promotions;
+      const dayObj = new Date(promotionData?.Endtime);
+      const dateToCheck = new Date(dayObj.getFullYear(), dayObj.getMonth(), dayObj.getDate());
+      const today = new Date();
+      const todayForComparison = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-      if (promotionData?.Code) {
-        // *** CHỈ GIẢM GIÁ GHẾ, KHÔNG GIẢM PRODUCT ***
+      if (promotionData?.Code && dateToCheck ) {
+       
         const seatDiscount = seatPrice * (promotionData.DiscountValue / 100);
         const newSeatPrice = seatPrice - seatDiscount;
-        const newFinalPrice = newSeatPrice + productPrice; // Ghế đã giảm + Product gốc
+        const newFinalPrice = newSeatPrice + productPrice; 
 
         setAppliedPromotion(promotionData);
         setDiscountAmount(seatDiscount);
@@ -208,8 +246,8 @@ const ConfirmPayment = () => {
           newFinalPrice
         });
       } else {
-        setPromotionError('Invalid promotion code');
-        toast.error('Invalid promotion code!', {
+        setPromotionError(' Invalid or expired promotion code');
+        toast.error('  Invalid or expired promotion code   ', {
           duration: 4000,
           position: "top-center",
         });
@@ -243,9 +281,6 @@ const ConfirmPayment = () => {
       fetchMembership();
     }
   }, [user]);
-
-
-
 
   const handleRemovePromotion = () => {
     const savedAmount = discountAmount;
@@ -307,7 +342,6 @@ const ConfirmPayment = () => {
       handleRemovePromotion();
     }
 
-    // *** CHỈ TRỪ ĐIỂM TỪ GIÁ GHẾ ***
     const seatDiscount = Math.min(points, seatPrice) * 1000;
     const newSeatPrice = seatPrice - seatDiscount;
     const newFinalPrice = newSeatPrice + productPrice; // Ghế đã giảm + Product gốc
@@ -352,7 +386,7 @@ const ConfirmPayment = () => {
     });
   };
 
-  // Enhanced handleConfirm with both HoldingSeats and holdProducts
+ 
   const handleConfirm = async (e) => {
     e.preventDefault();
 
@@ -364,26 +398,22 @@ const ConfirmPayment = () => {
       return;
     }
 
-    setIsConfirming(true);
+    // Kiểm tra nếu chọn Stripe nhưng chưa chọn card type
+    if (paymentMethod === "3" && !stripeCardType) {
+      toast.error("Please select a card type!", {
+        duration: 4000,
+        position: "top-center",
+      });
+      return;
+    }
 
-    // Show loading toast
-    // const loadingToastId = toast.loading("Processing your booking...", {
-    //   position: "top-center",
-    // });
+    setIsConfirming(true);
 
     try {
       let holdingResult = null;
       let productHoldResult = null;
 
-      // 1. HOLD SEATS - Always required
-      console.log("🪑 Holding seats with data:", {
-        userId: user.userId,
-        selectedShowtimeId,
-        seatIds,
-        promotionCode: appliedPromotion?.Code || '',
-        PointsToUse: isUsingPoints ? parseInt(pointsToUse) : 0
-      });
-
+      // 1. HOLD SEATS
       holdingResult = await HoldingSeats(
         user.userId,
         selectedShowtimeId,
@@ -394,14 +424,11 @@ const ConfirmPayment = () => {
       );
       console.log("BOOKING ID TRUOC KHI SET REDUX", holdingResult.bookingId)
       dispatch(setBookingId(holdingResult.bookingId))
-      console.log("BOOKING ID FROM REDUX:", bookingId)
 
-      console.log("✅ Seats held successfully:", holdingResult);
+      console.log("HOLDING SEAT SUCCESSSS:", holdingResult);
 
       // 2. HOLD PRODUCTS - Only if products are selected
       if (product && Array.isArray(product) && product.length > 0) {
-        console.log("🛍️ Holding products with data:", product);
-
         // Prepare products for API call
         const productsForAPI = product.map(p => ({
           ProductId: p.ProductId.toString(),
@@ -413,77 +440,127 @@ const ConfirmPayment = () => {
           products: productsForAPI,
           Notes: `Product hold for booking: ${holdingResult.bookingId || 'Unknown'} - Movie: ${movie?.NameOfEnglish || 'Unknown Movie'}`
         };
-
-        console.log("🔄 Calling holdProducts API with payload:", productHoldPayload);
-
         productHoldResult = await holdProducts(
           productHoldPayload.MemberId,
           productHoldPayload.products,
           productHoldPayload.Notes
         );
-        dispatch(setOrderProductsId(productHoldResult.OrderProductId));
 
-
-        console.log("✅ Products held successfully:", productHoldResult);
+        console.log("HOLDING PRODUCT SUCCESSSSS:", productHoldResult);
       } else {
         console.log("ℹ️ No products to hold");
       }
 
-      // Update loading toast to success  // toast.update(loadingToastId, {
-      //   render: "Booking confirmed! Redirecting to payment...",
-      //   type: "success",
-      //   isLoading: false,
-      //   autoClose: 2000,
-      //   position: "top-center",
-      // });
+      // 3. HANDLE PAYMENT METHOD
+      // if (paymentMethod === "3") {
+      //   // STRIPE PAYMENT - Create intent after holding
+      //   const stripeResult = await createStripePaymentIntent(
+      //     holdingResult.bookingId,
+      //     productHoldResult?.OrderProductId || null
+      //   );
+        
+      //   if (!stripeResult) {
+      //     throw new Error("Failed to create Stripe payment intent");
+      //   }
+        
+      //   // Navigate to Stripe payment page or continue with current page
+      //   const stripePaymentData = {
+      //     // Booking data
+      //     selectedSeats,
+      //     finalTotalPrice,
+      //     paymentMethod,
+      //     selectedRoom,
+      //     selectedDate,
+      //     selectedTime,
+      //     selectedShowtimeId,
+      //     userId: user.userId,
+      //     seatIds,
+      //     movie,
+          
+      //     // Price data
+      //     discountType,
+      //     promotionCode: appliedPromotion?.Code || null,
+      //     promotionData: appliedPromotion,
+      //     pointsUsed: isUsingPoints ? parseInt(pointsToUse) : 0,
+      //     discountAmount,
+      //     seatPrice,
+      //     discountedSeatPrice,
+      //     productPrice,
+      //     finalPrice,
+          
+      //     // Stripe specific data
+      //     stripeClientSecret: stripeResult.clientSecret,
+      //     stripePaymentId: stripeResult.paymentId,
+      //     stripeCardType,
+          
+      //     // Hold results
+      //     bookingId: holdingResult.bookingId,
+      //     holdingSeats: holdingResult,
+          
+      //     // Product data
+      //     products: product || [],
+      //     OrderProductId: productHoldResult?.OrderProductId || null,
+      //     productHoldResult: productHoldResult,
+      //   };
+        
+        // console.log("Stripe payment ready with data:", stripePaymentData);
+        
+        // Stay on current page to show Stripe form
+        // The form will appear automatically due to stripeClientSecret being set
+        
+      // } else {
+        // OTHER PAYMENT METHODS - Navigate to waiting page
+        const waitingData = {
+          // Seat data
+          selectedSeats,
+          finalTotalPrice, // Keep original for reference
+          paymentMethod,
+          selectedRoom,
+          selectedDate,
+          selectedTime,
+          selectedShowtimeId,
+          userId: user.userId,
+          seatIds,
+          movie,
 
+          // *** UPDATED PRICE DATA ***
+          discountType,
+          promotionCode: appliedPromotion?.Code || null,
+          promotionData: appliedPromotion,
+          pointsUsed: isUsingPoints ? parseInt(pointsToUse) : 0,
+          discountAmount, // Chỉ là discount của ghế
+          seatPrice, // Giá ghế gốc
+          discountedSeatPrice, // Giá ghế sau giảm
+          productPrice, // Giá product gốc
+          finalPrice, // Tổng cuối = ghế đã giảm + product gốc
 
-      // 3. Navigate to waiting page with all data
-      const waitingData = {
-        // Seat data
-        selectedSeats,
-        finalTotalPrice, // Keep original for reference
-        paymentMethod,
-        selectedRoom,
-        selectedDate,
-        selectedTime,
-        selectedShowtimeId,
-        userId: user.userId,
-        seatIds,
-        movie,
+          // Hold results
+          bookingId: holdingResult.bookingId,
+          holdingSeats: holdingResult,
 
-        // *** UPDATED PRICE DATA ***
-        discountType,
-        promotionCode: appliedPromotion?.Code || null,
-        promotionData: appliedPromotion,
-        pointsUsed: isUsingPoints ? parseInt(pointsToUse) : 0,
-        discountAmount, // Chỉ là discount của ghế
-        seatPrice, // Giá ghế gốc
-        discountedSeatPrice, // Giá ghế sau giảm
-        productPrice, // Giá product gốc
-        finalPrice, // Tổng cuối = ghế đã giảm + product gốc
+          // Product data
+          products: product || [],
+          OrderProductId: productHoldResult?.OrderProductId || null,
+          productHoldResult: productHoldResult,
+          stripeCardType,
+        };
 
-        // Hold results
-        // bookingId: holdingResult.bookingId,
-        holdingSeats: holdingResult,
+        console.log("Navigating to waiting page with data:", waitingData);
 
-        // Product data
-        products: product || [],
-        // OrderProductId: productHoldResult?.OrderProductId || null,
-        productHoldResult: productHoldResult,
-      };
+        // Delay navigation slightly to show success message
+        setTimeout(() => {
+          navigate("/waiting", {
+            state: waitingData
+          });
+        }, 1000);
+      }
 
-      console.log("Navigating to waiting page with data:", waitingData);
-
-      // Delay navigation slightly to show success message
-      setTimeout(() => {
-        navigate("/waiting", {
-          state: waitingData
-        });
-      }, 1000);
-
-    } catch (error) {
+     catch (error) {
       console.error("❌ Error during confirmation process:", error);
+      toast.error(error.message || "An error occurred during booking confirmation!", {
+        duration: 4000,
+        position: "top-center",
+      });
     } finally {
       setIsConfirming(false);
     }
@@ -620,19 +697,11 @@ const ConfirmPayment = () => {
                       </div>
                     </div>
                   </div>
-
-                  {/* {movie?.ContentSynopsis && (
-                    <div className="mt-4 p-3  rounded-2xl">
-                      <p className="text-gray-300 text-xs leading-relaxed line-clamp-3">
-                        {movie?.ContentSynopsis}
-                      </p>
-                    </div>
-                  )} */}
                 </div>
-                <MembershipProgress
                 
+                <MembershipProgress
                   points={memberPoints}
-                 onTierChange={handleTierChange}
+                  onTierChange={handleTierChange}
                 />
               </div>
 
@@ -731,7 +800,6 @@ const ConfirmPayment = () => {
                           {selectedSeats.length > 0 ? selectedSeats.join(", ") : "None selected"}
                         </p>
                       </div>
-                    
                     </div>
                   </div>
 
@@ -754,22 +822,18 @@ const ConfirmPayment = () => {
                               <span className="text-white font-semibold">{formatPrice(seatPrice)}</span>
                             )}
                           </div>
-                           
-                    
                         </div>
-                         <div>
-                        <p className="flex justify-end text-sm text-green-400">Member Discount {userDiscount}%</p>
-                      </div>
+                        <div>
+                          <p className="flex justify-end text-sm text-green-400">Member Discount {userDiscount}%</p>
+                        </div>
 
                         {/* Product Price */}
                         {product && Array.isArray(product) && product.length > 0 && (
                           <>
-
                             <div className="flex justify-between items-center text-gray-300">
                               {product.map((item, index) => (
                                 <div key={index} className="flex justify-between">
                                   <span>{item.ProductName} x{item.Quantity}</span>
-
                                 </div>
                               ))}
                               <span className="text-white font-semibold">{formatPrice(productPrice)}</span>
@@ -895,111 +959,163 @@ const ConfirmPayment = () => {
                           Cannot use both discounts at the same time.
                         </div>
                       )}
-
-
                     </div>
                   </div>
 
                   {/* Payment Methods Section */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                    {/* Stripe (Visa/MasterCard/JCB/UnionPay) */}
-                    <div>
-                      <button
-                        onClick={() => handlePaymentMethod("3")}
-                        className={`flex flex-col items-center justify-center rounded-2xl p-4 h-20 font-semibold transition-all duration-300 border-2 ${paymentMethod === "3"
-                          ? "bg-gray/20 shadow-lg"
-                          : "bg-white hover:bg-white/10 border-white/20"
-                          } focus:outline-none focus:ring-4 focus:ring-purple-500 w-full`}
-                      >
-                        <img
-                          src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png"
-                          alt="Visa Logo"
-                          className="w-16 h-3 mb-1"
-                        />
-                        <span className="text-xs text-gray-300 mt-1">
-                          Stripe (Visa, MasterCard, JCB, UnionPay)
-                        </span>
-                      </button>
-                      {/* Nếu đã chọn Stripe thì show chọn loại thẻ và hướng dẫn */}
-                      {paymentMethod === "3" && stripeClientSecret && (
-                        <>
-                          {console.log("Rendering StripeCheckoutForm with clientSecret:", stripeClientSecret)}
-                          <div className="w-full max-w-md mx-auto mt-4">
-                            <StripeCheckoutForm
-                              clientSecret={stripeClientSecret}
-                              onSuccess={(paymentIntent) => {
-                                alert("Thanh toán thành công!");
-                                // Xử lý tiếp theo
-                              }}
-                            />
-                          </div>
-                        </>
-                      )}
-                      {/* Khi đã có clientSecret thì show form Stripe */}
-                      {paymentMethod === "3" && stripeClientSecret && (
-                        <div className="w-full max-w-md mx-auto mt-4">
-                          <StripeCheckoutForm
-                            clientSecret={stripeClientSecret}
-                            onSuccess={(paymentIntent) => {
-                              alert("Thanh toán thành công!");
-                              // Xử lý tiếp theo
-                            }}
+                  <div className="mb-6">
+                    <h3 className="text-lg font-bold text-white mb-4">Payment Methods</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                      {/* Stripe (Visa/MasterCard/JCB/UnionPay) */}
+                      <div>
+                        <button
+                          onClick={() => handlePaymentMethod("3")}
+                          className={`flex flex-col items-center justify-center rounded-2xl p-4 h-20 font-semibold transition-all duration-300 border-2 ${paymentMethod === "3"
+                            ? "bg-blue-600/30 border-blue-400 shadow-lg"
+                            : "bg-white/90 hover:bg-white/95 border-white/20"
+                            } focus:outline-none focus:ring-4 focus:ring-blue-500 w-full`}
+                        >
+                          <img
+                            src="https://www.thesmbguide.com/images/Stripe-Payments-Review-1024x512-20200129.png"
+                            alt="Stripe Logo"
+                            className="w-16 h-7 mb-1"
                           />
+                        </button>
+                      </div>
+
+                      {/* ZaloPay */}
+                      <div>
+                        <button
+                          onClick={() => handlePaymentMethod("4")}
+                          className={`flex flex-col items-center justify-center rounded-2xl p-4 h-20 font-semibold transition-all duration-300 border-2 ${paymentMethod === "4"
+                            ? "bg-blue-600/30 border-blue-400 shadow-lg"
+                            : "bg-white/90 hover:bg-white/95 border-white/20"
+                            } focus:outline-none focus:ring-4 focus:ring-blue-500 w-full`}
+                        >
+                          <img
+                            src="https://vectorseek.com/wp-content/uploads/2023/09/Zalopay-Logo-Vector.svg-.png"
+                            alt="ZaloPay logo"
+                            className="w-16 h-5 mb-1"
+                          />
+                        </button>
+                      </div>
+
+                      {/* Momo */}
+                      <div>
+                        <button
+                          onClick={() => handlePaymentMethod("2")}
+                          className={`flex flex-col items-center justify-center rounded-2xl p-4 h-20 font-semibold transition-all duration-300 border-2 ${paymentMethod === "2"
+                            ? "bg-blue-600/30 border-blue-400 shadow-lg"
+                            : "bg-white/90 hover:bg-white/95 border-white/20"
+                            } focus:outline-none focus:ring-4 focus:ring-blue-500 w-full`}
+                        >
+                          <img
+                            src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-MoMo-Transparent-1024x1024.png"
+                            alt="Momo logo"
+                            className="w-10 h-8 mb-1"
+                          />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Card Type Selection for Stripe */}
+                    {paymentMethod === "3" && (
+                      <div className="bg-white/5 rounded-2xl p-4 border border-white/10 mb-4">
+                        <h4 className="text-md font-semibold text-white mb-3">Select Card Type</h4>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                          {cardTypes.map((card) => (
+                            <button
+                              key={card.value}
+                              onClick={() => handleCardTypeChange(card.value)}
+                              className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 border-2 ${
+                                stripeCardType === card.value
+                                  ? "bg-purple-600/30 border-purple-400 shadow-lg"
+                                  : "bg-white/5 hover:bg-white/10 border-white/20"
+                              } focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                            >
+                              <img
+                                src={card.logo}
+                                alt={`${card.name} logo`}
+                                className="w-12 h-8 object-contain mb-1"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  e.target.nextSibling.style.display = 'block';
+                                }}
+                              />
+                              <span 
+                                className="text-xs text-white font-medium text-center hidden"
+                                style={{ display: 'none' }}
+                              >
+                                {card.name}
+                              </span>
+                              <span className="text-xs text-gray-300 text-center">
+                                {card.name}
+                              </span>
+                            </button>
+                          ))}
                         </div>
-                      )}
-                      {/* Hiển thị lỗi Stripe nếu có */}
-                      {paymentMethod === "3" && stripeError && (
-                        <div className="text-red-500 mt-2 text-center">{stripeError}</div>
-                      )}
-                    </div>
+                        
+                        {/* Stripe Processing Status */}
+                        {stripeLoading && (
+                          <div className="mt-4 flex items-center justify-center space-x-2 text-purple-400">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-400"></div>
+                            <span className="text-sm">Setting up payment...</span>
+                          </div>
+                        )}
+                        
+                        {stripeError && (
+                          <div className="mt-4 p-3 bg-red-500/20 rounded-lg border border-red-400/30">
+                            <p className="text-red-400 text-sm">{stripeError}</p>
+                          </div>
+                        )}
+                        
+                        {stripeClientSecret && !stripeError && (
+                          <div className="mt-4 p-3 bg-green-500/20 rounded-lg border border-green-400/30">
+                            <p className="text-green-400 text-sm">✓ Payment ready for {cardTypes.find(c => c.value === stripeCardType)?.name}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
-                    {/* ZaloPay */}
-                    <div>
-                      <button
-                        onClick={() => handlePaymentMethod("4")}
-                        className={`flex flex-col items-center justify-center rounded-2xl p-4 h-20 font-semibold transition-all duration-300 border-2 ${paymentMethod === "4"
-                          ? "bg-gray/20 shadow-lg"
-                          : "bg-white hover:bg-white/10 border-white/20"
-                          } focus:outline-none focus:ring-4 focus:ring-purple-500 w-full`}
-                      >
-                        <img
-                          src="https://vectorseek.com/wp-content/uploads/2023/09/Zalopay-Logo-Vector.svg-.png"
-                          alt="ZaloPay logo"
-                          className="w-16 h-5 mb-1"
+                    {/* Stripe Checkout Form */}
+                    {paymentMethod === "3" && stripeClientSecret && (
+                      <div className="bg-white/5 rounded-2xl p-4 border border-white/10 mb-4">
+                        <h4 className="text-md font-semibold text-white mb-3">Payment Details</h4>
+                        <StripeCheckoutForm
+                          clientSecret={stripeClientSecret}
+                          onSuccess={(paymentIntent) => {
+                            toast.success("Payment processed successfully!", {
+                              duration: 4000,
+                              position: "top-center",
+                            });
+                            console.log("Stripe payment successful:", paymentIntent);
+                          }}
+                          onError={(error) => {
+                            toast.error(`Payment failed: ${error.message}`, {
+                              duration: 4000,
+                              position: "top-center",
+                            });
+                            console.error("Stripe payment error:", error);
+                          }}
                         />
-                      </button>
-                    </div>
-
-                    {/* Momo */}
-                    <div>
-                      <button
-                        onClick={() => handlePaymentMethod("2")}
-                        className={`flex flex-col items-center justify-center rounded-2xl p-4 h-20 font-semibold transition-all duration-300 border-2 ${paymentMethod === "2"
-                          ? "bg-gray/20 shadow-lg"
-                          : "bg-white hover:bg-white/10 border-white/20"
-                          } focus:outline-none focus:ring-4 focus:ring-purple-500 w-full`}
-                      >
-                        <img
-                          src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-MoMo-Transparent-1024x1024.png"
-                          alt="Momo logo"
-                          className="w-10 h-8 mb-1"
-                        />
-                      </button>
-                    </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Action Buttons */}
                   <div className="mt-auto space-y-4">
                     <button
                       type="button"
-                      className={`w-full py-4 bg-gradient-to-r via-purple-500   hover:via-purple-600  shadow-xl hover:shadow-2xl hover:shadow-purple-500/20 transform hover:scale-[1.02] transition-all duration-300 ease-out border border-purple-400/10 text-white font-semibold rounded-2xl text-lg ${(!paymentMethod || isConfirming) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`w-full py-4 bg-gradient-to-r from-purple-600 via-purple-500 to-purple-700 hover:from-purple-700 hover:via-purple-600 hover:to-purple-800 shadow-xl hover:shadow-2xl hover:shadow-purple-500/20 transform hover:scale-[1.02] transition-all duration-300 ease-out border border-purple-400/10 text-white font-semibold rounded-2xl text-lg ${(!paymentMethod || isConfirming || (paymentMethod === "3" && !stripeCardType)) ? 'opacity-50 cursor-not-allowed' : ''}`}
                       onClick={handleConfirm}
-                      disabled={!paymentMethod || isConfirming}
+                      disabled={!paymentMethod || isConfirming || (paymentMethod === "3" && !stripeCardType)}
                     >
                       {isConfirming ? (
                         <div className="flex items-center justify-center space-x-2">
                           <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                          <span>Processing...</span>
+                          <span>
+                            {paymentMethod === "3" && stripeLoading ? "Setting up Stripe payment..." : "Processing..."}
+                          </span>
                         </div>
                       ) : (
                         'Confirm And Payment'

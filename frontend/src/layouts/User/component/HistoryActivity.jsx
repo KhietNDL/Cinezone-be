@@ -3,12 +3,14 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import {
   getBookingHistory,
-  getScoreHistoryByMemberId
+  getPaymentHistory,
+  getScoreHistoryByMemberId,
 } from "../../../services/API";
 
 const HistoryActivity = () => {
   const [activeTab, setActiveTab] = useState("booking");
   const [historyData, setHistoryData] = useState([]);
+  const [paymentHistory, setPaymentHistory] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -36,61 +38,63 @@ const HistoryActivity = () => {
 
   // Helper function to convert date to dd/mm/yyyy format
   const formatDateToDDMMYYYY = (date) => {
-    if (!date) return '';
+    if (!date) return "";
     const d = new Date(date);
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
     const year = d.getFullYear();
     return `${day}/${month}/${year}`;
   };
 
   // Helper function to convert dd/mm/yyyy to yyyy-mm-dd for date input
   const convertDDMMYYYYtoYYYYMMDD = (ddmmyyyy) => {
-    if (!ddmmyyyy) return '';
-    const parts = ddmmyyyy.split('/');
-    if (parts.length !== 3) return '';
+    if (!ddmmyyyy) return "";
+    const parts = ddmmyyyy.split("/");
+    if (parts.length !== 3) return "";
     return `${parts[2]}-${parts[1]}-${parts[0]}`;
   };
 
   // Helper function to convert yyyy-mm-dd to dd/mm/yyyy
   const convertYYYYMMDDtoDDMMYYYY = (yyyymmdd) => {
-    if (!yyyymmdd) return '';
-    const parts = yyyymmdd.split('-');
-    if (parts.length !== 3) return '';
+    if (!yyyymmdd) return "";
+    const parts = yyyymmdd.split("-");
+    if (parts.length !== 3) return "";
     return `${parts[2]}/${parts[1]}/${parts[0]}`;
   };
 
-  // Filter và Search functions cho booking
- const applyFilters = () => {
-  const safeHistoryData = Array.isArray(historyData) ? historyData : [];
-  let filtered = [...safeHistoryData];
+  // Filter và Search functions cho booking (sử dụng paymentHistory)
+  const applyFilters = () => {
+    const safePaymentHistory = Array.isArray(paymentHistory) ? paymentHistory : [];
+    let filtered = [...safePaymentHistory];
 
     // Search by movie name
     if (searchTerm) {
-      filtered = filtered.filter(item =>
-        item.movieNameEnglish?.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter((item) =>
+        item.booking?.movieNameEnglish?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     // Filter by status
     if (statusFilter !== "all") {
-      filtered = filtered.filter(item => item.status.toString() === statusFilter);
+      filtered = filtered.filter(
+        (item) => item.booking?.status?.toString() === statusFilter
+      );
     }
 
     // Filter by date - so sánh với format dd/mm/yyyy
     if (dateFilter) {
       const selectedDateDDMMYYYY = convertYYYYMMDDtoDDMMYYYY(dateFilter);
-      filtered = filtered.filter(item => {
-        if (!item.bookingDate) return false;
-        const bookingDateDDMMYYYY = formatDateToDDMMYYYY(item.bookingDate);
+      filtered = filtered.filter((item) => {
+        if (!item.booking?.BookingDate) return false;
+        const bookingDateDDMMYYYY = formatDateToDDMMYYYY(item.booking.BookingDate);
         return bookingDateDDMMYYYY === selectedDateDDMMYYYY;
       });
     }
 
     // Luôn sort theo newest first (cố định)
     filtered.sort((a, b) => {
-      const dateA = new Date(a.BookingDate);
-      const dateB = new Date(b.BookingDate);
+      const dateA = new Date(a.booking?.BookingDate);
+      const dateB = new Date(b.booking?.BookingDate);
       return dateB - dateA; // newest first
     });
 
@@ -99,26 +103,30 @@ const HistoryActivity = () => {
   };
 
   // Filter functions cho points
- const applyPointsFilters = () => {
-  const safeScoreHistory = Array.isArray(scoreHistory) ? scoreHistory : [];
-  let filtered = [...safeScoreHistory];
+  const applyPointsFilters = () => {
+    const safeScoreHistory = Array.isArray(scoreHistory) ? scoreHistory : [];
+    let filtered = [...safeScoreHistory];
 
     // Search by booking ID
     if (pointsSearchTerm) {
-      filtered = filtered.filter(item =>
-        item.RelatedBookingId?.toLowerCase().includes(pointsSearchTerm.toLowerCase())
+      filtered = filtered.filter((item) =>
+        item.RelatedBookingId?.toLowerCase().includes(
+          pointsSearchTerm.toLowerCase()
+        )
       );
     }
 
     // Filter by change type
     if (pointsStatusFilter !== "all") {
-      filtered = filtered.filter(item => item.ChangeType.toString() === pointsStatusFilter);
+      filtered = filtered.filter(
+        (item) => item.ChangeType.toString() === pointsStatusFilter
+      );
     }
 
     // Filter by date
     if (pointsDateFilter) {
       const selectedDateDDMMYYYY = convertYYYYMMDDtoDDMMYYYY(pointsDateFilter);
-      filtered = filtered.filter(item => {
+      filtered = filtered.filter((item) => {
         if (!item.ChangeDate) return false;
         const changeDateDDMMYYYY = formatDateToDDMMYYYY(item.ChangeDate);
         return changeDateDDMMYYYY === selectedDateDDMMYYYY;
@@ -160,17 +168,38 @@ const HistoryActivity = () => {
         const response = await getBookingHistory(user.userId);
         console.log("Booking History in HistoryPage:", response);
         setHistoryData(response?.data || []);
-        setFilteredData(response?.data || []);
       } catch (error) {
         console.error("Lỗi khi lấy history:", error);
         setHistoryData([]);
-        setFilteredData([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchBookingHistory();
+  }, [user]);
+
+    useEffect(() => {
+    const fetchPaymentHistory = async () => {
+      if (!user?.userId) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const response = await getPaymentHistory(user.userId);
+        console.log("PAYMENT history in history page:", response);
+        setPaymentHistory(response?.data || []);
+      } catch (error) {
+        console.error("Lỗi khi lấy history:", error);
+        setPaymentHistory([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPaymentHistory();
   }, [user]);
 
   useEffect(() => {
@@ -185,7 +214,6 @@ const HistoryActivity = () => {
         const response = await getScoreHistoryByMemberId(user.userId);
         console.log("SCORE History in HistoryPage:", response);
         setScoreHistory(response || []);
-        setFilteredScoreHistory(response || []);
       } catch (error) {
         console.error("Lỗi khi lấy history:", error);
       } finally {
@@ -199,60 +227,65 @@ const HistoryActivity = () => {
   // Apply filters whenever filter states change
   useEffect(() => {
     applyFilters();
-  }, [searchTerm, statusFilter, dateFilter, historyData]);
+  }, [searchTerm, statusFilter, dateFilter, paymentHistory]); // Thay đổi từ historyData thành paymentHistory
 
   useEffect(() => {
     applyPointsFilters();
   }, [pointsSearchTerm, pointsStatusFilter, pointsDateFilter, scoreHistory]);
 
   useEffect(() => {
-  setCurrentPage(1);
-}, [activeTab]);
+    setCurrentPage(1);
+  }, [activeTab]);
 
-const handleTabChange = (tab) => {
-  setActiveTab(tab);
-  setCurrentPage(1);
-};
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setCurrentPage(1);
+  };
 
   const getStatusStyle = (status) => {
     switch (status) {
       case 2:
-        return 'bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-medium';
+        return "bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-medium";
       case 4:
-        return 'bg-red-100 text-red-700 px-4 py-2 rounded-full text-sm font-medium';
-      case 'Waiting':
-        return 'bg-yellow-100 text-yellow-700 px-4 py-2 rounded-full text-sm font-medium';
+        return "bg-red-100 text-red-700 px-4 py-2 rounded-full text-sm font-medium";
+      case "Waiting":
+        return "bg-yellow-100 text-yellow-700 px-4 py-2 rounded-full text-sm font-medium";
       default:
-        return 'bg-gray-100 text-gray-700 px-4 py-2 rounded-full text-sm font-medium';
+        return "bg-gray-100 text-gray-700 px-4 py-2 rounded-full text-sm font-medium";
     }
   };
 
   const getStatusLabel = (status) => {
-    const statusValue = typeof status === 'string' ?
-      (status === 'Waiting' ? 'Waiting' : parseInt(status)) :
-      status;
+    const statusValue =
+      typeof status === "string"
+        ? status === "Waiting"
+          ? "Waiting"
+          : parseInt(status)
+        : status;
 
     switch (statusValue) {
       case 2:
-        return 'Success';
+        return "Success";
       case 4:
-        return 'Canceled';
-      case 'Waiting':
-        return 'Waiting';
+        return "Canceled";
+      case "Waiting":
+        return "Waiting";
       default:
-        return 'Unknown';
+        return "Unknown";
     }
   };
 
   // Pagination cho booking
- 
+
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentData = filteredData.slice(startIndex, endIndex);
 
   // Pagination cho points
-  const totalPagesPoints = Math.ceil(filteredScoreHistory.length / itemsPerPage);
+  const totalPagesPoints = Math.ceil(
+    filteredScoreHistory.length / itemsPerPage
+  );
   const currentScoreData = filteredScoreHistory.slice(startIndex, endIndex);
 
   const handlePageChange = (page) => {
@@ -260,7 +293,8 @@ const handleTabChange = (tab) => {
   };
 
   const renderPagination = () => {
-    const currentTotalPages = activeTab === "booking" ? totalPages : totalPagesPoints;
+    const currentTotalPages =
+      activeTab === "booking" ? totalPages : totalPagesPoints;
 
     if (currentTotalPages <= 1) return null;
 
@@ -297,10 +331,11 @@ const handleTabChange = (tab) => {
         <button
           key={i}
           onClick={() => handlePageChange(i)}
-          className={`px-3 py-2 mx-1 text-sm font-medium rounded-lg transition-all duration-200 ${i === currentPage
-            ? "bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-lg"
-            : "text-gray-700 bg-white border border-gray-300 hover:bg-purple-50 hover:border-purple-300"
-            }`}
+          className={`px-3 py-2 mx-1 text-sm font-medium rounded-lg transition-all duration-200 ${
+            i === currentPage
+              ? "bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-lg"
+              : "text-gray-700 bg-white border border-gray-300 hover:bg-purple-50 hover:border-purple-300"
+          }`}
         >
           {i}
         </button>
@@ -337,7 +372,9 @@ const handleTabChange = (tab) => {
         </button>
         {pages}
         <button
-          onClick={() => handlePageChange(Math.min(currentTotalPages, currentPage + 1))}
+          onClick={() =>
+            handlePageChange(Math.min(currentTotalPages, currentPage + 1))
+          }
           disabled={currentPage === currentTotalPages}
           className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-purple-50 hover:border-purple-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
         >
@@ -361,28 +398,33 @@ const handleTabChange = (tab) => {
 
   return (
     <div className="bg-gradient-to-br from-purple-100 via-indigo-50 to-purple-50 min-h-screen p-8">
-
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-4 text-gray-800">Activity History</h1>
-        <p className="text-gray-600 text-lg">Track your booking history and use your loyalty points</p>
+        <h1 className="text-4xl font-bold mb-4 text-gray-800">
+          Activity History
+        </h1>
+        <p className="text-gray-600 text-lg">
+          Track your booking history and use your loyalty points
+        </p>
       </div>
 
       <div className="flex mb-8 space-x-2 bg-gray-100 p-2 rounded-2xl">
         <button
           onClick={() => handleTabChange("booking")}
-          className={`flex-1 px-8 py-3 rounded-xl font-medium transition-all duration-300 ${activeTab === "booking"
-            ? "bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-lg"
-            : "text-gray-600 hover:text-gray-800 hover:bg-white/50"
-            }`}
+          className={`flex-1 px-8 py-3 rounded-xl font-medium transition-all duration-300 ${
+            activeTab === "booking"
+              ? "bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-lg"
+              : "text-gray-600 hover:text-gray-800 hover:bg-white/50"
+          }`}
         >
           Booking History
         </button>
         <button
           onClick={() => handleTabChange("points")}
-          className={`flex-1 px-8 py-3 rounded-xl font-medium transition-all duration-300 ${activeTab === "points"
-            ? "bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-lg"
-            : "text-gray-600 hover:text-gray-800 hover:bg-white/50"
-            }`}
+          className={`flex-1 px-8 py-3 rounded-xl font-medium transition-all duration-300 ${
+            activeTab === "points"
+              ? "bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-lg"
+              : "text-gray-600 hover:text-gray-800 hover:bg-white/50"
+          }`}
         >
           Points Activity
         </button>
@@ -475,14 +517,18 @@ const handleTabChange = (tab) => {
 
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center">
-              <h2 className="text-xl font-semibold text-gray-800 ml-4">Booking History</h2>
+              <h2 className="text-xl font-semibold text-gray-800 ml-4">
+                Booking History
+              </h2>
             </div>
             {filteredData.length > 0 && (
               <div className="text-sm text-gray-600">
-                Showing {startIndex + 1}-{Math.min(endIndex, filteredData.length)} of {filteredData.length} bookings
-                {filteredData.length !== historyData.length && (
+                Showing {startIndex + 1}-
+                {Math.min(endIndex, filteredData.length)} of{" "}
+                {filteredData.length} bookings
+                {filteredData.length !== paymentHistory.length && (
                   <span className="ml-1 text-purple-600">
-                    (filtered from {historyData.length} total)
+                    (filtered from {paymentHistory.length} total)
                   </span>
                 )}
               </div>
@@ -493,17 +539,19 @@ const handleTabChange = (tab) => {
             {filteredData.length === 0 ? (
               <div className="text-center py-16">
                 <div className="text-6xl mb-6">
-                  {historyData.length === 0 ? "📋" : "🔍"}
+                  {paymentHistory.length === 0 ? "📋" : "🔍"}
                 </div>
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                  {historyData.length === 0 ? "No Booking History" : "No Results Found"}
+                  {paymentHistory.length === 0
+                    ? "No Booking History"
+                    : "No Results Found"}
                 </h3>
                 <p className="text-gray-500">
-                  {historyData.length === 0
+                  {paymentHistory.length === 0
                     ? "You haven't made any bookings yet"
                     : "Try adjusting your search or filter criteria"}
                 </p>
-                {historyData.length > 0 && (
+                {paymentHistory.length > 0 && (
                   <button
                     onClick={clearFilters}
                     className="mt-4 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200"
@@ -517,61 +565,96 @@ const handleTabChange = (tab) => {
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="text-center py-4 px-6 font-semibold text-gray-700">Name</th>
-                      <th className="text-center py-4 px-6 font-semibold text-gray-700">Date</th>
-                      <th className="text-center py-4 px-6 font-semibold text-gray-700">Time</th>
-                      <th className="text-center py-4 px-2 font-semibold text-gray-700">Ticket</th>
-                      <th className="text-center py-4 px-6 font-semibold text-gray-700">Price</th>
-                      <th className="text-center py-4 px-6 font-semibold text-gray-700">Customer</th>
-                      <th className="text-center py-4 px-6 font-semibold text-gray-700">Status</th>
-                      <th className="text-start py-4 px-2 font-semibold text-gray-700">Action</th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">
+                        Name
+                      </th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">
+                        Date
+                      </th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">
+                        Time
+                      </th>
+                      <th className="text-center py-4 px-2 font-semibold text-gray-700">
+                        Ticket
+                      </th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">
+                        Price
+                      </th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">
+                        Customer
+                      </th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">
+                        Status
+                      </th>
+                      <th className="text-start py-4 px-2 font-semibold text-gray-700">
+                        Action
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {currentData.map((item, index) => (
-                      <tr key={item.id || index} className="border-b border-gray-100 hover:bg-purple-50/50 transition-colors duration-200">
+                      <tr
+                        key={item.payment?.PaymentId || index}
+                        className="border-b border-gray-100 hover:bg-purple-50/50 transition-colors duration-200"
+                      >
                         <td className="py-4 px-6">
                           <div className="text-center space-x-3">
-                            <span className="font-medium text-gray-800">{item.movieNameEnglish || 'Unknown Movie'}</span>
+                            <span className="font-medium text-gray-800">
+                              {item.booking?.movieNameEnglish || "Unknown Movie"}
+                            </span>
                           </div>
                         </td>
 
                         <td className="py-4 px-6">
                           <div className="text-center text-gray-700">
-                            {item.BookingDate
-                              ? new Date(item.BookingDate).toLocaleDateString('vi-VN').replace(/\//g, '-')
-                              : 'N/A'}
+                            {item.booking?.BookingDate
+                              ? new Date(item.booking.BookingDate)
+                                  .toLocaleDateString("vi-VN")
+                                  .replace(/\//g, "-")
+                              : "N/A"}
                           </div>
                         </td>
                         <td className="py-4 px-6">
                           <div className="text-center text-gray-700">
-                            {item.BookingDate
-                              ? new Date(item.BookingDate).toLocaleTimeString('vi-VN', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: false
-                              })
-                              : 'N/A'}
+                            {item.booking?.BookingDate
+                              ? new Date(item.booking.BookingDate).toLocaleTimeString(
+                                  "vi-VN",
+                                  {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    hour12: false,
+                                  }
+                                )
+                              : "N/A"}
                           </div>
                         </td>
                         <td className=" text-center py-4 px-4 text-gray-700 ">
-                          {item.seats ? (Array.isArray(item.seats) ? item.seats.length : item.seats.toString().split(',').length) : 0}
+                          {item.booking?.seats
+                            ? Array.isArray(item.booking.seats)
+                              ? item.booking.seats.length
+                              : item.booking.seats.toString().split(",").length
+                            : 0}
                         </td>
-                        <td className=" text-center py-4 px-6 text-gray-700 font-medium">{item.totalAmount || '0'}</td>
-                        <td className=" text-center py-4 px-6 text-gray-700 font-medium">{item.buyerName || 'N/A'}</td>
+                        <td className=" text-center py-4 px-6 text-gray-700 font-medium">
+                          {item.payment?.Amount || "0"}
+                        </td>
+                        <td className=" text-center py-4 px-6 text-gray-700 font-medium">
+                          {item.booking?.buyerName || "N/A"}
+                        </td>
                         <td className="text-center py-4 px-6 mr-0 ">
                           <span
-                            className={`${getStatusStyle(item.status)} inline-flex justify-center items-center px-4 py-2 rounded-full text-sm font-medium min-w-[90px] text-center`}
+                            className={`${getStatusStyle(
+                              item.booking?.status
+                            )} inline-flex justify-center items-center px-4 py-2 rounded-full text-sm font-medium min-w-[90px] text-center`}
                           >
-                            {getStatusLabel(item.status)}
+                            {getStatusLabel(item.booking?.status)}
                           </span>
-
                         </td>
 
                         <td className="  text-start py-0 px-0">
-                          {item.status === 2 && (
+                          {item.booking?.status === 2 && (
                             <button
-                              onClick={() => handleViewDetail(item)}
+                              onClick={() => handleViewDetail(item.booking)}
                               className="bg-blue-100 text-blue-600 px-2  py-2 w-[60px] rounded-full text-sm font-medium hover:bg-blue-500/50"
                             >
                               Detail
@@ -649,7 +732,9 @@ const handleTabChange = (tab) => {
             </div>
 
             {/* Active Filters Display for Points */}
-            {(pointsSearchTerm || pointsStatusFilter !== "all" || pointsDateFilter) && (
+            {(pointsSearchTerm ||
+              pointsStatusFilter !== "all" ||
+              pointsDateFilter) && (
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <span className="font-medium">Active filters:</span>
@@ -660,7 +745,10 @@ const handleTabChange = (tab) => {
                   )}
                   {pointsStatusFilter !== "all" && (
                     <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full">
-                      Type: {pointsStatusFilter === "2" ? "Points Used" : "Points Earned"}
+                      Type:{" "}
+                      {pointsStatusFilter === "2"
+                        ? "Points Used"
+                        : "Points Earned"}
                     </span>
                   )}
                   {pointsDateFilter && (
@@ -675,11 +763,15 @@ const handleTabChange = (tab) => {
 
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center">
-              <h2 className="text-xl font-semibold text-gray-800 ml-4">Points Activity</h2>
+              <h2 className="text-xl font-semibold text-gray-800 ml-4">
+                Points Activity
+              </h2>
             </div>
             {filteredScoreHistory.length > 0 && (
               <div className="text-sm text-gray-600">
-                Showing {startIndex + 1}-{Math.min(endIndex, filteredScoreHistory.length)} of {filteredScoreHistory.length} activities
+                Showing {startIndex + 1}-
+                {Math.min(endIndex, filteredScoreHistory.length)} of{" "}
+                {filteredScoreHistory.length} activities
                 {filteredScoreHistory.length !== scoreHistory.length && (
                   <span className="ml-1 text-purple-600">
                     (filtered from {scoreHistory.length} total)
@@ -696,7 +788,9 @@ const handleTabChange = (tab) => {
                   {scoreHistory.length === 0 ? "🎯" : "🔍"}
                 </div>
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                  {scoreHistory.length === 0 ? "No Points Activity" : "No Results Found"}
+                  {scoreHistory.length === 0
+                    ? "No Points Activity"
+                    : "No Results Found"}
                 </h3>
                 <p className="text-gray-500">
                   {scoreHistory.length === 0
@@ -717,43 +811,65 @@ const handleTabChange = (tab) => {
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="text-center py-4 px-6 font-semibold text-gray-700">Date</th>
-                      <th className="text-center py-4 px-6 font-semibold text-gray-700">Time</th>
-                      <th className="text-center py-4 px-6 font-semibold text-gray-700">Points</th>
-                      <th className="text-center py-4 px-6 font-semibold text-gray-700">Booking ID</th>
-                      <th className="text-center py-4 px-6 font-semibold text-gray-700">Activity Type</th>
-                      {/* <th className="text-center py-4 px-6 font-semibold text-gray-700">Status</th> */}
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">
+                        Date
+                      </th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">
+                        Time
+                      </th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">
+                        Points
+                      </th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">
+                        Booking ID
+                      </th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">
+                        Activity Type
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {currentScoreData.map((item, index) => (
-                      <tr key={item.ScoreHistoryId || index} className="border-b border-gray-100 hover:bg-purple-50/50 transition-colors duration-200">
+                      <tr
+                        key={item.ScoreHistoryId || index}
+                        className="border-b border-gray-100 hover:bg-purple-50/50 transition-colors duration-200"
+                      >
                         <td className="py-4 px-6">
                           <div className="flex items-center justify-center text-gray-700">
                             {item.ChangeDate
-                              ? new Date(item.ChangeDate).toLocaleDateString('vi-VN').replace(/\//g, '-')
-                              : 'N/A'}
+                              ? new Date(item.ChangeDate)
+                                  .toLocaleDateString("vi-VN")
+                                  .replace(/\//g, "-")
+                              : "N/A"}
                           </div>
                         </td>
 
                         <td className="py-4 px-6">
                           <div className="flex items-center justify-center text-gray-700">
                             {item.ChangeDate
-                              ? new Date(item.ChangeDate).toLocaleTimeString('vi-VN', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: false
-                              })
-                              : 'N/A'}
+                              ? new Date(item.ChangeDate).toLocaleTimeString(
+                                  "vi-VN",
+                                  {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    hour12: false,
+                                  }
+                                )
+                              : "N/A"}
                           </div>
                         </td>
-
-
 
                         <td className="text-center py-4 px-6">
-                          <div className={`font-semibold ${item.ScoreValue > 0 ? 'text-green-600' : 'text-red-600'
-                            }`}>
-                            {item.ScoreValue > 0 ? `+${item.ScoreValue}` : item.ScoreValue}
+                          <div
+                            className={`font-semibold ${
+                              item.ScoreValue > 0
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }`}
+                          >
+                            {item.ScoreValue > 0
+                              ? `+${item.ScoreValue}`
+                              : item.ScoreValue}
                           </div>
                         </td>
 
@@ -761,25 +877,22 @@ const handleTabChange = (tab) => {
                           {item.RelatedBookingId}
                         </td>
                         <td className="text-center py-4 px-6">
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${item.ChangeType === 2
-                            ? 'bg-red-100 text-red-700'
-                            : item.ChangeType === 4
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-gray-100 text-gray-700'
-                            }`}>
-                            {item.ChangeType === 2 ? 'Points Used' : item.ChangeType === 4 ? 'Points Earned' : 'Unknown'}
+                          <span
+                            className={`px-3 py-1 rounded-full text-sm font-medium ${
+                              item.ChangeType === 2
+                                ? "bg-red-100 text-red-700"
+                                : item.ChangeType === 4
+                                ? "bg-green-100 text-green-700"
+                                : "bg-gray-100 text-gray-700"
+                            }`}
+                          >
+                            {item.ChangeType === 2
+                              ? "Points Used"
+                              : item.ChangeType === 4
+                              ? "Points Earned"
+                              : "Unknown"}
                           </span>
                         </td>
-
-                        {/* <td className="text-center py-4 px-6">
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                            item.IsDeleted === 0 
-                              ? 'bg-green-100 text-green-700' 
-                              : 'bg-red-100 text-red-700'
-                          }`}>
-                            {item.IsDeleted === 0 ? 'Active' : 'Deleted'}
-                          </span>
-                        </td> */}
                       </tr>
                     ))}
                   </tbody>
@@ -789,29 +902,38 @@ const handleTabChange = (tab) => {
                 <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 border-t border-gray-100">
                   <div className="flex justify-between items-center">
                     <div>
-                      <h4 className="text-lg font-semibold text-gray-800 mb-2">Points Summary</h4>
+                      <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                        Points Summary
+                      </h4>
                       <div className="flex gap-6">
                         <div className="text-center">
                           <p className="text-sm text-gray-600">Total Earned</p>
                           <p className="text-xl font-bold text-green-600">
-                            +{scoreHistory.filter(item => item.ScoreValue > 0).reduce((sum, item) => sum + item.ScoreValue, 0)}
+                            +
+                            {scoreHistory
+                              .filter((item) => item.ScoreValue > 0)
+                              .reduce((sum, item) => sum + item.ScoreValue, 0)}
                           </p>
                         </div>
                         <div className="text-center">
                           <p className="text-sm text-gray-600">Total Used</p>
                           <p className="text-xl font-bold text-red-600">
-                            {scoreHistory.filter(item => item.ScoreValue < 0).reduce((sum, item) => sum + item.ScoreValue, 0)}
+                            {scoreHistory
+                              .filter((item) => item.ScoreValue < 0)
+                              .reduce((sum, item) => sum + item.ScoreValue, 0)}
                           </p>
                         </div>
                         <div className="text-center">
                           <p className="text-sm text-gray-600">Net Points</p>
                           <p className="text-xl font-bold text-purple-600">
-                            {scoreHistory.reduce((sum, item) => sum + item.ScoreValue, 0)}
+                            {scoreHistory.reduce(
+                              (sum, item) => sum + item.ScoreValue,
+                              0
+                            )}
                           </p>
                         </div>
                       </div>
                     </div>
-
                   </div>
                 </div>
 
@@ -848,40 +970,46 @@ const handleTabChange = (tab) => {
                 {/* Date & Time */}
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
                   <div className="text-center flex-1">
-                    <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Date</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedBooking.showDate}</p>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">
+                      Date
+                    </p>
+                    <p className="text-sm font-semibold text-gray-900 mt-1">
+                      {selectedBooking.showDate}
+                    </p>
                   </div>
                   <div className="w-px h-8 bg-gray-200"></div>
                   <div className="text-center flex-1">
-                    <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Time</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedBooking.showTime}</p>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">
+                      Time
+                    </p>
+                    <p className="text-sm font-semibold text-gray-900 mt-1">
+                      {selectedBooking.showTime}
+                    </p>
                   </div>
                 </div>
 
                 {/* Room & Seats */}
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
                   <div className="text-center flex-1">
-                    <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Room</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedBooking.room}</p>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">
+                      Room
+                    </p>
+                    <p className="text-sm font-semibold text-gray-900 mt-1">
+                      {selectedBooking.room}
+                    </p>
                   </div>
                   <div className="w-px h-8 bg-gray-200"></div>
                   <div className="text-center flex-1">
-                    <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Seats</p>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">
+                      Seats
+                    </p>
                     <p className="text-sm font-semibold text-gray-900 mt-1">
-                      {Array.isArray(selectedBooking.seats) ? selectedBooking.seats.join(", ") : selectedBooking.seats}
+                      {Array.isArray(selectedBooking.seats)
+                        ? selectedBooking.seats.join(", ")
+                        : selectedBooking.seats}
                     </p>
                   </div>
                 </div>
-
-                {/* Ticket Code */}
-                {/* <div className="text-center py-3">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2">Ticket Code</p>
-                  <div className="bg-gray-50 rounded-lg py-3 px-4 border border-gray-200">
-                    <p className="text-lg font-mono font-bold text-gray-900 tracking-wider">
-                      {selectedBooking.BookingId}
-                    </p>
-                  </div>
-                </div> */}
               </div>
             </div>
 

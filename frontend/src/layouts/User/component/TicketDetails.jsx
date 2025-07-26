@@ -11,6 +11,7 @@ import {
 } from "../../../services/API";
 import { useDispatch, useSelector } from "react-redux";
 import { setProductDetail } from "../../../redux/features/bookingSlice";
+import { DNALoader } from "../../../component/Loader";
 
 const TicketDetails = () => {
   const [searchParams] = useSearchParams();
@@ -20,29 +21,45 @@ const TicketDetails = () => {
   const [isCancelled, setIsCancelled] = useState(false);
   const dispatch = useDispatch();
 
+  // Momo parameters
   const resultCode = searchParams.get("resultCode");
   const extraDataRaw = searchParams.get("extraData");
-  const { productDetail, bookingId: reduxBookingId, orderProductsId: reduxOrderProductId } = useSelector(
+  
+  // ZaloPay parameters
+  const zaloStatus = searchParams.get("status");
+  
+  const { productDetail, bookingId: reduxBookingId, orderProductsId: reduxOrderProductId, paymentId: reduxPaymentId } = useSelector(
     (state) => state.booking
   );
 
   let bookingId = null;
   let orderProductId = null;
   let paymentId = null;
+  let paymentMethod = null; // Để xác định phương thức thanh toán
 
   try {
     const isMomo = resultCode !== null;
+    const isZaloPay = zaloStatus !== null;
+    
     if (isMomo) {
+      paymentMethod = 'momo';
       if (!extraDataRaw) throw new Error("Thiếu extraData từ Momo");
       const decoded = decodeURIComponent(extraDataRaw);
       const extraData = JSON.parse(decoded);
       bookingId = extraData.bookingId;
       paymentId = extraData.paymentId;
       orderProductId = extraData.orderProductId;
-    } else {
+    } else if (isZaloPay) {
+      paymentMethod = 'zalopay';
+      // ZaloPay lấy thông tin từ Redux
       bookingId = reduxBookingId;
       orderProductId = reduxOrderProductId;
-      paymentId = "visa"; 
+      paymentId = reduxPaymentId;
+    } else {
+      paymentMethod = 'other'; // Visa, etc.
+      bookingId = reduxBookingId;
+      orderProductId = reduxOrderProductId;
+      paymentId = reduxPaymentId;
     }
   } catch (err) {
     console.error("Failed to parse payment data:", err);
@@ -50,75 +67,97 @@ const TicketDetails = () => {
     setLoading(false);
   }
 
-useEffect(() => {
-  const isMomo = resultCode !== null;
-  const isSuccess = isMomo ? resultCode === "0" : true;
+  useEffect(() => {
+    let isSuccess = false;
+    
+    // Xác định trạng thái thành công dựa trên phương thức thanh toán
+    switch (paymentMethod) {
+      case 'momo':
+        isSuccess = resultCode === "0";
+        break;
+      case 'zalopay':
+        isSuccess = zaloStatus === "1"; // ZaloPay: status=0 là thành công
+        break;
+      case 'other':
+        isSuccess = true; // Các phương thức khác mặc định là thành công
+        break;
+      default:
+        isSuccess = false;
+    }
 
-  // Nếu thất bại thì hủy booking
-  if (!isSuccess) {
-    setIsCancelled(true);
-    const handleCancellation = async () => {
+    // Nếu thất bại thì hủy booking
+    if (!isSuccess) {
+      setIsCancelled(true);
+      const handleCancellation = async () => {
+        try {
+          if (bookingId) await cancelBooking(bookingId);
+          if (orderProductId) await cancelProduct(orderProductId);
+        } catch (err) {
+          console.error("Lỗi khi hủy:", err);
+        } finally {
+          setLoading(false);
+        }
+      };
+      handleCancellation();
+      return;
+    }
+
+    if (!bookingId) {
+      setError("Không có thông tin booking.");
+      setLoading(false);
+      return;
+    }
+
+    const fetchPayment = async () => {
       try {
-        if (bookingId) await cancelBooking(bookingId);
-        if (orderProductId) await cancelProduct(orderProductId);
+        if (paymentMethod === 'momo') {
+          // Thanh toán qua Momo -> confirm bằng paymentId từ extraData
+          await ConfirmPayment(paymentId);
+        } else {
+          // Thanh toán ZaloPay hoặc khác -> confirm bằng paymentId từ Redux
+          console.log("Order Product ID:", orderProductId);
+          await ConfirmPayment(reduxPaymentId);
+          console.log("PAYMENTID", reduxPaymentId);
+        }
+
+        // Lấy thông tin vé
+        const ticketResponse = await getBookingById(bookingId);
+        setTicket(ticketResponse);
+
+        // Nếu có sản phẩm thì load thông tin
+        if (orderProductId) {
+          const productResponse = await getProductByOderProductId(orderProductId);
+          dispatch(setProductDetail(productResponse));
+        }
       } catch (err) {
-        console.error("Lỗi khi hủy:", err);
+        console.error("Lỗi khi tải thông tin:", err);
+        setError("Không thể tải thông tin vé.");
       } finally {
         setLoading(false);
       }
     };
-    handleCancellation();
-    return;
-  }
 
-  if (!bookingId) {
-    setError("Không có thông tin booking.");
-    setLoading(false);
-    return;
-  }
+    fetchPayment();
+  }, [bookingId, paymentId, orderProductId, resultCode, zaloStatus, paymentMethod, dispatch, reduxPaymentId]);
 
-  const fetchPayment = async () => {
-    try {
-      if (isMomo) {
-        // Thanh toán qua Momo -> confirm bằng paymentId
-        await ConfirmPayment(paymentId);
-      } else {
-        // Thanh toán khác (Visa, etc.) -> confirm bằng bookingId + productId
-        console.log("Oder Product ID:", orderProductId);
-         await ConfirmBooking(bookingId);
-         await confirmProduct(orderProductId);
-      }
-
-      // Lấy thông tin vé
-      const ticketResponse = await getBookingById(bookingId);
-      setTicket(ticketResponse);
-
-      // Nếu có sản phẩm thì load thông tin
-      if (orderProductId) {
-        const productResponse = await getProductByOderProductId(orderProductId);
-        dispatch(setProductDetail(productResponse));
-      }
-    } catch (err) {
-      console.error("Lỗi khi tải thông tin:", err);
-      setError("Không thể tải thông tin vé.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchPayment();
-}, [bookingId, paymentId, orderProductId, resultCode, dispatch]);
-
-
-  if (loading) return <div className="text-white p-6">Đang tải thông tin vé...</div>;
+  if (loading)
+    return <div className="text-center h-full w-full py-8 md:py-12 bg-white/5 rounded-2xl text-gray-400 ">
+            <DNALoader className="mt-40" />
+            <p className="font-semibold mt-2 text-sm md:text-base">
+              Loading Ticket ! Please wait...
+            </p>
+          </div>;
   if (error) return <div className="text-red-400 p-6">{error}</div>;
 
   if (isCancelled) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] flex flex-col items-center justify-center text-center text-white p-10">
-        <h1 className="text-4xl font-bold text-red-500 mb-4">Ticket Cancelled</h1>
+        <h1 className="text-4xl font-bold text-red-500 mb-4">
+          Ticket Cancelled
+        </h1>
         <p className="text-white/70 text-lg mb-6">
-          The transaction was cancelled or failed. Your booking has been cancelled.
+          The transaction was cancelled or failed. Your booking has been
+          cancelled.
         </p>
         <a
           href="/"
@@ -139,8 +178,12 @@ useEffect(() => {
       <div className="flex w-full max-w-4xl rounded-2xl overflow-hidden border-2 border-white/60 shadow-2xl">
         <div className="w-1/2 bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] p-8 flex flex-col justify-between">
           <div>
-            <h2 className="text-white text-2xl font-bold mb-2">🎟️Your Ticket</h2>
-            <p className="text-sm text-white/70 mb-6">Enjoy your movie experience!</p>
+            <h2 className="text-white text-2xl font-bold mb-2">
+              🎟️Your Ticket
+            </h2>
+            <p className="text-sm text-white/70 mb-6">
+              Enjoy your movie experience!
+            </p>
 
             <div className="text-white space-y-3">
               <div><span className="text-white/60">Movie: </span><span className="font-bold">{ticket.movieNameEnglish}</span></div>

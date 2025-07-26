@@ -187,10 +187,10 @@ export const updatePromotion = async (id, formData) => {
     handleError(error);
   }
 };
-export const searchPromotion = async (title) => {
+export const searchPromotion = async (code) => {
   try {
     const response = await api.get("/promotions/search", {
-      params: { title },
+      params: { code },
     });
     return response.data;
   } catch (error) {
@@ -485,7 +485,6 @@ export const ConfirmBooking = async (bookingId) => {
   }
 };
 
-
 export const ConfirmPayment = async (paymentId) => {
   try {
     const response = await api.post(`/payment/confirm/${paymentId}`);
@@ -497,9 +496,6 @@ export const ConfirmPayment = async (paymentId) => {
     throw error;
   }
 };
-
-
-
 
 export const getAllBookings = async (params = {}) => {
   try {
@@ -572,6 +568,35 @@ export const getBookingHistory = async (memberId) => {
   }
 };
 
+export const getPaymentHistory = async (memberId) => {
+  try {
+    const token = localStorage.getItem("token");
+
+    const response = await api.get(`/payment/history`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        memberId,       
+        page: 1,
+        limit: 10,
+        sortBy: "CreatedAt",
+        sortOrder: "desc",
+      },
+    });
+
+    console.log("Payment History :", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy lịch sử payment:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+
+
+
 export const getMembership = async (userId) => {
   try {
     const response = await api.get(`/user/${userId}/membership`);
@@ -588,7 +613,6 @@ export const getAllProducts = async (params) => {
   try {
     const response = await api.get("/products", { params });
     return response.data;
-    console.log("DATA PRODCUT",response.data)
   } catch (error) {
     console.error("Lỗi khi lấy danh sách sản phẩm owr API:", error);
     handleError(error);
@@ -718,8 +742,6 @@ export const getScoreHistoryByMemberId = async (MemberId) => {
   }
 };
 
-
-
 // API Analytics
 export const getRevenueByMonth = async (year) => {
   try {
@@ -731,8 +753,6 @@ export const getRevenueByMonth = async (year) => {
     handleError(error);
   }
 };
-
-
 
 export const getRevenueByQuarter = async (year) => {
   try {

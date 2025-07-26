@@ -8,4 +8,7 @@ export default defineConfig({
     allowedHosts: ["cinezone.info"],
     open: true,
   },
+  define: {
+    "process.env": {}, // Shim process.env to an empty object
+  },
 });
