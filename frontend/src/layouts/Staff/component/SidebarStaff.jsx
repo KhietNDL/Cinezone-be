@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { PiPopcornDuotone } from "react-icons/pi";
+import { BsQrCodeScan } from "react-icons/bs";
 import { FaBars } from "react-icons/fa6";
 
 const SidebarStaff = () => {
@@ -21,6 +22,11 @@ const SidebarStaff = () => {
       label: "Combo Food",
       icon: <PiPopcornDuotone />,
       to: "/staff/combo-selling",
+    },
+     {
+      label: "Check-in",
+      icon: <BsQrCodeScan />,
+      to: "/staff/check-in",
     },
   ];
 
@@ -72,7 +78,7 @@ const SidebarStaff = () => {
                     : "text-gray-800 hover:bg-gray-100"
                 }`
               }
-              onClick={() => setOpen(false)} // Đóng sidebar khi chọn menu trên mobile
+              onClick={() => setOpen(false)} 
             >
               <div className="mr-2">{item.icon}</div> {item.label}
             </NavLink>

@@ -20,7 +20,7 @@ export default function MoviePage() {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
 
-  const debouncedSearch = useDebounce(search, 500); // delay 500ms
+  const debouncedSearch = useDebounce(search, 3000);
 
   const toSlug = (str) =>
     str
@@ -76,7 +76,7 @@ export default function MoviePage() {
 
   return (
     <div className="w-full bg-[#fafbfc] p-[20px]">
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-5">
         <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-4">
           <h1 className="text-3xl font-bold text-[#9810FA]">Movies</h1>
           <Input.Search
@@ -87,7 +87,7 @@ export default function MoviePage() {
             allowClear
           />
         </div>
-        <h5 className="mt-5">
+        <h5 className="text-xl font-semibold">
           <i className="fa-solid fa-film"></i> Select Movie to view details
         </h5>
 

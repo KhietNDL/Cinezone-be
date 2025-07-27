@@ -1,7 +1,7 @@
 import React from "react";
 import momo from "../../../assets/momo-seeklogo.png";
 import zalopay from "../../../assets/zalopay-seeklogo.svg";
-import visa from "../../../assets/visa.svg"
+import stripe from "../../../assets/Stripe-Symbol.png"
 import { FaMoneyBillWave } from "react-icons/fa6";
 
 const PAYMENT_METHODS = [
@@ -18,9 +18,9 @@ const PAYMENT_METHODS = [
     color: "bg-[#F3E8FF] border border-pink-300 ring-4 ring-pink-400 focus:ring-4",
   },
   {
-    value: "Visa",
-    label: "Visa",
-    icon: <img src={visa} alt="Visa" className="h-10 mx-auto"/>,
+    value: "Stripe",
+    label: "Stripe",
+    icon: <img src={stripe} alt="Stripe" className="h-8 mx-auto mb-2 rounded-sm"/>,
     color: "bg-[#F3E8FF] border border-pink-300 ring-4 ring-pink-400 focus:ring-4",
   },
   {
@@ -35,7 +35,7 @@ const PAYMENT_METHODS = [
     { value: "visa", label: "Visa" },
     { value: "mastercard", label: "MasterCard" },
     { value: "jcb", label: "JCB" },
-    { value: "unionpay", label: "UnionPay" },
+    { value: "americanexpress", label: "American Express" },
   ];
 
 function PaymentMethod({

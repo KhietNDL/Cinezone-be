@@ -62,7 +62,7 @@ export async function processPayment({
       case "VNPay":
         throw new Error("VNPay payment method not yet supported");
 
-      case "Visa":
+      case "Stripe":
         {
           setIsRedirecting?.(true);
           let visaRes;

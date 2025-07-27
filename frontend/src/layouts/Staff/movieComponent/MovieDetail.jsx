@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-// import { getMovieById } from '../../../services/APIForStaff/API';
 import { FaStar, FaRegStar, FaStarHalfAlt } from 'react-icons/fa';
 import { LuChartBar } from "react-icons/lu";
 import { GiTrophyCup } from "react-icons/gi";
@@ -13,7 +12,7 @@ import "swiper/css/pagination";
 import { Navigation, Pagination } from "swiper/modules";
 import '../component/SwiperButton.css'
 import { toast } from 'react-toastify';
-//import { getDaysByMovieName, getVersionsAndTimesByMovieAndDay } from '../../../services/APIForStaff/API';
+import BackButton from '../component/BackButton';
 
 export default function MovieDetail() {
 
@@ -194,7 +193,14 @@ export default function MovieDetail() {
 
   return (
     <div className='w-full flex flex-col p-[20px]'>
-      <div className='text-3xl font-bold mb-4 text-[#9810FA]'>Movie Detail</div>
+      <div className="flex flex-col items-start justify-center gap-4 mb-6">
+        <div>
+          <BackButton />
+        </div>
+        <h1 className="text-3xl font-bold text-[#9810FA] flex lg:items-start items-center lg:justify-start justify-center flex-col">
+          Movie Detail
+        </h1>
+      </div>
 
       <div className='flex gap-5 w-full '>
         <div className='w-[70%] flex flex-col'>

@@ -68,8 +68,6 @@ const HeaderStaff = () => {
               className="flex items-center bg-transparent rounded-4xl cursor-pointer group"
               onClick={toggleDropdown}
             >
-              {/* <div className="flex items-center bg-white rounded-4xl group-hover:bg-gray-100 transition-colors duration-500 overflow-hidden">
-              <div className="text-3xl flex items-center justify-end transform transition-transform duration-500 group-hover:-translate-x-0 p-[1px]"> */}
               <div className="flex items-center bg-white rounded-4xl ">
                 <div className="text-3xl flex items-center justify-end p-[1px]">
                   {user.avatar_url ? (
@@ -82,7 +80,7 @@ const HeaderStaff = () => {
                     <MdAccountCircle className="text-[#604CE9] group-hover:text-[#5038E9]" />
                   )}
                 </div>
-                {/* <p className="opacity-0 max-w-0 group-hover:opacity-100 group-hover:max-w-full hover:px-2 font-semibold transition-all duration-700 whitespace-nowrap bg-white text-[#604CE9] py-2 rounded-2xl"> */}
+               
                 <p className="max-w-full px-2 font-semibold text-[#604CE9] rounded-2xl">
                   {user.fullName || user.FullName || "Staff"}
                 </p>

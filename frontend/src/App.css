@@ -37,6 +37,9 @@ div[role="button"] {
   padding-left: 50px !important;
   width: 100% !important;
 }
+.landingPage .landingPage-trending .swiper {
+  height: 480px;
+}
 .landingPage .swiper-slide {
   height: 550px !important;
 }

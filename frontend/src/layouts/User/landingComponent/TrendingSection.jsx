@@ -40,7 +40,7 @@ const TrendingSection = ({
   };
 
   return (
-    <div className="w-full py-16 md:py-20 px-4 relative overflow-hidden">
+    <div className="w-full py-16 px-4 relative overflow-hidden">
       {/* Background Effects */}
       <div className="absolute inset-0">
         <div className="absolute top-0 left-1/3 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl animate-pulse" />
@@ -184,7 +184,7 @@ const TrendingSection = ({
         </div>
 
         {/* Trending Movies Carousel */}
-        <div className="relative">
+        <div className="relative landingPage-trending">
           <Swiper
             ref={swiperRef}
             modules={[Navigation, Autoplay, EffectCoverflow]}
