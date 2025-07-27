@@ -187,10 +187,8 @@ const Header = () => {
           // Helper để lấy điểm cộng/trừ
           const getScoreValue = (booking) => {
             if (!booking) return 0;
-            if (booking.pointEarn && booking.pointEarn > 0)
-              return booking.pointEarn;
-            if (booking.pointUse && booking.pointUse > 0)
-              return -booking.pointUse;
+            if (booking.pointEarn && booking.pointEarn > 0) return booking.pointEarn;
+            if (booking.pointUse && booking.pointUse > 0) return -booking.pointUse;
             return 0;
           };
 
@@ -411,7 +409,7 @@ const Header = () => {
       {/* Modern Action Buttons */}
       <div className="flex items-center space-x-3 md:space-x-4">
         {/* Enhanced Search Component */}
-        <div className="relative flex items-center z-50">
+        <div className="relative flex items-center z-10">
           <input
             ref={searchInputRef}
             type="text"
@@ -436,7 +434,7 @@ const Header = () => {
           />
 
           <button
-            className="relative z-20 p-3 bg-gradient-to-r from-[#6a57f5] to-purple-600 hover:from-[#7c6aff] hover:to-purple-700 rounded-2xl shadow-lg shadow-[#6a57f5]/30 hover:shadow-[#6a57f5]/50 transition-all duration-300 ease-out hover:scale-105 active:scale-95 border border-[#6a57f5]/20"
+            className="relative  p-3 bg-gradient-to-r from-[#6a57f5] to-purple-600 hover:from-[#7c6aff] hover:to-purple-700 rounded-2xl shadow-lg shadow-[#6a57f5]/30 hover:shadow-[#6a57f5]/50 transition-all duration-300 ease-out hover:scale-105 active:scale-95 border border-[#6a57f5]/20"
             onClick={toggleSearch}
           >
             <FaSearch size={18} className="text-white" />
@@ -470,7 +468,6 @@ const Header = () => {
             <FaBell
               size={18}
               className="cursor-pointer text-gray-300 group-hover:text-[#6a57f5] transition-colors duration-300"
-              onClick={() => setShowNoti((prev) => !prev)}
             />
             {newNotiCount > 0 && (
               <span className="absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-full px-2 py-1 text-xs font-bold shadow-lg animate-pulse min-w-[20px] text-center leading-none">

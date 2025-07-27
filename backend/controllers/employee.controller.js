@@ -2,6 +2,7 @@ const Employee = require("../models/employee.model");
 const jwt = require("jsonwebtoken");
 const User = require('../models/user.model');
 const bucket = require("../config/firebase"); // Thêm dòng này ở đầu file
+const { blacklistUserId } = require('../middlewares/auth.middleware');
 // Get all employees
 const getAllEmployees = async (req, res) => {
   try {
@@ -25,7 +26,6 @@ const getAllEmployees = async (req, res) => {
       });
     }
 
-    // Thêm avatar_url vào kết quả trả về
     const filteredEmployees = result.employees.map((emp) => ({
       UserId: emp.UserId,
       FullName: emp.FullName,
@@ -36,7 +36,8 @@ const getAllEmployees = async (req, res) => {
       Address: emp.Address,
       PhoneNumber: emp.PhoneNumber,
       CreatedAt: emp.CreatedAt,
-      avatar_url: emp.avatar_url
+      avatar_url: emp.avatar_url,
+      isDeleted: emp.IsDeleted // Thêm trường isDeleted
     }));
 
     res.status(200).json({
@@ -184,6 +185,7 @@ const deleteEmployee = async (req, res) => {
   try {
     const result = await Employee.deleteEmployee(userId);
     if (result) {
+      blacklistUserId(userId); // Force logout for deleted employee
       res.status(200).json({ message: "Employee deleted successfully" });
     } else {
       res
@@ -269,6 +271,52 @@ const updateEmployee = async (req, res) => {
   }
 };
 
+// Find employees by information
+const findEmployeesByInfo = async (req, res) => {
+  const { email, cccd, phone, name, page = 1, limit = 0, sortBy = 'FullName', sortOrder = 'asc' } = req.query;
+  try {
+    const result = await Employee.findEmployeesByInfo({ email, cccd, phone, name }, parseInt(page), parseInt(limit), sortBy, sortOrder);
+
+    const filteredEmployees = result.employees.map((emp) => ({
+      UserId: emp.UserId,
+      FullName: emp.FullName,
+      DateOfBirth: emp.DateOfBirth,
+      Sex: emp.Sex,
+      Email: emp.Email,
+      PhoneNumber: emp.PhoneNumber,
+      Address: emp.Address,
+      CCCD: emp.CCCD,
+      avatar_url: emp.avatar_url,
+      CreatedAt: emp.CreatedAt,
+      isDeleted: emp.IsDeleted
+    }));
+
+    res.status(200).json({
+      message: "Employees found",
+      employees: filteredEmployees,
+      pagination: result.pagination,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Unban employee
+const unbanEmployee = async (req, res) => {
+  const { userId } = req.params;
+  const updatedBy = req.user ? req.user.UserId : null;
+  try {
+    const result = await Employee.unbanEmployee(userId, updatedBy);
+    if (result) {
+      res.status(200).json({ message: "Employee unbanned successfully" });
+    } else {
+      res.status(404).json({ message: "Employee not found or not banned" });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Export the controller functions
 module.exports = {
   getAllEmployees,
@@ -278,4 +326,6 @@ module.exports = {
   createEmployee,
   deleteEmployee,
   updateEmployee,
+  findEmployeesByInfo,
+  unbanEmployee,
 };

@@ -120,6 +120,14 @@ const createCinemaRoom = async (req, res) => {
             });
         }
 
+        // Validate seat quantity limit (10 rows × 12 columns = 120 seats max)
+        if (SeatQuantity > 120) {
+            return res.status(400).json({
+                error: 'SeatQuantity cannot exceed 120 seats (maximum grid capacity: 10 rows × 12 columns)',
+                code: ERROR_CODES.INVALID_SEAT_QUANTITY
+            });
+        }
+
         // Check for duplicate room name
         const existingRoom = await CinemaRoom.findByName(Name);
         if (existingRoom) {
@@ -139,13 +147,14 @@ const createCinemaRoom = async (req, res) => {
 
         const newRoom = await CinemaRoom.getCinemaRoomById(id);
         res.status(201).json({
-            message: 'Cinema room created successfully',
-            room: formatRoomData(newRoom)
+            message: 'Cinema room and seats created successfully',
+            room: formatRoomData(newRoom),
+            seatsGenerated: SeatQuantity
         });
     } catch (error) {
         console.error('Create cinema room error:', error);
         res.status(500).json({
-            error: 'Internal server error while creating cinema room',
+            error: error.message || 'Internal server error while creating cinema room',
             code: ERROR_CODES.SERVER_ERROR
         });
     }
@@ -285,7 +294,7 @@ const deleteCinemaRoom = async (req, res) => {
 // Search cinema rooms by name
 const searchCinemaRoomsByName = async (req, res) => {
     try {
-        const { name } = req.query;
+        const { name, page = 1, limit = 10, sortBy = "Name", sortOrder = "ASC" } = req.query;
 
         // Validate search query
         if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -295,8 +304,8 @@ const searchCinemaRoomsByName = async (req, res) => {
             });
         }
 
-        const rooms = await CinemaRoom.searchCinemaRoomsByName(name.trim());
-        if (!rooms || rooms.length === 0) {
+        const result = await CinemaRoom.searchCinemaRoomsByName(name.trim(), parseInt(page), parseInt(limit), sortBy, sortOrder);
+        if (!result.rooms || result.rooms.length === 0) {
             return res.status(404).json({ 
                 error: 'No cinema rooms found',
                 code: ERROR_CODES.ROOM_NOT_FOUND
@@ -305,7 +314,8 @@ const searchCinemaRoomsByName = async (req, res) => {
 
         res.json({
             message: 'Cinema rooms found',
-            rooms: rooms.map(formatRoomData)
+            rooms: result.rooms.map(formatRoomData),
+            pagination: result.pagination
         });
     } catch (error) {
         console.error('Search cinema rooms error:', error);
