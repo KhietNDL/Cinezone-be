@@ -180,7 +180,9 @@ const SellTicketPage = () => {
 
   return (
     <div className="w-full bg-[#fafbfc] p-[20px]">
-      <div className="flex flex-col justify-between items-center sm:flex-row gap-4">
+
+      <div className="flex flex-col justify-between items-end sm:flex-row gap-4">
+        <div className="w-[250px]"></div>
         <h1 className="text-3xl font-bold text-[#9810FA]">Sell Movie Ticket</h1>
         <Input.Search
           placeholder="Search movie..."
@@ -197,6 +199,7 @@ const SellTicketPage = () => {
           <div className="text-center my-8"><Spin size="large" /></div>
         ) : (
           <Swiper
+            key={movies.length}
             modules={[Navigation, Pagination]}
             breakpoints={swiperBreakpoints}
             navigation
@@ -222,7 +225,7 @@ const SellTicketPage = () => {
 
       {selectedMovie && (
         <>
-          <p className="flex items-center gap-1 font-semibold text-xl"><FaCalendarDays/> Select Day</p>
+          <p className="flex items-center gap-1 font-semibold text-xl"><FaCalendarDays /> Select Day</p>
           <ShowtimeButton
             selectedDay={selectedDay}
             onSelectDay={handleSelectDay}
@@ -257,7 +260,7 @@ const SellTicketPage = () => {
 
       {selectedMovie && selectedVersion && selectedDay && selectedTime && (
         <div className="flex items-center gap-2 ">
-          <div className="flex items-center gap-1 font-semibold text-xl"><FaLocationDot/> Room:</div>
+          <div className="flex items-center gap-1 font-semibold text-xl"><FaLocationDot /> Room:</div>
           <div className="font-semibold text-lg">{room}</div>
         </div>
       )}

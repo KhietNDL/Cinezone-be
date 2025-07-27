@@ -43,7 +43,7 @@ export default function ComboInformation() {
       try {
         if (status === "success" && paymentId) {
           await confirmPayment(paymentId);
-          console.log("Payment confirmed successfully!" );
+          console.log("Payment confirmed successfully!");
           console.log("PaymentId:", paymentId);
           toast.success("Payment confirmed successfully!");
         }
@@ -135,12 +135,15 @@ export default function ComboInformation() {
 
   return (
     <div className="p-4 w-full mx-auto bg-white">
-        <div>
-          <BackButton />
-        </div>
+      <div className='flex items-start justify-between gap-4 mb-6'>
+        <div className='w-[20%]'>
+        <BackButton />
+      </div>
       <div className="text-center py-8">
         {statusInfo.icon}
         <h1 className={`text-3xl font-bold mt-4 ${statusInfo.color}`}>{statusInfo.title}</h1>
+      </div>
+      <div className='w-[20%]'></div>
       </div>
       <div className="flex flex-col gap-6 mt-6 items-center">
         <div className="rounded-xl border border-gray-300 shadow-xl bg-white p-6 w-full">
@@ -164,7 +167,8 @@ export default function ComboInformation() {
               icon={<FaRedo />}
               onClick={handleTryAgain}
               className="w-full"
-              type="primary"
+              color="danger"
+              variant="solid"
             >
               Try Again
             </Button>
