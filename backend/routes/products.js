@@ -53,6 +53,54 @@ const upload = multer();
  *         description: Internal server error
  */
 router.get('/', productController.getAllProducts);
+/**
+ * @swagger
+ * /api/products/search:
+ *   get:
+ *     summary: Search products by name with pagination and sorting
+ *     tags: [Products]
+ *     parameters:
+ *       - in: query
+ *         name: name
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Product name to search (partial match)
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of products per page
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [ProductName, Price, Quantity, CreatedAt]
+ *           default: ProductName
+ *         description: Field to sort by
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: asc
+ *         description: Sort order (ascending or descending)
+ *     responses:
+ *       200:
+ *         description: Products found
+ *       400:
+ *         description: Missing or invalid product name
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/search', productController.searchProductsByName);
 /** 
  * @swagger
  * /api/products/{productId}:
@@ -196,5 +244,6 @@ router.delete('/:productId', auth, productController.deleteProduct);
  *         description: Internal server error
  */
 router.get('/combo-children/:productId', productController.getComboChildren);
+
 
 module.exports = router;

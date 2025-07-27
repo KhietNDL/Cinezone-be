@@ -346,21 +346,50 @@ router.post('/cancel/:bookingId', bookingController.cancelBooking);
  * @swagger
  * /api/bookings/search/user:
  *   get:
- *     summary: Find bookings by user's Email, CCCD, or PhoneNumber
+ *     summary: Find bookings by user's Email, CCCD, or PhoneNumber with pagination and sorting
  *     tags: [Bookings]
  *     parameters:
  *       - in: query
  *         name: email
  *         schema:
  *           type: string
+ *         description: User email to search
  *       - in: query
  *         name: cccd
  *         schema:
  *           type: string
+ *         description: User CCCD to search
  *       - in: query
  *         name: phone
  *         schema:
  *           type: string
+ *         description: User phone number to search
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of bookings per page
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [CreatedAt, BookingDate, TotalAmount, Status]
+ *           default: CreatedAt
+ *         description: Field to sort by
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: desc
+ *         description: Sort order (asc or desc)
  *     responses:
  *       200:
  *         description: Bookings found

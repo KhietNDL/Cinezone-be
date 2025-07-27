@@ -98,18 +98,48 @@ router.get('/getAll', getAllPromotions);
  * @swagger
  * /api/promotions/search:
  *   get:
- *     summary: Search promotions by code
+ *     summary: Search promotions by code with pagination and sorting
  *     tags: [Promotion Management]
  *     parameters:
  *       - in: query
  *         name: code
+ *         required: true
  *         schema:
  *           type: string
- *         required: true
- *         description: Code (or part of code) of the promotion
+ *         description: Promotion code to search (partial match)
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of promotions per page
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [CreatedAt, StartTime, EndTime, DiscountValue, Title]
+ *           default: CreatedAt
+ *         description: Field to sort by
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: desc
+ *         description: Sort order (ascending or descending)
  *     responses:
  *       200:
- *         description: List of matching promotions
+ *         description: Promotions found
+ *       400:
+ *         description: Missing or invalid promotion code
+ *       500:
+ *         description: Internal server error
  */
 router.get('/search', searchPromotionsByCode);
 
