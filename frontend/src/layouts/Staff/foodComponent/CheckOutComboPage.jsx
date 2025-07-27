@@ -135,13 +135,14 @@ export default function CheckOutComboPage() {
 
   return (
     <div className="p-4 mx-auto w-full bg-[#fafbfc]">
-      <div className="flex flex-col items-start justify-center gap-4 mb-6">
-        <div>
+      <div className="flex items-start justify-between gap-4 mb-6">
+        <div className='w-[20%]'>
           <BackButton />
         </div>
         <h1 className="text-3xl font-bold text-[#9810FA] flex lg:items-start items-center lg:justify-start justify-center flex-col">
           Confirm Combos
         </h1>
+         <div className='w-[20%]'></div>
       </div>
       <div className="px-8 w-full">
         <div className='block mb-2 font-medium text-lg'>

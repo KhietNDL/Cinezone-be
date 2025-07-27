@@ -7,7 +7,7 @@ import { setComboVisaResponse } from '../../../redux/features/comboSlice';
 import { toast } from 'react-toastify';
 import logo from '../../../assets/logoWeb.svg';
 import BackButton from '../component/BackButton';
-import { cancelBookingById, cancelProductsById } from '../../../services/APIForStaff/API';
+import { cancelBookingById, cancelProductsById} from '../../../services/APIForStaff/API';
 import { IoMdArrowRoundBack } from 'react-icons/io';
 
 export default function WaitingPaymentStaff() {
@@ -43,8 +43,8 @@ export default function WaitingPaymentStaff() {
 
     return (
         <div className="p-4 mx-auto w-full bg-[#fafbfc]">
-            <div className="flex flex-col items-start justify-center gap-4 mb-6">
-                <div>
+            <div className="flex items-start justify-between gap-4 mb-6">
+                <div className='w-[20%]'>
                     <button
                         onClick={handleCancel}
                         className='text-white bg-[#9810FA] hover:bg-[#9810fa9d] px-3 py-2 flex items-center gap-1 rounded-xl cursor-pointer'>
@@ -54,9 +54,10 @@ export default function WaitingPaymentStaff() {
                         </p>
                     </button>
                 </div>
-                <h1 className="text-3xl font-bold text-[#9810FA] flex lg:items-start items-center lg:justify-start justify-center flex-col">
+                <h1 className="mx-auto lg:mx-0 text-3xl font-bold text-[#9810FA] flex lg:items-start items-center lg:justify-start justify-center flex-col">
                     Pay with Stripe
                 </h1>
+                <div className='w-[20%]'></div>
             </div>
             <div className="mt-6 text-center w-full lg:w-[50%] mx-auto bg-[#201A3E] p-8 rounded-2xl">
                 <img src={logo} alt="Logo" className="w-50 h-auto mx-auto" />

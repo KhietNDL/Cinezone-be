@@ -91,22 +91,25 @@ export default function PrintTicket() {
         return <div>Loading ticket information...</div>;
     }
     return (
-        <div className='p-4 mx-auto w-full'>
-            <div className="flex flex-col items-start justify-center gap-4 mb-6">
-                <div>
+        <div className='p-4 w-full flex flex-col items-center justify-center bg-white'>
+            <div className="flex items-center justify-between gap-4 mb-6 w-full">
+                <div className='w-[20%]'>
                     <BackButton />
                 </div>
-                <h1 className="text-3xl font-bold text-[#9810FA] flex lg:items-start items-center lg:justify-start justify-center flex-col">
+                <h1 className="mx-auto lg:mx-0 text-3xl font-bold text-[#9810FA] flex lg:items-start items-center lg:justify-start justify-center flex-col">
                     Tickets
                 </h1>
+                <div className='w-[20%]'></div>
             </div>
 
             <div className='flex flex-col items-center justify-center h-full space-y-4'>
                 <div ref={componentRef}>
                     <div className='flex flex-col items-center justify-center'>
-                        <div className="w-full flex flex-col justify-center items-center rounded-xl space-y-2 bg-[linear-gradient(to_right,_#6366F1,_#8B5CF6,_#4F46E5)] mt-6 mb-6">
+                        <div className="w-full flex flex-col justify-center items-center rounded-xl space-y-2 
+                        bg-gradient-to-br from-[#FFD700] via-[#FFC300] to-[#FFB700] mt-6 mb-6">
                             <div className="relative flex h-[180px] w-[1000px] md:h-[200px] lg:h-[300px] p-5">
-                                <div className='w-[63%] h-full'>
+                                <div className='w-[63%] h-full bg-[linear-gradient(to_right,_#6366F1,_#8B5CF6,_#4F46E5)] 
+                                p-4 rounded-tl-xl rounded-bl-xl'>
                                     <div className="flex items-start gap-4 border-b border-white pb-2 w-[95%] text-white">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2">
@@ -116,19 +119,13 @@ export default function PrintTicket() {
                                                     className="w-[20%] h-[35px] object-cover"
                                                     style={{ filter: "brightness(0) invert(1)" }}
                                                 />
-                                                <div
-                                                    className="px-3 rounded-full shadow-md flex items-center justify-center"
-                                                    style={{
-                                                        background: "linear-gradient(90deg, #FACC15, #DDB61A, #DBBB3B, #CDB03D, #B1900C)",
-                                                        color: "#FFF8A7"
-                                                    }}
-                                                >
-                                                    <p className="font-bold p-2 text-sm"
-                                                        style={{
-
-                                                            lineHeight: "1rem",
-                                                            textShadow: "0 1px 2px Orange"
-                                                        }}>Now Showing</p>
+                                                <div className="px-3 rounded-full shadow-md flex items-center justify-center 
+                                                bg-[linear-gradient(to_right,_#FACC15,_#DDB61A,_#DBBB3B,_#CDB03D,_#B1900C)] 
+                                                text-[#FFF8A7]">
+                                                    <p className="font-bold p-2 text-sm leading-4"
+                                                        style={{ textShadow: "0 1px 2px orange" }}>
+                                                        Now Showing
+                                                    </p>
                                                 </div>
 
                                                 <VersionCard
@@ -152,11 +149,11 @@ export default function PrintTicket() {
                                             <FaAlignLeft /> Synopsis:
                                         </h5>
                                         <p className='p-2 text-sm'>
-                                            {movieInfo?.Description || "Movie description not available"}
+                                            {movieInfo?.ContentSynopsis || "Movie description not available"}
                                         </p>
                                     </div>
                                 </div>
-                                <div className='w-[37%] h-full'>
+                                <div className='w-[37%] h-full bg-[linear-gradient(to_right,_#6366F1,_#8B5CF6,_#4F46E5)] rounded-tr-xl rounded-br-xl'>
                                     <div className='flex flex-col items-start justify-center h-full text-white p-4 space-y-2 w-[100%]'>
                                         <p className='flex w-full'><strong className='w-[40%]'>Screen:</strong><span>{version || "Standard"}</span></p>
                                         <p className='flex w-full'><strong className='w-[40%]'>Showtime:</strong><span>{day} - {time || "N/A"}</span></p>
