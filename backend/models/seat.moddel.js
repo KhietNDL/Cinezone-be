@@ -25,13 +25,26 @@ class Seat {
     const SeatId = uuidv4();
     const CreatedAt = new Date();
     const IsDeleted = 0;
+    
+    // Kiểm tra xem SeatNumber đã tồn tại trong phòng chưa
+    const [existingSeat] = await db.promise().query(
+      `SELECT SeatId FROM Seats WHERE CinemaRoomId = ? AND SeatNumber = ? AND IsDeleted = 0`,
+      [CinemaRoomId, SeatNumber]
+    );
+    
+    if (existingSeat.length > 0) {
+      throw new Error(`Seat ${SeatNumber} already exists in this cinema room`);
+    }
+    
     const sql = `INSERT INTO Seats (SeatId, CinemaRoomId, SeatNumber, Type, Price, IsDeleted, CreatedAt, CreatedBy) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
     await db.promise().query(sql, [SeatId, CinemaRoomId, SeatNumber, Type, Price, IsDeleted, CreatedAt, CreatedBy]);
-    // Tăng số lượng ghế trong CinemaRooms
+    
+    // Cập nhật SeatQuantity trong CinemaRooms khi thêm ghế mới thành công
     await db.promise().query(
       `UPDATE CinemaRooms SET SeatQuantity = SeatQuantity + 1 WHERE CinemaRoomId = ?`,
       [CinemaRoomId]
     );
+    
     return SeatId;
   }
 
@@ -80,5 +93,6 @@ class Seat {
     }
   }
 }
+
 
 module.exports = Seat;

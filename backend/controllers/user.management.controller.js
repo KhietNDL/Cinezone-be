@@ -1,6 +1,7 @@
 const UserManagement = require("../models/user.management.model");
 const jwt = require("jsonwebtoken");
 const bucket = require("../config/firebase"); // Nếu dùng Firebase
+const { blacklistUserId } = require('../middlewares/auth.middleware');
 
 // Get all users
 const getAllUsers = async (req, res) => {
@@ -28,8 +29,7 @@ const getUsersbyName = async (req, res) => {
   const { name, page = 1, limit = 0, sortBy = 'FullName', sortOrder = 'asc' } = req.query;
   try {
     const result = await UserManagement.getUsersbyName(name, parseInt(page), parseInt(limit), sortBy, sortOrder);
-    
-    // Chỉ lấy các trường cần thiết
+
     const filteredUsers = result.users.map((user) => ({
       UserId: user.UserId,
       FullName: user.FullName,
@@ -43,7 +43,7 @@ const getUsersbyName = async (req, res) => {
       ScoreBalance: user.ScoreBalance,
       CreatedAt: user.CreatedAt,
     }));
-    
+
     res.status(200).json({
       message: "Users retrieved successfully",
       users: filteredUsers,
@@ -93,10 +93,14 @@ const getUserById = async (req, res) => {
 
 // Get user by email
 const getUserByEmail = async (req, res) => {
+  // Ưu tiên lấy từ query, sau đó body, sau đó params
   const email =
     (req && req.query && req.query.email) ||
     (req && req.body && req.body.email) ||
     (req && req.params && req.params.email);
+
+  // Lấy các tham số phân trang và sort
+  const { page = 1, limit = 0, sortBy = 'FullName', sortOrder = 'asc' } = req.query;
 
   if (!email) {
     return res
@@ -105,13 +109,9 @@ const getUserByEmail = async (req, res) => {
   }
 
   try {
-    const user = await UserManagement.getUserByEmail(email);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    const result = await UserManagement.getUserByEmail(email, parseInt(page), parseInt(limit), sortBy, sortOrder);
 
-    // Chỉ lấy các trường cần thiết
-    const filteredUser = {
+    const filteredUsers = result.users.map((user) => ({
       UserId: user.UserId,
       FullName: user.FullName,
       DateOfBirth: user.DateOfBirth,
@@ -123,10 +123,12 @@ const getUserByEmail = async (req, res) => {
       avatar_url: user.avatar_url,
       ScoreBalance: user.ScoreBalance,
       CreatedAt: user.CreatedAt,
-    };
+    }));
+
     res.status(200).json({
-      message: "User retrieved successfully",
-      user: filteredUser,
+      message: "Users retrieved successfully",
+      users: filteredUsers,
+      pagination: result.pagination,
     });
   } catch (error) {
     console.error("Get user by email error:", error);
@@ -195,6 +197,7 @@ const deleteUser = async (req, res) => {
   try {
     const result = await UserManagement.deleteUser(userId);
     if (result) {
+      blacklistUserId(userId); // Force logout for deleted user
       res.status(200).json({ message: "User deleted successfully" });
     } else {
       res.status(404).json({ message: "User not found or already deleted" });
@@ -336,6 +339,51 @@ const getUserByPhoneNumber = async (req, res) => {
   }
 };
 
+// Find users by information
+const findUsersByInfo = async (req, res) => {
+  const { email, cccd, phone, name, page = 1, limit = 0, sortBy = 'FullName', sortOrder = 'asc' } = req.query;
+  try {
+    const result = await UserManagement.findUsersByInfo({ email, cccd, phone, name }, parseInt(page), parseInt(limit), sortBy, sortOrder);
+
+    const filteredUsers = result.users.map((user) => ({
+      UserId: user.UserId,
+      FullName: user.FullName,
+      DateOfBirth: user.DateOfBirth,
+      Sex: user.Sex,
+      Email: user.Email,
+      PhoneNumber: user.PhoneNumber,
+      Address: user.Address,
+      CCCD: user.CCCD,
+      avatar_url: user.avatar_url,
+      ScoreBalance: user.ScoreBalance,
+      CreatedAt: user.CreatedAt,
+    }));
+
+    res.status(200).json({
+      message: "Users found",
+      users: filteredUsers,
+      pagination: result.pagination,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Unban user
+const unbanUser = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const result = await UserManagement.unbanUser(userId);
+    if (result) {
+      res.status(200).json({ message: "User unbanned successfully" });
+    } else {
+      res.status(404).json({ message: "User not found or not banned" });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getAllUsers,
   getUsersbyName,
@@ -346,4 +394,6 @@ module.exports = {
   updateUser,
   getUserByCCCD,
   getUserByPhoneNumber,
+  findUsersByInfo,
+  unbanUser,
 };

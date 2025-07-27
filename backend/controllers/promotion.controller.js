@@ -339,36 +339,11 @@ const deletePromotion = async (req, res) => {
 // Search promotions by code
 const searchPromotionsByCode = async (req, res) => {
     try {
-        const { code } = req.query;
-
-        // Validate search query
-        if (!code || typeof code !== 'string' || code.trim().length === 0) {
-            return res.status(400).json({
-                error: 'Valid code query parameter is required',
-                code: ERROR_CODES.INVALID_INPUT
-            });
-        }
-
-        const promotions = await Promotion.searchPromotionsByCode(code.trim());
-        if (!promotions || promotions.length === 0) {
-            return res.status(404).json({
-                error: 'No promotions found',
-                code: ERROR_CODES.PROMOTION_NOT_FOUND
-            });
-        }
-
-        const formattedPromotions = promotions.map(formatPromotionData);
-
-        res.json({
-            message: 'Promotions found',
-            promotions: formattedPromotions
-        });
+        const { code, page = 1, limit = 10, sortBy = "CreatedAt", sortOrder = "desc" } = req.query;
+        const result = await Promotion.searchPromotionsByCode(code, parseInt(page), parseInt(limit), sortBy, sortOrder);
+        res.json(result);
     } catch (error) {
-        console.error('Search promotions error:', error);
-        res.status(500).json({
-            error: 'Internal server error while searching promotions',
-            code: ERROR_CODES.SERVER_ERROR
-        });
+        res.status(500).json({ error: error.message });
     }
 };
 

@@ -294,9 +294,9 @@ const cancelBooking = async (req, res) => {
 
 const findBookingsByUserInfo = async (req, res) => {
   try {
-    const { email, cccd, phone } = req.query;
-    const bookings = await Booking.findBookingsByUserInfo({ email, cccd, phone });
-    res.json(bookings);
+    const { email, cccd, phone, page = 1, limit = 10, sortBy = "CreatedAt", sortOrder = "desc" } = req.query;
+    const result = await Booking.findBookingsByUserInfo({ email, cccd, phone, page, limit, sortBy, sortOrder });
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
