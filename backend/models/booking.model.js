@@ -630,7 +630,7 @@ class Booking {
       status: rows[0].Status
     };
   }
-  static async findBookingsByUserInfo({ email, cccd, phone }) {
+  static async findBookingsByUserInfo({ email, cccd, phone, page = 1, limit = 10, sortBy = "CreatedAt", sortOrder = "desc" }) {
   let where = [];
   let params = [];
   if (email) {
@@ -645,24 +645,53 @@ class Booking {
     where.push("u.PhoneNumber LIKE ?");
     params.push(`%${phone}%`);
   }
-  if (where.length === 0) return [];
+  if (where.length === 0) return { data: [], pagination: { page, limit, total: 0, totalPages: 0 } };
 
-  const [rows] = await db.promise().query(
-    `
+  // Validate sort fields
+  const allowedSort = ["CreatedAt", "BookingDate", "TotalAmount", "Status"];
+  if (!allowedSort.includes(sortBy)) sortBy = "CreatedAt";
+  sortOrder = sortOrder.toLowerCase() === "asc" ? "ASC" : "DESC";
+
+  let sql = `
     SELECT b.BookingId
     FROM Bookings b
     JOIN Users u ON b.MemberId = u.UserId
     WHERE (${where.join(" OR ")}) AND b.IsDeleted = 0
-    `,
-    params
-  );
+    ORDER BY ${sortBy} ${sortOrder}
+  `;
+  let total = 0;
+  if (limit > 0) {
+    const [[countRow]] = await db.promise().query(
+      `
+      SELECT COUNT(*) as total
+      FROM Bookings b
+      JOIN Users u ON b.MemberId = u.UserId
+      WHERE (${where.join(" OR ")}) AND b.IsDeleted = 0
+      `,
+      params
+    );
+    total = countRow.total;
+    const offset = (page - 1) * limit;
+    sql += ` LIMIT ? OFFSET ?`;
+    params.push(Number(limit), Number(offset));
+  }
+
+  const [rows] = await db.promise().query(sql, params);
   // Lấy chi tiết từng booking
   const bookingDetails = [];
   for (const row of rows) {
     const detail = await Booking.getBookingDetail(row.BookingId);
     if (detail) bookingDetails.push(detail);
   }
-  return bookingDetails;
+  return {
+    data: bookingDetails,
+    pagination: {
+      page: Number(page),
+      limit: Number(limit),
+      total,
+      totalPages: limit > 0 ? Math.ceil(total / limit) : 1
+    }
+  };
 }
 }
 

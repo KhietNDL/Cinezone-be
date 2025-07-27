@@ -8,8 +8,10 @@ const {
   createEmployee,
   deleteEmployee,
   updateEmployee,
+  findEmployeesByInfo,
+  unbanEmployee,
 } = require("../controllers/employee.controller");
-const { auth, isAdminOrEmployee } = require("../middlewares/auth.middleware");
+const { auth, isAdminOrEmployee, isAdmin } = require("../middlewares/auth.middleware");
 const { validateEmployee } = require("../middlewares/employee.validator");
 const multer = require("multer");
 const upload = multer();
@@ -278,5 +280,93 @@ router.put(
   validateEmployee,
   updateEmployee
 );
+
+/**
+ * @swagger
+ * /api/employee/search/info:
+ *   get:
+ *     summary: Search employees by email, CCCD, phone, or name (partial match, pagination, sorting)
+ *     tags: [Employee Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: email
+ *         schema:
+ *           type: string
+ *         description: Partial or full email to search
+ *       - in: query
+ *         name: cccd
+ *         schema:
+ *           type: string
+ *         description: Partial or full CCCD to search
+ *       - in: query
+ *         name: phone
+ *         schema:
+ *           type: string
+ *         description: Partial or full phone number to search
+ *       - in: query
+ *         name: name
+ *         schema:
+ *           type: string
+ *         description: Partial or full name to search
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of employees per page (0 = all)
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [FullName, DateOfBirth, Email, PhoneNumber, CreatedAt]
+ *           default: FullName
+ *         description: Field to sort by
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: asc
+ *         description: Sort order (asc or desc)
+ *     responses:
+ *       200:
+ *         description: Employees found
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/search/info', auth, isAdminOrEmployee, findEmployeesByInfo);
+
+/**
+ * @swagger
+ * /api/employee/unban/{userId}:
+ *   post:
+ *     summary: Unban (restore) a soft-deleted employee
+ *     tags: [Employee Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the employee to unban
+ *     responses:
+ *       200:
+ *         description: Employee unbanned successfully
+ *       404:
+ *         description: Employee not found or not banned
+ *       500:
+ *         description: Internal server error
+ */
+router.post('/unban/:userId', auth, isAdmin, unbanEmployee);
 
 module.exports = router;

@@ -41,12 +41,12 @@ const getAllMovies = async (req, res) => {
 };
 
 const getMoviesByName = async (req, res) => {
-  const { name } = req.query;
+  const { name, page = 1, limit = 0, sortBy = 'FromDate', sortOrder = 'desc' } = req.query;
   try {
     if (!name) {
       return res.status(400).json({ error: "Movie name is required" });
     }
-    const movies = await Movie.getMoviesByName(name);
+    const movies = await Movie.getMoviesByName(name, parseInt(page), parseInt(limit), sortBy, sortOrder);
 
     if (movies.length === 0) {
       return res.status(200).json({

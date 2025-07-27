@@ -48,14 +48,55 @@ class Movie {
     };
   }
 
-  static async getMoviesByName(name) {
-    const [rows] = await db
-      .promise()
-      .query(
-        "SELECT * FROM Movies WHERE (NameOfVietnamese LIKE ? OR NameOfEnglish LIKE ?) AND IsDeleted = 0",
-        [`%${name}%`, `%${name}%`]
+  static async getMoviesByName(name, page = 1, limit = 0, sortBy = 'FromDate', sortOrder = 'desc') {
+    const allowedSortFields = ['NameOfVietnamese', 'NameOfEnglish', 'FromDate', 'ToDate'];
+    if (!allowedSortFields.includes(sortBy)) sortBy = 'FromDate';
+    sortOrder = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+
+    let moviesQuery = `SELECT * FROM Movies WHERE (NameOfVietnamese LIKE ? OR NameOfEnglish LIKE ?) AND IsDeleted = 0 ORDER BY ${sortBy} ${sortOrder}`;
+    let moviesParams = [`%${name}%`, `%${name}%`];
+    if (limit > 0) {
+      const offset = (page - 1) * limit;
+      moviesQuery += " LIMIT ? OFFSET ?";
+      moviesParams.push(limit, offset);
+    }
+    const [movies] = await db.promise().query(moviesQuery, moviesParams);
+
+    const movieIds = movies.map(m => m.MovieId);
+    let versions = [];
+    if (movieIds.length > 0) {
+      const [versionRows] = await db.promise().query(
+        `SELECT * FROM Version WHERE MovieId IN (${movieIds.map(() => '?').join(',')}) AND IsDeleted = 0`,
+        movieIds
       );
-    return rows;
+      versions = versionRows;
+    }
+
+    const moviesWithVersions = movies.map(movie => ({
+      ...movie,
+      versions: versions.filter(v => v.MovieId === movie.MovieId)
+    }));
+
+    let totalMovies = movies.length;
+    if (limit > 0) {
+      const [countResult] = await db
+        .promise()
+        .query(
+          "SELECT COUNT(*) as total FROM Movies WHERE (NameOfVietnamese LIKE ? OR NameOfEnglish LIKE ?) AND IsDeleted = 0",
+          [`%${name}%`, `%${name}%`]
+        );
+      totalMovies = countResult[0].total;
+    }
+
+    return {
+      movies: moviesWithVersions,
+      pagination: {
+        total: totalMovies,
+        currentPage: page,
+        totalPages: limit > 0 ? Math.ceil(totalMovies / limit) : 1,
+        limit: limit > 0 ? limit : movies.length,
+      },
+    };
   }
 
   static async getMovieById(movieId) {

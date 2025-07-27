@@ -374,3 +374,12 @@ export const convertScoreToMoney = async (userId, pointsToExchange, bookingId) =
     handleError(error);
   }
 };
+
+export const checkMemberShip = async (userId) => {
+  try {
+    const response = await api.get(`/user/${userId}/membership`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};

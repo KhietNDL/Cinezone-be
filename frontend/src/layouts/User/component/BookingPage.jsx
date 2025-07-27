@@ -193,6 +193,7 @@ const BookingPage = () => {
       try {
         const response = await getShowtimeByMovieId(movie?.MovieId);
         setShowtimes(response.showtimes || []);
+        console.log("DATA NGAY",response)
       } catch (error) {
         console.error("Error fetching showtimes:", error);
         toast.error("Failed to load showtimes", {

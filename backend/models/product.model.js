@@ -132,6 +132,45 @@ class Product {
       children
     };
   }
+
+  static async searchProductsByName(name, page = 1, limit = 10, sortBy = "ProductName", sortOrder = "asc") {
+    const allowedSortFields = ["ProductName", "Price", "Quantity", "CreatedAt"];
+    if (!allowedSortFields.includes(sortBy)) sortBy = "ProductName";
+    sortOrder = sortOrder.toLowerCase() === "desc" ? "DESC" : "ASC";
+
+    let productsQuery = `SELECT * FROM Products WHERE IsDeleted = 0 AND ProductName LIKE ? ORDER BY ${sortBy} ${sortOrder}`;
+    let productsParams = [`%${name}%`];
+    let totalProducts = 0;
+
+    if (limit > 0) {
+      const offset = (page - 1) * limit;
+      productsQuery += " LIMIT ? OFFSET ?";
+      productsParams.push(limit, offset);
+    }
+    const [products] = await db.promise().query(productsQuery, productsParams);
+
+
+    if (limit > 0) {
+      const [countResult] = await db.promise().query(
+        "SELECT COUNT(*) as total FROM Products WHERE IsDeleted = 0 AND ProductName LIKE ?",
+        [`%${name}%`]
+      );
+      totalProducts = countResult[0].total;
+      console.log('[searchProductsByName] Total products:', totalProducts);
+    } else {
+      totalProducts = products.length;
+    }
+
+    return {
+      products,
+      pagination: {
+        total: totalProducts,
+        currentPage: page,
+        totalPages: limit > 0 ? Math.ceil(totalProducts / limit) : 1,
+        limit: limit > 0 ? limit : products.length,
+      },
+    };
+  }
 }
 
 module.exports = Product;

@@ -339,6 +339,51 @@ const getUserByPhoneNumber = async (req, res) => {
   }
 };
 
+// Find users by information
+const findUsersByInfo = async (req, res) => {
+  const { email, cccd, phone, name, page = 1, limit = 0, sortBy = 'FullName', sortOrder = 'asc' } = req.query;
+  try {
+    const result = await UserManagement.findUsersByInfo({ email, cccd, phone, name }, parseInt(page), parseInt(limit), sortBy, sortOrder);
+
+    const filteredUsers = result.users.map((user) => ({
+      UserId: user.UserId,
+      FullName: user.FullName,
+      DateOfBirth: user.DateOfBirth,
+      Sex: user.Sex,
+      Email: user.Email,
+      PhoneNumber: user.PhoneNumber,
+      Address: user.Address,
+      CCCD: user.CCCD,
+      avatar_url: user.avatar_url,
+      ScoreBalance: user.ScoreBalance,
+      CreatedAt: user.CreatedAt,
+    }));
+
+    res.status(200).json({
+      message: "Users found",
+      users: filteredUsers,
+      pagination: result.pagination,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Unban user
+const unbanUser = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const result = await UserManagement.unbanUser(userId);
+    if (result) {
+      res.status(200).json({ message: "User unbanned successfully" });
+    } else {
+      res.status(404).json({ message: "User not found or not banned" });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getAllUsers,
   getUsersbyName,
@@ -349,4 +394,6 @@ module.exports = {
   updateUser,
   getUserByCCCD,
   getUserByPhoneNumber,
+  findUsersByInfo,
+  unbanUser,
 };

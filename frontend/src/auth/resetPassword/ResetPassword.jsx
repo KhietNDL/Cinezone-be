@@ -15,6 +15,7 @@ import imageLogin2 from "../../assets/imageLogin2.jpg";
 import imageLogin3 from "../../assets/imageLogin3.jpg";
 import imageLogin4 from "../../assets/imageLogin4.jpg";
 import { resetPassword } from "../../services/API";
+import { getCurrentMovies } from "../../services/API";
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -37,8 +38,40 @@ const ResetPassword = () => {
     },
   });
 
-  // Movie backgrounds - same as verification form
-  const movieBackgrounds = [imageLogin1, imageLogin2, imageLogin3, imageLogin4];
+  const [movieBackgrounds, setMovieBackgrounds] = useState([
+    imageLogin1,
+    imageLogin2,
+    imageLogin3,
+    imageLogin4,
+  ]);
+
+  useEffect(() => {
+    const fetchPosters = async () => {
+      try {
+        const data = await getCurrentMovies();
+        const posters = data?.data
+          ?.map((movie) => {
+            if (!movie.PosterImage) return null;
+            if (movie.PosterImage.startsWith("http")) return movie.PosterImage;
+            return `http://cinezone:4458${movie.PosterImage}`;
+          })
+          .filter(Boolean);
+        setMovieBackgrounds(
+          posters && posters.length > 0
+            ? posters
+            : [imageLogin1, imageLogin2, imageLogin3, imageLogin4]
+        );
+      } catch {
+        setMovieBackgrounds([
+          imageLogin1,
+          imageLogin2,
+          imageLogin3,
+          imageLogin4,
+        ]);
+      }
+    };
+    fetchPosters();
+  }, []);
 
   // Auto change background every 4 seconds
   useEffect(() => {

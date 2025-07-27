@@ -11,7 +11,9 @@ const {
     getUserByPhoneNumber,
     createUser,
     deleteUser,
-    updateUser
+    updateUser,
+    findUsersByInfo,
+    unbanUser
 } = require("../controllers/user.management.controller");
 const { createUserValidator, updateUserValidator } = require('../middlewares/user.management.validator');
 const { auth, isAdmin, isAdminOrEmployee} = require("../middlewares/auth.middleware");
@@ -456,5 +458,93 @@ router.post('/:userId/exchange-score', auth, exchangeScore);
  *         description: Server error
  */
 router.get('/:userId/membership', userController.getMembershipInfo);
+
+/**
+ * @swagger
+ * /api/user/search/info:
+ *   get:
+ *     summary: Search users by email, CCCD, phone, or name (partial match, pagination, sorting)
+ *     tags: [User Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: email
+ *         schema:
+ *           type: string
+ *         description: Partial or full email to search
+ *       - in: query
+ *         name: cccd
+ *         schema:
+ *           type: string
+ *         description: Partial or full CCCD to search
+ *       - in: query
+ *         name: phone
+ *         schema:
+ *           type: string
+ *         description: Partial or full phone number to search
+ *       - in: query
+ *         name: name
+ *         schema:
+ *           type: string
+ *         description: Partial or full name to search
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of users per page (0 = all)
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [FullName, DateOfBirth, Email, PhoneNumber, CreatedAt]
+ *           default: FullName
+ *         description: Field to sort by
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: asc
+ *         description: Sort order (asc or desc)
+ *     responses:
+ *       200:
+ *         description: Users found
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/search/info', auth, isAdminOrEmployee, findUsersByInfo);
+
+/**
+ * @swagger
+ * /api/user/unban/{userId}:
+ *   post:
+ *     summary: Unban (restore) a soft-deleted user
+ *     tags: [User Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the user to unban
+ *     responses:
+ *       200:
+ *         description: User unbanned successfully
+ *       404:
+ *         description: User not found or not banned
+ *       500:
+ *         description: Internal server error
+ */
+router.post('/unban/:userId', auth, isAdmin, unbanUser);
 
 module.exports = router;

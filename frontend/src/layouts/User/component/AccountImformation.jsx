@@ -96,7 +96,7 @@ const AccountInformation = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] p-4 sm:p-5">
+    <div className="bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] p-4 sm:p-5">
       <div className="lg:hidden absolute mt-20 top-5 left-4 z-50">
         <button
           onClick={toggleSidebar}
@@ -105,9 +105,9 @@ const AccountInformation = () => {
           {isSidebarOpen ? <FaTimes size={20} /> : <FaBars size={20} />}
         </button>
       </div>
-      <div className="flex flex-col lg:flex-row w-full mt-35 lg:mt-22 gap-4 lg:gap-8 min-h-[calc(100vh-2rem)] sm:min-h-[calc(100vh-2.5rem)]">
+      <div className="flex flex-col lg:flex-row w-full mt-35 lg:mt-22 gap-4 lg:gap-8">
         <div
-          className={`fixed lg:static inset-y-0 left-0 z-50 lg:w-[30%] w-80 max-w-sm bg-white rounded-2xl shadow-lg p-6 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+          className={`fixed lg:static inset-y-0 left-0 z-20 lg:w-[30%] w-80 max-w-sm bg-white rounded-2xl shadow-lg p-6 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
             isSidebarOpen ? "translate-x-0" : "-translate-x-full"
           } flex flex-col`}
         >

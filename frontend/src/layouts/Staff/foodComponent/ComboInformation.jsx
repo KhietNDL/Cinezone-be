@@ -1,27 +1,58 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button, Image, Table } from 'antd';
 import { FaPlus, FaRedo, FaTimes } from "react-icons/fa";
 import { CheckCircleTwoTone, CloseCircleTwoTone } from "@ant-design/icons";
 import { useSelector, useDispatch } from "react-redux";
-import { clearComboCart, clearOrderInfo } from "../../../redux/features/comboSlice";
+import { clearComboCart, clearOrderInfo, resetCart } from "../../../redux/features/comboSlice";
 import './ComboPage.css';
-import { cancelProductsById } from '../../../services/APIForStaff/API';
+import { cancelProductsById, confirmPayment } from '../../../services/APIForStaff/API';
 import { toast } from 'react-toastify';
 
 export default function ComboInformation() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { search } = useLocation();
+  const comboVisaResponse = useSelector(state => state.combo.comboVisaResponse);
+  const comboData = useSelector((state) => state.combo);
+
 
   const params = new URLSearchParams(search);
   const momoResult = params.get('resultCode');
-  const status = momoResult ? momoResult === "0" ? "success" : "error" : "success";
+  const zaloStatus = params.get('status');
+  let status = "success";
+
+  if (momoResult !== null) {
+    status = momoResult === "0" ? "success" : "error";
+  } else if (zaloStatus !== null) {
+    status = zaloStatus === "1" ? "success" : "error";
+  } else if (comboVisaResponse) {
+    status = comboVisaResponse.status === "succeeded" ? "success" : "error";
+  }
+
+  const paymentId = params.get('paymentId') || comboData?.paymentId;
 
   const cart = useSelector(state => state.combo.cart) || [];
   const orderProductId = useSelector(state => state.combo.orderProductId);
   const formatPrice = (price) => price?.toLocaleString('vi-VN');
   const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  useEffect(() => {
+    const confirm = async () => {
+      try {
+        if (status === "success" && paymentId) {
+          await confirmPayment(paymentId);
+          console.log("Payment confirmed successfully!" );
+          console.log("PaymentId:", paymentId);
+          toast.success("Payment confirmed successfully!");
+        }
+      } catch (error) {
+        toast.error("Failed to confirm payment");
+        console.error(error);
+      }
+    };
+    confirm();
+  }, [status, paymentId]);
 
   const statusMap = {
     success: {
@@ -45,12 +76,14 @@ export default function ComboInformation() {
   const handleNewCombo = () => {
     dispatch(clearComboCart());
     dispatch(clearOrderInfo());
+    dispatch(resetCart());
     navigate("/staff/combo-selling");
   };
 
   const handleCancel = () => {
     dispatch(clearComboCart());
     dispatch(clearOrderInfo());
+    dispatch(resetCart());
     navigate("/staff/combo-selling");
   };
 

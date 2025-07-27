@@ -144,6 +144,16 @@ const getComboChildren = async (req, res) => {
   }
 };
 
+const searchProductsByName = async (req, res) => {
+  try {
+    const { name, page = 1, limit = 10, sortBy = "ProductName", sortOrder = "asc" } = req.query;
+    const result = await Product.searchProductsByName(name, parseInt(page), parseInt(limit), sortBy, sortOrder);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getAllProducts,
   getProductById,
@@ -151,4 +161,5 @@ module.exports = {
   updateProduct,
   deleteProduct,
   getComboChildren,
+  searchProductsByName,
 };
