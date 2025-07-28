@@ -262,7 +262,12 @@ export const deleteMovie = async (movieId) => {
   }
 };
 export const searchMovies = async (params) => {
-  return api.get("/movie/search", { params });
+  try {
+    const response = await api.get("/movie/search", { params });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
 };
 
 // API cho Employee

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   createEmployee,
   deleteEmployee,
@@ -30,7 +30,6 @@ const EmployeeManagement = () => {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [selectedEmployeeForTooltip, setSelectedEmployeeForTooltip] =
     useState(null);
-  // eslint-disable-next-line no-unused-vars
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const itemsPerPage = 5;
   const [searchEmployee, setSearchEmployee] = useState("");
@@ -49,95 +48,90 @@ const EmployeeManagement = () => {
   const [sortBy, setSortBy] = useState("FullName");
   const [sortOrder, setSortOrder] = useState("asc");
 
-  const getEmployees = async () => {
-    try {
-      setLoading(true);
-      const response = await getEmployee({ page: page, limit: itemsPerPage });
-      if (response.data) {
-        setEmployees(response.data);
-        if (response.pagination) {
-          setTotalPages(response.pagination.totalPages);
-          setTotalEmployees(response.pagination.total);
+  // Removed getEmployees function - now using handleSearchEmployees for all data fetching
+
+  // Initial load - removed since handleSearchEmployees useEffect handles this
+
+  const handleSearchEmployees = useCallback(
+    async (searchTerm) => {
+      try {
+        setLoading(true);
+        const params = {
+          page: page,
+          limit: itemsPerPage,
+          sortBy: sortBy,
+          sortOrder: sortOrder,
+        };
+
+        if (searchTerm.trim() === "") {
+          const response = await getEmployee(params);
+          if (response.data) {
+            setEmployees(response.data);
+            if (response.pagination) {
+              setTotalPages(response.pagination.totalPages);
+              setTotalEmployees(response.pagination.total);
+            }
+          }
+        } else {
+          const response = await searchEmployees(searchTerm, params);
+          if (response.employees) {
+            setEmployees(response.employees);
+            if (response.pagination) {
+              setTotalPages(response.pagination.totalPages);
+              setTotalEmployees(response.pagination.total);
+            } else {
+              // Fallback for backward compatibility
+              const total = response.employees.length;
+              setTotalEmployees(total);
+              setTotalPages(Math.ceil(total / itemsPerPage));
+            }
+          }
         }
+      } catch (error) {
+        console.error("Failed to search employees:", error);
+        toast.error("Failed to search employees!");
+        setEmployees([]);
+        setTotalPages(0);
+        setTotalEmployees(0);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Failed to fetch employees:", error);
-      toast.error("Failed to fetch employees!");
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [page, itemsPerPage, sortBy, sortOrder]
+  );
 
+  const searchTimeoutRef = useRef(null);
+  const isSearchTermChanging = useRef(false);
+
+  // Handle search term changes with debounce
   useEffect(() => {
-    getEmployees();
-  }, [itemsPerPage, page]);
+    isSearchTermChanging.current = true;
 
-  const handleSearchEmployees = async (searchTerm) => {
-    try {
-      setLoading(true);
-      if (searchTerm.trim() === "") {
-        getEmployees();
-      } else {
-        const response = await searchEmployees(searchTerm);
-        if (response.employees) {
-          setEmployees(response.employees);
-          // Calculate total pages based on search results
-          const total = response.employees.length;
-          setTotalEmployees(total);
-          setTotalPages(Math.ceil(total / itemsPerPage));
-          setPage(1); // Reset to first page on search
-        }
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      handleSearchEmployees(searchEmployee);
+      isSearchTermChanging.current = false;
+    }, 300);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
       }
-    } catch (error) {
-      console.error("Failed to search employees:", error);
-      toast.error("Failed to search employees!");
-      setEmployees([]);
-      setTotalPages(0);
-      setTotalEmployees(0);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+  }, [searchEmployee, handleSearchEmployees]);
 
+  // Handle page, sortBy, sortOrder changes without debounce
   useEffect(() => {
-    const debounceSearch = setTimeout(
-      () => handleSearchEmployees(searchEmployee),
-      300
-    );
-    return () => clearTimeout(debounceSearch);
-  }, [searchEmployee]);
-
-  const filteredEmployees = useMemo(() => {
-    return employees.filter(
-      (emp) =>
-        (emp.FullName &&
-          emp.FullName.toLowerCase().includes(searchEmployee.toLowerCase())) ||
-        (emp.Email &&
-          emp.Email.toLowerCase().includes(searchEmployee.toLowerCase()))
-    );
-  }, [employees, searchEmployee]);
-
-  // Sorting logic
-  const sortedEmployees = useMemo(() => {
-    const sorted = [...filteredEmployees];
-    if (sortBy === "FullName" || sortBy === "Email") {
-      sorted.sort((a, b) => {
-        const aValue = (a[sortBy] || "").toLowerCase();
-        const bValue = (b[sortBy] || "").toLowerCase();
-        if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
-        if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
-        return 0;
-      });
+    if (!isSearchTermChanging.current) {
+      handleSearchEmployees(searchEmployee);
     }
-    return sorted;
-  }, [filteredEmployees, sortBy, sortOrder]);
+  }, [page, sortBy, sortOrder, handleSearchEmployees, searchEmployee]);
 
-  // Paginate sorted employees
-  const paginatedEmployees = useMemo(() => {
-    const startIndex = (page - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return sortedEmployees.slice(startIndex, endIndex);
-  }, [sortedEmployees, page, itemsPerPage]);
+  // Remove client-side filtering and sorting since we now handle this server-side
+  // Server-side pagination - use employees directly
 
   const validateForm = () => {
     if (!fullName || fullName.length < 6 || fullName.length > 100) {
@@ -220,7 +214,7 @@ const EmployeeManagement = () => {
       resetForm();
       setShowAddForm(false);
       toast.success("Employee added successfully!");
-      getEmployees(); // Refresh the list to update pagination
+      handleSearchEmployees(searchEmployee); // Refresh current search results
     } catch (error) {
       console.error("Failed to add employee:", error);
     } finally {
@@ -285,7 +279,7 @@ const EmployeeManagement = () => {
       setSelectedEmployee(null);
       resetForm();
       toast.success("Employee updated successfully!");
-      getEmployees(); // Refresh the list to update pagination
+      handleSearchEmployees(searchEmployee); // Refresh current search results
     } catch (error) {
       console.error("Failed to update employee:", error);
     } finally {
@@ -308,7 +302,7 @@ const EmployeeManagement = () => {
       setShowDeletePopup(false);
       setSelectedEmployee(null);
       toast.success("Employee deleted successfully!");
-      getEmployees(); // Refresh the list to update pagination
+      handleSearchEmployees(searchEmployee); // Refresh current search results
     } catch (error) {
       console.error("Failed to delete employee:", error);
       toast.error(
@@ -361,7 +355,7 @@ const EmployeeManagement = () => {
       setSortBy(column);
       setSortOrder("asc");
     }
-    setPage(1);
+    setPage(1); // Reset to first page when sorting changes
   };
 
   return (
@@ -404,7 +398,10 @@ const EmployeeManagement = () => {
           <HeaderStats totalEmployees={totalEmployees} />
           <SearchAndAdd
             searchEmployee={searchEmployee}
-            setSearchEmployee={setSearchEmployee}
+            setSearchEmployee={(term) => {
+              setSearchEmployee(term);
+              setPage(1); // Reset to first page when searching
+            }}
             setPage={setPage}
             resetForm={resetForm}
             setShowAddForm={setShowAddForm}
@@ -414,7 +411,7 @@ const EmployeeManagement = () => {
             {/* Table Layout for sm and above */}
             <div className="hidden sm:block">
               <EmployeeTable
-                employees={paginatedEmployees} // Use paginated data
+                employees={employees} // Use server-side paginated data
                 page={page}
                 itemsPerPage={itemsPerPage}
                 handleEdit={handleEdit}
@@ -428,7 +425,7 @@ const EmployeeManagement = () => {
             </div>
             {/* Card Layout for Mobile */}
             <div className="block sm:hidden space-y-4">
-              {paginatedEmployees.map((emp) => (
+              {employees.map((emp) => (
                 <article
                   key={emp.UserId}
                   className="bg-white p-4 rounded-lg shadow-sm border border-slate-200"

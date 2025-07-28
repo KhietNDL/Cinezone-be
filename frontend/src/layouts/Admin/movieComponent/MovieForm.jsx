@@ -14,10 +14,12 @@ const MovieForm = ({
   genres,
   contentSynopsis,
   posterPreview,
+  posterHorizontalPreview,
   trailerPreview,
   versions,
   iframeUrl,
   posterUploadRef,
+  posterHorizontalUploadRef,
   trailerUploadRef,
   handleInputChange,
   handleVersionChange,
@@ -28,6 +30,8 @@ const MovieForm = ({
   handleEditMovie,
   setPosterFileName,
   setPosterPreview,
+  setPosterHorizontalFileName,
+  setPosterHorizontalPreview,
   setTrailerFileName,
   setTrailerPreview,
   loading,
@@ -484,67 +488,136 @@ const MovieForm = ({
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Poster Image <span className="text-red-500">*</span>
-                  </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
-                    {posterPreview ? (
-                      <div className="relative">
-                        <img
-                          src={posterPreview}
-                          alt="Poster Preview"
-                          className="w-full h-48 object-cover rounded-lg"
-                        />
-                        <button
-                          onClick={() => {
-                            handleFileChange("PosterImage", {
-                              target: { files: [] },
-                            });
-                            setPosterFileName("");
-                            setPosterPreview(null);
-                            if (posterUploadRef.current)
-                              posterUploadRef.current.value = "";
-                          }}
-                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 transition-colors"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ) : (
-                      <div>
-                        <svg
-                          className="mx-auto h-12 w-12 text-gray-400 mb-4"
-                          stroke="currentColor"
-                          fill="none"
-                          viewBox="0 0 48 48"
-                        >
-                          <path
-                            d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                            strokeWidth={2}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Poster Image (Vertical){" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors">
+                      {posterPreview ? (
+                        <div className="relative">
+                          <img
+                            src={posterPreview}
+                            alt="Poster Preview"
+                            className="w-full h-32 object-cover rounded-lg"
                           />
-                        </svg>
-                        <input
-                          type="file"
-                          accept="image/png, image/jpeg"
-                          onChange={(e) => handleFileChange("PosterImage", e)}
-                          className="hidden"
-                          id="posterUpload"
-                          ref={posterUploadRef}
-                        />
-                        <label
-                          htmlFor="posterUpload"
-                          className="text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
-                        >
-                          Click to upload poster
-                        </label>
-                        <p className="text-xs text-gray-500 mt-2">
-                          PNG, JPG up to 10MB
-                        </p>
-                      </div>
-                    )}
+                          <button
+                            onClick={() => {
+                              handleFileChange("PosterImage", {
+                                target: { files: [] },
+                              });
+                              setPosterFileName("");
+                              setPosterPreview(null);
+                              if (posterUploadRef.current)
+                                posterUploadRef.current.value = "";
+                            }}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors text-xs"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <svg
+                            className="mx-auto h-8 w-8 text-gray-400 mb-2"
+                            stroke="currentColor"
+                            fill="none"
+                            viewBox="0 0 48 48"
+                          >
+                            <path
+                              d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                              strokeWidth={2}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                          <input
+                            type="file"
+                            accept="image/png, image/jpeg"
+                            onChange={(e) => handleFileChange("PosterImage", e)}
+                            className="hidden"
+                            id="posterUpload"
+                            ref={posterUploadRef}
+                          />
+                          <label
+                            htmlFor="posterUpload"
+                            className="text-blue-600 hover:text-blue-800 font-semibold cursor-pointer text-sm"
+                          >
+                            Upload vertical poster
+                          </label>
+                          <p className="text-xs text-gray-500 mt-1">
+                            PNG, JPG up to 10MB
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Poster Image (Horizontal){" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors">
+                      {posterHorizontalPreview ? (
+                        <div className="relative">
+                          <img
+                            src={posterHorizontalPreview}
+                            alt="Horizontal Poster Preview"
+                            className="w-full h-24 object-cover rounded-lg"
+                          />
+                          <button
+                            onClick={() => {
+                              handleFileChange("PosterImageHorizontal", {
+                                target: { files: [] },
+                              });
+                              setPosterHorizontalFileName("");
+                              setPosterHorizontalPreview(null);
+                              if (posterHorizontalUploadRef.current)
+                                posterHorizontalUploadRef.current.value = "";
+                            }}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors text-xs"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <svg
+                            className="mx-auto h-8 w-8 text-gray-400 mb-2"
+                            stroke="currentColor"
+                            fill="none"
+                            viewBox="0 0 48 48"
+                          >
+                            <path
+                              d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                              strokeWidth={2}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                          <input
+                            type="file"
+                            accept="image/png, image/jpeg"
+                            onChange={(e) =>
+                              handleFileChange("PosterImageHorizontal", e)
+                            }
+                            className="hidden"
+                            id="posterHorizontalUpload"
+                            ref={posterHorizontalUploadRef}
+                          />
+                          <label
+                            htmlFor="posterHorizontalUpload"
+                            className="text-blue-600 hover:text-blue-800 font-semibold cursor-pointer text-sm"
+                          >
+                            Upload horizontal poster
+                          </label>
+                          <p className="text-xs text-gray-500 mt-1">
+                            PNG, JPG up to 10MB
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -643,36 +716,6 @@ const MovieForm = ({
           </button>
         </div>
       </div>
-      {loading && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 flex flex-col items-center shadow-xl">
-            <svg
-              className="animate-spin h-8 w-8 text-blue-600 mb-4"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-                fill="none"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v8z"
-              />
-            </svg>
-            <div className="font-semibold text-lg text-blue-700">
-              {showEditForm
-                ? "Đang cập nhật phim, vui lòng chờ..."
-                : "Đang thêm phim, vui lòng chờ..."}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
