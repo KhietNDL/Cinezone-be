@@ -36,10 +36,11 @@ const MovieTheaterLogin = () => {
         // Giả sử mỗi phim có trường posterImage là URL ảnh
         const posters = data?.data
           ?.map((movie) => {
-            if (!movie.PosterImage) return null;
+            if (!movie.PosterImageHorizontal) return null;
             // Nếu là đường dẫn tương đối thì thêm host
-            if (movie.PosterImage.startsWith("http")) return movie.PosterImage;
-            return `http://cinezone.info:4458${movie.PosterImage}`;
+            if (movie.PosterImageHorizontal.startsWith("http"))
+              return movie.PosterImageHorizontal;
+            return `http://cinezone.info:4458${movie.PosterImageHorizontal}`;
           })
           .filter(Boolean);
         setMovieBackgrounds(
@@ -110,14 +111,14 @@ const MovieTheaterLogin = () => {
           throw new Error("No token in response");
         }
       } catch (error) {
-        console.error("Login error:", error.message);
+        console.error("Login error:", error);
         setIsLoading(false);
-        // Kiểm tra lỗi 401 hoặc message liên quan xác thực
-        if (
-          error?.response?.status === 401 ||
-          error?.message?.toLowerCase().includes("401") ||
-          error?.message?.toLowerCase().includes("unauthorized")
-        ) {
+
+        // Xử lý lỗi từ backend response
+        if (error?.response?.data) {
+          const { error: errorMessage, code } = error.response.data;
+          setErrors({ api: errorMessage || "Login failed. Please try again." });
+        } else if (error?.response?.status === 401) {
           setErrors({ api: "Invalid email or password" });
         } else {
           setErrors({
