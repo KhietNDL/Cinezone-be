@@ -393,3 +393,12 @@ export const checkIn = async (bookingId) => {
     handleError(error);
   }
 };
+
+export const getBookingById = async (bookingId) => {
+  try {
+    const response = await api.get(`/bookings/${bookingId}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }   
+};

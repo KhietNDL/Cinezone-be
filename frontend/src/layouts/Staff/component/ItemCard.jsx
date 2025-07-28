@@ -46,11 +46,12 @@ const ItemCard = ({ item, type, onSelect, selected, small, disabled }) => {
   return (
     <div
       onClick={handleClick}
-      className={`cursor-pointer rounded-xl border border-gray-300 transition-transform
+      className={`cursor-pointer rounded-xl border border-gray-300 
+                 transition-transform duration-300 ease-in-out hover:scale-105
         ${selected ? "shadow-[0_10px_10px_gray]" : "none"}
         ${type === "movie"
           ? small
-            ? "w-[170px] h-[270px] min-h-[220px]"
+            ? "w-[170px] h-[280px] min-h-[220px]"
             : "w-[250px] h-[420px] min-h-[350px]"
           : small
             ? "w-[140px] h-[180px]"

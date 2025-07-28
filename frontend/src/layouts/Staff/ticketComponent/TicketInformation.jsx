@@ -6,7 +6,7 @@ import { FaTicket, FaCouch, FaLocationDot, FaUser, FaPhone, FaCalendarDays, FaEn
 import { IoReloadOutline, IoTicketSharp, IoTime } from "react-icons/io5";
 import { RiFilmAiFill, RiMovie2AiFill, RiDiscountPercentFill } from "react-icons/ri";
 import { FaMoneyBillWave, FaIdCard, FaRegEye } from "react-icons/fa";
-import {checkInfoBookingById, cancelBookingById, getUserByPhone, getMovieById, confirmPayment} from "../../../services/APIForStaff/API";
+import { checkInfoBookingById, cancelBookingById, getUserByPhone, getMovieById, confirmPayment } from "../../../services/APIForStaff/API";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useDispatch, useSelector } from 'react-redux';
@@ -86,7 +86,7 @@ const TicketInformation = () => {
             setPaymentStatus('succeeded');
             toast.success("Payment successful!");
           } catch (error) {
-            setPaymentStatus('succeeded'); 
+            setPaymentStatus('succeeded');
             toast.success("Payment successful (confirm failed)", error.message);
           }
         } else {
@@ -108,7 +108,7 @@ const TicketInformation = () => {
         }
       }
 
-       //Nếu có thông tin khách hàng, lấy thêm info
+      //Nếu có thông tin khách hàng, lấy thêm info
       if (memberData?.member?.phone) {
         const customerData = await getUserByPhone(memberData?.member?.phone);
         setApiCustomerData(customerData);
@@ -198,12 +198,15 @@ const TicketInformation = () => {
   return (
     <div className="p-4 w-full mx-auto bg-white rounded-lg shadow-sm">
       {/* Header */}
-      <div >
-        <BackButton />
-      </div>
-      <div className="text-center py-8">
-        {status.icon}
-        <h1 className={`text-3xl font-bold mt-4 ${status.color}`}>{status.title}</h1>
+      <div className="flex items-start justify-between">
+        <div className="w-[20%]">
+          <BackButton />
+        </div>
+        <div className="text-center py-8">
+          {status.icon}
+          <h1 className={`text-3xl font-bold mt-4 ${status.color}`}>{status.title}</h1>
+        </div>
+        <div className="w-[20%]"></div>
       </div>
 
       {/* Main Content */}
@@ -266,7 +269,7 @@ const TicketInformation = () => {
                   {bookingData?.paymentMethod === bookingData?.paymentMethod ? bookingData?.paymentMethod : "Convert points to tickets"}
                 </span>
               </div>
-       
+
               {/* Thêm phần hiển thị giá từng ghế */}
               <div className="border-b pb-2">
                 <h3 className="font-semibold mb-2">Ticket Details:</h3>
@@ -280,7 +283,7 @@ const TicketInformation = () => {
                   );
                 })}
               </div>
-        
+
               <div className="flex justify-between">
                 <span className="font-semibold">Total ticket price:</span>
                 <span>{formatPrice(apiBookingData?.totalPrice)} VNĐ</span>

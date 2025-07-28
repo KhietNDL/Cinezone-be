@@ -153,7 +153,8 @@ export default function ComboPage() {
             <ToastContainer position="top-right" autoClose={3000} />
             <div className="w-full">
                 {/* Header */}
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col gap-4 lg:flex-row justify-between items-center">
+                    <div className='w-[250px]'></div>
                     <h1 className="text-3xl font-bold text-[#9810FA]">Sell Combo Food</h1>
                     <Input.Search
                         placeholder="Search combo..."
