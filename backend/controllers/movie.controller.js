@@ -152,10 +152,34 @@ const createMovie = async (req, res) => {
         expires: '03-01-2500',
       });
 
-      // const url = await posterBlob.getDownloadURL(); dùng khi url đơn giản hơn
-
       // Update URL poster into movie data
       movieData.PosterImage = url;
+    }
+    
+    // upload horizontal poster (if provided)
+    if (req.files && req.files.posterHorizontal && req.files.posterHorizontal[0]) {
+      const posterFile = req.files.posterHorizontal[0];
+      const posterFileName = `posters-horizontal/${Date.now()}-${posterFile.originalname.replace(/\s+/g, '_')}`;
+      const posterBlob = bucket.file(posterFileName);
+
+      // Upload horizontal poster to Firebase
+      const posterStream = posterBlob.createWriteStream({
+        metadata: { contentType: posterFile.mimetype }
+      });
+
+      await new Promise((resolve, reject) => {
+        posterStream.on('error', reject);
+        posterStream.on('finish', resolve);
+        posterStream.end(posterFile.buffer);
+      });
+
+      const [url] = await posterBlob.getSignedUrl({
+        action: 'read',
+        expires: '03-01-2500',
+      });
+
+      // Update URL horizontal poster into movie data
+      movieData.PosterImageHorizontal = url;
     }
 
     // upload trailer (if provided)
@@ -223,8 +247,8 @@ const deleteMovie = async (req, res) => {
 const deleteFirebaseFileByUrl = async (fileUrl) => {
   if (!fileUrl) return;
   try {
-    // Tìm path file trong URL
-    const match = fileUrl.match(/(?:posters|trailers)\/[^?]+/);
+    // Find file path in URL, including posters-horizontal
+    const match = fileUrl.match(/(?:posters|posters-horizontal|trailers)\/[^?]+/);
     if (match && match[0]) {
       await bucket.file(match[0]).delete();
       console.log("Deleted old file from Firebase:", match[0]);
@@ -264,6 +288,28 @@ const updateMovie = async (req, res) => {
         expires: '03-01-2500',
       });
       movieData.PosterImage = url;
+    }
+    
+    // Handle horizontal poster
+    if (req.files && req.files.posterHorizontal && req.files.posterHorizontal[0]) {
+      await deleteFirebaseFileByUrl(existingMovie.PosterImageHorizontal);
+
+      const posterFile = req.files.posterHorizontal[0];
+      const posterFileName = `posters-horizontal/${Date.now()}-${posterFile.originalname.replace(/\s+/g, '_')}`;
+      const posterBlob = bucket.file(posterFileName);
+      const posterStream = posterBlob.createWriteStream({
+        metadata: { contentType: posterFile.mimetype }
+      });
+      await new Promise((resolve, reject) => {
+        posterStream.on('error', reject);
+        posterStream.on('finish', resolve);
+        posterStream.end(posterFile.buffer);
+      });
+      const [url] = await posterBlob.getSignedUrl({
+        action: 'read',
+        expires: '03-01-2500',
+      });
+      movieData.PosterImageHorizontal = url;
     }
 
     if (req.files && req.files.trailer && req.files.trailer[0]) {
@@ -314,6 +360,7 @@ const patchMovie = async (req, res) => {
     const movieData = req.body;
     delete movieData.poster;
     delete movieData.trailer;
+    delete movieData.posterHorizontal;
 
     Object.keys(movieData).forEach(key => {
       if (movieData[key] === "") {
@@ -347,6 +394,28 @@ const patchMovie = async (req, res) => {
         expires: '03-01-2500',
       });
       movieData.PosterImage = url;
+    }
+    
+    // Handle horizontal poster
+    if (req.files && req.files.posterHorizontal && req.files.posterHorizontal[0]) {
+      await deleteFirebaseFileByUrl(existingMovie.PosterImageHorizontal);
+
+      const posterFile = req.files.posterHorizontal[0];
+      const posterFileName = `posters-horizontal/${Date.now()}-${posterFile.originalname.replace(/\s+/g, '_')}`;
+      const posterBlob = bucket.file(posterFileName);
+      const posterStream = posterBlob.createWriteStream({
+        metadata: { contentType: posterFile.mimetype }
+      });
+      await new Promise((resolve, reject) => {
+        posterStream.on('error', reject);
+        posterStream.on('finish', resolve);
+        posterStream.end(posterFile.buffer);
+      });
+      const [url] = await posterBlob.getSignedUrl({
+        action: 'read',
+        expires: '03-01-2500',
+      });
+      movieData.PosterImageHorizontal = url;
     }
 
     if (req.files && req.files.trailer && req.files.trailer[0]) {
