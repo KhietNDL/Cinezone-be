@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Input, Button, Table, Image, Space } from 'antd';
 import { MinusOutlined, PlusOutlined } from '@ant-design/icons';
 import ItemCard from '../component/ItemCard';
@@ -148,6 +148,37 @@ export default function ComboPage() {
         },
     ];
 
+    const swiperBreakpoints = useMemo(
+        () => ({
+            320: {
+                slidesPerView: 1,
+                spaceBetween: 20,
+                slidesPerGroup: 1
+            },
+            640: {
+                slidesPerView: 2,
+                spaceBetween: 30,
+                slidesPerGroup: 1
+            },
+            768: {
+                slidesPerView: 3,
+                spaceBetween: 50,
+                slidesPerGroup: 2
+            },
+            1024: {
+                slidesPerView: 3,
+                spaceBetween: 60,
+                slidesPerGroup: 2
+            },
+            1280: {
+                slidesPerView: 4,
+                spaceBetween: 60,
+                slidesPerGroup: 2
+            },
+        }),
+        []
+    );
+
     return (
         <div className="w-full bg-[#fafbfc] p-[20px]">
             <ToastContainer position="top-right" autoClose={3000} />
@@ -177,21 +208,14 @@ export default function ComboPage() {
                         <div className="staff-swiper">
                             <Swiper
                                 modules={[Navigation, Pagination]}
+                                breakpoints={swiperBreakpoints}
                                 navigation
                                 pagination={{ clickable: true }}
-                                spaceBetween={50}
                                 slidesPerView={4}
-                                slidesPerGroup={1}
-                                loop={true}
-                                breakpoints={{
-                                    320: { slidesPerView: 1 },
-                                    640: { slidesPerView: 2 },
-                                    1024: { slidesPerView: 4 },
-                                }}
                             >
                                 {filteredCombos.map((combo) => (
                                     <SwiperSlide key={combo.id}>
-                                        <div className="flex justify-center p-2 w-[260px]">
+                                        <div className="flex justify-center p-2 w-[100%]">
                                             <ItemCard
                                                 item={combo}
                                                 type="combo"

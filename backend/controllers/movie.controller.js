@@ -6,7 +6,7 @@ const getAllMovies = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = req.query.limit !== undefined ? parseInt(req.query.limit) : 0;
-    const sortBy = req.query.sortBy; 
+    const sortBy = req.query.sortBy;
     const sortOrder = req.query.sortOrder;
 
     const result = await Movie.getAllMovies(
@@ -156,7 +156,7 @@ const createMovie = async (req, res) => {
       // Update URL poster into movie data
       movieData.PosterImage = url;
     }
-    
+
     // upload horizontal poster (if provided)
     if (req.files && req.files.posterHorizontal && req.files.posterHorizontal[0]) {
       const posterFile = req.files.posterHorizontal[0];
@@ -251,10 +251,19 @@ const deleteFirebaseFileByUrl = async (fileUrl) => {
     // Find file path in URL, including posters-horizontal
     const match = fileUrl.match(/(?:posters|posters-horizontal|trailers)\/[^?]+/);
     if (match && match[0]) {
-      await bucket.file(match[0]).delete();
-      console.log("Deleted old file from Firebase:", match[0]);
+      // Check if file exists before trying to delete
+      const file = bucket.file(match[0]);
+      const [exists] = await file.exists();
+      
+      if (exists) {
+        await file.delete();
+        console.log("Deleted old file from Firebase:", match[0]);
+      } else {
+        console.log("File not found in Firebase, skipping deletion:", match[0]);
+      }
     }
   } catch (err) {
+    // Log but don't throw error to prevent interrupting the update process
     console.log("Failed to delete old file from Firebase:", err.message);
   }
 };
@@ -263,6 +272,12 @@ const updateMovie = async (req, res) => {
   const { movieId } = req.params;
   try {
     const movieData = req.body;
+
+    // Delete these fields from body to prevent conflicts with file uploads
+    delete movieData.poster;
+    delete movieData.trailer;
+    delete movieData.posterHorizontal;
+
     movieData.UpdatedBy = req.user.UserId;
 
     const existingMovie = await Movie.getMovieById(movieId);
@@ -270,6 +285,7 @@ const updateMovie = async (req, res) => {
       return res.status(404).json({ error: "Movie not found" });
     }
 
+    // Handle vertical poster upload
     if (req.files && req.files.poster && req.files.poster[0]) {
       await deleteFirebaseFileByUrl(existingMovie.PosterImage);
 
@@ -290,8 +306,8 @@ const updateMovie = async (req, res) => {
       });
       movieData.PosterImage = url;
     }
-    
-    // Handle horizontal poster
+
+    // Handle horizontal poster upload
     if (req.files && req.files.posterHorizontal && req.files.posterHorizontal[0]) {
       await deleteFirebaseFileByUrl(existingMovie.PosterImageHorizontal);
 
@@ -313,6 +329,7 @@ const updateMovie = async (req, res) => {
       movieData.PosterImageHorizontal = url;
     }
 
+    // Handle trailer upload
     if (req.files && req.files.trailer && req.files.trailer[0]) {
       await deleteFirebaseFileByUrl(existingMovie.TrailerUrl);
 
@@ -332,11 +349,21 @@ const updateMovie = async (req, res) => {
         expires: '03-01-2500',
       });
       movieData.TrailerUrl = trailerUrl;
+    } else {
+      // If no new trailer is uploaded, preserve the existing one
+      if (existingMovie.TrailerUrl) {
+        movieData.TrailerUrl = existingMovie.TrailerUrl;
+      }
     }
 
     if (movieData.RunningTime) {
       movieData.RunningTime = parseInt(movieData.RunningTime);
     }
+
+    console.log("Final movie data before update:", {
+      ...movieData,
+      PosterImageHorizontal: movieData.PosterImageHorizontal
+    });
 
     const success = await Movie.updateMovie(movieId, movieData);
     if (!success) {
@@ -344,6 +371,14 @@ const updateMovie = async (req, res) => {
     }
 
     const updatedMovie = await Movie.getMovieById(movieId);
+    
+    // Thêm ghi nhật ký này
+    console.log("Retrieved movie after update:", {
+      PosterImage: updatedMovie.PosterImage,
+      PosterImageHorizontal: updatedMovie.PosterImageHorizontal,
+      TrailerUrl: updatedMovie.TrailerUrl
+    });
+    
     res.status(200).json({
       status: "success",
       message: "Movie updated successfully",
@@ -396,7 +431,7 @@ const patchMovie = async (req, res) => {
       });
       movieData.PosterImage = url;
     }
-    
+
     // Handle horizontal poster
     if (req.files && req.files.posterHorizontal && req.files.posterHorizontal[0]) {
       await deleteFirebaseFileByUrl(existingMovie.PosterImageHorizontal);
