@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {
   getAllProducts,
+  searchProductsByName,
   createProduct,
   deleteProduct,
   updateProduct,
@@ -47,11 +48,17 @@ const ProductManagement = () => {
   const [comboDetail, setComboDetail] = useState(null);
   const itemsPerPage = 5;
 
-  const fetchProducts = async (page) => {
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await getAllProducts({ page, limit: itemsPerPage });
-      setProducts(response.products);
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+        sortBy: "CreatedAt",
+        sortOrder: "desc",
+      };
+      const response = await getAllProducts(params);
+      setProducts(response.products || response.data || []);
       if (response.pagination) {
         setTotalPages(response.pagination.totalPages);
         setTotalProducts(response.pagination.total);
@@ -66,11 +73,76 @@ const ProductManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, itemsPerPage]);
 
+  const searchProducts = useCallback(
+    async (searchTerm) => {
+      if (!searchTerm.trim()) {
+        fetchProducts();
+        return;
+      }
+      setLoading(true);
+      try {
+        const params = {
+          page: currentPage,
+          limit: itemsPerPage,
+          sortBy: "ProductName",
+          sortOrder: "asc",
+        };
+
+        const response = await searchProductsByName(searchTerm, params);
+        if (response) {
+          setProducts(response.products || response.data || []);
+
+          // Xử lý pagination từ response
+          if (response.pagination) {
+            setTotalProducts(response.pagination.total);
+            setTotalPages(response.pagination.totalPages);
+          } else {
+            const productsList = response.products || response.data || [];
+            setTotalProducts(productsList.length);
+            setTotalPages(Math.ceil(productsList.length / itemsPerPage));
+          }
+        }
+      } catch (error) {
+        console.error("Error searching products:", error);
+        toast.error("Failed to search products.");
+        setProducts([]);
+        setTotalProducts(0);
+        setTotalPages(0);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [currentPage, itemsPerPage, fetchProducts]
+  );
+
+  // Load initial data khi component mount
   useEffect(() => {
-    fetchProducts(currentPage);
-  }, [currentPage]);
+    if (!searchTerm) {
+      fetchProducts();
+    }
+  }, [fetchProducts, searchTerm]);
+
+  // Effect riêng cho searchTerm để reset về trang 1
+  useEffect(() => {
+    if (searchTerm !== "") {
+      setCurrentPage(1); // Reset về trang 1 khi có search term mới
+    }
+  }, [searchTerm]);
+
+  // useEffect với debounce cho search
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchTerm) {
+        searchProducts(searchTerm);
+      } else {
+        fetchProducts();
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm, currentPage, searchProducts, fetchProducts]);
 
   const handleViewComboDetail = async (productId) => {
     setLoading(true);
@@ -139,7 +211,7 @@ const ProductManagement = () => {
       }
       resetForm();
       setShowFormPopup(false);
-      fetchProducts(currentPage);
+      fetchProducts();
     } catch (error) {
       console.error("Error saving product:", error);
       toast.error("Failed to save product.");
@@ -170,7 +242,7 @@ const ProductManagement = () => {
       toast.success("Product deleted successfully!");
       setShowDeletePopup(false);
       setSelectedProduct(null);
-      fetchProducts(currentPage);
+      fetchProducts();
     } catch (error) {
       console.error("Error deleting product:", error);
       toast.error("Failed to delete product.");

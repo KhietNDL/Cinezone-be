@@ -532,16 +532,19 @@ export const getBookingById = async (bookingId) => {
     throw error;
   }
 };
-export const searchBookingsByUser = async (searchTerm) => {
+export const searchBookingsByUser = async (searchTerm, params = {}) => {
   try {
+    const searchParams = {
+      [searchTerm.includes("@")
+        ? "email"
+        : searchTerm.length === 12
+        ? "cccd"
+        : "phone"]: searchTerm,
+      ...params, // Thêm các tham số pagination
+    };
+
     const response = await api.get("/bookings/search/user", {
-      params: {
-        [searchTerm.includes("@")
-          ? "email"
-          : searchTerm.length === 12
-          ? "cccd"
-          : "phone"]: searchTerm,
-      },
+      params: searchParams,
     });
     return response.data;
   } catch (error) {
@@ -591,6 +594,24 @@ export const getAllProducts = async (params) => {
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy danh sách sản phẩm owr API:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const searchProductsByName = async (name, params = {}) => {
+  try {
+    const searchParams = {
+      name,
+      ...params, // Thêm các tham số pagination
+    };
+
+    const response = await api.get("/products/search", {
+      params: searchParams,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi tìm kiếm sản phẩm:", error);
     handleError(error);
     throw error;
   }

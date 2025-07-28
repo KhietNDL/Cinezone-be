@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Users, CheckCircle, Clock, Film, Eye } from "lucide-react";
 import { IoSearchOutline } from "react-icons/io5";
 import {
@@ -74,7 +74,7 @@ const TicketBookingManagement = () => {
     },
   ];
 
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     setLoading(true);
     try {
       const params = {
@@ -93,26 +93,23 @@ const TicketBookingManagement = () => {
       const fetchDetails = async () => {
         const detailsPromises = data.data.map(async (booking) => {
           const bookingId = booking.BookingId;
-          if (!bookingDetails[bookingId]) {
-            try {
-              const detail = await getBookingById(bookingId);
-              return { [bookingId]: detail };
-            } catch (error) {
-              console.error(
-                `Error fetching detail for booking ${bookingId}:`,
-                error
-              );
-              return { [bookingId]: {} };
-            }
+          try {
+            const detail = await getBookingById(bookingId);
+            return { [bookingId]: detail };
+          } catch (error) {
+            console.error(
+              `Error fetching detail for booking ${bookingId}:`,
+              error
+            );
+            return { [bookingId]: {} };
           }
-          return null;
         });
         const details = await Promise.all(detailsPromises);
         const updatedDetails = details.reduce(
           (acc, curr) => ({ ...acc, ...curr }),
           {}
         );
-        setBookingDetails((prev) => ({ ...prev, ...updatedDetails }));
+        setBookingDetails(updatedDetails);
       };
       await fetchDetails();
     } catch (error) {
@@ -120,41 +117,51 @@ const TicketBookingManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
-  useEffect(() => {
-    fetchBookings();
   }, [currentPage, itemsPerPage]);
-
-  const searchBookingData = async (searchTerm) => {
-    if (!searchTerm.trim()) {
+  // Load initial data khi component mount
+  useEffect(() => {
+    if (!searchTerm) {
       fetchBookings();
-      return;
     }
-    setLoading(true);
-    try {
-      const response = await searchBookingsByUser(searchTerm);
-      if (response) {
-        // Chuẩn hóa dữ liệu booking
-        const bookingsData = Array.isArray(response)
-          ? response.map(normalizeBookingData)
-          : (response.data || []).map(normalizeBookingData);
+  }, [fetchBookings, searchTerm]);
 
-        setBookings(bookingsData);
+  const searchBookingData = useCallback(
+    async (searchTerm) => {
+      if (!searchTerm.trim()) {
+        fetchBookings();
+        return;
+      }
+      setLoading(true);
+      try {
+        const params = {
+          page: currentPage,
+          limit: itemsPerPage,
+          sortBy: "CreatedAt",
+          sortOrder: "desc",
+        };
 
-        // Xử lý pagination
-        if (response.pagination) {
-          setTotalItems(response.pagination.total);
-          setTotalPages(response.pagination.totalPages);
-        } else {
-          const total = bookingsData.length;
-          setTotalItems(total);
-          setTotalPages(Math.ceil(total / itemsPerPage));
-        }
+        const response = await searchBookingsByUser(searchTerm, params);
+        if (response) {
+          // Chuẩn hóa dữ liệu booking
+          const bookingsData = response.data
+            ? response.data.map(normalizeBookingData)
+            : [];
 
-        // Fetch chi tiết cho từng booking
-        const detailsPromises = bookingsData.map(async (booking) => {
-          const bookingId = booking.BookingId;
-          if (!bookingDetails[bookingId]) {
+          setBookings(bookingsData);
+
+          // Xử lý pagination từ response
+          if (response.pagination) {
+            setTotalItems(response.pagination.total);
+            setTotalPages(response.pagination.totalPages);
+          } else {
+            const total = bookingsData.length;
+            setTotalItems(total);
+            setTotalPages(Math.ceil(total / itemsPerPage));
+          }
+
+          // Fetch chi tiết cho từng booking - Reset booking details khi search
+          const detailsPromises = bookingsData.map(async (booking) => {
+            const bookingId = booking.BookingId;
             try {
               const detail = await getBookingById(bookingId);
               return { [bookingId]: detail };
@@ -165,25 +172,26 @@ const TicketBookingManagement = () => {
               );
               return { [bookingId]: booking }; // Sử dụng dữ liệu booking hiện có nếu không lấy được chi tiết
             }
-          }
-          return { [bookingId]: bookingDetails[bookingId] };
-        });
+          });
 
-        const details = await Promise.all(detailsPromises);
-        const updatedDetails = details.reduce(
-          (acc, curr) => ({ ...acc, ...curr }),
-          {}
-        );
-        setBookingDetails((prev) => ({ ...prev, ...updatedDetails }));
+          const details = await Promise.all(detailsPromises);
+          const updatedDetails = details.reduce(
+            (acc, curr) => ({ ...acc, ...curr }),
+            {}
+          );
+          setBookingDetails(updatedDetails);
+        }
+      } catch (error) {
+        console.error("Error searching bookings:", error);
+        setBookings([]);
+        setTotalItems(0);
+        setTotalPages(0);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Error searching bookings:", error);
-      setBookings([]);
-      setTotalPages(0);
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [currentPage, itemsPerPage, fetchBookings]
+  );
   const normalizeBookingData = (booking) => {
     return {
       BookingId: booking.BookingId || booking.bookingId,
@@ -207,6 +215,13 @@ const TicketBookingManagement = () => {
     };
   };
 
+  // Effect riêng cho searchTerm để reset về trang 1
+  useEffect(() => {
+    if (searchTerm !== "") {
+      setCurrentPage(1); // Reset về trang 1 khi có search term mới
+    }
+  }, [searchTerm]);
+
   // Thêm useEffect mới với debounce
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -218,7 +233,7 @@ const TicketBookingManagement = () => {
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm]);
+  }, [searchTerm, currentPage, searchBookingData, fetchBookings]); // Thêm currentPage để search lại khi đổi trang
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {

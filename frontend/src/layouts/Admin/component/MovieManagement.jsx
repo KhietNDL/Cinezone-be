@@ -84,13 +84,9 @@ const MovieManagement = () => {
         sortBy,
         sortOrder,
       });
-
-      console.log("GetMovies response:", response);
-
       if (response.data) {
         const moviesArray = Array.isArray(response.data) ? response.data : [];
         setMovies(moviesArray);
-        console.log("Movies set:", moviesArray);
 
         if (response.pagination) {
           setTotalPages(response.pagination.totalPages);
@@ -164,32 +160,24 @@ const MovieManagement = () => {
           sortOrder: sortOrder,
         });
 
-        console.log("Search API response:", response);
-
         // Backend search now returns paginated structure
         let moviesData = [];
         let totalPagesData = 1;
         let totalMoviesData = 0;
-
-        if (response && response.data) {
-          moviesData = Array.isArray(response.data) ? response.data : [];
-
+        const data = response.data.movies;
+        console.log("🚀 - data:", data);
+        if (response.data.movies) {
+          moviesData = response.data.movies;
           // Check if backend returned pagination info
           if (response.pagination) {
-            totalPagesData = response.pagination.totalPages;
-            totalMoviesData = response.pagination.total;
+            totalPagesData = response.data.pagination.totalPages;
+            totalMoviesData = response.data.pagination.total;
           } else {
             // Fallback to simple calculation
             totalMoviesData = moviesData.length;
             totalPagesData = Math.ceil(totalMoviesData / itemsPerPage);
           }
         }
-
-        console.log("Search - Movies:", moviesData.length);
-        console.log("Search - Total pages:", totalPagesData);
-        console.log("Search - Total movies:", totalMoviesData);
-        console.log("Search - Current page:", currentPage);
-
         setMovies(moviesData);
         setTotalPages(totalPagesData);
         setTotalMovies(totalMoviesData);
@@ -232,21 +220,6 @@ const MovieManagement = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchMovie]);
-
-  // Debug logging for posterImageHorizontal state changes
-  useEffect(() => {
-    console.log(
-      "posterImageHorizontal state changed to:",
-      posterImageHorizontal
-    );
-  }, [posterImageHorizontal]);
-
-  // Debug logging
-  useEffect(() => {
-    console.log("Movies state updated:", movies);
-    console.log("Movies is array:", Array.isArray(movies));
-    console.log("Movies length:", movies?.length);
-  }, [movies]);
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
@@ -309,21 +282,7 @@ const MovieManagement = () => {
     setVersions((prev) => prev.filter((_, i) => i !== idx));
 
   const handleFileChange = (field, e) => {
-    console.log("handleFileChange START:", {
-      field,
-      e,
-      target: e?.target,
-      files: e?.target?.files,
-    });
-
     const file = e.target.files[0];
-    console.log("handleFileChange called:", {
-      field,
-      file: !!file,
-      fileName: file?.name,
-      fileObject: file,
-    });
-
     if (file) {
       if (
         (field === "PosterImage" || field === "PosterImageHorizontal") &&
@@ -341,35 +300,13 @@ const MovieManagement = () => {
         setPosterFileName(file.name);
         setPosterPreview(URL.createObjectURL(file));
       } else if (field === "PosterImageHorizontal") {
-        console.log("Setting horizontal poster:", {
-          fileName: file.name,
-          fileSize: file.size,
-        });
         setPosterImageHorizontal(file);
-        console.log("After setPosterImageHorizontal:", file);
         setPosterHorizontalFileName(file.name);
         setPosterHorizontalPreview(URL.createObjectURL(file));
       } else if (field === "TrailerUrl") {
         setTrailerUrl(file);
         setTrailerFileName(file.name);
         setTrailerPreview(URL.createObjectURL(file));
-      }
-    } else {
-      // Handle file removal
-      console.log("Removing file for field:", field);
-      if (field === "PosterImage") {
-        setPosterImage(null);
-        setPosterFileName("");
-        setPosterPreview(null);
-      } else if (field === "PosterImageHorizontal") {
-        console.log("Removing horizontal poster");
-        setPosterImageHorizontal(null);
-        setPosterHorizontalFileName("");
-        setPosterHorizontalPreview(null);
-      } else if (field === "TrailerUrl") {
-        setTrailerUrl(null);
-        setTrailerFileName("");
-        setTrailerPreview(null);
       }
     }
   };
@@ -394,17 +331,6 @@ const MovieManagement = () => {
       { value: trailerUrl || trailerFileName, name: "Trailer URL" },
       { value: iframeUrl, name: "Trailer Iframe URL" },
     ];
-
-    // Debug validation
-    console.log("Validation check:", {
-      posterImage: !!posterImage,
-      posterFileName,
-      posterImageValue: posterImage || posterFileName,
-      posterImageHorizontal: !!posterImageHorizontal,
-      posterHorizontalFileName,
-      posterHorizontalValue: posterImageHorizontal || posterHorizontalFileName,
-    });
-
     for (const field of requiredFields) {
       if (
         !field.value &&
@@ -508,12 +434,6 @@ const MovieManagement = () => {
         trailerUrl: !!trailerUrl,
         trailerFileName,
       });
-
-      // Debug FormData entries
-      console.log("FormData entries:");
-      for (let [key, value] of movieData.entries()) {
-        console.log(`${key}:`, value);
-      }
 
       const newMovie = await createMovie(movieData);
       setMovies((prev) => [...prev, newMovie]);
@@ -661,7 +581,6 @@ const MovieManagement = () => {
   };
 
   const resetForm = () => {
-    console.log("resetForm called - clearing all file states");
     setNameOfVietnamese("");
     setNameOfEnglish("");
     setFromDate("");
