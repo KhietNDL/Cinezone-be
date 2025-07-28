@@ -632,68 +632,73 @@ class Booking {
     };
   }
   static async findBookingsByUserInfo({ email, cccd, phone, page = 1, limit = 10, sortBy = "CreatedAt", sortOrder = "desc" }) {
-  let where = [];
-  let params = [];
-  if (email) {
-    where.push("u.Email LIKE ?");
-    params.push(`%${email}%`);
-  }
-  if (cccd) {
-    where.push("u.CCCD LIKE ?");
-    params.push(`%${cccd}%`);
-  }
-  if (phone) {
-    where.push("u.PhoneNumber LIKE ?");
-    params.push(`%${phone}%`);
-  }
-  if (where.length === 0) return { data: [], pagination: { page, limit, total: 0, totalPages: 0 } };
+    let where = [];
+    let params = [];
+    if (email) {
+      where.push("u.Email LIKE ?");
+      params.push(`%${email}%`);
+    }
+    if (cccd) {
+      where.push("u.CCCD LIKE ?");
+      params.push(`%${cccd}%`);
+    }
+    if (phone) {
+      where.push("u.PhoneNumber LIKE ?");
+      params.push(`%${phone}%`);
+    }
+    if (where.length === 0) return { data: [], pagination: { page, limit, total: 0, totalPages: 0 } };
 
-  // Validate sort fields
-  const allowedSort = ["CreatedAt", "BookingDate", "TotalAmount", "Status"];
-  if (!allowedSort.includes(sortBy)) sortBy = "CreatedAt";
-  sortOrder = sortOrder.toLowerCase() === "asc" ? "ASC" : "DESC";
+    // Validate sort fields và thêm alias cho bảng
+    const sortMapping = {
+      "CreatedAt": "b.CreatedAt",
+      "BookingDate": "b.BookingDate", 
+      "TotalAmount": "b.TotalAmount",
+      "Status": "b.Status"
+    };
+    const orderField = sortMapping[sortBy] || "b.CreatedAt";
+    sortOrder = sortOrder.toLowerCase() === "asc" ? "ASC" : "DESC";
 
-  let sql = `
-    SELECT b.BookingId
-    FROM Bookings b
-    JOIN Users u ON b.MemberId = u.UserId
-    WHERE (${where.join(" OR ")}) AND b.IsDeleted = 0
-    ORDER BY ${sortBy} ${sortOrder}
-  `;
-  let total = 0;
-  if (limit > 0) {
-    const [[countRow]] = await db.promise().query(
-      `
-      SELECT COUNT(*) as total
+    let sql = `
+      SELECT b.BookingId
       FROM Bookings b
       JOIN Users u ON b.MemberId = u.UserId
       WHERE (${where.join(" OR ")}) AND b.IsDeleted = 0
-      `,
-      params
-    );
-    total = countRow.total;
-    const offset = (page - 1) * limit;
-    sql += ` LIMIT ? OFFSET ?`;
-    params.push(Number(limit), Number(offset));
-  }
-
-  const [rows] = await db.promise().query(sql, params);
-  // Lấy chi tiết từng booking
-  const bookingDetails = [];
-  for (const row of rows) {
-    const detail = await Booking.getBookingDetail(row.BookingId);
-    if (detail) bookingDetails.push(detail);
-  }
-  return {
-    data: bookingDetails,
-    pagination: {
-      page: Number(page),
-      limit: Number(limit),
-      total,
-      totalPages: limit > 0 ? Math.ceil(total / limit) : 1
+      ORDER BY ${orderField} ${sortOrder}
+    `;
+    let total = 0;
+    if (limit > 0) {
+      const [[countRow]] = await db.promise().query(
+        `
+        SELECT COUNT(*) as total
+        FROM Bookings b
+        JOIN Users u ON b.MemberId = u.UserId
+        WHERE (${where.join(" OR ")}) AND b.IsDeleted = 0
+        `,
+        params
+      );
+      total = countRow.total;
+      const offset = (page - 1) * limit;
+      sql += ` LIMIT ? OFFSET ?`;
+      params.push(Number(limit), Number(offset));
     }
-  };
-}
+
+    const [rows] = await db.promise().query(sql, params);
+    // Lấy chi tiết từng booking
+    const bookingDetails = [];
+    for (const row of rows) {
+      const detail = await Booking.getBookingDetail(row.BookingId);
+      if (detail) bookingDetails.push(detail);
+    }
+    return {
+      data: bookingDetails,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        totalPages: limit > 0 ? Math.ceil(total / limit) : 1
+      }
+    };
+  }
 }
 
 module.exports = Booking;
