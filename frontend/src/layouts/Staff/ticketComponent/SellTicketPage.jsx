@@ -28,6 +28,7 @@ import {
 } from '../../../redux/features/sellingSlice';
 import { resetMember } from '../../../redux/features/memberSlice';
 import VersionCard from "../component/VersionCard";
+import { FaCalendarDays, FaLocationDot } from "react-icons/fa6";
 
 const SellTicketPage = () => {
   const dispatch = useDispatch();
@@ -179,7 +180,9 @@ const SellTicketPage = () => {
 
   return (
     <div className="w-full bg-[#fafbfc] p-[20px]">
-      <div className="flex flex-col justify-between items-center sm:flex-row gap-4">
+
+      <div className="flex flex-col justify-between items-end sm:flex-row gap-4">
+        <div className="w-[250px]"></div>
         <h1 className="text-3xl font-bold text-[#9810FA]">Sell Movie Ticket</h1>
         <Input.Search
           placeholder="Search movie..."
@@ -189,13 +192,14 @@ const SellTicketPage = () => {
         />
       </div>
 
-      <p className="font-semibold mt-5"><i className="fa-solid fa-film"></i> Select Movie</p>
+      <p className="font-semibold mt-5 text-xl"><i className="fa-solid fa-film"></i> Select Movie</p>
 
       <div className="staff-swiper">
         {loading ? (
           <div className="text-center my-8"><Spin size="large" /></div>
         ) : (
           <Swiper
+            key={movies.length}
             modules={[Navigation, Pagination]}
             breakpoints={swiperBreakpoints}
             navigation
@@ -221,7 +225,7 @@ const SellTicketPage = () => {
 
       {selectedMovie && (
         <>
-          <p className="font-semibold"><i className="fa-solid fa-calendar-days"></i> Select Day</p>
+          <p className="flex items-center gap-1 font-semibold text-xl"><FaCalendarDays /> Select Day</p>
           <ShowtimeButton
             selectedDay={selectedDay}
             onSelectDay={handleSelectDay}
@@ -233,9 +237,7 @@ const SellTicketPage = () => {
 
       {selectedMovie && selectedDay && (
         <>
-          <p className="flex items-center gap-1 font-semibold">
-            <IoTime /> Select Time
-          </p>
+          <p className="flex items-center gap-1 font-semibold text-xl"> <IoTime /> Select Time</p>
           <div className="flex flex-wrap gap-6 p-4 ml-1 items-center">
             {versionsAndTimes.map(ver => (
               <VersionCard
@@ -258,8 +260,8 @@ const SellTicketPage = () => {
 
       {selectedMovie && selectedVersion && selectedDay && selectedTime && (
         <div className="flex items-center gap-2 ">
-          <div className="flex items-center gap-2 font-semibold"><i className="fa-solid fa-location-dot"></i> Room:</div>
-          <div className="font-bold">{room}</div>
+          <div className="flex items-center gap-1 font-semibold text-xl"><FaLocationDot /> Room:</div>
+          <div className="font-semibold text-lg">{room}</div>
         </div>
       )}
 

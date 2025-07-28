@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { 
-  getAllMovies, 
-  getMoviesByName, 
-  getMovieById, 
+const {
+  getAllMovies,
+  getMoviesByName,
+  getMovieById,
   getMoviesByGenre,
-  createMovie, 
-  deleteMovie, 
+  createMovie,
+  deleteMovie,
   updateMovie,
   patchMovie,
   getCurrentMovies,
@@ -17,12 +17,12 @@ const { auth, isAdmin } = require('../middlewares/auth.middleware');
 const { validateMovie, validatePatchMovie } = require('../middlewares/movie.validator');
 
 // config Multer to process upload file
-const upload = multer({ 
+const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
   fileFilter: (req, file, cb) => {
     // check type file
-    if (file.fieldname === 'poster') {
+    if (file.fieldname === 'poster' || file.fieldname === 'posterHorizontal') {
       if (file.mimetype.startsWith('image/')) {
         cb(null, true);
       } else {
@@ -85,7 +85,7 @@ router.get('/', getAllMovies);
  * @swagger
  * /api/movie/search:
  *   get:
- *     summary: Search movies by name
+ *     summary: Search movies by name with pagination and sorting
  *     tags: [Movies]
  *     parameters:
  *       - in: query
@@ -94,6 +94,32 @@ router.get('/', getAllMovies);
  *         schema:
  *           type: string
  *         description: Movie name (Vietnamese or English) to search for
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of movies per page (0 = all)
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [NameOfVietnamese, NameOfEnglish, FromDate, ToDate]
+ *           default: FromDate
+ *         description: Field to sort by
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: desc
+ *         description: Sort order (asc or desc)
  *     responses:
  *       200:
  *         description: Successfully found movies
@@ -220,7 +246,7 @@ router.get('/:movieId', getMovieById);
  * @swagger
  * /api/movie/create:
  *   post:
- *     summary: Create a new movie with poster and trailer
+ *     summary: Create a new movie with poster, horizontal poster, and trailer
  *     tags: [Movies]
  *     security:
  *       - bearerAuth: []
@@ -273,7 +299,11 @@ router.get('/:movieId', getMovieById);
  *               poster:
  *                 type: string
  *                 format: binary
- *                 description: Will be saved as PosterImage in database
+ *                 description: Will be saved as PosterImage in database (vertical format)
+ *               posterHorizontal:
+ *                 type: string
+ *                 format: binary
+ *                 description: Horizontal format poster image for banners and wide displays
  *               trailer:
  *                 type: string
  *                 format: binary
@@ -291,6 +321,7 @@ router.get('/:movieId', getMovieById);
  */
 router.post('/create', auth, isAdmin, upload.fields([
   { name: 'poster', maxCount: 1 },
+  { name: 'posterHorizontal', maxCount: 1 },
   { name: 'trailer', maxCount: 1 }
 ]), validateMovie, createMovie);
 
@@ -350,9 +381,15 @@ router.post('/create', auth, isAdmin, upload.fields([
  *               poster:
  *                 type: string
  *                 format: binary
+ *                 description: Vertical poster image
+ *               posterHorizontal:
+ *                 type: string
+ *                 format: binary
+ *                 description: Horizontal poster image for banners and carousels
  *               trailer:
  *                 type: string
  *                 format: binary
+ *                 description: Movie trailer video
  *               IframeUrl:
  *                 type: string
  *                 description: YouTube embed link
@@ -366,6 +403,7 @@ router.post('/create', auth, isAdmin, upload.fields([
  */
 router.put('/:movieId', auth, isAdmin, upload.fields([
   { name: 'poster', maxCount: 1 },
+  { name: 'posterHorizontal', maxCount: 1 },
   { name: 'trailer', maxCount: 1 }
 ]), validateMovie, updateMovie);
 
@@ -437,7 +475,11 @@ router.put('/:movieId', auth, isAdmin, upload.fields([
  *               poster:
  *                 type: string
  *                 format: binary
- *                 description: Movie poster image
+ *                 description: Vertical poster image
+ *               posterHorizontal:
+ *                 type: string
+ *                 format: binary
+ *                 description: Horizontal poster image for banners and wide displays
  *               trailer:
  *                 type: string
  *                 format: binary
@@ -455,6 +497,7 @@ router.put('/:movieId', auth, isAdmin, upload.fields([
  */
 router.patch('/:movieId', auth, isAdmin, upload.fields([
   { name: 'poster', maxCount: 1 },
+  { name: 'posterHorizontal', maxCount: 1 },
   { name: 'trailer', maxCount: 1 }
 ]), validatePatchMovie, patchMovie);
 

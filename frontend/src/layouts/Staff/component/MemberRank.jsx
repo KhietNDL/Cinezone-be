@@ -23,7 +23,6 @@ const MemberRank = ({ rank, pointsMemberShip }) => {
         )
         : 100;
 
-    // Tạo màu chữ theo rank
     const rankColor = {
         Bronze: "#cd7f32",
         Silver: "#C0C0C0",

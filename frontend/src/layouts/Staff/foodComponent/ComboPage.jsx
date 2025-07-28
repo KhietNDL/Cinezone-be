@@ -8,9 +8,6 @@ import './ComboPage.css';
 import { PiPopcornDuotone } from "react-icons/pi";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
-// import 'swiper/css';
-// import 'swiper/css/navigation';
-// import 'swiper/css/pagination';
 import { getAllProduct } from '../../../services/APIForStaff/API';
 import { toast, ToastContainer } from "react-toastify";
 import { useNavigate } from 'react-router-dom';
@@ -84,14 +81,13 @@ export default function ComboPage() {
     };
 
     // Xóa toàn bộ cart
-     const handleCancel = () => {
-       dispatch(clearComboCart());
-       dispatch(clearOrderInfo());
-     };
+    const handleCancel = () => {
+        dispatch(clearComboCart());
+        dispatch(clearOrderInfo());
+    };
 
     const filteredCombos = products.filter(c =>
-        c.name.toLowerCase().includes(search.toLowerCase()) 
-        // || (c.description && c.description.toLowerCase().includes(search.toLowerCase()))
+        c.name.toLowerCase().includes(search.toLowerCase())
     );
 
     const handleCheckout = async () => {
@@ -120,9 +116,9 @@ export default function ComboPage() {
             width: 190,
             render: (qty, record) => (
                 <Space>
-                    <Button style={{ backgroundColor: '#7254EF', color: "white" }} icon={<MinusOutlined />} size="small" onClick={() => handleQuantity(record.id, -1)} data-testid={`decrease-${record.id}`}/>
+                    <Button style={{ backgroundColor: '#7254EF', color: "white" }} icon={<MinusOutlined />} size="small" onClick={() => handleQuantity(record.id, -1)} data-testid={`decrease-${record.id}`} />
                     <span>{qty}</span>
-                    <Button style={{ backgroundColor: '#7254EF', color: "white" }} icon={<PlusOutlined />} size="small" onClick={() => handleQuantity(record.id, 1)} data-testid={`increase-${record.id}`}/>
+                    <Button style={{ backgroundColor: '#7254EF', color: "white" }} icon={<PlusOutlined />} size="small" onClick={() => handleQuantity(record.id, 1)} data-testid={`increase-${record.id}`} />
                 </Space>
             ),
         },
@@ -157,7 +153,8 @@ export default function ComboPage() {
             <ToastContainer position="top-right" autoClose={3000} />
             <div className="w-full">
                 {/* Header */}
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col gap-4 lg:flex-row justify-between items-center">
+                    <div className='w-[250px]'></div>
                     <h1 className="text-3xl font-bold text-[#9810FA]">Sell Combo Food</h1>
                     <Input.Search
                         placeholder="Search combo..."
@@ -169,10 +166,11 @@ export default function ComboPage() {
                 </div>
 
                 {/* Combo Carousel */}
-                <div className="mt-8">
-                    <p className="text-lg flex items-center gap-2">
-                        <span className="text-xl"><PiPopcornDuotone /></span> Select Combo
-                    </p>
+                <div className="mt-5">
+                    <div className="text-xl flex items-center gap-1 font-semibold">
+                        <PiPopcornDuotone />
+                        <p>Select Combo</p>
+                    </div>
                     {loading ? (
                         <div className="text-center py-8">Loading products...</div>
                     ) : (

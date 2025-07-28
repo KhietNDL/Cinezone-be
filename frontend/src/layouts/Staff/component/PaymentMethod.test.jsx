@@ -3,9 +3,6 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import PaymentMethod from "./PaymentMethod";
 
-// Mocks (nếu bạn dùng toast hay navigate thì thêm ở đây)
-
-// Helper render với wrapper nếu cần (BrowserRouter, context...)
 const renderComponent = (props = {}) => {
   const defaultProps = {
     value: "Cash",
@@ -31,9 +28,6 @@ describe("PaymentMethod", () => {
   it("calls onChange with correct value when a method is clicked", () => {
     const onChange = jest.fn();
     renderComponent({ onChange });
-
-    // fireEvent.click(screen.getByText("VNPay").closest("label"));
-    // expect(onChange).toHaveBeenCalledWith("VNPay");
     fireEvent.click(screen.getByText("Stripe").closest("label"));
     expect(onChange).toHaveBeenCalledWith("Stripe");
 

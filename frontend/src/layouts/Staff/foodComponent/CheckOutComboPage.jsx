@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Button, Table, Input, Select, Image } from 'antd';
 import { useNavigate } from 'react-router-dom';
-// import { createCashPaymentForProduct, createProductHold, createMomoPaymentForProducts } from '../../../services/APIForStaff/API';
 import { createProductHold } from '../../../services/APIForStaff/API';
 import { useAuth } from '../../../context/AuthContext';
 import { toast } from 'react-toastify';
@@ -12,6 +11,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { clearComboCart, clearOrderInfo, setOrderInfo, setStripeClientSecret, setPaymentId } from "../../../redux/features/comboSlice";
 import PaymentMethod from '../component/PaymentMethod';
 import { processPayment } from '../../../hooks/useProcessPayment';
+import BackButton from '../component/BackButton';
 
 const { Option } = Select;
 
@@ -36,8 +36,8 @@ export default function CheckOutComboPage() {
       return;
     }
 
-    if (paymentMethod === "Visa" && !cardType) {
-      toast.error("Please select a card type for Visa payment.");
+    if (paymentMethod === "Stripe" && !cardType) {
+      toast.error("Please select a card type for Stripe payment.");
       return;
     }
 
@@ -61,26 +61,25 @@ export default function CheckOutComboPage() {
         totalAmount: totalPrice,
       }));
 
-      const paymentResult =  await processPayment({
+      const paymentResult = await processPayment({
         paymentMethod,
         orderId: holdResponse.OrderProductId,
         amount: totalPrice,
         type: "combo",
         navigate,
         setIsRedirecting: null,
-        // successUrl: `${paymentMethod === "Cash" ? "/staff/combo-selling/combo-information" :`${window.location.origin}/staff/combo-selling/combo-information`}`,
         successUrl: paymentMethod === "Cash"
           ? "/staff/combo-selling/combo-information"
-          : paymentMethod === "Visa"
+          : paymentMethod === "Stripe"
             ? "/staff/combo-selling/waiting-payment"
             : `${window.location.origin}/staff/combo-selling/combo-information`,
-        cardType: paymentMethod === "Visa" ? cardType : undefined,
+        cardType: paymentMethod === "Stripe" ? cardType : undefined,
       });
       console.log("paymentResult:", paymentResult);
       console.log("paymentResult.data:", paymentResult?.data);
 
       if (
-        paymentMethod === "Visa" &&
+        paymentMethod === "Stripe" &&
         (paymentResult?.data?.clientSecret || paymentResult?.clientSecret)
       ) {
         dispatch(setStripeClientSecret(paymentResult.data || paymentResult));
@@ -136,9 +135,15 @@ export default function CheckOutComboPage() {
 
   return (
     <div className="p-4 mx-auto w-full bg-[#fafbfc]">
-      <h1 className="text-3xl font-bold mb-4 text-[#9810FA] justify-between items-center flex flex-col sm:flex-row">
-        Confirm Combos
-      </h1>
+      <div className="flex items-start justify-between gap-4 mb-6">
+        <div className='w-[20%]'>
+          <BackButton />
+        </div>
+        <h1 className="text-3xl font-bold text-[#9810FA] flex lg:items-start items-center lg:justify-start justify-center flex-col">
+          Confirm Combos
+        </h1>
+         <div className='w-[20%]'></div>
+      </div>
       <div className="px-8 w-full">
         <div className='block mb-2 font-medium text-lg'>
           Combos Details:
@@ -165,12 +170,12 @@ export default function CheckOutComboPage() {
           value={paymentMethod}
           onChange={val => {
             setPaymentMethod(val);
-            if (val !== "Visa") setCardType("");
+            if (val !== "Stripe") setCardType("");
           }}
-          showCardType={paymentMethod === "Visa"}
+          showCardType={paymentMethod === "Stripe"}
           cardType={cardType}
           onCardTypeChange={setCardType}
-          cardTypeError={paymentMethod === "Visa" && !cardType ? "Please select a card type" : ""}
+          cardTypeError={paymentMethod === "Stripe" && !cardType ? "Please select a card type" : ""}
         />
 
       </div>

@@ -6,10 +6,7 @@ import { FaTicket, FaCouch, FaLocationDot, FaUser, FaPhone, FaCalendarDays, FaEn
 import { IoReloadOutline, IoTicketSharp, IoTime } from "react-icons/io5";
 import { RiFilmAiFill, RiMovie2AiFill, RiDiscountPercentFill } from "react-icons/ri";
 import { FaMoneyBillWave, FaIdCard, FaRegEye } from "react-icons/fa";
-import {
-  //  confirmBooking,
-  checkInfoBookingById, cancelBookingById, getUserByPhone, getMovieById, confirmPayment
-} from "../../../services/APIForStaff/API";
+import { checkInfoBookingById, cancelBookingById, getUserByPhone, getMovieById, confirmPayment } from "../../../services/APIForStaff/API";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useDispatch, useSelector } from 'react-redux';
@@ -53,14 +50,6 @@ const TicketInformation = () => {
     return price?.toLocaleString('vi-VN');
   }, []);
 
-  // useEffect(() => async () => {
-  //   if (memberData?.member?.phone) {
-  //     const customerData = await getUserByPhone(memberData?.member?.phone);
-  //     setApiCustomerData(customerData);
-  //     console.log("Customer data from API:", customerData);
-  //   }
-  // }), [memberData?.member?.phone];
-
   const processPaymentResult = useCallback(async () => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -85,35 +74,23 @@ const TicketInformation = () => {
       //Bước 1: Luôn fetch thông tin booking trước
       const res = await checkInfoBookingById(bookingId);
       setApiBookingData(res);
-      // console.log("Booking data from API:", res);
-
-      //Nếu có thông tin khách hàng, lấy thêm info
-      if (memberData?.member?.phone) {
-        const customerData = await getUserByPhone(memberData?.member?.phone);
-        setApiCustomerData(customerData);
-        console.log("Customer data from API:", customerData);
-      }
-
       // Bước 2: Xác định trạng thái thanh toán
       if (resultCode) {
         if (resultCode === '0' || resultCode === '1') {
           try {
-            // await confirmPayment();
             if (paymentId) {
               await confirmPayment(paymentId);
               console.log("PaymentId:", paymentId)
               console.log("Payment confirmed successfully");
             }
-            // Gọi confirmBooking
-            // await confirmBooking(bookingId);
             setPaymentStatus('succeeded');
             toast.success("Payment successful!");
           } catch (error) {
-            setPaymentStatus('succeeded'); // vẫn success nếu confirm thất bại
+            setPaymentStatus('succeeded');
             toast.success("Payment successful (confirm failed)", error.message);
           }
         } else {
-          setPaymentStatus('error'); //vẫn hiển thị vé nhưng báo thất bại
+          setPaymentStatus('error');
           toast.error("Payment failed");
         }
 
@@ -129,6 +106,13 @@ const TicketInformation = () => {
           await confirmPayment(paymentId);
           console.log("Payment confirmed successfully");
         }
+      }
+
+      //Nếu có thông tin khách hàng, lấy thêm info
+      if (memberData?.member?.phone) {
+        const customerData = await getUserByPhone(memberData?.member?.phone);
+        setApiCustomerData(customerData);
+        console.log("Customer data from API:", customerData);
       }
 
     } catch (error) {
@@ -208,29 +192,21 @@ const TicketInformation = () => {
 
   const status = statusMap[paymentStatus];
   const {
-    // movie,
-    // day,
-    // time,
-    // room,
-    // version,
-    // selectedSeats,
-    // totalPrice,
-    // memberInfo,
-    // paymentMethod,
     discount
   } = bookingData;
-
-  // const finalAmount = totalPrice * (1 - (discount / 100));
 
   return (
     <div className="p-4 w-full mx-auto bg-white rounded-lg shadow-sm">
       {/* Header */}
-      <div className="fixed top-20 right-4 z-50">
-        <BackButton />
-      </div>
-      <div className="text-center py-8">
-        {status.icon}
-        <h1 className={`text-3xl font-bold mt-4 ${status.color}`}>{status.title}</h1>
+      <div className="flex items-start justify-between">
+        <div className="w-[20%]">
+          <BackButton />
+        </div>
+        <div className="text-center py-8">
+          {status.icon}
+          <h1 className={`text-3xl font-bold mt-4 ${status.color}`}>{status.title}</h1>
+        </div>
+        <div className="w-[20%]"></div>
       </div>
 
       {/* Main Content */}
@@ -293,7 +269,6 @@ const TicketInformation = () => {
                   {bookingData?.paymentMethod === bookingData?.paymentMethod ? bookingData?.paymentMethod : "Convert points to tickets"}
                 </span>
               </div>
-              {/* {apiBookingData && ( */}
 
               {/* Thêm phần hiển thị giá từng ghế */}
               <div className="border-b pb-2">
@@ -308,8 +283,6 @@ const TicketInformation = () => {
                   );
                 })}
               </div>
-              {/* )} */}
-
 
               <div className="flex justify-between">
                 <span className="font-semibold">Total ticket price:</span>

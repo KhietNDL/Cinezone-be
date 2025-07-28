@@ -101,7 +101,7 @@ router.get('/', auth, isAdmin, getAllCinemaRooms);
  * @swagger
  * /api/cinema-rooms/search:
  *   get:
- *     summary: Search cinema rooms by name
+ *     summary: Search cinema rooms by name with pagination and sorting
  *     description: Search for cinema rooms by name (admin only)
  *     tags: [Cinema Room Management]
  *     security:
@@ -113,6 +113,32 @@ router.get('/', auth, isAdmin, getAllCinemaRooms);
  *           type: string
  *         required: true
  *         description: Name (or part of name) of the cinema room
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number (default 1)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of items per page (default 10)
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [Name, SeatQuantity, Type, CreatedAt]
+ *           default: Name
+ *         description: Field to sort by
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [ASC, DESC]
+ *           default: ASC
+ *         description: Sort order (ASC or DESC)
  *     responses:
  *       200:
  *         description: List of matching cinema rooms
@@ -127,6 +153,17 @@ router.get('/', auth, isAdmin, getAllCinemaRooms);
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/CinemaRoom'
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                     currentPage:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
  *       400:
  *         description: Missing name query parameter
  *       401:
@@ -173,8 +210,8 @@ router.get('/:id', auth, isAdmin, (req, res, next) => { console.log('Hit /:id ro
  * @swagger
  * /api/cinema-rooms/create:
  *   post:
- *     summary: Create new cinema room
- *     description: Add a new cinema room to the system
+ *     summary: Create new cinema room with automatic seat generation
+ *     description: Add a new cinema room to the system and automatically generate seats based on the specified quantity. Seats are created in a grid pattern (A-J rows, 1-12 columns) with automatic type assignment (A-C=Normal, D-I=VIP, J=Couple).
  *     tags: [Cinema Room Management]
  *     security:
  *       - bearerAuth: []
@@ -194,17 +231,29 @@ router.get('/:id', auth, isAdmin, (req, res, next) => { console.log('Hit /:id ro
  *                 description: Name of the cinema room
  *               SeatQuantity:
  *                 type: integer
- *                 description: Total number of seats in the room
+ *                 minimum: 1
+ *                 maximum: 120
+ *                 description: Total number of seats (max 120 - grid capacity 10 rows × 12 columns)
  *               Type:
  *                 type: string
  *                 description: Type of the cinema room (e.g. 2D, 3D, VIP, etc.)
  *     responses:
  *       201:
- *         description: Cinema room created successfully
+ *         description: Cinema room and seats created successfully
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/CinemaRoom'
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 room:
+ *                   $ref: '#/components/schemas/CinemaRoom'
+ *                 seatsGenerated:
+ *                   type: integer
+ *                   description: Number of seats automatically generated
+ *       400:
+ *         description: Bad request (invalid input, duplicate name, or seat quantity exceeds limit)
  *       401:
  *         description: Unauthorized - Authentication required
  *       403:

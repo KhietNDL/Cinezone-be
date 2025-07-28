@@ -9,13 +9,32 @@ async function validateSeatsAdjacent(seatIds) {
   if (!Array.isArray(seatIds) || seatIds.length < 2) return true;
 
   const [seats] = await db.promise().query(
-    `SELECT SeatId, SeatNumber FROM Seats WHERE SeatId IN (?) AND IsDeleted = 0`,
+    `SELECT SeatId, SeatNumber, Type FROM Seats WHERE SeatId IN (?) AND IsDeleted = 0`,
     [seatIds]
   );
   if (seats.length !== seatIds.length) {
     throw new Error("Some seats not found");
   }
 
+  // Kiểm tra xem có ghế couple không
+  const coupleSeats = seats.filter(s => s.Type === 'Couple');
+  const normalSeats = seats.filter(s => s.Type !== 'Couple');
+
+  // Nếu có ghế couple, không cần kiểm tra adjacent cho ghế couple
+  // (vì ghế couple đã là ghế đôi rồi)
+  if (coupleSeats.length > 0) {
+    // Nếu chọn ghế couple + ghế thường, chỉ kiểm tra ghế thường
+    if (normalSeats.length > 1) {
+      return validateNormalSeatsAdjacent(normalSeats);
+    }
+    return true; // Chỉ có ghế couple hoặc 1 ghế thường
+  }
+
+  // Chỉ có ghế thường, kiểm tra adjacent bình thường
+  return validateNormalSeatsAdjacent(seats);
+}
+
+function validateNormalSeatsAdjacent(seats) {
   // Chuyển SeatNumber thành tọa độ (row, col)
   const seatMap = {};
   const coords = seats.map(s => {

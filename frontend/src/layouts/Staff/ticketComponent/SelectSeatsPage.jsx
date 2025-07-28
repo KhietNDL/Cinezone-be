@@ -165,14 +165,15 @@ const SelectSeatsPage = () => {
   return (
 
     <div className="p-4 mx-auto w-full bg-[#fafbfc]">
-      <div className="flex flex-col items-start justify-center gap-4 mb-6">
-        {/* <div className="fixed top-20 left-4 z-50"> */}
-        <div>
+      <div className="flex items-center justify-between gap-4 mb-6">
+       
+        <div className="w-[20%]">
           <BackButton />
         </div>
-        <h1 className="text-3xl font-bold text-[#9810FA] flex lg:items-start items-center lg:justify-start justify-center flex-col">
+        <h1 className="mx-auto lg:mx-0 text-3xl font-bold text-[#9810FA] flex lg:items-start items-center lg:justify-start justify-center flex-col">
           Select Seats
         </h1>
+        <div className="w-[20%]"></div>
       </div>
 
       {/* Movie Info */}
@@ -208,7 +209,7 @@ const SelectSeatsPage = () => {
               </p>
             )}
           </div>
-          <p className="text-sm mt-1 flex gap-4">
+          <div className="text-sm mt-1 flex gap-4">
             {bookingData.selectedDay && (
               <span className="py-2 flex items-center justify-center gap-1">
                 <FaCalendarDays className="text-lg" /> <p className="text-lg">{bookingData.selectedDay}</p>
@@ -227,7 +228,7 @@ const SelectSeatsPage = () => {
             <span className="py-2 flex items-center justify-center gap-1">
               <FaCouch className="text-lg" /> <p className="text-lg"> Row: A-J</p>
             </span>
-          </p>
+          </div>
         </div>
       </div>
 
