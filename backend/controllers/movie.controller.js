@@ -1,5 +1,6 @@
 const Movie = require("../models/movie.model");
 const bucket = require('../config/firebase');
+const axios = require('axios'); // Thêm nếu chưa có
 
 const getAllMovies = async (req, res) => {
   try {
@@ -563,6 +564,100 @@ const getUpcomingMovies = async (req, res) => {
   }
 };
 
+// API: GET /api/movie/top?type=rating|imdb&limit=10
+const getTopMoviesByRatingOrImdb = async (req, res) => {
+  try {
+    const { type = 'rating', limit = 10 } = req.query;
+    const topLimit = Math.max(1, Math.min(Number(limit) || 10, 50));
+    const result = await Movie.getAllMovies(1, 0);
+    let movies = result.movies;
+
+    if (type === 'imdb') {
+      const imdbApiUrl = 'https://api.imdbapi.dev/search/titles';
+      movies = movies.slice(0, 50);
+
+      const imdbResults = await Promise.all(movies.map(async (movie) => {
+        let imdbRating = null;
+        let imdbTitle = null;
+        let imdbYear = null;
+        let imdbId = null;
+        let imdbImage = null;
+        try {
+          const resp = await axios.get(imdbApiUrl, {
+            params: { query: encodeURIComponent(movie.NameOfEnglish), limit: 1 }
+          });
+          if (resp.data && Array.isArray(resp.data.titles) && resp.data.titles.length > 0) {
+            const first = resp.data.titles[0];
+            imdbRating = first.rating && first.rating.aggregateRating ? Number(first.rating.aggregateRating) : null;
+            imdbTitle = first.primaryTitle;
+            imdbYear = first.startYear;
+            imdbId = first.id;
+            imdbImage = first.primaryImage?.url;
+          } else if (movie.NameOfVietnamese) {
+            const respVN = await axios.get(imdbApiUrl, {
+              params: { query: encodeURIComponent(movie.NameOfVietnamese), limit: 1 }
+            });
+            if (respVN.data && Array.isArray(respVN.data.titles) && respVN.data.titles.length > 0) {
+              const firstVN = respVN.data.titles[0];
+              imdbRating = firstVN.rating && firstVN.rating.aggregateRating ? Number(firstVN.rating.aggregateRating) : null;
+              imdbTitle = firstVN.primaryTitle;
+              imdbYear = firstVN.startYear;
+              imdbId = firstVN.id;
+              imdbImage = firstVN.primaryImage?.url;
+            }
+          }
+        } catch (err) {
+          // Bỏ qua lỗi, chỉ lấy phim có imdbRating
+        }
+        // Chỉ trả về các trường cần thiết
+        return {
+          MovieId: movie.MovieId,
+          NameOfVietnamese: movie.NameOfVietnamese,
+          NameOfEnglish: movie.NameOfEnglish,
+          PosterImage: movie.PosterImage,
+          TrailerUrl: movie.TrailerUrl,
+          Genres: movie.Genres,
+          Director: movie.Director,
+          Actors: movie.Actors,
+          RunningTime: movie.RunningTime,
+          FromDate: movie.FromDate,
+          ToDate: movie.ToDate,
+          imdbRating,
+          imdbTitle,
+          imdbYear,
+          imdbId,
+          imdbImage
+        };
+      }));
+
+      const sorted = imdbResults
+        .filter(m => m.imdbRating !== null)
+        .sort((a, b) => b.imdbRating - a.imdbRating)
+        .slice(0, topLimit);
+
+      return res.json({
+        type: 'imdb',
+        top: topLimit,
+        movies: sorted
+      });
+    } else {
+      // Sắp xếp theo AverageRating giảm dần
+      const sorted = movies
+        .filter(m => m.AverageRating !== undefined && m.AverageRating !== null)
+        .sort((a, b) => Number(b.AverageRating) - Number(a.AverageRating))
+        .slice(0, topLimit);
+
+      return res.json({
+        type: 'rating',
+        top: topLimit,
+        movies: sorted
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getAllMovies,
   getMoviesByName,
@@ -573,5 +668,6 @@ module.exports = {
   updateMovie,
   patchMovie,
   getCurrentMovies,
-  getUpcomingMovies
+  getUpcomingMovies,
+  getTopMoviesByRatingOrImdb
 };
