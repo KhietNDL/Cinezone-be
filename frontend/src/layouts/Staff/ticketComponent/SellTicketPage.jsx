@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+// import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button, Input, Spin } from "antd";
 import { Link } from "react-router-dom";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -29,6 +30,7 @@ import {
 import { resetMember } from '../../../redux/features/memberSlice';
 import VersionCard from "../component/VersionCard";
 import { FaCalendarDays, FaLocationDot } from "react-icons/fa6";
+import MovieSwiper from "../component/MovieSwiper";
 
 const SellTicketPage = () => {
   const dispatch = useDispatch();
@@ -148,13 +150,6 @@ const SellTicketPage = () => {
     getCurrentMovie();
   }, [getCurrentMovie]);
 
-  const swiperBreakpoints = useMemo(() => ({
-    320: { slidesPerView: 1, spaceBetween: 50, slidesPerGroup: 1 },
-    640: { slidesPerView: 2, spaceBetween: 30, slidesPerGroup: 1 },
-    768: { slidesPerView: 2, spaceBetween: 50, slidesPerGroup: 2 },
-    1024: { slidesPerView: 4, spaceBetween: 50, slidesPerGroup: 2 },
-  }), []);
-
   const handleSelectMovie = useCallback((movie) => {
     const isSame = selectedMovie?.MovieId === movie.MovieId;
     dispatch(setSelectedMovie(isSame ? null : movie));
@@ -181,7 +176,7 @@ const SellTicketPage = () => {
   return (
     <div className="w-full bg-[#fafbfc] p-[20px]">
 
-      <div className="flex flex-col justify-between items-end sm:flex-row gap-4">
+      <div className="flex flex-col justify-between items-center lg:flex-row gap-4">
         <div className="w-[250px]"></div>
         <h1 className="text-3xl font-bold text-[#9810FA]">Sell Movie Ticket</h1>
         <Input.Search
@@ -192,34 +187,19 @@ const SellTicketPage = () => {
         />
       </div>
 
-      <p className="font-semibold mt-5 text-xl"><i className="fa-solid fa-film"></i> Select Movie</p>
+      <p className="font-semibold mt-5 text-xl">
+        <i className="fa-solid fa-film"></i> Select Movie
+      </p>
 
       <div className="staff-swiper">
         {loading ? (
           <div className="text-center my-8"><Spin size="large" /></div>
         ) : (
-          <Swiper
-            key={movies.length}
-            modules={[Navigation, Pagination]}
-            breakpoints={swiperBreakpoints}
-            navigation
-            pagination={{ clickable: true }}
-            slidesPerView={4}
-            loop={true}
-          >
-            {movies.map((movie) => (
-              <SwiperSlide key={movie.MovieId}>
-                <div className="flex justify-center p-2 w-[260px]">
-                  <ItemCard
-                    item={movie}
-                    type="movie"
-                    onSelect={() => handleSelectMovie(movie)}
-                    selected={selectedMovie?.MovieId === movie.MovieId}
-                  />
-                </div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
+          <MovieSwiper
+            movies={movies}
+            selectedMovie={selectedMovie}
+            onSelectMovie={handleSelectMovie}
+          />
         )}
       </div>
 

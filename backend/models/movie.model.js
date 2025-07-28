@@ -294,11 +294,12 @@ class Movie {
       current.ContentSynopsis
     );
     const PosterImage = keepOld(movieData.PosterImage, current.PosterImage);
+    const PosterImageHorizontal = keepOld(movieData.PosterImageHorizontal, current.PosterImageHorizontal);
 
     const [result] = await db
       .promise()
       .query(
-        "UPDATE Movies SET NameOfVietnamese = ?, NameOfEnglish = ?, FromDate = ?, ToDate = ?, Actors = ?, ProductionCompany = ?, Director = ?, RunningTime = ?, TrailerUrl = ?, IframeUrl = ?, Genres = ?, ContentSynopsis = ?, PosterImage = ?, UpdatedAt = NOW(), UpdatedBy = ? WHERE MovieId = ? AND IsDeleted = 0",
+        "UPDATE Movies SET NameOfVietnamese = ?, NameOfEnglish = ?, FromDate = ?, ToDate = ?, Actors = ?, ProductionCompany = ?, Director = ?, RunningTime = ?, TrailerUrl = ?, IframeUrl = ?, Genres = ?, ContentSynopsis = ?, PosterImage = ?, PosterImageHorizontal = ?, UpdatedAt = NOW(), UpdatedBy = ? WHERE MovieId = ? AND IsDeleted = 0",
         [
           NameOfVietnamese,
           NameOfEnglish,
@@ -313,6 +314,7 @@ class Movie {
           Genres,
           ContentSynopsis,
           PosterImage,
+          PosterImageHorizontal,
           movieData.UpdatedBy,
           movieId,
         ]

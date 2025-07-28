@@ -11,8 +11,8 @@ import { IoTime, IoSearch, IoAddOutline } from "react-icons/io5";
 import { IoMdCash } from "react-icons/io";
 import { FiLoader } from "react-icons/fi";
 import {
-  getMovieById, getUserByEmail, getUserByCCCD, getUserByPhone, cancelBookingById,
-  checkPromotion, createBookingHold, checkMemberShip
+  getMovieById, cancelBookingById,
+  checkPromotion, createBookingHold, checkMemberShip, getUserInfo
 } from "../../../services/APIForStaff/API";
 import { useAuth } from "../../../context/AuthContext";
 import { useDispatch, useSelector } from 'react-redux';
@@ -119,19 +119,23 @@ const ConfirmTicketsPage = () => {
       let res = null;
 
       if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(searchValue)) {
-        res = await getUserByEmail(searchValue);
+        res = await getUserInfo('email', searchValue);
 
       } else if (/^0\d{9,10}$/.test(searchValue)) {
-        res = await getUserByPhone(searchValue);
+        res = await getUserInfo('phone', searchValue);
 
       } else if (/^\d{9,12}$/.test(searchValue)) {
-        res = await getUserByCCCD(searchValue);
+        res = await getUserInfo('cccd', searchValue);
+      } else if (searchValue.length >= 6) {
+        res = await getUserInfo('name', searchValue);
 
       } else {
-        throw new Error("Invalid Email/Phone/ID");
+        throw new Error("Invalid Email/Phone/ID/Full Name");
       }
 
-      const user = res.data?.user || res.user || res.data;
+      // const user = res.data?.users || res.users || res.data || res.users.data;
+      const user = res?.users?.[0] || res?.data?.users?.[0];
+
       const memberShip = await checkMemberShip(user?.UserId || user?.id);
       console.log("MemberShip:", memberShip);
 
@@ -271,6 +275,14 @@ const ConfirmTicketsPage = () => {
 
       dispatch(setCompleteBooking(completeBooking));
 
+      let successUrl = `${window.location.origin}/staff/ticket-selling/ticket-information`;
+
+      if (values.paymentMethod === "Cash") {
+        successUrl = "/staff/ticket-selling/ticket-information";
+      } else if (values.paymentMethod === "Stripe") {
+        successUrl = "/staff/ticket-selling/waiting-payment";
+      }
+
       const paymentResult = await processPayment({
         paymentMethod: values.paymentMethod,
         orderId: bookingRes.bookingId,
@@ -279,11 +291,7 @@ const ConfirmTicketsPage = () => {
         cardType: values.paymentMethod === "Stripe" ? values.cardType : undefined,
         navigate,
         setIsRedirecting,
-        successUrl: values.paymentMethod === "Cash"
-          ? "/staff/ticket-selling/ticket-information"
-          : values.paymentMethod === "Stripe"
-            ? "/staff/ticket-selling/waiting-payment"
-            : `${window.location.origin}/staff/ticket-selling/ticket-information`,
+        successUrl
       });
 
       // Nếu là Visa, lưu clientSecret để render StripeCheckoutForm
