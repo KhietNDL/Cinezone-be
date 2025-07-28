@@ -53,76 +53,82 @@ const TicketInformation = () => {
   const processPaymentResult = useCallback(async () => {
     try {
       const params = new URLSearchParams(window.location.search);
-      const resultCode = params.get('resultCode') || params.get('status');
-      let bookingId = params.get('bookingId') || bookingData?.bookingId;
-      let paymentId = params.get('paymentId') || bookingData?.paymentId;
+      const resultCode = params.get("resultCode"); // MOMO
+      const zaloStatus = params.get("status");     // ZaloPay
 
-      if (!bookingId || !paymentId) {
-        const extraData = params.get('extraData');
-        if (extraData) {
-          try {
-            const decoded = decodeURIComponent(extraData);
-            const extra = JSON.parse(decoded);
-            bookingId = extra.bookingId || bookingId;
-            paymentId = extra.paymentId || paymentId;
-          } catch (e) {
-            console.error("Failed to parse extraData:", e);
-          }
+      let bookingId = params.get("bookingId") || bookingData?.bookingId;
+      let paymentId = params.get("paymentId") || bookingData?.paymentId;
+
+      if ((!bookingId || !paymentId) && params.get("extraData")) {
+        try {
+          const extra = JSON.parse(decodeURIComponent(params.get("extraData")));
+          bookingId = extra.bookingId || bookingId;
+          paymentId = extra.paymentId || paymentId;
+        } catch (e) {
+          console.error("Failed to parse extraData:", e);
         }
       }
 
-      //Bước 1: Luôn fetch thông tin booking trước
       const res = await checkInfoBookingById(bookingId);
       setApiBookingData(res);
-      // Bước 2: Xác định trạng thái thanh toán
-      if (resultCode) {
-        if (resultCode === '0' || resultCode === '1') {
-          try {
-            if (paymentId) {
-              await confirmPayment(paymentId);
-              console.log("PaymentId:", paymentId)
-              console.log("Payment confirmed successfully");
-            }
-            setPaymentStatus('succeeded');
-            toast.success("Payment successful!");
-          } catch (error) {
-            setPaymentStatus('succeeded');
-            toast.success("Payment successful (confirm failed)", error.message);
-          }
-        } else {
-          setPaymentStatus('error');
-          toast.error("Payment failed");
-        }
 
-      } else {
-        // Thanh toán tiền mặt hoặc truy cập trực tiếp
-        if (visaResponse && visaResponse.status) {
-          setPaymentStatus(visaResponse.status === 'succeeded' ? 'succeeded' : 'error');
+      let status = "error";
+
+      // MOMO
+      if (resultCode !== null) {
+        if (resultCode === "0") {
+          if (paymentId) await confirmPayment(paymentId);
+          status = "succeeded";
+          toast.success("MoMo payment successful!");
         } else {
-          setPaymentStatus(res?.status === 2 ? 'succeeded' : 'error');
-        }
-        console.log("PaymentId:", paymentId)
-        if (paymentId) {
-          await confirmPayment(paymentId);
-          console.log("Payment confirmed successfully");
+          toast.error("MoMo payment failed!");
         }
       }
 
-      //Nếu có thông tin khách hàng, lấy thêm info
+      // ZaloPay
+      else if (zaloStatus !== null) {
+        if (zaloStatus === "1") {
+          if (paymentId) await confirmPayment(paymentId);
+          status = "succeeded";
+          toast.success("ZaloPay payment successful!");
+        } else {
+          toast.error("ZaloPay payment failed!");
+        }
+      }
+
+      // VISA hoặc truy cập trực tiếp
+      else {
+        if (visaResponse?.status === "succeeded" || res?.status === 2) {
+          if (paymentId) {
+            try {
+              await confirmPayment(paymentId);
+            } catch (err) {
+              console.warn("Confirm failed:", err.message);
+            }
+          }
+          status = "succeeded";
+          toast.success("Payment successful!");
+        } else {
+          toast.error("Payment failed!");
+        }
+      }
+
+      setPaymentStatus(status);
+      window.history.replaceState({}, document.title, window.location.pathname);
+      // Fetch thêm thông tin khách hàng
       if (memberData?.member?.phone) {
         const customerData = await getUserByPhone(memberData?.member?.phone);
         setApiCustomerData(customerData);
-        console.log("Customer data from API:", customerData);
       }
-
     } catch (error) {
       console.error("Payment processing error:", error);
-      setPaymentStatus('error');
+      setPaymentStatus("error");
       toast.error(error.message || "System error");
     } finally {
       setIsLoading(false);
     }
   }, [bookingData, memberData, visaResponse]);
+
 
   useEffect(() => {
     if (!hasRun.current) {
