@@ -17,6 +17,8 @@ const formatRoomData = (room) => ({
     CinemaRoomId: room.CinemaRoomId,
     Name: room.Name,
     SeatQuantity: room.SeatQuantity,
+    Row: room.Row,
+    Col: room.Col,
     Type: room.Type
 });
 
@@ -102,28 +104,60 @@ const getCinemaRoomById = async (req, res) => {
 // Create new cinema room
 const createCinemaRoom = async (req, res) => {
     try {
-        const { Name, SeatQuantity, Type } = req.body;
+        const { Name, Row, Col, SeatQuantity, Type } = req.body;
 
         // Validate input
-        if (!Name || !SeatQuantity || !Type) {
+        if (!Name || !Row || !Col || !SeatQuantity || !Type) {
             return res.status(400).json({
-                error: 'Name, SeatQuantity, and Type are required',
+                error: 'Name, Row, Col, SeatQuantity, and Type are required',
                 code: ERROR_CODES.INVALID_INPUT
             });
         }
 
-        // Validate seat quantity
-        if (SeatQuantity <= 0 || !Number.isInteger(SeatQuantity)) {
+        // Validate row and column
+        if (!Number.isInteger(Row) || Row < 5 || Row > 20) {
+            return res.status(400).json({
+                error: 'Row must be an integer between 5 and 20',
+                code: ERROR_CODES.INVALID_SEAT_QUANTITY
+            });
+        }
+
+        if (!Number.isInteger(Col) || Col < 8 || Col > 20) {
+            return res.status(400).json({
+                error: 'Col must be an integer between 8 and 20',
+                code: ERROR_CODES.INVALID_SEAT_QUANTITY
+            });
+        }
+
+        // Validate SeatQuantity
+        if (!Number.isInteger(SeatQuantity) || SeatQuantity <= 0) {
             return res.status(400).json({
                 error: 'SeatQuantity must be a positive integer',
                 code: ERROR_CODES.INVALID_SEAT_QUANTITY
             });
         }
 
-        // Validate seat quantity limit (10 rows × 12 columns = 120 seats max)
-        if (SeatQuantity > 120) {
+        // Validate maximum possible seats
+        const maxPossibleSeats = Row * Col;
+        if (maxPossibleSeats > 300) {
             return res.status(400).json({
-                error: 'SeatQuantity cannot exceed 120 seats (maximum grid capacity: 10 rows × 12 columns)',
+                error: 'Maximum possible seats cannot exceed 300 (Row × Col ≤ 300)',
+                code: ERROR_CODES.INVALID_SEAT_QUANTITY
+            });
+        }
+
+        // Validate minimum seat requirement (90%)
+        const minRequiredSeats = Math.ceil(maxPossibleSeats * 0.9);
+        if (SeatQuantity < minRequiredSeats) {
+            return res.status(400).json({
+                error: `SeatQuantity must be at least 90% of total capacity (minimum ${minRequiredSeats} seats)`,
+                code: ERROR_CODES.INVALID_SEAT_QUANTITY
+            });
+        }
+
+        if (SeatQuantity > maxPossibleSeats) {
+            return res.status(400).json({
+                error: `SeatQuantity cannot exceed maximum capacity (${maxPossibleSeats} seats)`,
                 code: ERROR_CODES.INVALID_SEAT_QUANTITY
             });
         }
@@ -140,6 +174,8 @@ const createCinemaRoom = async (req, res) => {
         const CreatedBy = req.user.UserId;
         const id = await CinemaRoom.createCinemaRoom({
             Name,
+            Row,
+            Col,
             SeatQuantity,
             Type,
             CreatedBy
@@ -149,7 +185,12 @@ const createCinemaRoom = async (req, res) => {
         res.status(201).json({
             message: 'Cinema room and seats created successfully',
             room: formatRoomData(newRoom),
-            seatsGenerated: SeatQuantity
+            layout: {
+                designedCapacity: maxPossibleSeats,
+                actualSeats: SeatQuantity,
+                efficiency: `${Math.round((SeatQuantity / maxPossibleSeats) * 100)}%`,
+                minRequired: minRequiredSeats
+            }
         });
     } catch (error) {
         console.error('Create cinema room error:', error);
@@ -164,7 +205,7 @@ const createCinemaRoom = async (req, res) => {
 const updateCinemaRoom = async (req, res) => {
     try {
         const { id } = req.params;
-        const { Name, SeatQuantity, Type } = req.body;
+        const { Name, Row, Col, SeatQuantity, Type } = req.body;
 
         // Validate UUID format
         if (!uuidValidate(id)) {
@@ -175,17 +216,42 @@ const updateCinemaRoom = async (req, res) => {
         }
 
         // Validate input
-        if (!Name || !SeatQuantity || !Type) {
+        if (!Name || !Row || !Col || !SeatQuantity || !Type) {
             return res.status(400).json({
-                error: 'Name, SeatQuantity, and Type are required',
+                error: 'Name, Row, Col, SeatQuantity, and Type are required',
                 code: ERROR_CODES.INVALID_INPUT
             });
         }
 
-        // Validate seat quantity
-        if (SeatQuantity <= 0 || !Number.isInteger(SeatQuantity)) {
+        // Validate row and column
+        if (!Number.isInteger(Row) || Row < 5 || Row > 20) {
             return res.status(400).json({
-                error: 'SeatQuantity must be a positive integer',
+                error: 'Row must be an integer between 5 and 20',
+                code: ERROR_CODES.INVALID_SEAT_QUANTITY
+            });
+        }
+
+        if (!Number.isInteger(Col) || Col < 8 || Col > 20) {
+            return res.status(400).json({
+                error: 'Col must be an integer between 8 and 20',
+                code: ERROR_CODES.INVALID_SEAT_QUANTITY
+            });
+        }
+
+        // Validate SeatQuantity
+        const maxPossibleSeats = Row * Col;
+        const minRequiredSeats = Math.ceil(maxPossibleSeats * 0.9);
+        
+        if (!Number.isInteger(SeatQuantity) || SeatQuantity < minRequiredSeats) {
+            return res.status(400).json({
+                error: `SeatQuantity must be at least 90% of total capacity (minimum ${minRequiredSeats} seats)`,
+                code: ERROR_CODES.INVALID_SEAT_QUANTITY
+            });
+        }
+
+        if (SeatQuantity > maxPossibleSeats) {
+            return res.status(400).json({
+                error: `SeatQuantity cannot exceed maximum capacity (${maxPossibleSeats} seats)`,
                 code: ERROR_CODES.INVALID_SEAT_QUANTITY
             });
         }
@@ -213,6 +279,8 @@ const updateCinemaRoom = async (req, res) => {
         const UpdatedBy = req.user.UserId;
         const success = await CinemaRoom.updateCinemaRoom(id, {
             Name,
+            Row,
+            Col,
             SeatQuantity,
             Type,
             UpdatedBy
@@ -233,7 +301,7 @@ const updateCinemaRoom = async (req, res) => {
     } catch (error) {
         console.error('Update cinema room error:', error);
         res.status(500).json({
-            error: 'Internal server error while updating cinema room',
+            error: error.message || 'Internal server error while updating cinema room',
             code: ERROR_CODES.SERVER_ERROR
         });
     }

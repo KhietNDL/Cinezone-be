@@ -42,21 +42,43 @@ class CinemaRoom {
       
       const id = uuidv4();
       const now = new Date();
-      const { Name, SeatQuantity, Type, CreatedBy } = data;
+      const { Name, Row, Col, SeatQuantity, Type, CreatedBy } = data;
       
-      // Validate seat quantity (max 120 seats: 10 rows × 12 columns)
-      if (SeatQuantity > 120) {
-        throw new Error('Seat quantity cannot exceed 120 seats (10 rows × 12 columns)');
+      // Validate row and column limits
+      if (Row < 5 || Row > 20) {
+        throw new Error('Number of rows must be between 5 and 20');
+      }
+      if (Col < 8 || Col > 20) {
+        throw new Error('Number of columns must be between 8 and 20');
+      }
+      
+      const maxPossibleSeats = Row * Col;
+      if (maxPossibleSeats > 300) {
+        throw new Error('Total seats cannot exceed 300 seats');
+      }
+      
+      // Validate SeatQuantity
+      if (!SeatQuantity || !Number.isInteger(SeatQuantity) || SeatQuantity <= 0) {
+        throw new Error('SeatQuantity must be a positive integer');
+      }
+      
+      const minRequiredSeats = Math.ceil(maxPossibleSeats * 0.9); // 90% của Row×Col
+      if (SeatQuantity < minRequiredSeats) {
+        throw new Error(`SeatQuantity must be at least 90% of total capacity (${minRequiredSeats} seats)`);
+      }
+      
+      if (SeatQuantity > maxPossibleSeats) {
+        throw new Error(`SeatQuantity cannot exceed maximum capacity (${maxPossibleSeats} seats)`);
       }
       
       // Create cinema room
       await connection.query(
-        "INSERT INTO CinemaRooms (CinemaRoomId, Name, SeatQuantity, Type, IsDeleted, CreatedAt, CreatedBy) VALUES (?, ?, ?, ?, 0, ?, ?)",
-        [id, Name, SeatQuantity, Type, now, CreatedBy]
+        "INSERT INTO CinemaRooms (CinemaRoomId, Name, SeatQuantity, `Row`, `Col`, Type, IsDeleted, CreatedAt, CreatedBy) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)",
+        [id, Name, SeatQuantity, Row, Col, Type, now, CreatedBy]
       );
 
-      // Auto-generate seats based on seat quantity
-      await this.generateSeatsForRoom(connection, id, SeatQuantity, CreatedBy);
+      // Auto-generate seats theo SeatQuantity
+      await this.generateSeatsForRoom(connection, id, Row, Col, SeatQuantity, CreatedBy);
       
       await connection.commit();
       return id;
@@ -68,24 +90,26 @@ class CinemaRoom {
     }
   }
 
-  static async generateSeatsForRoom(connection, cinemaRoomId, seatQuantity, createdBy) {
-    const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
-    const maxCols = 12;
-    const now = new Date();
+  static async generateSeatsForRoom(connection, cinemaRoomId, numRows, numCols, targetSeats, createdBy) {
+    const rows = [];
+    // Generate row letters A, B, C, ..., T
+    for (let i = 0; i < numRows; i++) {
+      rows.push(String.fromCharCode(65 + i)); // A=65, B=66, ...
+    }
     
+    const now = new Date();
     let seatsCreated = 0;
     
-    // Create seats column by column (A1, B1, C1... then A2, B2, C2...)
-    for (let col = 1; col <= maxCols && seatsCreated < seatQuantity; col++) {
-      for (let rowIndex = 0; rowIndex < rows.length && seatsCreated < seatQuantity; rowIndex++) {
+    // Tạo ghế theo thứ tự từ trái sang phải, từ trên xuống dưới
+    for (let col = 1; col <= numCols && seatsCreated < targetSeats; col++) {
+      for (let rowIndex = 0; rowIndex < rows.length && seatsCreated < targetSeats; rowIndex++) {
         const row = rows[rowIndex];
         
-        // Special handling for row J (Couple seats)
-        if (rowIndex === 9) { // J = Couple
-          // Chỉ tạo ghế couple cho cột lẻ (1, 3, 5, 7, 9, 11)
-          // Mỗi ghế couple sẽ chiếm 2 vị trí
-          if (col % 2 === 1) { // Cột lẻ
-            const seatNumber = `${row}${col}-${col + 1}`; // J1-2, J3-4, J5-6...
+        // Special handling for last row (Couple seats)
+        if (rowIndex === rows.length - 1) { // Last row = Couple
+          // Chỉ tạo ghế couple cho cột lẻ (1, 3, 5, 7, 9...) VÀ phải có đủ 2 cột
+          if (col % 2 === 1 && (col + 1) <= numCols && seatsCreated < targetSeats) {
+            const seatNumber = `${row}${col}-${col + 1}`; // T1-2, T3-4, T5-6...
             const seatId = uuidv4();
             await connection.query(
               `INSERT INTO Seats (SeatId, CinemaRoomId, SeatNumber, Type, Price, IsDeleted, CreatedAt, CreatedBy) 
@@ -94,17 +118,18 @@ class CinemaRoom {
             );
             seatsCreated++;
           }
+          // Với cột chẵn hoặc cột cuối lẻ: không tạo ghế couple, chỉ skip
           continue;
         } else {
-          // Normal và VIP seats
+          // Normal và VIP seats - TẠO ĐẦY ĐỦ TẤT CẢ CỘT
           const seatNumber = `${row}${col}`;
           
           // Determine seat type based on row
           let seatType, price;
-          if (rowIndex <= 2) { // A, B, C = Normal
+          if (rowIndex <= 2) { // First 3 rows = Normal
             seatType = 'Normal';
             price = 90000;
-          } else { // D, E, F, G, H, I = VIP
+          } else { // Middle rows = VIP
             seatType = 'VIP';
             price = 150000;
           }
@@ -120,16 +145,43 @@ class CinemaRoom {
         }
       }
     }
+    
+    return seatsCreated; // Trả về số ghế thực tế đã tạo
   }
 
   static async updateCinemaRoom(id, data) {
     const now = new Date();
-    const { Name, SeatQuantity, Type, UpdatedBy } = data;
+    const { Name, Row, Col, SeatQuantity, Type, UpdatedBy } = data;
+    
+    // Validate row and column limits if provided
+    if (Row && (Row < 5 || Row > 20)) {
+      throw new Error('Number of rows must be between 5 and 20');
+    }
+    if (Col && (Col < 8 || Col > 20)) {
+      throw new Error('Number of columns must be between 8 and 20');
+    }
+    if (Row && Col && Row * Col > 300) {
+      throw new Error('Total seats cannot exceed 300 seats');
+    }
+    
+    // Validate SeatQuantity if provided
+    if (Row && Col && SeatQuantity) {
+      const maxPossibleSeats = Row * Col;
+      const minRequiredSeats = Math.ceil(maxPossibleSeats * 0.9);
+      
+      if (SeatQuantity < minRequiredSeats) {
+        throw new Error(`SeatQuantity must be at least 90% of total capacity (${minRequiredSeats} seats)`);
+      }
+      if (SeatQuantity > maxPossibleSeats) {
+        throw new Error(`SeatQuantity cannot exceed maximum capacity (${maxPossibleSeats} seats)`);
+      }
+    }
+    
     const [result] = await db
       .promise()
       .query(
-        "UPDATE CinemaRooms SET Name = ?, SeatQuantity = ?, Type = ?, UpdatedAt = ?, UpdatedBy = ? WHERE CinemaRoomId = ? AND IsDeleted = 0",
-        [Name, SeatQuantity, Type, now, UpdatedBy, id]
+        "UPDATE CinemaRooms SET Name = ?, `Row` = ?, `Col` = ?, SeatQuantity = ?, Type = ?, UpdatedAt = ?, UpdatedBy = ? WHERE CinemaRoomId = ? AND IsDeleted = 0",
+        [Name, Row, Col, SeatQuantity, Type, now, UpdatedBy, id]
       );
     return result.affectedRows > 0;
   }
