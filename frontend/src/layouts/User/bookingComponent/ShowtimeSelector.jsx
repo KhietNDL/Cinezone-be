@@ -11,7 +11,7 @@ const ShowtimeSelector = ({
   setDateIndex,
   dispatch,
 }) => {
-  // Helper function để validate và format date
+  // Validate date
   const isValidDate = (date) => {
     return date instanceof Date && !isNaN(date.getTime());
   };
@@ -22,32 +22,47 @@ const ShowtimeSelector = ({
     return isValidDate(date) ? date : null;
   };
 
-  const handleChangeDate = (direction) => {
-    if (!showtimes || !Array.isArray(showtimes) || showtimes.length === 0) {
-      console.warn('Invalid showtimes data');
-      return;
-    }
+  // Lọc showtimes để bỏ ngày quá khứ
+  const validShowtimes = (showtimes || []).filter((d) => {
+    if (!d || !d.Day) return false;
+    const dayObj = safeCreateDate(d.Day);
+    if (!dayObj) return false;
 
-    // Chỉ di chuyển dateIndex để scroll danh sách, không thay đổi selectedDate
+    const today = new Date();
+    const dateToCheck = new Date(
+      dayObj.getFullYear(),
+      dayObj.getMonth(),
+      dayObj.getDate()
+    );
+    const todayForComparison = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+
+    return dateToCheck >= todayForComparison;
+  });
+
+  // Scroll
+  const handleChangeDate = (direction) => {
+    if (!validShowtimes || validShowtimes.length === 0) return;
     const newDateIndex = dateIndex + direction;
-    
-    if (newDateIndex >= 0 && newDateIndex <= showtimes.length - 3) {
+
+    if (newDateIndex >= 0 && newDateIndex <= validShowtimes.length - 3) {
       setDateIndex(newDateIndex);
     }
   };
 
-  // Kiểm tra có thể scroll trái/phải danh sách không
   const canGoLeft = dateIndex > 0;
-  const canGoRight = dateIndex < (showtimes?.length || 0) - 3;
+  const canGoRight = dateIndex < validShowtimes.length - 3;
+  const visibleDates = validShowtimes.slice(dateIndex, dateIndex + 3);
 
-  const visibleDates = showtimes ? showtimes.slice(dateIndex, dateIndex + 3) : [];
-
-  // Early return nếu không có dữ liệu hợp lệ
-  if (!showtimes || !Array.isArray(showtimes) || showtimes.length === 0) {
+  // Early return nếu không có dữ liệu
+  if (!validShowtimes || validShowtimes.length === 0) {
     return (
       <div className="mb-6 md:mb-8">
         <div className="text-center text-white/60">
-          <p>No showtime data available</p>
+          <p>No upcoming showtime data available</p>
         </div>
       </div>
     );
@@ -56,6 +71,7 @@ const ShowtimeSelector = ({
   return (
     <div className="mb-6 md:mb-8">
       <div className="space-y-6 md:space-y-0 md:flex md:items-center md:gap-4 lg:gap-8 text-sm text-white/80">
+        {/* Date Selector */}
         <div className="flex-1">
           <label className="block mb-4 text-white font-bold text-lg md:text-xl text-center md:text-left">
             Date
@@ -74,17 +90,6 @@ const ShowtimeSelector = ({
             </button>
             <div className="flex gap-2 md:gap-3 overflow-x-auto flex-1 scrollbar-hide justify-center">
               {visibleDates.map((d, idx) => {
-                if (!d || !d.Day) {
-                  return (
-                    <div
-                      key={idx}
-                      className="flex flex-col items-center justify-center w-16 md:w-20 h-12 md:h-16 rounded-2xl md:rounded-4xl text-xs md:text-sm bg-gray-600/20 text-gray-500"
-                    >
-                      <span>Invalid</span>
-                    </div>
-                  );
-                }
-
                 const dayObj = safeCreateDate(d.Day);
                 if (!dayObj) {
                   return (
@@ -98,32 +103,22 @@ const ShowtimeSelector = ({
                 }
 
                 const isSelected = d.Day === selectedDate;
-                const today = new Date();
-                
-                const dateToCheck = new Date(dayObj.getFullYear(), dayObj.getMonth(), dayObj.getDate());
-                const todayForComparison = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-                
-                const isPastDate = dateToCheck < todayForComparison;
-                
+
                 return (
                   <div
                     key={idx}
                     className={`flex flex-col items-center justify-center w-16 md:w-20 h-12 md:h-16 rounded-2xl md:rounded-4xl text-xs md:text-sm transition-all duration-200
                       ${
-                        isPastDate
-                          ? "bg-gray-600/40 text-gray-400 opacity-50"
-                          : isSelected
-                          ? "bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 text-white shadow-lg cursor-pointer"
+                        isSelected
+                          ? "bg-gradient-to-r from-purple-600/30 via-purple-500/100 to-purple-600/30 text-white shadow-lg cursor-pointer"
                           : "bg-white/10 hover:bg-white/20 text-white/80 cursor-pointer"
                       }`}
-                    onClick={() => {
-                      if (!isPastDate) {
-                        dispatch({
-                          type: "booking/setSelectedDate",
-                          payload: d.Day,
-                        });
-                      }
-                    }}
+                    onClick={() =>
+                      dispatch({
+                        type: "booking/setSelectedDate",
+                        payload: d.Day,
+                      })
+                    }
                   >
                     <span className="text-[8px] md:text-[10px] font-medium opacity-90">
                       {dayObj
@@ -155,6 +150,8 @@ const ShowtimeSelector = ({
             </button>
           </div>
         </div>
+
+        {/* Time Selector */}
         <div className="w-full md:w-64 lg:w-80">
           <label className="block mb-4 text-white font-bold text-lg md:text-xl text-center md:text-left">
             Time
@@ -211,6 +208,8 @@ const ShowtimeSelector = ({
             <FaChevronDown className="absolute top-1/2 right-3 -translate-y-1/2 text-purple-300 pointer-events-none text-sm" />
           </div>
         </div>
+
+        {/* Room Info */}
         <div className="w-full md:w-48 lg:w-64">
           <label className="block mb-4 text-white font-bold text-lg md:text-xl text-center md:text-left">
             Room

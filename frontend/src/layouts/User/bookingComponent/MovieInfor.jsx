@@ -115,14 +115,14 @@ const MovieInfo = ({
           <div className="flex items-center justify-between gap-3 mt-4">
             <button
               onClick={onOpenTrailer}
-              className="flex-1 group relative overflow-hidden bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 hover:from-purple-700 hover:via-purple-600 hover:to-pink-600 rounded-2xl p-3 text-white font-bold text-sm md:text-base shadow-xl hover:shadow-2xl hover:shadow-purple-500/20 transform hover:scale-[1.02] transition-all duration-300 ease-out border border-purple-400/20 focus:outline-none focus:ring-4 focus:ring-purple-500/50 flex items-center justify-center gap-2"
+              className="flex-1 group relative overflow-hidden bg-gradient-to-r from-purple-600/10 via-purple-500/80 to-purple-600/10 hover:from-purple-600/30 hover:via-purple-600 hover:to-purple-800/30 rounded-2xl p-3 text-white font-bold text-sm md:text-base shadow-xl hover:shadow-2xl hover:shadow-purple-500/20 transform hover:scale-[1.02] transition-all duration-300 ease-out border border-purple-400/20 focus:outline-none focus:ring-4 focus:ring-purple-500/50 flex items-center justify-center gap-2"
             >
               <MdOutlineOndemandVideo className="text-xl" />
               <span className="tracking-wide text-sm">Watch Trailer</span>
             </button>
             {ratingSummary && (
               <button
-                className="flex-1 group relative overflow-hidden bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 hover:from-purple-700 hover:via-purple-600 hover:to-pink-600 rounded-2xl p-3 text-white font-bold text-sm md:text-base shadow-xl hover:shadow-2xl hover:shadow-purple-500/20 transform hover:scale-[1.02] transition-all duration-300 ease-out border border-purple-400/20 focus:outline-none focus:ring-4 focus:ring-purple-500/50 flex items-center justify-center gap-2"
+                className="flex-1 group relative overflow-hidden bg-gradient-to-r from-purple-600/10 via-purple-500/80 to-purple-600/10 hover:from-purple-600/30 hover:via-purple-600 hover:to-purple-800/30  rounded-2xl p-3 text-white font-bold text-sm md:text-base shadow-xl hover:shadow-2xl hover:shadow-purple-500/20 transform hover:scale-[1.02] transition-all duration-300 ease-out border border-purple-400/20 focus:outline-none focus:ring-4 focus:ring-purple-500/50 flex items-center justify-center gap-2"
                 onClick={() => {
                   onOpenRatingList();
                   onFetchRatings();
