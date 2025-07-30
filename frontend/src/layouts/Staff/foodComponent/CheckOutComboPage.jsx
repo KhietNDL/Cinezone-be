@@ -1,30 +1,37 @@
-import React, { useState, useMemo } from 'react';
-import { Button, Table, Input, Select, Image } from 'antd';
-import { useNavigate } from 'react-router-dom';
-import { createProductHold } from '../../../services/APIForStaff/API';
-import { useAuth } from '../../../context/AuthContext';
-import { toast } from 'react-toastify';
+import React, { useState, useMemo } from "react";
+import { Button, Table, Input, Select, Image } from "antd";
+import { useNavigate } from "react-router-dom";
+import { createProductHold } from "../../../services/APIForStaff/API";
+import { useAuth } from "../../../context/AuthContext";
+import { toast } from "react-toastify";
 import { FaCheck, FaTimes } from "react-icons/fa";
 import { FaArrowLeft, FaMoneyBillWave } from "react-icons/fa6";
-import './ComboPage.css';
+import { PiPopcornDuotone } from "react-icons/pi";
+import "./ComboPage.css";
 import { useSelector, useDispatch } from "react-redux";
-import { clearComboCart, clearOrderInfo, setOrderInfo, setStripeClientSecret, setPaymentId } from "../../../redux/features/comboSlice";
-import PaymentMethod from '../component/PaymentMethod';
-import { processPayment } from '../../../hooks/useProcessPayment';
-import BackButton from '../component/BackButton';
+import {
+  clearComboCart,
+  clearOrderInfo,
+  setOrderInfo,
+  setStripeClientSecret,
+  setPaymentId,
+} from "../../../redux/features/comboSlice";
+import PaymentMethod from "../component/PaymentMethod";
+import { processPayment } from "../../../hooks/useProcessPayment";
+import BackButton from "../component/BackButton";
 
 const { Option } = Select;
 
 export default function CheckOutComboPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const cart = useSelector(state => state.combo.cart);
+  const cart = useSelector((state) => state.combo.cart);
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [cardType, setCardType] = useState("");
   const dispatch = useDispatch();
 
-  const formatPrice = (price) => price?.toLocaleString('vi-VN');
+  const formatPrice = (price) => price?.toLocaleString("vi-VN");
 
   const totalPrice = useMemo(() => {
     return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -50,16 +57,22 @@ export default function CheckOutComboPage() {
         return;
       }
 
-      const productsForApi = cart.map(item => ({
+      const productsForApi = cart.map((item) => ({
         ProductId: item.id,
-        Quantity: item.quantity
+        Quantity: item.quantity,
       }));
 
-      const holdResponse = await createProductHold(userId, productsForApi, "Payment for combo");
-      dispatch(setOrderInfo({
-        orderProductId: holdResponse.OrderProductId,
-        totalAmount: totalPrice,
-      }));
+      const holdResponse = await createProductHold(
+        userId,
+        productsForApi,
+        "Payment for combo"
+      );
+      dispatch(
+        setOrderInfo({
+          orderProductId: holdResponse.OrderProductId,
+          totalAmount: totalPrice,
+        })
+      );
 
       let successUrl;
 
@@ -91,10 +104,16 @@ export default function CheckOutComboPage() {
         dispatch(setStripeClientSecret(paymentResult.data || paymentResult));
       }
 
-      if (paymentMethod && paymentResult?.data?.paymentId || paymentResult?.data?.payment?.PaymentId) {
-        dispatch(setPaymentId(paymentResult.data.paymentId || paymentResult.data.payment.PaymentId));
+      if (
+        (paymentMethod && paymentResult?.data?.paymentId) ||
+        paymentResult?.data?.payment?.PaymentId
+      ) {
+        dispatch(
+          setPaymentId(
+            paymentResult.data.paymentId || paymentResult.data.payment.PaymentId
+          )
+        );
       }
-
     } catch (error) {
       toast.error("Payment failed.");
       console.error("Checkout error:", error);
@@ -111,97 +130,164 @@ export default function CheckOutComboPage() {
 
   const columns = [
     {
-      title: 'Image',
-      dataIndex: 'image',
+      title: "Image",
+      dataIndex: "image",
       width: 200,
-      render: img => <Image src={img} width={100} height={130} />,
+      render: (img) => <Image src={img} width={100} height={130} />,
     },
     {
-      title: 'Product',
-      dataIndex: 'name',
-      width: 200
+      title: "Product",
+      dataIndex: "name",
+      width: 200,
     },
     {
-      title: 'Quantity',
-      dataIndex: 'quantity',
-      width: 100
+      title: "Quantity",
+      dataIndex: "quantity",
+      width: 100,
     },
     {
-      title: 'Unit Price',
-      dataIndex: 'price',
-      render: price => `${formatPrice(price)} VNĐ`,
-      width: 150
+      title: "Unit Price",
+      dataIndex: "price",
+      render: (price) => `${formatPrice(price)} VNĐ`,
+      width: 150,
     },
     {
-      title: 'Total',
-      render: (_, record) => `${formatPrice(record.price * record.quantity)} VNĐ`,
-      width: 150
-    }
+      title: "Total",
+      render: (_, record) =>
+        `${formatPrice(record.price * record.quantity)} VNĐ`,
+      width: 150,
+    },
   ];
 
   return (
-    <div className="p-4 mx-auto w-full bg-[#fafbfc]">
-      <div className="flex items-start justify-between gap-4 mb-6">
-        <div className='w-[20%]'>
-          <BackButton />
+    <div className="min-h-screen bg-gray-50">
+      {/* Header Section */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 bg-white shadow-md rounded-lg mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <BackButton />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
+              <PiPopcornDuotone className="text-white text-lg sm:text-xl" />
+            </div>
+            <div>
+              <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent">
+                Combo Checkout
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">
+                Confirm your order details
+              </p>
+            </div>
+          </div>
         </div>
-        <h1 className="text-3xl font-bold text-[#9810FA] flex lg:items-start items-center lg:justify-start justify-center flex-col">
-          Confirm Combos
-        </h1>
-        <div className='w-[20%]'></div>
       </div>
-      <div className="px-8 w-full">
-        <div className='block mb-2 font-medium text-lg'>
-          Combos Details:
+
+      <div className="max-w-7xl mx-auto">
+        {/* Order Details Section */}
+        <div className="bg-white rounded-xl shadow-lg border-0 overflow-hidden mb-6">
+          <div className="p-6">
+            {/* Section Header */}
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+              <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
+                <PiPopcornDuotone className="text-white text-lg" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-gray-800">
+                  Order Details
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Review your selected combo items
+                </p>
+              </div>
+              <div className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">
+                {cart.length} {cart.length === 1 ? "item" : "items"}
+              </div>
+            </div>
+
+            <Table
+              className="table-cart-staff"
+              dataSource={cart}
+              columns={columns}
+              rowKey="id"
+              pagination={false}
+              scroll={{ x: true }}
+            />
+          </div>
         </div>
-        <Table
-          className='table-cart-staff'
-          dataSource={cart}
-          columns={columns}
-          rowKey="id"
-          pagination={false}
-          style={{ width: '100%', border: '1px solid gray', borderRadius: '20px' }}
-        />
-      </div>
 
-      <div className="flex gap-3 items-center my-4 justify-center">
-        <span className="text-2xl font-semibold">Total Amount:</span>
-        <span className="text-xl font-bold text-green-600" data-testid="total-amount">{formatPrice(totalPrice)} VNĐ</span>
-      </div>
+        {/* Payment Section */}
+        <div className="bg-white rounded-xl shadow-lg border-0 overflow-hidden mb-6">
+          <div className="p-6">
+            {/* Section Header */}
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+              <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
+                <FaMoneyBillWave className="text-white text-sm" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-gray-800">
+                  Payment Information
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Choose your payment method
+                </p>
+              </div>
+            </div>
 
-      <div className="mx-6 my-3">
-        <label className="block mb-2 font-medium text-lg">Payment method:</label>
+            {/* Total Amount */}
+            <div className="flex justify-center mb-6 p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg">
+              <div className="text-center">
+                <p className="text-lg font-semibold text-purple-700 mb-1">
+                  Total Amount
+                </p>
+                <p
+                  className="text-2xl font-bold text-purple-800"
+                  data-testid="total-amount"
+                >
+                  {formatPrice(totalPrice)} VNĐ
+                </p>
+              </div>
+            </div>
 
-        <PaymentMethod
-          value={paymentMethod}
-          onChange={val => {
-            setPaymentMethod(val);
-            if (val !== "Stripe") setCardType("");
-          }}
-          showCardType={paymentMethod === "Stripe"}
-          cardType={cardType}
-          onCardTypeChange={setCardType}
-          cardTypeError={paymentMethod === "Stripe" && !cardType ? "Please select a card type" : ""}
-        />
+            {/* Payment Method */}
+            <PaymentMethod
+              value={paymentMethod}
+              onChange={(val) => {
+                setPaymentMethod(val);
+                if (val !== "Stripe") setCardType("");
+              }}
+              showCardType={paymentMethod === "Stripe"}
+              cardType={cardType}
+              onCardTypeChange={setCardType}
+              cardTypeError={
+                paymentMethod === "Stripe" && !cardType
+                  ? "Please select a card type"
+                  : ""
+              }
+            />
 
-      </div>
-
-      <div className="flex justify-center gap-4 mt-5">
-        <Button
-          type="primary"
-          icon={<FaCheck />}
-          loading={loading}
-          onClick={handlePayment}
-        >
-          Confirm
-        </Button>
-        <Button
-          danger
-          onClick={handleCancel}
-          icon={<FaTimes />}
-        >
-          Cancel
-        </Button>
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row justify-center gap-4 mt-8 pt-4 border-t border-gray-100">
+              <Button
+                type="primary"
+                icon={<FaCheck />}
+                loading={loading}
+                onClick={handlePayment}
+                disabled={cart.length === 0}
+                className="h-12 px-8 bg-gradient-to-r from-purple-600 to-purple-700 border-0 hover:from-purple-700 hover:to-purple-800 focus:from-purple-700 focus:to-purple-800 font-semibold text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
+                size="large"
+              >
+                {loading ? "Processing..." : "Confirm Payment"}
+              </Button>
+              <Button
+                icon={<FaTimes />}
+                onClick={handleCancel}
+                className="h-12 px-8 font-semibold rounded-lg border-2 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 focus:bg-red-50 focus:border-red-400 transition-all duration-200"
+                size="large"
+              >
+                Cancel Order
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

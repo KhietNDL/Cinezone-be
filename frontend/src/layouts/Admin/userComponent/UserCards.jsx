@@ -1,8 +1,16 @@
 import React from "react";
 import { FaRegEdit } from "react-icons/fa";
 import { RiDeleteBin5Line } from "react-icons/ri";
+import { FaUnlock } from "react-icons/fa";
 
-const UserCards = ({ users, handleEditUser, handleDeleteUser, formatDate }) => {
+const UserCards = ({
+  users,
+  handleEditUser,
+  handleDeleteUser,
+  handleUnbanUser,
+  formatDate,
+  unbanLoading,
+}) => {
   return (
     <div className="block sm:hidden space-y-4">
       {users.map((user) => (
@@ -53,8 +61,22 @@ const UserCards = ({ users, handleEditUser, handleDeleteUser, formatDate }) => {
             <p>
               <strong>Phone:</strong> {user.PhoneNumber || "N/A"}
             </p>
+            <p>
+              <strong>Status:</strong>{" "}
+              <span
+                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  user.isDeleted === 0 || user.isDeleted === false
+                    ? "bg-green-100 text-green-800"
+                    : "bg-red-100 text-red-800"
+                }`}
+              >
+                {user.isDeleted === 0 || user.isDeleted === false
+                  ? "Active"
+                  : "Expired"}
+              </span>
+            </p>
           </div>
-          <div className="flex justify-center space-x-2 sm:space-x-3">
+          <div className="flex justify-center space-x-3 mt-4">
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -75,6 +97,19 @@ const UserCards = ({ users, handleEditUser, handleDeleteUser, formatDate }) => {
             >
               <RiDeleteBin5Line size={16} />
             </button>
+            {(user.isDeleted === 1 || user.isDeleted === true) && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleUnbanUser(user.UserId);
+                }}
+                disabled={unbanLoading}
+                className="text-green-500 hover:text-green-700 disabled:opacity-50"
+                aria-label={`Unban ${user.FullName || "user"}`}
+              >
+                <FaUnlock size={16} />
+              </button>
+            )}
           </div>
         </article>
       ))}

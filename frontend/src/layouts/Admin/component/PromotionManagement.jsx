@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {
@@ -25,6 +25,8 @@ const PromotionManagement = () => {
   const [detail, setDetail] = useState("");
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [code, setCode] = useState("");
+  const [updatedAt, setUpdatedAt] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [selectedPromotion, setSelectedPromotion] = useState(null);
@@ -36,50 +38,99 @@ const PromotionManagement = () => {
   const [totalPromotions, setTotalPromotions] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
-  const searchTimeout = useRef();
 
-  const fetchPromotions = async (page) => {
-    setLoading(true);
+  const getPromotionData = useCallback(async () => {
     try {
-      const response = await getPromotion({ page, limit: itemsPerPage });
-      setPromotions(response.data);
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+        sortBy: "CreatedAt",
+        sortOrder: "desc",
+      };
+      const response = await getPromotion(params);
+      setPromotions(response.data || []);
       if (response.pagination) {
         setTotalPages(response.pagination.totalPages);
         setTotalPromotions(response.pagination.total);
+      } else {
+        const promotionsList = response.data || [];
+        setTotalPromotions(promotionsList.length);
+        setTotalPages(Math.ceil(promotionsList.length / itemsPerPage));
       }
     } catch (error) {
       console.error("Error fetching promotions:", error);
       toast.error("Failed to fetch promotions.");
-    } finally {
-      setLoading(false);
+      setPromotions([]);
+      setTotalPages(0);
+      setTotalPromotions(0);
     }
-  };
+  }, [currentPage, itemsPerPage]);
 
-  useEffect(() => {
-    if (!searchTerm) {
-      fetchPromotions(currentPage);
-      return;
-    }
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    searchTimeout.current = setTimeout(async () => {
-      setLoading(true);
+  const searchPromotionData = useCallback(
+    async (searchTerm) => {
+      if (!searchTerm.trim()) {
+        getPromotionData();
+        return;
+      }
+
       try {
-        const data = await searchPromotion(searchTerm);
-        setPromotions(data.promotions || []);
-        setTotalPages(1);
-        setTotalPromotions(data?.length || 0);
-        setCurrentPage(1);
+        const params = {
+          page: currentPage,
+          limit: itemsPerPage,
+          sortBy: "CreatedAt",
+          sortOrder: "desc",
+        };
+
+        const response = await searchPromotion(searchTerm, params);
+        if (response) {
+          setPromotions(response.data || response.promotions || []);
+
+          // Xử lý pagination từ response
+          if (response.pagination) {
+            setTotalPromotions(response.pagination.total);
+            setTotalPages(response.pagination.totalPages);
+          } else {
+            const promotionsList = response.data || response.promotions || [];
+            setTotalPromotions(promotionsList.length);
+            setTotalPages(Math.ceil(promotionsList.length / itemsPerPage));
+          }
+        }
       } catch (error) {
         console.error("Error searching promotions:", error);
         setPromotions([]);
-        setTotalPages(1);
         setTotalPromotions(0);
-        toast.error("Failed to search promotions.");
-      } finally {
-        setLoading(false);
+        setTotalPages(0);
+      }
+    },
+    [currentPage, itemsPerPage, getPromotionData]
+  );
+
+  // Load initial data when component mounts
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      getPromotionData();
+    }
+  }, [getPromotionData, searchTerm]);
+
+  // Effect riêng cho searchTerm để reset về trang 1
+  useEffect(() => {
+    if (searchTerm !== "") {
+      setCurrentPage(1); // Reset về trang 1 khi có search term mới
+    }
+  }, [searchTerm]);
+
+  // useEffect với debounce cho search
+  useEffect(() => {
+    const searchTimeout = setTimeout(() => {
+      if (searchTerm.trim()) {
+        searchPromotionData(searchTerm);
+      } else {
+        getPromotionData();
       }
     }, 500);
-  }, [searchTerm, currentPage]);
+
+    return () => clearTimeout(searchTimeout);
+  }, [searchTerm, currentPage, searchPromotionData, getPromotionData]);
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
@@ -94,6 +145,8 @@ const PromotionManagement = () => {
     setEndTime("");
     setDiscountValue("");
     setDetail("");
+    setCode("");
+    setUpdatedAt("");
     setImage(null);
     setImagePreview(null);
     setIsEdit(false);
@@ -109,6 +162,7 @@ const PromotionManagement = () => {
       formData.append("endTime", new Date(endTime).toISOString());
       formData.append("discountValue", discountValue);
       formData.append("detail", detail);
+      formData.append("code", code);
       if (image) formData.append("image", image);
 
       if (isEdit) {
@@ -125,7 +179,12 @@ const PromotionManagement = () => {
       }
       resetForm();
       setShowFormPopup(false);
-      fetchPromotions(currentPage);
+      // Refresh current data
+      if (searchTerm.trim()) {
+        searchPromotionData(searchTerm);
+      } else {
+        getPromotionData();
+      }
     } catch (error) {
       console.error("Error saving promotion:", error);
       toast.error("Failed to save promotion.");
@@ -135,12 +194,23 @@ const PromotionManagement = () => {
   };
 
   const handleEdit = (promotion) => {
+    console.log("Editing promotion:", promotion); // Debug log
     setPromotionId(promotion.PromotionId);
     setTitle(promotion.Title || "");
-    setStartTime(promotion.StartTime ? promotion.StartTime.split("T")[0] : "");
-    setEndTime(promotion.EndTime ? promotion.EndTime.split("T")[0] : "");
+
+    // Format dates properly for date input
+    const formatDateForInput = (dateString) => {
+      if (!dateString) return "";
+      const date = new Date(dateString);
+      return date.toISOString().split("T")[0];
+    };
+
+    setStartTime(formatDateForInput(promotion.StartTime));
+    setEndTime(formatDateForInput(promotion.EndTime));
     setDiscountValue(promotion.DiscountValue || "");
     setDetail(promotion.Detail || "");
+    setCode(promotion.Code || "");
+    setUpdatedAt(promotion.UpdatedAt || "");
     setImage(null);
     setImagePreview(promotion.Image || null);
     setIsEdit(true);
@@ -155,7 +225,12 @@ const PromotionManagement = () => {
       toast.success("Promotion deleted successfully!");
       setShowDeletePopup(false);
       setSelectedPromotion(null);
-      fetchPromotions(currentPage);
+      // Refresh current data
+      if (searchTerm.trim()) {
+        searchPromotionData(searchTerm);
+      } else {
+        getPromotionData();
+      }
     } catch (error) {
       console.error("Error deleting promotion:", error);
       toast.error("Failed to delete promotion.");
@@ -241,6 +316,9 @@ const PromotionManagement = () => {
           setDiscountValue={setDiscountValue}
           detail={detail}
           setDetail={setDetail}
+          code={code}
+          setCode={setCode}
+          updatedAt={updatedAt}
           image={image}
           setImage={setImage}
           imagePreview={imagePreview}
