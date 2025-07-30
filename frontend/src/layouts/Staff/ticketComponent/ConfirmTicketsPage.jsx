@@ -8,7 +8,6 @@ import { FaMoneyBillWave, FaIdCard, FaUser, FaPhone, FaExchangeAlt } from "react
 import { FaCalendarDays, FaLocationDot, FaCouch, FaFire, FaStar, FaX } from "react-icons/fa6";
 import { BiSolidDiscount } from "react-icons/bi";
 import { IoTime, IoSearch, IoAddOutline } from "react-icons/io5";
-import { IoMdCash } from "react-icons/io";
 import { FiLoader } from "react-icons/fi";
 import {
   getMovieById, cancelBookingById,
@@ -27,13 +26,12 @@ import {
   setMemberChecked,
   resetMember
 } from '../../../redux/features/memberSlice'
-import { Button, Tag, Spin, Switch } from "antd";
+import { Button, Spin, Switch } from "antd";
 import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
 import { Formik, Form, Field } from "formik";
 import VersionCard from "../component/VersionCard";
 import PaymentMethod from '../component/PaymentMethod'
 import { processPayment } from '../../../hooks/useProcessPayment';
-import StripeCheckoutForm from "../../User/component/StripeCheckoutForm";
 import MemberRank from "../component/MemberRank";
 import BackButton from "../component/BackButton";
 
@@ -85,7 +83,6 @@ const ConfirmTicketsPage = () => {
   const { member, memberChecked } = useSelector((state) => state.member);
 
   const [discount, setDiscount] = useState(null);
-  // const [memberDiscount, setMemberDiscount] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [movieInfo, setMovieInfo] = useState(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
@@ -133,7 +130,6 @@ const ConfirmTicketsPage = () => {
         throw new Error("Invalid Email/Phone/ID/Full Name");
       }
 
-      // const user = res.data?.users || res.users || res.data || res.users.data;
       const user = res?.users?.[0] || res?.data?.users?.[0];
 
       const memberShip = await checkMemberShip(user?.UserId || user?.id);
