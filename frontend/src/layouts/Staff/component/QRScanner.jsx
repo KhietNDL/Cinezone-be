@@ -76,10 +76,10 @@ const QRScanner = ({ onScanSuccess }) => {
     }, []);
 
     return (
-        <div style={{ textAlign: "center" }}>
-            <Title level={3}>Scan QR Code to Check-in</Title>
+        <div className="text-center">
+            <h3 className="text-xl py-2 font-semibold">Scan QR Code to Check-in</h3>
 
-            <div style={{ marginBottom: 16 }}>
+            <div className="mb-4">
                 <Select
                     placeholder="Select a camera"
                     style={{ width: 300 }}
@@ -107,7 +107,7 @@ const QRScanner = ({ onScanSuccess }) => {
                 )}
             </div>
 
-            <div style={{ margin: "20px 0" }}>
+            <div className="my-4">
                 <Upload
                     beforeUpload={handleImageUpload}
                     accept="image/*"
@@ -117,7 +117,7 @@ const QRScanner = ({ onScanSuccess }) => {
                 </Upload>
             </div>
 
-            <div id="qr-reader" style={{ width: "100%", minHeight: 300 }}></div>
+            <div id="qr-reader" className="w-full min-h-[300px]"></div>
         </div>
     );
 };

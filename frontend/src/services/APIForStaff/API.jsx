@@ -10,9 +10,9 @@ const handleError = (error) => {
 
   let errorMessage = error.message || "Unknown error";
   if (error.response) {
-    // Try to parse response data
+
     if (typeof error.response.data === "string") {
-      // Handle HTML or plain text responses
+
       if (error.response.data.includes("MulterError: Unexpected field")) {
         errorMessage =
           "Invalid file field names. Please check poster and trailer fields.";
@@ -22,9 +22,8 @@ const handleError = (error) => {
     } else if (error.response.data?.message) {
       errorMessage = error.response.data.message;
     } else if (error.response.data?.error) {
-      // Preserve backend validation errors
       errorMessage = error.response.data.error;
-      throw error.response.data.error; // Pass through for handleCreateMovie to process
+      throw error.response.data.error;
     }
   } else if (error.request) {
     errorMessage = "No response from server";
@@ -376,6 +375,7 @@ export const convertScoreToMoney = async (userId, pointsToExchange, bookingId) =
   }
 };
 
+// Lấy thông tin thành viên theo userId
 export const checkMemberShip = async (userId) => {
   try {
     const response = await api.get(`/user/${userId}/membership`);
@@ -385,9 +385,35 @@ export const checkMemberShip = async (userId) => {
   }
 };
 
+// Check-in booking by Id
 export const checkIn = async (bookingId) => {
   try {
-    const response = await api.get(`/bookings/checkin/${bookingId}`);
+    const response = await api.post(`/bookings/checkin/${bookingId}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+// Lấy thông tin booking theo Id
+export const getBookingById = async (bookingId) => {
+  try {
+    const response = await api.get(`/bookings/${bookingId}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+// Lấy thông tin người dùng theo trường và giá trị
+// field: 'email', 'phone', 'cccd', 'name'
+export const getUserInfo = async (field, value) => {
+  try {
+      const response = await api.get('/user/search/info', {
+      params: {
+        [field]: value
+      },
+    });
     return response.data;
   } catch (error) {
     handleError(error);

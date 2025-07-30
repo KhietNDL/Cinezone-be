@@ -43,19 +43,25 @@ const ItemCard = ({ item, type, onSelect, selected, small, disabled }) => {
     quantityColor = "text-green-700";
   }
 
+  const getCardSizeClass = (type, small) => {
+    if (type === "movie") {
+      return small
+        ? "w-[170px] h-[280px] min-h-[220px]"
+        : "w-[250px] h-auto min-h-[350px]";
+    } else {
+      return small
+        ? "w-[140px] h-[180px]"
+        : "w-[250px] h-[300px] min-h-[380px]";
+    }
+  };
+
   return (
     <div
       onClick={handleClick}
-      className={`cursor-pointer rounded-xl border border-gray-300 transition-transform
+      className={`cursor-pointer rounded-xl border border-gray-300 
+                 transition-transform duration-300 ease-in-out hover:scale-105
         ${selected ? "shadow-[0_10px_10px_gray]" : "none"}
-        ${type === "movie"
-          ? small
-            ? "w-[170px] h-[270px] min-h-[220px]"
-            : "w-[250px] h-[420px] min-h-[350px]"
-          : small
-            ? "w-[140px] h-[180px]"
-            : "w-[250px] h-[380px]"
-        }`}
+        ${getCardSizeClass(type, small)}`}
       title={fullName}
       style={{ position: "relative", overflow: "hidden" }}
     >
@@ -64,7 +70,7 @@ const ItemCard = ({ item, type, onSelect, selected, small, disabled }) => {
           alt={item?.NameOfEnglish}
           src={item?.PosterImage}
           loading="lazy"
-          className={`w-full ${small ? "h-[230px]" : "h-[350px]"} object-cover rounded-tl-xl rounded-tr-xl mx-auto`}
+          className={`w-full ${small ? "h-[230px]" : "h-auto"} object-cover rounded-tl-xl rounded-tr-xl mx-auto`}
         />
       ) : (
         <div style={{ position: "relative" }}>
@@ -102,20 +108,17 @@ const ItemCard = ({ item, type, onSelect, selected, small, disabled }) => {
         </div>
       )}
 
-      <div
-        className={`p-2 font-semibold text-center uppercase flex flex-col text-gray-700 ${small ? "text-[11px]" : "text-md"
-          }`}
-      >
+      <div className={`p-2 font-semibold text-center uppercase flex flex-col text-gray-700 ${small ? "text-[11px]" : "text-md"}`}>
         <div>{displayNameEN}</div>
         <div>{displayNameVN}</div>
       </div>
 
       {type === "combo" && (
-        <div className="flex flex-col items-center justify-center">
-          <div className="text-xl p-2 font-bold text-center uppercase text-green-700">
+        <div className="flex flex-col items-center justify-center p-2 gap-2 size-auto">
+          <div className="text-xl font-bold text-center uppercase text-green-700">
             {formatPrice(item?.price?.toFixed ? item.price : item.price)} VNĐ
           </div>
-          <div className={`p-2 font-bold ${quantityColor}`}>
+          <div className={`font-bold ${quantityColor}`}>
             Quantity: {item?.quantity}
           </div>
         </div>

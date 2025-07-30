@@ -12,6 +12,7 @@ jest.mock("../../services/API", () => ({
   cancelBooking: jest.fn(),
   cancelProduct: jest.fn(),
   ConfirmBooking: jest.fn(),
+  ConfirmPayment: jest.fn(),
   confirmProduct: jest.fn(),
   getBookingById: jest.fn(),
   getProductByOderProductId: jest.fn(),
@@ -94,11 +95,13 @@ describe("TicketDetails", () => {
     mockSearchParams.get.mockImplementation((key) => {
       if (key === "resultCode") return "0";
       if (key === "extraData")
-        return encodeURIComponent(JSON.stringify({ bookingId: "B1" }));
+        return encodeURIComponent(
+          JSON.stringify({ bookingId: "B1", paymentId: "P1" })
+        );
       return null;
     });
-    const { ConfirmBooking, getBookingById } = require("../../services/API");
-    ConfirmBooking.mockResolvedValue({});
+    const { ConfirmPayment, getBookingById } = require("../../services/API");
+    ConfirmPayment.mockResolvedValue({});
     getBookingById.mockRejectedValue(new Error("API error"));
     renderWithStore();
     await waitFor(() => {
@@ -112,11 +115,13 @@ describe("TicketDetails", () => {
     mockSearchParams.get.mockImplementation((key) => {
       if (key === "resultCode") return "0";
       if (key === "extraData")
-        return encodeURIComponent(JSON.stringify({ bookingId: "B1" }));
+        return encodeURIComponent(
+          JSON.stringify({ bookingId: "B1", paymentId: "P1" })
+        );
       return null;
     });
-    const { ConfirmBooking, getBookingById } = require("../../services/API");
-    ConfirmBooking.mockResolvedValue({});
+    const { ConfirmPayment, getBookingById } = require("../../services/API");
+    ConfirmPayment.mockResolvedValue({});
     getBookingById.mockResolvedValue(null);
     renderWithStore();
     await waitFor(() => {
@@ -128,11 +133,13 @@ describe("TicketDetails", () => {
     mockSearchParams.get.mockImplementation((key) => {
       if (key === "resultCode") return "0";
       if (key === "extraData")
-        return encodeURIComponent(JSON.stringify({ bookingId: "B1" }));
+        return encodeURIComponent(
+          JSON.stringify({ bookingId: "B1", paymentId: "P1" })
+        );
       return null;
     });
-    const { ConfirmBooking, getBookingById } = require("../../services/API");
-    ConfirmBooking.mockResolvedValue({});
+    const { ConfirmPayment, getBookingById } = require("../../services/API");
+    ConfirmPayment.mockResolvedValue({});
     getBookingById.mockResolvedValue({
       movieNameEnglish: "Avengers",
       showTime: "18:00",
@@ -156,16 +163,20 @@ describe("TicketDetails", () => {
       if (key === "resultCode") return "0";
       if (key === "extraData")
         return encodeURIComponent(
-          JSON.stringify({ bookingId: "B1", orderProductId: "O1" })
+          JSON.stringify({
+            bookingId: "B1",
+            orderProductId: "O1",
+            paymentId: "P1",
+          })
         );
       return null;
     });
     const {
-      ConfirmBooking,
+      ConfirmPayment,
       getBookingById,
       getProductByOderProductId,
     } = require("../../services/API");
-    ConfirmBooking.mockResolvedValue({});
+    ConfirmPayment.mockResolvedValue({});
     getBookingById.mockResolvedValue({
       movieNameEnglish: "Avengers",
       showTime: "18:00",

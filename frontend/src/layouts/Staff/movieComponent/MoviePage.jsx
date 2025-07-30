@@ -13,6 +13,7 @@ import {
   searchMovies,
 } from "../../../services/APIForStaff/API";
 import { useDebounce } from '../../../hooks/useDebounce'
+import MovieSwiper from "../component/MovieSwiper";
 
 export default function MoviePage() {
   const [selectedMovie, setSelectedMovie] = useState(null);
@@ -67,67 +68,37 @@ export default function MoviePage() {
     getCurrentMovie(); // initial load
   }, []);
 
-  const swiperBreakpoints = {
-    320: { slidesPerView: 1, spaceBetween: 50, slidesPerGroup: 1 },
-    640: { slidesPerView: 2, spaceBetween: 30, slidesPerGroup: 1 },
-    768: { slidesPerView: 3, spaceBetween: 40, slidesPerGroup: 2 },
-    1024: { slidesPerView: 4, spaceBetween: 50, slidesPerGroup: 2 },
-  };
-
   return (
     <div className="w-full bg-[#fafbfc] p-[20px]">
-      <div className="flex flex-col gap-5">
-        <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-4">
-          <h1 className="text-3xl font-bold text-[#9810FA]">Movies</h1>
-          <Input.Search
-            placeholder="Search movie..."
-            style={{ width: 250 }}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)} // cập nhật search input
-            allowClear
-          />
-        </div>
-        <h5 className="text-xl font-semibold">
-          <i className="fa-solid fa-film"></i> Select Movie to view details
-        </h5>
+      <div className="flex flex-col justify-between items-center lg:flex-row gap-4">
+        <div className="w-[250px]"></div>
+        <h1 className="text-3xl font-bold text-[#9810FA]">Movies</h1>
+        <Input.Search
+          placeholder="Search movie..."
+          style={{ width: 250 }}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        // allowClear
+        />
+      </div>
+      <p className="font-semibold mt-5 text-xl">
+        <i className="fa-solid fa-film"></i> Select Movie to view details
+      </p>
 
-        <div className="staff-swiper">
-          {loading ? (
-            <div className="text-center my-8">
-              <Spin size="large" />
-            </div>
-          ) : (
-            <Swiper
-              modules={[Navigation, Pagination]}
-              breakpoints={swiperBreakpoints}
-              navigation
-              pagination={{ clickable: true }}
-              slidesPerView={4}
-            
-              loop={true}
-            >
-              {movies.map((movie) => (
-                <SwiperSlide key={movie.MovieId}>
-                  <div className="flex justify-center p-2 w-[260px]">
-                    <Link to={`/staff/movie/${toSlug(movie.NameOfEnglish)}`}>
-                      <ItemCard
-                        item={movie}
-                        type="movie"
-                        selected={selectedMovie?.MovieId === movie.MovieId}
-                        onSelect={() =>
-                          setSelectedMovie(
-                            selectedMovie?.MovieId === movie.MovieId ? null : movie
-                          )
-                        }
-                        
-                      />
-                    </Link>
-                  </div>
-                </SwiperSlide>
-              ))}
-            </Swiper>
-          )}
-        </div>
+      <div className="staff-swiper w-full mt-4">
+        {loading ? (
+          <div className="text-center my-8"><Spin size="large" /></div>
+        ) : (
+          <MovieSwiper
+            movies={movies}
+            selectedMovie={selectedMovie}
+            onSelectMovie={(movie) =>
+              setSelectedMovie(selectedMovie?.MovieId === movie.MovieId ? null : movie)
+            }
+            useLink={true}
+            linkTo={(movie) => `/staff/movie/${toSlug(movie.NameOfEnglish)}`}
+          />
+        )}
       </div>
     </div>
   );

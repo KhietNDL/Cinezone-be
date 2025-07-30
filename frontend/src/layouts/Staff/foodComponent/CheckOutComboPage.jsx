@@ -61,6 +61,16 @@ export default function CheckOutComboPage() {
         totalAmount: totalPrice,
       }));
 
+      let successUrl;
+
+      if (paymentMethod === "Cash") {
+        successUrl = "/staff/combo-selling/combo-information";
+      } else if (paymentMethod === "Stripe") {
+        successUrl = "/staff/combo-selling/waiting-payment";
+      } else {
+        successUrl = `${window.location.origin}/staff/combo-selling/combo-information`;
+      }
+
       const paymentResult = await processPayment({
         paymentMethod,
         orderId: holdResponse.OrderProductId,
@@ -68,11 +78,7 @@ export default function CheckOutComboPage() {
         type: "combo",
         navigate,
         setIsRedirecting: null,
-        successUrl: paymentMethod === "Cash"
-          ? "/staff/combo-selling/combo-information"
-          : paymentMethod === "Stripe"
-            ? "/staff/combo-selling/waiting-payment"
-            : `${window.location.origin}/staff/combo-selling/combo-information`,
+        successUrl,
         cardType: paymentMethod === "Stripe" ? cardType : undefined,
       });
       console.log("paymentResult:", paymentResult);
@@ -135,13 +141,14 @@ export default function CheckOutComboPage() {
 
   return (
     <div className="p-4 mx-auto w-full bg-[#fafbfc]">
-      <div className="flex flex-col items-start justify-center gap-4 mb-6">
-        <div>
+      <div className="flex items-start justify-between gap-4 mb-6">
+        <div className='w-[20%]'>
           <BackButton />
         </div>
         <h1 className="text-3xl font-bold text-[#9810FA] flex lg:items-start items-center lg:justify-start justify-center flex-col">
           Confirm Combos
         </h1>
+        <div className='w-[20%]'></div>
       </div>
       <div className="px-8 w-full">
         <div className='block mb-2 font-medium text-lg'>
