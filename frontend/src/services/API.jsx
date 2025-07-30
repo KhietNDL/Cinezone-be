@@ -621,6 +621,35 @@ export const getBookingHistory = async (memberId) => {
   }
 };
 
+export const getPaymentHistory = async (memberId) => {
+  try {
+    const token = localStorage.getItem("token");
+
+    const response = await api.get(`/payment/history`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        memberId,       
+        page: 1,
+        limit: 10,
+        sortBy: "CreatedAt",
+        sortOrder: "desc",
+      },
+    });
+
+    console.log("Payment History :", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy lịch sử payment:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+
+
+
 export const getMembership = async (userId) => {
   try {
     const response = await api.get(`/user/${userId}/membership`);

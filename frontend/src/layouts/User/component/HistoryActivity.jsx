@@ -3,12 +3,14 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import {
   getBookingHistory,
+  getPaymentHistory,
   getScoreHistoryByMemberId,
 } from "../../../services/API";
 
 const HistoryActivity = () => {
   const [activeTab, setActiveTab] = useState("booking");
   const [historyData, setHistoryData] = useState([]);
+  const [paymentHistory, setPaymentHistory] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -60,22 +62,22 @@ const HistoryActivity = () => {
     return `${parts[2]}/${parts[1]}/${parts[0]}`;
   };
 
-  // Filter và Search functions cho booking
+  // Filter và Search functions cho booking (sử dụng paymentHistory)
   const applyFilters = () => {
-    const safeHistoryData = Array.isArray(historyData) ? historyData : [];
-    let filtered = [...safeHistoryData];
+    const safePaymentHistory = Array.isArray(paymentHistory) ? paymentHistory : [];
+    let filtered = [...safePaymentHistory];
 
     // Search by movie name
     if (searchTerm) {
       filtered = filtered.filter((item) =>
-        item.movieNameEnglish?.toLowerCase().includes(searchTerm.toLowerCase())
+        item.booking?.movieNameEnglish?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     // Filter by status
     if (statusFilter !== "all") {
       filtered = filtered.filter(
-        (item) => item.status.toString() === statusFilter
+        (item) => item.booking?.status?.toString() === statusFilter
       );
     }
 
@@ -83,16 +85,16 @@ const HistoryActivity = () => {
     if (dateFilter) {
       const selectedDateDDMMYYYY = convertYYYYMMDDtoDDMMYYYY(dateFilter);
       filtered = filtered.filter((item) => {
-        if (!item.bookingDate) return false;
-        const bookingDateDDMMYYYY = formatDateToDDMMYYYY(item.bookingDate);
+        if (!item.booking?.BookingDate) return false;
+        const bookingDateDDMMYYYY = formatDateToDDMMYYYY(item.booking.BookingDate);
         return bookingDateDDMMYYYY === selectedDateDDMMYYYY;
       });
     }
 
     // Luôn sort theo newest first (cố định)
     filtered.sort((a, b) => {
-      const dateA = new Date(a.BookingDate);
-      const dateB = new Date(b.BookingDate);
+      const dateA = new Date(a.booking?.BookingDate);
+      const dateB = new Date(b.booking?.BookingDate);
       return dateB - dateA; // newest first
     });
 
@@ -177,6 +179,29 @@ const HistoryActivity = () => {
     fetchBookingHistory();
   }, [user]);
 
+    useEffect(() => {
+    const fetchPaymentHistory = async () => {
+      if (!user?.userId) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const response = await getPaymentHistory(user.userId);
+        console.log("PAYMENT history in history page:", response);
+        setPaymentHistory(response?.data || []);
+      } catch (error) {
+        console.error("Lỗi khi lấy history:", error);
+        setPaymentHistory([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPaymentHistory();
+  }, [user]);
+
   useEffect(() => {
     const fetchScoreHistory = async () => {
       if (!user?.userId) {
@@ -202,7 +227,7 @@ const HistoryActivity = () => {
   // Apply filters whenever filter states change
   useEffect(() => {
     applyFilters();
-  }, [searchTerm, statusFilter, dateFilter, historyData]);
+  }, [searchTerm, statusFilter, dateFilter, paymentHistory]); // Thay đổi từ historyData thành paymentHistory
 
   useEffect(() => {
     applyPointsFilters();
@@ -501,9 +526,9 @@ const HistoryActivity = () => {
                 Showing {startIndex + 1}-
                 {Math.min(endIndex, filteredData.length)} of{" "}
                 {filteredData.length} bookings
-                {filteredData.length !== historyData.length && (
+                {filteredData.length !== paymentHistory.length && (
                   <span className="ml-1 text-purple-600">
-                    (filtered from {historyData.length} total)
+                    (filtered from {paymentHistory.length} total)
                   </span>
                 )}
               </div>
@@ -514,19 +539,19 @@ const HistoryActivity = () => {
             {filteredData.length === 0 ? (
               <div className="text-center py-16">
                 <div className="text-6xl mb-6">
-                  {historyData.length === 0 ? "📋" : "🔍"}
+                  {paymentHistory.length === 0 ? "📋" : "🔍"}
                 </div>
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                  {historyData.length === 0
+                  {paymentHistory.length === 0
                     ? "No Booking History"
                     : "No Results Found"}
                 </h3>
                 <p className="text-gray-500">
-                  {historyData.length === 0
+                  {paymentHistory.length === 0
                     ? "You haven't made any bookings yet"
                     : "Try adjusting your search or filter criteria"}
                 </p>
-                {historyData.length > 0 && (
+                {paymentHistory.length > 0 && (
                   <button
                     onClick={clearFilters}
                     className="mt-4 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200"
@@ -569,21 +594,21 @@ const HistoryActivity = () => {
                   <tbody>
                     {currentData.map((item, index) => (
                       <tr
-                        key={item.id || index}
+                        key={item.payment?.PaymentId || index}
                         className="border-b border-gray-100 hover:bg-purple-50/50 transition-colors duration-200"
                       >
                         <td className="py-4 px-6">
                           <div className="text-center space-x-3">
                             <span className="font-medium text-gray-800">
-                              {item.movieNameEnglish || "Unknown Movie"}
+                              {item.booking?.movieNameEnglish || "Unknown Movie"}
                             </span>
                           </div>
                         </td>
 
                         <td className="py-4 px-6">
                           <div className="text-center text-gray-700">
-                            {item.BookingDate
-                              ? new Date(item.BookingDate)
+                            {item.booking?.BookingDate
+                              ? new Date(item.booking.BookingDate)
                                   .toLocaleDateString("vi-VN")
                                   .replace(/\//g, "-")
                               : "N/A"}
@@ -591,8 +616,8 @@ const HistoryActivity = () => {
                         </td>
                         <td className="py-4 px-6">
                           <div className="text-center text-gray-700">
-                            {item.BookingDate
-                              ? new Date(item.BookingDate).toLocaleTimeString(
+                            {item.booking?.BookingDate
+                              ? new Date(item.booking.BookingDate).toLocaleTimeString(
                                   "vi-VN",
                                   {
                                     hour: "2-digit",
@@ -604,32 +629,32 @@ const HistoryActivity = () => {
                           </div>
                         </td>
                         <td className=" text-center py-4 px-4 text-gray-700 ">
-                          {item.seats
-                            ? Array.isArray(item.seats)
-                              ? item.seats.length
-                              : item.seats.toString().split(",").length
+                          {item.booking?.seats
+                            ? Array.isArray(item.booking.seats)
+                              ? item.booking.seats.length
+                              : item.booking.seats.toString().split(",").length
                             : 0}
                         </td>
                         <td className=" text-center py-4 px-6 text-gray-700 font-medium">
-                          {item.totalAmount || "0"}
+                          {item.payment?.Amount || "0"}
                         </td>
                         <td className=" text-center py-4 px-6 text-gray-700 font-medium">
-                          {item.buyerName || "N/A"}
+                          {item.booking?.buyerName || "N/A"}
                         </td>
                         <td className="text-center py-4 px-6 mr-0 ">
                           <span
                             className={`${getStatusStyle(
-                              item.status
+                              item.booking?.status
                             )} inline-flex justify-center items-center px-4 py-2 rounded-full text-sm font-medium min-w-[90px] text-center`}
                           >
-                            {getStatusLabel(item.status)}
+                            {getStatusLabel(item.booking?.status)}
                           </span>
                         </td>
 
                         <td className="  text-start py-0 px-0">
-                          {item.status === 2 && (
+                          {item.booking?.status === 2 && (
                             <button
-                              onClick={() => handleViewDetail(item)}
+                              onClick={() => handleViewDetail(item.booking)}
                               className="bg-blue-100 text-blue-600 px-2  py-2 w-[60px] rounded-full text-sm font-medium hover:bg-blue-500/50"
                             >
                               Detail
@@ -801,7 +826,6 @@ const HistoryActivity = () => {
                       <th className="text-center py-4 px-6 font-semibold text-gray-700">
                         Activity Type
                       </th>
-                      {/* <th className="text-center py-4 px-6 font-semibold text-gray-700">Status</th> */}
                     </tr>
                   </thead>
                   <tbody>
@@ -869,16 +893,6 @@ const HistoryActivity = () => {
                               : "Unknown"}
                           </span>
                         </td>
-
-                        {/* <td className="text-center py-4 px-6">
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                            item.IsDeleted === 0 
-                              ? 'bg-green-100 text-green-700' 
-                              : 'bg-red-100 text-red-700'
-                          }`}>
-                            {item.IsDeleted === 0 ? 'Active' : 'Deleted'}
-                          </span>
-                        </td> */}
                       </tr>
                     ))}
                   </tbody>
@@ -993,18 +1007,6 @@ const HistoryActivity = () => {
                       {Array.isArray(selectedBooking.seats)
                         ? selectedBooking.seats.join(", ")
                         : selectedBooking.seats}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Ticket Code */}
-                <div className="text-center py-3">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2">
-                    Ticket Code
-                  </p>
-                  <div className="bg-gray-50 rounded-lg py-3 px-4 border border-gray-200">
-                    <p className="text-lg font-mono font-bold text-gray-900 tracking-wider">
-                      {selectedBooking.BookingId}
                     </p>
                   </div>
                 </div>

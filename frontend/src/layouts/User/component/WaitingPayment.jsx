@@ -8,10 +8,13 @@ import {
   createZalopayPayment,
 } from "../../../services/API";
 import StripeCheckoutForm from "./StripeCheckoutForm";
+import { useDispatch, useSelector } from "react-redux";
+import { setOrderProductsId, setPaymentId } from "../../../redux/features/bookingSlice";
 
 const WaitingPayment = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const {
     selectedSeats = [],
@@ -23,13 +26,19 @@ const WaitingPayment = () => {
     seatIds,
     promotionId,
     userId,
-    bookingId,
+    
     finalPrice = 0,
     // Product related data from ConfirmPayment
     OrderProductId = null,
     products = [],
     productHoldResult = null,
+    stripeCardType ,
   } = state || {};
+
+  const {
+    bookingId,
+    orderProductsId=null,
+  }=useSelector((state) => state.booking);
 
   const [paymentStatus, setPaymentStatus] = useState("waiting");
   const [clientSecret, setClientSecret] = useState(null);
@@ -38,10 +47,11 @@ const WaitingPayment = () => {
 
   console.log("🎫 WaitingPayment received data:", {
     bookingId,
-    OrderProductId,
+    orderProductsId,
     products: products.length,
     finalPrice,
-    paymentMethod
+    paymentMethod,
+    stripeCardType,
   });
 
   useEffect(() => {
@@ -52,43 +62,51 @@ const WaitingPayment = () => {
         // Determine payment scenario and build appropriate payload
         if (bookingId && OrderProductId) {
           // Case 1: Mua cả ghế và bắp nước (Pay for both booking and order product)
+          dispatch(setOrderProductsId(OrderProductId));
           payload = {
+            
             bookingId: bookingId,
             orderProductId: OrderProductId,
             amount: finalPrice,
             returnUrl,
             userId,
           };
-          console.log("💳 Case 1: Pay for both booking and order product");
+         
         } else if (bookingId && !OrderProductId) {
           // Case 2: Chỉ mua ghế (Pay for booking only)
+          dispatch(setOrderProductsId(null));
           payload = {
             bookingId: bookingId,
             amount: finalPrice,
             returnUrl,
             userId,
           };
-          console.log("🎫 Case 2: Pay for booking only");
+          
         } else if (!bookingId && OrderProductId) {
           // Case 3: Chỉ mua bắp nước (Pay for order product only)
+          dispatch(setOrderProductsId(OrderProductId));
           payload = {
             orderProductId: OrderProductId,
             amount: finalPrice,
             returnUrl,
             userId,
           };
-          console.log("🛍️ Case 3: Pay for order product only");
+         
         } else {
           console.error("❌ No valid booking or product order found");
           setPaymentStatus("failed");
           return;
         }
 
-        console.log("💳 Payment payload:", payload);
-        console.log("🎫 Seat Booking ID:", bookingId || "None");
-        console.log("🛍️ Product Order ID:", OrderProductId || "None");
-        console.log("💰 Final Price:", finalPrice);
-        console.log("🔄 Payment Method:", paymentMethod);
+        // console.log("Payment payload:", payload);
+        // console.log("Seat Booking ID:", bookingId || "None");
+        // console.log("Product Order ID:", orderProductsId || "None");
+        // console.log("" Final Price:", finalPrice);
+        // console.log("Payment Method:", paymentMethod);
+
+        if (paymentMethod === "3") {
+        payload.cardType = stripeCardType; // stripeCardType là state/prop bạn đã có sẵn
+      }
 
         let response;
 
@@ -101,7 +119,9 @@ const WaitingPayment = () => {
           }
           setPaymentStatus("failed");
         } else if (paymentMethod === "3") {
+          
           response = await createStripePayment(payload);
+          dispatch(setPaymentId(response?.data?.paymentId || response?.paymentId));
           const clientSecret = response?.data?.clientSecret || response?.data?.ClientSecret;
           if (clientSecret) {
             setClientSecret(clientSecret);
@@ -113,6 +133,7 @@ const WaitingPayment = () => {
         } else if (paymentMethod === "4") {
           response = await createZalopayPayment(payload);
           const redirectUrl = response?.data?.order_url || response?.order_url;
+          dispatch(setPaymentId(response?.data?.paymentId || response?.paymentId));
           if (redirectUrl) {
             window.location.href = redirectUrl;
             return;
@@ -128,23 +149,23 @@ const WaitingPayment = () => {
       }
     };
 
-    if (paymentMethod && (bookingId || OrderProductId)) {
+    if (paymentMethod && (bookingId || orderProductsId)) {
       processPayment();
     } else {
       console.error("❌ Missing required data:", { 
         paymentMethod, 
         bookingId, 
-        OrderProductId 
+        orderProductsId
       });
       setPaymentStatus("failed");
     }
-  }, [paymentMethod, bookingId, OrderProductId]);
+  }, [paymentMethod, bookingId, orderProductsId]);
 
   // Helper function to determine payment type
   const getPaymentType = () => {
-    if (bookingId && OrderProductId) return "Both seats and products";
-    if (bookingId && !OrderProductId) return "Seats only";
-    if (!bookingId && OrderProductId) return "Products only";
+    if (bookingId && orderProductsId) return "Both seats and products";
+    if (bookingId && !orderProductsId) return "Seats only";
+    if (!bookingId && orderProductsId) return "Products only";
     return "Unknown";
   };
 
@@ -156,7 +177,7 @@ const WaitingPayment = () => {
   //       body: JSON.stringify({
   //         amount: state.finalPrice,
   //         bookingId: state.bookingId,
-  //         orderProductId: state.OrderProductId,
+  //         orderProductId: state.orderProductId,
   //       }),
   //     });
   //     const data = await res.json();
@@ -174,7 +195,7 @@ const WaitingPayment = () => {
   // }, [state]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] text-white flex items-center justify-center p-25">
+    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 via-50% via-purple-950/50 to-slate-900 text-white flex items-center justify-center p-25">
       <div className="bg-[#1E1B3A] rounded-xl shadow-xl w-full max-w-2xl   text-center">
         <img src={logo} alt="Logo" className="w-40 h-auto mx-auto" />
         
@@ -200,10 +221,10 @@ const WaitingPayment = () => {
                   </div>
                 )}
                 
-                {OrderProductId && (
+                {orderProductsId && (
                   <div className="flex justify-between">
                     <span>Product Order ID:</span>
-                    <span className="font-mono">{OrderProductId.slice(0, 8)}...</span>
+                    <span className="font-mono">{orderProductsId.slice(0, 8)}...</span>
                   </div>
                 )}
                 
@@ -214,7 +235,7 @@ const WaitingPayment = () => {
                   </div>
                 )}
                 
-                {OrderProductId && products.length > 0 && (
+                {orderProductsId && products.length > 0 && (
                   <div className="flex justify-between">
                     <span>Products:</span>
                     <span>{products.length} item{products.length > 1 ? 's' : ''}</span>
@@ -241,7 +262,7 @@ const WaitingPayment = () => {
               <h4 className="font-semibold text-red-400 mb-2">Error Details:</h4>
               <div className="text-sm text-gray-300">
                 {!paymentMethod && <p>• Payment method not selected</p>}
-                {!bookingId && !OrderProductId && <p>• No booking or product order found</p>}
+                {!bookingId && !orderProductsId && <p>• No booking or product order found</p>}
                 {!finalPrice && <p>• Amount is invalid</p>}
               </div>
             </div>
@@ -254,7 +275,9 @@ const WaitingPayment = () => {
                 Go Back
               </button>
               <button
-                onClick={() => navigate("/")}
+                onClick={() => navigate("/",
+                  
+                )}
                 className="bg-[#6B59E6] hover:bg-[#534a89] text-white px-6 py-3 rounded-lg font-semibold transition flex items-center gap-2"
               >
                 <Home size={20} />
@@ -267,7 +290,7 @@ const WaitingPayment = () => {
         {clientSecret && paymentMethod === "3" && (
           <StripeCheckoutForm
             clientSecret={clientSecret}
-            onSuccess={() => {/* xử lý sau khi thanh toán thành công */}}
+            onSuccess={() => {navigate("/ticket");}}
           />
         )}
         

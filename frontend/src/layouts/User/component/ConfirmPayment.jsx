@@ -3,20 +3,25 @@ import { FaStar, FaRegClock, FaCalendarAlt, FaHeart } from "react-icons/fa";
 import { RiMovie2AiLine } from "react-icons/ri";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
-import {
-  getPromotionByTitle,
-  HoldingSeats,
-  cancelBooking,
-  holdProducts,
-  getMembership,
-} from "../../../services/API";
+import { getPromotionByTitle, HoldingSeats, cancelBooking, holdProducts, getMembership, createStripePayment } from "../../../services/API";
 import { useDispatch, useSelector } from "react-redux";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import StripeCheckoutForm from "./StripeCheckoutForm";
-import { setBookingId } from "../../../redux/features/bookingSlice";
-import MembershipProgress from "../bookingComponent/MembershipProgress";
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import { setBookingId, setOrderProductsId } from "../../../redux/features/bookingSlice";
+import ActionButtons from "../confirmComponent/ActionButtons";
+import PaymentMethodsSection from "../confirmComponent/PaymentMethodsSection";
+import PointsSection from "../confirmComponent/PointsSection";
+import PromotionSection from "../confirmComponent/PromotionSection";
+import PriceBreakdownCard from "../confirmComponent/PriceBreakdownCard";
+import BookingDetailsCard from "../confirmComponent/BookingDetailsCard";
+import UserInfoCard from "../confirmComponent/UserInfoCard";
+import MovieInfoCard from "../confirmComponent/MovieInfoCard";
+import { FadeInWrapper } from "../../../component/FadeIn";
+import AnimatedWrapper from "../../../component/MagicBentoAnimation";
+import BackButton from "../../../component/BackButton";
+
+// Import components
+
 
 const ConfirmPayment = () => {
   const { state } = useLocation();
@@ -30,7 +35,7 @@ const ConfirmPayment = () => {
   const [stripeLoading, setStripeLoading] = useState(false);
   const [stripeError, setStripeError] = useState("");
 
-  //MEMbership
+  //MEMbership 
   const [userDiscount, setUserDiscount] = useState(0);
 
   // Promotion states
@@ -74,10 +79,10 @@ const ConfirmPayment = () => {
   const productTotal =
     product && Array.isArray(product)
       ? product.reduce(
-          (sum, p) =>
-            sum + parseFloat(p.Price || 0) * parseInt(p.Quantity || 0),
-          0
-        )
+        (sum, p) =>
+          sum + parseFloat(p.Price || 0) * parseInt(p.Quantity || 0),
+        0
+      )
       : 0;
 
   // Initialize prices - SEPARATE SEAT AND PRODUCT
@@ -87,8 +92,7 @@ const ConfirmPayment = () => {
     console.log("USER DISCOUNT", userDiscount);
 
     // Tách giá ghế và product
-    const calculatedSeatPrice =
-      ((finalTotalPrice - productTotal) * (100 - userDiscount)) / 100;
+    const calculatedSeatPrice = (finalTotalPrice - productTotal) * (100 - userDiscount) / 100;
     const calculatedProductPrice = productTotal;
     const priceAfterMembership = calculatedSeatPrice + calculatedProductPrice;
 
@@ -97,67 +101,38 @@ const ConfirmPayment = () => {
     setDiscountedSeatPrice(calculatedSeatPrice); // Ban đầu chưa giảm
     setFinalPrice(priceAfterMembership); // Tổng ban đầu
 
-    console.log("💰 Price breakdown:", {
-      seatPrice: calculatedSeatPrice,
-      productPrice: calculatedProductPrice,
-      totalPrice: finalTotalPrice,
-    });
   }, [finalTotalPrice, productTotal, userDiscount]);
 
-  console.log(" Products from Redux:", product);
-  console.log(" Seat PRICE:", seatPrice);
-  console.log("SLECTED SEAT ID", seatIds);
-  console.log("Product PRICE:", productPrice);
-  console.log("Final PRICE:", finalPrice);
-
-  // useEffect(() => {
-  //   if (paymentMethod === "3") {
-  //     // Gọi API lấy clientSecret khi chọn Stripe
-  //     const fetchStripeIntent = async () => {
-  //       setStripeLoading(true);
-  //       setStripeError("");
-  //       try {
-  //         const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/payment/stripe`, {
-  //           method: "POST",
-  //           headers: {
-  //             "Content-Type": "application/json",
-  //             Authorization: `Bearer ${user.token}`,
-  //           },
-  //           body: JSON.stringify({
-  //             amount: finalPrice,
-  //             bookingId: holdingResult?.bookingId, // hoặc bookingId phù hợp
-  //             orderProductId: productHoldResult?.OrderProductId,
-  //             cardType: stripeCardType,
-  //           }),
-  //         });
-  //         const data = await res.json();
-  //         console.log("Stripe API response:", data);
-  //         console.log("stripeClientSecret to set:", data.data?.clientSecret, data.data?.ClientSecret);
-  //         if (data.status === "success") {
-  //           setStripeClientSecret(data.data.clientSecret);
-  //           setStripePaymentId(data.data.paymentId);
-  //         } else {
-  //           setStripeError(data.error || "Không lấy được thông tin thanh toán Stripe");
-  //         }
-  //       } catch (err) {
-  //         setStripeError("Lỗi kết nối Stripe");
-  //       } finally {
-  //         setStripeLoading(false);
-  //       }
-  //     };
-  //     fetchStripeIntent();
-  //   } else {
-  //     setStripeClientSecret(null);
-  //     setStripePaymentId(null);
-  //   }
-  //   // eslint-disable-next-line
-  // }, [paymentMethod, stripeCardType, finalPrice]);
+  // Stripe integration effect - MODIFIED: Only reset state, don't create intent
+  useEffect(() => {
+    // Chỉ reset state khi thay đổi payment method, không tạo intent ngay
+    if (paymentMethod !== "3") {
+      setStripeClientSecret(null);
+      setStripePaymentId(null);
+      setStripeError("");
+      setStripeLoading(false);
+    }
+  }, [paymentMethod, stripeCardType]);
 
   // Handle payment method selection
   const handlePaymentMethod = (method) => {
     setPaymentMethod(method);
+    // Reset Stripe states khi chuyển sang phương thức khác
+    if (method !== "3") {
+      setStripeClientSecret(null);
+      setStripePaymentId(null);
+      setStripeError("");
+      setStripeLoading(false);
+    }
   };
+
+  // Handle card type selection
+  const handleCardTypeChange = (cardType) => {
+    setStripeCardType(cardType);
+  };
+
   console.log("METHOD SELECTED", paymentMethod);
+  console.log("CARD TYPE SELECTED", stripeCardType);
 
   // Promotion handling - CHỈ ÁP DỤNG CHO GHẾ
   const handleInputPromoCode = (event) => {
@@ -186,15 +161,18 @@ const ConfirmPayment = () => {
 
     try {
       const response = await getPromotionByTitle(promoCode);
-      let promotionData = Array.isArray(response.promotions)
-        ? response.promotions[0]
-        : response.promotions;
+      console.log("Promotion response:", response);
+      let promotionData = Array.isArray(response.promotions) ? response.promotions[0] : response.promotions;
+      const dayObj = new Date(promotionData?.Endtime);
+      const dateToCheck = new Date(dayObj.getFullYear(), dayObj.getMonth(), dayObj.getDate());
+      const today = new Date();
+      const todayForComparison = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-      if (promotionData?.Code) {
-        // *** CHỈ GIẢM GIÁ GHẾ, KHÔNG GIẢM PRODUCT ***
+      if (promotionData?.Code && dateToCheck) {
+
         const seatDiscount = seatPrice * (promotionData.DiscountValue / 100);
         const newSeatPrice = seatPrice - seatDiscount;
-        const newFinalPrice = newSeatPrice + productPrice; // Ghế đã giảm + Product gốc
+        const newFinalPrice = newSeatPrice + productPrice;
 
         setAppliedPromotion(promotionData);
         setDiscountAmount(seatDiscount);
@@ -204,8 +182,7 @@ const ConfirmPayment = () => {
         setPromoCode("");
 
         toast.success(
-          `Promotion "${
-            promotionData.Code
+          `Promotion "${promotionData.Code
           }" applied successfully! Save ${formatPrice(seatDiscount)}`,
           {
             duration: 4000,
@@ -221,8 +198,8 @@ const ConfirmPayment = () => {
           newFinalPrice,
         });
       } else {
-        setPromotionError("Invalid promotion code");
-        toast.error("Invalid promotion code!", {
+        setPromotionError(' Invalid or expired promotion code');
+        toast.error('  Invalid or expired promotion code   ', {
           duration: 4000,
           position: "top-center",
         });
@@ -319,7 +296,6 @@ const ConfirmPayment = () => {
       handleRemovePromotion();
     }
 
-    // *** CHỈ TRỪ ĐIỂM TỪ GIÁ GHẾ ***
     const seatDiscount = Math.min(points, seatPrice) * 1000;
     const newSeatPrice = seatPrice - seatDiscount;
     const newFinalPrice = newSeatPrice + productPrice; // Ghế đã giảm + Product gốc
@@ -376,7 +352,6 @@ const ConfirmPayment = () => {
     );
   };
 
-  // Enhanced handleConfirm with both HoldingSeats and holdProducts
   const handleConfirm = async (e) => {
     e.preventDefault();
 
@@ -388,26 +363,22 @@ const ConfirmPayment = () => {
       return;
     }
 
-    setIsConfirming(true);
+    // Kiểm tra nếu chọn Stripe nhưng chưa chọn card type
+    if (paymentMethod === "3" && !stripeCardType) {
+      toast.error("Please select a card type!", {
+        duration: 4000,
+        position: "top-center",
+      });
+      return;
+    }
 
-    // Show loading toast
-    // const loadingToastId = toast.loading("Processing your booking...", {
-    //   position: "top-center",
-    // });
+    setIsConfirming(true);
 
     try {
       let holdingResult = null;
       let productHoldResult = null;
 
-      // 1. HOLD SEATS - Always required
-      console.log("🪑 Holding seats with data:", {
-        userId: user.userId,
-        selectedShowtimeId,
-        seatIds,
-        promotionCode: appliedPromotion?.Code || "",
-        PointsToUse: isUsingPoints ? parseInt(pointsToUse) : 0,
-      });
-
+      // 1. HOLD SEATS
       holdingResult = await HoldingSeats(
         user.userId,
         selectedShowtimeId,
@@ -416,16 +387,13 @@ const ConfirmPayment = () => {
         appliedPromotion?.Code || "",
         isUsingPoints ? parseInt(pointsToUse) : 0
       );
-      console.log("BOOKING ID TRUOC KHI SET REDUX", holdingResult.bookingId);
-      dispatch(setBookingId(holdingResult.bookingId));
-      console.log("BOOKING ID FROM REDUX:", bookingId);
+      console.log("BOOKING ID TRUOC KHI SET REDUX", holdingResult.bookingId)
+      dispatch(setBookingId(holdingResult.bookingId))
 
-      console.log("✅ Seats held successfully:", holdingResult);
+      console.log("HOLDING SEAT SUCCESSSS:", holdingResult);
 
       // 2. HOLD PRODUCTS - Only if products are selected
       if (product && Array.isArray(product) && product.length > 0) {
-        console.log("🛍️ Holding products with data:", product);
-
         // Prepare products for API call
         const productsForAPI = product.map((p) => ({
           ProductId: p.ProductId.toString(),
@@ -435,36 +403,20 @@ const ConfirmPayment = () => {
         const productHoldPayload = {
           MemberId: user.userId.toString(),
           products: productsForAPI,
-          Notes: `Product hold for booking: ${
-            holdingResult.bookingId || "Unknown"
-          } - Movie: ${movie?.NameOfEnglish || "Unknown Movie"}`,
+          Notes: `Product hold for booking: ${holdingResult.bookingId || "Unknown"
+            } - Movie: ${movie?.NameOfEnglish || "Unknown Movie"}`,
         };
-
-        console.log(
-          "🔄 Calling holdProducts API with payload:",
-          productHoldPayload
-        );
-
         productHoldResult = await holdProducts(
           productHoldPayload.MemberId,
           productHoldPayload.products,
           productHoldPayload.Notes
         );
 
-        console.log("✅ Products held successfully:", productHoldResult);
+        console.log("HOLDING PRODUCT SUCCESSSSS:", productHoldResult);
       } else {
         console.log("ℹ️ No products to hold");
       }
 
-      // Update loading toast to success  // toast.update(loadingToastId, {
-      //   render: "Booking confirmed! Redirecting to payment...",
-      //   type: "success",
-      //   isLoading: false,
-      //   autoClose: 2000,
-      //   position: "top-center",
-      // });
-
-      // 3. Navigate to waiting page with all data
       const waitingData = {
         // Seat data
         selectedSeats,
@@ -497,6 +449,7 @@ const ConfirmPayment = () => {
         products: product || [],
         OrderProductId: productHoldResult?.OrderProductId || null,
         productHoldResult: productHoldResult,
+        stripeCardType,
       };
 
       console.log("Navigating to waiting page with data:", waitingData);
@@ -507,8 +460,14 @@ const ConfirmPayment = () => {
           state: waitingData,
         });
       }, 1000);
-    } catch (error) {
+    }
+
+    catch (error) {
       console.error("❌ Error during confirmation process:", error);
+      toast.error(error.message || "An error occurred during booking confirmation!", {
+        duration: 4000,
+        position: "top-center",
+      });
     } finally {
       setIsConfirming(false);
     }
@@ -570,9 +529,19 @@ const ConfirmPayment = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] text-white">
+    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 via-50% via-purple-950/70  to-slate-900 text-white relative">
+      <FadeInWrapper delay={600}>
+        <BackButton
+          className="absolute top-28 left-14 z-10"
+          onClick={() => {
+            window.scrollTo({ top: 0, behavior: 'instant' });
+            navigate(-1);
+          }}
+        />
+
+      </FadeInWrapper>
       <ToastContainer
-        position="top-center"
+        position="top-center mt-20 "
         autoClose={4000}
         hideProgressBar={false}
         newestOnTop={false}
@@ -581,587 +550,149 @@ const ConfirmPayment = () => {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="dark"
+        theme="light"
       />
-      <div className="max-w-7xl mx-auto py-1 md:py-14 lg:py-18 px-4 sm:px-10 mt-0 pb-8">
-        <div className="space-y-6 mt-10">
+      <div className="max-w-7xl mx-auto py-1 md:py-14 lg:py-18 px-4 sm:px-10 pb-8 ">
+        <div className="space-y-6 mt-[80px] sm:mt-[80px] md:mt-[40px]">
+
           {/* Grid 2 cột với chiều cao bằng nhau */}
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 md:gap-6 lg:gap-8">
             {/* Div trái chứa thông tin phim và user */}
             <div className="xl:col-span-5 order-1 xl:order-none space-y-6">
               {/* Movie Info Card */}
-              <div className="relative bg-white/5 backdrop-blur-md rounded-3xl p-4 md:p-6 border border-white/10 shadow-2xl">
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 rounded-3xl"></div>
-
-                <div className="relative z-10">
-                  <h2 className="text-xl md:text-2xl font-bold mb-6 bg-gradient-to-r from-white via-purple-100 to-pink-100 bg-clip-text text-transparent">
-                    Movie Information
-                  </h2>
-
-                  <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-                    <div className="flex justify-center sm:justify-start">
-                      <img
-                        src={movie?.PosterImage}
-                        alt={movie?.NameOfEnglish}
-                        className="w-32 h-48 sm:w-40 sm:h-60 object-cover rounded-2xl shadow-xl border border-white/10"
-                      />
-                    </div>
-
-                    <div className="flex flex-col justify-between flex-1">
-                      <div>
-                        <h3 className="text-lg sm:text-xl font-bold mb-2 text-center sm:text-left">
-                          {movie?.NameOfEnglish}
-                        </h3>
-                        <h4 className="text-sm sm:text-base font-medium mb-4 text-center sm:text-left text-gray-300">
-                          ({movie?.NameOfVietnamese})
-                        </h4>
-
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between p-3 bg-white/5 rounded-2xl border border-white/10">
-                            <div className="flex items-center gap-3">
-                              <FaRegClock className="text-purple-400 text-sm" />
-                              <span className="text-gray-300 text-sm">
-                                Runtime
-                              </span>
-                            </div>
-                            <span className="text-white font-semibold text-sm">
-                              {movie?.RunningTime} min
-                            </span>
-                          </div>
-
-                          <div className="flex items-center justify-between p-3 bg-white/5 rounded-2xl border border-white/10">
-                            <div className="flex items-center gap-3">
-                              <FaCalendarAlt className="text-purple-400 text-sm" />
-                              <span className="text-gray-300 text-sm">
-                                Release
-                              </span>
-                            </div>
-                            <span className="text-white font-semibold text-xs">
-                              {new Date(movie?.FromDate).toLocaleDateString(
-                                "vi-VN"
-                              )}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center justify-between p-3 bg-white/5 rounded-2xl border border-white/10">
-                            <div className="flex items-center gap-3">
-                              <RiMovie2AiLine className="text-purple-400 text-sm" />
-                              <span className="text-gray-300 text-sm">
-                                Genre
-                              </span>
-                            </div>
-                            <span className="text-white font-semibold text-xs text-right max-w-xs truncate">
-                              {movie?.Genres}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* {movie?.ContentSynopsis && (
-                    <div className="mt-4 p-3  rounded-2xl">
-                      <p className="text-gray-300 text-xs leading-relaxed line-clamp-3">
-                        {movie?.ContentSynopsis}
-                      </p>
-                    </div>
-                  )} */}
-                </div>
-                <MembershipProgress
-                  points={memberPoints}
-                  onTierChange={handleTierChange}
-                />
-              </div>
+              <FadeInWrapper delay={600}>
+                <AnimatedWrapper
+                  enableStars={true}
+                  enableTilt={false}
+                  enableMagnetism={false}
+                  clickEffect={true}
+                  enableBorderGlow={false}
+                  particleCount={6}
+                  glowColor="132, 0, 255"
+                >
+                  <MovieInfoCard
+                    movie={movie}
+                    memberPoints={memberPoints}
+                    onTierChange={handleTierChange}
+                  />
+                </AnimatedWrapper>
+              </FadeInWrapper>
 
               {/* User Info Card */}
-              <div className="relative bg-white/5 backdrop-blur-md rounded-3xl p-4 md:p-6 border border-white/10 shadow-2xl">
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 rounded-3xl"></div>
-
-                <div className="relative z-10">
-                  <h2 className="text-xl md:text-2xl font-bold mb-6 bg-gradient-to-r from-white via-purple-100 to-pink-100 bg-clip-text text-transparent">
-                    Customer Information
-                  </h2>
-
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-3 rounded-2xl ">
-                      <span className="text-gray-300 font-medium text-sm">
-                        Full Name
-                      </span>
-                      <span className="text-white font-semibold text-sm">
-                        {user?.fullName || "N/A"}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 rounded-2xl">
-                      <span className="text-gray-300 font-medium text-sm">
-                        Email
-                      </span>
-                      <span className="text-white font-semibold text-sm truncate max-w-xs">
-                        {user?.email || "N/A"}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 rounded-2xl ">
-                      <span className="text-gray-300 font-medium text-sm">
-                        Phone
-                      </span>
-                      <span className="text-white font-semibold text-sm">
-                        {user?.phoneNumber || "N/A"}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3  rounded-2xl ">
-                      <span className="text-gray-300 font-medium text-sm">
-                        Identity Card
-                      </span>
-                      <span className="text-white font-semibold text-sm">
-                        {user?.cccd}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3  rounded-2xl ">
-                      <span className="text-gray-300 font-medium text-sm">
-                        Available Points
-                      </span>
-                      <span className="text-yellow-400 font-bold text-sm">
-                        {user?.scoreBalance || 0} points
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Terms and Policy Section */}
-                  <div className="mt-6 pt-4 border-t border-white/20">
-                    <div className="text-xs text-gray-400 space-y-2">
-                      <p className="leading-relaxed">
-                        By proceeding with this booking, you agree to our
-                        <a
-                          href="/terms"
-                          className="text-purple-400 hover:text-purple-300 underline mx-1"
-                        >
-                          Terms of Service
-                        </a>
-                        and
-                        <a
-                          href="/privacy"
-                          className="text-purple-400 hover:text-purple-300 underline ml-1"
-                        >
-                          Privacy Policy
-                        </a>
-                        .
-                      </p>
-                      <div className="flex flex-wrap gap-4 text-xs">
-                        <a
-                          href="/refund-policy"
-                          className="text-gray-500 hover:text-gray-300 transition-colors"
-                        >
-                          Refund Policy
-                        </a>
-                        <a
-                          href="/cinema-rules"
-                          className="text-gray-500 hover:text-gray-300 transition-colors"
-                        >
-                          Cinema Rules
-                        </a>
-                        <a
-                          href="/contact"
-                          className="text-gray-500 hover:text-gray-300 transition-colors"
-                        >
-                          Contact Support
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <FadeInWrapper delay={700}>
+                <AnimatedWrapper
+                  enableStars={true}
+                  enableTilt={false}
+                  enableMagnetism={false}
+                  clickEffect={true}
+                  enableBorderGlow={false}
+                  particleCount={6}
+                  glowColor="132, 0, 255"
+                >
+                  <UserInfoCard user={user} />
+                </AnimatedWrapper>
+              </FadeInWrapper>
             </div>
 
             {/* Div phải chứa booking confirmation và payment */}
+
             <div className="xl:col-span-7 order-2 xl:order-none">
-              <div className="relative bg-white/5 backdrop-blur-md rounded-3xl p-4 md:p-6 lg:p-8 border border-white/10 shadow-2xl h-full">
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 rounded-3xl"></div>
+              <FadeInWrapper delay={800}>
+                <AnimatedWrapper
+                  enableStars={true}
+                  enableTilt={false}
+                  enableMagnetism={false}
+                  clickEffect={true}
+                  enableBorderGlow={false}
+                  particleCount={6}
+                  glowColor="132, 0, 255"
+                >
+                  <div className="relative bg-white/5 backdrop-blur-md rounded-3xl p-4 md:p-6 lg:p-8 border border-white/10 shadow-2xl h-full">
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 rounded-3xl"></div>
 
-                <div className="relative z-10 h-full flex flex-col">
-                  {/* Booking Details */}
-                  <div className="mb-6">
-                    <h3 className="text-lg md:text-xl font-bold text-white mb-4">
-                      Booking Details
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                        <p className="text-gray-300 text-sm mb-1">Room</p>
-                        <p className="text-white font-semibold">
-                          {selectedRoom}
-                        </p>
-                      </div>
-                      <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                        <p className="text-gray-300 text-sm mb-1">Date</p>
-                        <p className="text-white font-semibold">
-                          {selectedDate
-                            ? new Date(selectedDate)
-                                .toLocaleDateString("vi-VN")
-                                .replace(/\//g, "-")
-                            : "N/A"}
-                        </p>
-                      </div>
-                      <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                        <p className="text-gray-300 text-sm mb-1">Time</p>
-                        <p className="text-white font-semibold">
-                          {selectedTime}
-                        </p>
-                      </div>
-                      <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                        <p className="text-gray-300 text-sm mb-1">Seats</p>
-                        <p className="text-white font-semibold">
-                          {selectedSeats.length > 0
-                            ? selectedSeats.join(", ")
-                            : "None selected"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Price Breakdown */}
-                  <div className="mb-6">
-                    <h3 className="text-lg md:text-xl font-bold text-white mb-4">
-                      Price{" "}
-                    </h3>
-                    <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                      <div className="space-y-3">
-                        {/* Seat Price */}
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-300">
-                            Seats ({selectedSeats.join(", ")})
-                          </span>
-                          <div className="text-right">
-                            {discountAmount > 0 ? (
-                              <>
-                                <span className="text-gray-400 line-through text-sm">
-                                  {formatPrice(seatPrice)}
-                                </span>
-                                <br />
-                                <span className="text-white font-semibold">
-                                  {formatPrice(discountedSeatPrice)}
-                                </span>
-                              </>
-                            ) : (
-                              <span className="text-white font-semibold">
-                                {formatPrice(seatPrice)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Product Price */}
-                        {product &&
-                          Array.isArray(product) &&
-                          product.length > 0 && (
-                            <>
-                              <div className="flex justify-between items-center text-gray-300">
-                                {product.map((item, index) => (
-                                  <div
-                                    key={index}
-                                    className="flex justify-between"
-                                  >
-                                    <span>
-                                      {item.ProductName} x{item.Quantity}
-                                    </span>
-                                  </div>
-                                ))}
-                                <span className="text-white font-semibold">
-                                  {formatPrice(productPrice)}
-                                </span>
-                              </div>
-                            </>
-                          )}
-
-                        {/* Discount Display */}
-                        {discountAmount > 0 && (
-                          <div className="flex justify-between items-center text-green-400">
-                            <span>Seat Discount ({discountType})</span>
-                            <span>-{formatPrice(discountAmount)}</span>
-                          </div>
-                        )}
-
-                        {/* Final Total */}
-                        <div className="flex justify-between items-center text-lg font-bold border-t border-white/20 pt-3 mt-3">
-                          <span className="text-white">Total Amount</span>
-                          <span className="text-purple-300">
-                            {formatPrice(finalPrice)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Promotion Section */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-bold text-white mb-4">
-                      Promotion Code
-                    </h3>
-                    <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <input
-                          type="text"
-                          className="flex-1 bg-white/10 text-white rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 border border-white/20"
-                          placeholder="Enter promotion code (seats only)"
-                          value={promoCode}
-                          onChange={handleInputPromoCode}
-                          disabled={
-                            isLoadingPromotion ||
-                            appliedPromotion ||
-                            isUsingPoints
-                          }
+                    <div className="relative z-10 h-full flex flex-col">
+                      {/* Booking Details */}
+                      <FadeInWrapper delay={600}>
+                        <BookingDetailsCard
+                          selectedRoom={selectedRoom}
+                          selectedDate={selectedDate}
+                          selectedTime={selectedTime}
+                          selectedSeats={selectedSeats}
                         />
-                        <button
-                          className={`px-6 py-3 bg-gradient-to-r from-purple-600 via-purple-500 to-purple-700 hover:from-purple-700 hover:via-purple-600 hover:to-purple-800 text-white font-semibold rounded-xl text-sm transition-all duration-300 whitespace-nowrap ${
-                            isLoadingPromotion ||
-                            appliedPromotion ||
-                            isUsingPoints
-                              ? "opacity-50 cursor-not-allowed"
-                              : ""
-                          }`}
-                          onClick={handleAddPromotion}
-                          disabled={
-                            isLoadingPromotion ||
-                            appliedPromotion ||
-                            isUsingPoints
-                          }
-                        >
-                          {isLoadingPromotion ? "Checking..." : "Apply"}
-                        </button>
-                      </div>
+                      </FadeInWrapper>
 
-                      {/* Promotion error */}
-                      {promotionError && (
-                        <p className="text-red-400 text-xs mt-3">
-                          {promotionError}
-                        </p>
-                      )}
+                      {/* Price Breakdown */}
+                      <FadeInWrapper delay={600}>
+                        <PriceBreakdownCard
+                          selectedSeats={selectedSeats}
+                          seatPrice={seatPrice}
+                          discountedSeatPrice={discountedSeatPrice}
+                          discountAmount={discountAmount}
+                          userDiscount={userDiscount}
+                          product={product}
+                          productPrice={productPrice}
+                          finalPrice={finalPrice}
+                          discountType={discountType}
+                          formatPrice={formatPrice}
+                        />
+                      </FadeInWrapper>
 
-                      {/* Promotion applied notification */}
-                      {appliedPromotion && (
-                        <div className="mt-3 p-3 bg-green-500/20 rounded-lg border border-green-400/30">
-                          <div className="flex justify-between items-center">
-                            <div className="text-green-400 text-sm">
-                              ✓ Promotion applied: {appliedPromotion.Code} (-
-                              {appliedPromotion.DiscountValue}%)
-                            </div>
-                            <button
-                              onClick={handleRemovePromotion}
-                              className="text-red-400 hover:text-red-300 text-xs ml-2 transition-colors"
-                            >
-                              ✕ Remove
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                      {/* Promotion Section */}
+                      <FadeInWrapper delay={600}>
+                        <PromotionSection
+                          promoCode={promoCode}
+                          isLoadingPromotion={isLoadingPromotion}
+                          appliedPromotion={appliedPromotion}
+                          promotionError={promotionError}
+                          isUsingPoints={isUsingPoints}
+                          handleInputPromoCode={handleInputPromoCode}
+                          handleAddPromotion={handleAddPromotion}
+                          handleRemovePromotion={handleRemovePromotion}
+                        />
+                      </FadeInWrapper>
 
-                      {isUsingPoints && (
-                        <div className="mt-3 text-xs text-gray-400">
-                          Cannot use both discounts at the same time.
-                        </div>
-                      )}
+                      {/* Points Section */}
+                      <FadeInWrapper delay={600}>
+                        <PointsSection
+                          pointsToUse={pointsToUse}
+                          isUsingPoints={isUsingPoints}
+                          appliedPromotion={appliedPromotion}
+                          pointsError={pointsError}
+                          userDiscount={userDiscount}
+                          handlePointsChange={handlePointsChange}
+                          handleUsePoints={handleUsePoints}
+                          handleRemovePoints={handleRemovePoints}
+                        />
+                      </FadeInWrapper>
+
+                      {/* Payment Methods Section */}
+                      <FadeInWrapper delay={600}>
+                        <PaymentMethodsSection
+                          paymentMethod={paymentMethod}
+                          stripeCardType={stripeCardType}
+                          stripeClientSecret={stripeClientSecret}
+                          stripeLoading={stripeLoading}
+                          stripeError={stripeError}
+                          handlePaymentMethod={handlePaymentMethod}
+                          handleCardTypeChange={handleCardTypeChange}
+                        />
+                      </FadeInWrapper>
+
+                      {/* Action Buttons */}
+                      <FadeInWrapper delay={600}>
+                        <ActionButtons
+                          paymentMethod={paymentMethod}
+                          stripeCardType={stripeCardType}
+                          isConfirming={isConfirming}
+                          stripeLoading={stripeLoading}
+                          handleConfirm={handleConfirm}
+                          handleCancel={handleCancel}
+                        />
+                      </FadeInWrapper>
                     </div>
                   </div>
-
-                  {/* Points Section */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-bold text-white mb-4">
-                      Use Points
-                    </h3>
-                    <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <input
-                          type="text"
-                          className="flex-1 bg-white/10 text-white rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 border border-white/20"
-                          placeholder="Enter points to use on seats (1 point = 1,000 VND)"
-                          value={pointsToUse}
-                          onChange={handlePointsChange}
-                          disabled={
-                            isUsingPoints ||
-                            appliedPromotion ||
-                            userDiscount !== 0
-                          }
-                        />
-                        <button
-                          className={`px-6 py-3 bg-gradient-to-r from-purple-600 via-purple-500 to-purple-700 hover:from-purple-700 hover:via-purple-600 hover:to-purple-800 text-white  rounded-xl text-sm transition-all duration-300 whitespace-nowrap ${
-                            isUsingPoints || appliedPromotion
-                              ? "opacity-50 cursor-not-allowed"
-                              : ""
-                          }`}
-                          onClick={handleUsePoints}
-                          disabled={
-                            isUsingPoints ||
-                            appliedPromotion ||
-                            userDiscount !== 0
-                          }
-                        >
-                          Use Points
-                        </button>
-                      </div>
-
-                      {/* Points error */}
-                      {pointsError && (
-                        <p className="text-red-400 text-xs mt-3">
-                          {pointsError}
-                        </p>
-                      )}
-
-                      {/* Points applied notification */}
-                      {isUsingPoints && (
-                        <div className="mt-3 p-3 bg-yellow-500/20 rounded-lg border border-yellow-400/30">
-                          <div className="flex justify-between items-center">
-                            <div className="text-yellow-400 text-sm">
-                              ✓ Using {parseInt(pointsToUse).toLocaleString()}{" "}
-                              points on seats
-                            </div>
-                            <button
-                              onClick={handleRemovePoints}
-                              className="text-red-400 hover:text-red-300 text-xs ml-2 transition-colors"
-                            >
-                              ✕ Remove
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {appliedPromotion && (
-                        <div className="mt-3 text-xs text-gray-400">
-                          Cannot use both discounts at the same time.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Payment Methods Section */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                    {/* Stripe (Visa/MasterCard/JCB/UnionPay) */}
-                    <div>
-                      <button
-                        onClick={() => handlePaymentMethod("3")}
-                        className={`flex flex-col items-center justify-center rounded-2xl p-4 h-20 font-semibold transition-all duration-300 border-2 ${
-                          paymentMethod === "3"
-                            ? "bg-gray/20 shadow-lg"
-                            : "bg-white hover:bg-white/10 border-white/20"
-                        } focus:outline-none focus:ring-4 focus:ring-purple-500 w-full`}
-                      >
-                        <img
-                          src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png"
-                          alt="Visa Logo"
-                          className="w-16 h-3 mb-1"
-                        />
-                        <span className="text-xs text-gray-300 mt-1">
-                          Stripe (Visa, MasterCard, JCB, UnionPay)
-                        </span>
-                      </button>
-                      {/* Nếu đã chọn Stripe thì show chọn loại thẻ và hướng dẫn */}
-                      {paymentMethod === "3" && stripeClientSecret && (
-                        <>
-                          {console.log(
-                            "Rendering StripeCheckoutForm with clientSecret:",
-                            stripeClientSecret
-                          )}
-                          <div className="w-full max-w-md mx-auto mt-4">
-                            <StripeCheckoutForm
-                              clientSecret={stripeClientSecret}
-                              onSuccess={(paymentIntent) => {
-                                alert("Thanh toán thành công!");
-                                // Xử lý tiếp theo
-                              }}
-                            />
-                          </div>
-                        </>
-                      )}
-                      {/* Khi đã có clientSecret thì show form Stripe */}
-                      {paymentMethod === "3" && stripeClientSecret && (
-                        <div className="w-full max-w-md mx-auto mt-4">
-                          <StripeCheckoutForm
-                            clientSecret={stripeClientSecret}
-                            onSuccess={(paymentIntent) => {
-                              alert("Thanh toán thành công!");
-                              // Xử lý tiếp theo
-                            }}
-                          />
-                        </div>
-                      )}
-                      {/* Hiển thị lỗi Stripe nếu có */}
-                      {paymentMethod === "3" && stripeError && (
-                        <div className="text-red-500 mt-2 text-center">
-                          {stripeError}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* ZaloPay */}
-                    <div>
-                      <button
-                        onClick={() => handlePaymentMethod("4")}
-                        className={`flex flex-col items-center justify-center rounded-2xl p-4 h-20 font-semibold transition-all duration-300 border-2 ${
-                          paymentMethod === "4"
-                            ? "bg-gray/20 shadow-lg"
-                            : "bg-white hover:bg-white/10 border-white/20"
-                        } focus:outline-none focus:ring-4 focus:ring-purple-500 w-full`}
-                      >
-                        <img
-                          src="https://vectorseek.com/wp-content/uploads/2023/09/Zalopay-Logo-Vector.svg-.png"
-                          alt="ZaloPay logo"
-                          className="w-16 h-5 mb-1"
-                        />
-                      </button>
-                    </div>
-
-                    {/* Momo */}
-                    <div>
-                      <button
-                        onClick={() => handlePaymentMethod("2")}
-                        className={`flex flex-col items-center justify-center rounded-2xl p-4 h-20 font-semibold transition-all duration-300 border-2 ${
-                          paymentMethod === "2"
-                            ? "bg-gray/20 shadow-lg"
-                            : "bg-white hover:bg-white/10 border-white/20"
-                        } focus:outline-none focus:ring-4 focus:ring-purple-500 w-full`}
-                      >
-                        <img
-                          src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-MoMo-Transparent-1024x1024.png"
-                          alt="Momo logo"
-                          className="w-10 h-8 mb-1"
-                        />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="mt-auto space-y-4">
-                    <button
-                      type="button"
-                      className={`w-full py-4 bg-gradient-to-r via-purple-500   hover:via-purple-600  shadow-xl hover:shadow-2xl hover:shadow-purple-500/20 transform hover:scale-[1.02] transition-all duration-300 ease-out border border-purple-400/10 text-white font-semibold rounded-2xl text-lg ${
-                        !paymentMethod || isConfirming
-                          ? "opacity-50 cursor-not-allowed"
-                          : ""
-                      }`}
-                      onClick={handleConfirm}
-                      disabled={!paymentMethod || isConfirming}
-                    >
-                      {isConfirming ? (
-                        <div className="flex items-center justify-center space-x-2">
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                          <span>Processing...</span>
-                        </div>
-                      ) : (
-                        "Confirm And Payment"
-                      )}
-                    </button>
-
-                    <button
-                      type="button"
-                      className="w-full py-4 bg-transparent hover:bg-white/10 border-2 border-purple-500/50 hover:border-purple-400 text-white font-semibold rounded-2xl text-lg transition-all duration-300"
-                      onClick={handleCancel}
-                      disabled={isConfirming}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </div>
+                </AnimatedWrapper>
+              </FadeInWrapper>
             </div>
           </div>
         </div>

@@ -36,6 +36,11 @@ import VideoPopup from "../bookingComponent/VideoPopup";
 import FeedbackModal from "../bookingComponent/FeedbackModal";
 import RatingListModal from "../bookingComponent/RatingListModal";
 import BackButton from "../../../component/BackButton";
+import MagicBento from "../../../component/MagicBentoAnimation";
+import AnimatedWrapper from "../../../component/MagicBentoAnimation";
+import { FadeInWrapper } from "../../../component/FadeIn";
+
+// Component wrapper cho fade in animation
 
 const BookingPage = () => {
   const dispatch = useDispatch();
@@ -87,6 +92,17 @@ const BookingPage = () => {
   // Thêm state để theo dõi việc loading seat map
   const [seatMapLoading, setSeatMapLoading] = useState(false);
   const [previousDate, setPreviousDate] = useState(null);
+
+  // State cho animation
+  const [pageLoaded, setPageLoaded] = useState(false);
+
+  // Trigger animation sau khi page load
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPageLoaded(true);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Theo dõi thay đổi ngày và reset time selection
   useEffect(() => {
@@ -195,7 +211,7 @@ const BookingPage = () => {
       try {
         const response = await getShowtimeByMovieId(movie?.MovieId);
         setShowtimes(response.showtimes || []);
-        console.log("DATA NGAY",response)
+        console.log("DATA NGAY", response)
       } catch (error) {
         console.error("Error fetching showtimes:", error);
         toast.error("Failed to load showtimes", {
@@ -357,90 +373,153 @@ const BookingPage = () => {
   }, [dispatch]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] text-white">
+    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 via-50% via-purple-950/50 to-slate-900 text-white relative">
+       <FadeInWrapper delay={200} className="lg:col-span-4 order-1 lg:order-1">
+      <BackButton className="absolute top-28 left-14 z-10"
+       onClick={() => {
+                  window.scrollTo({ top: 0, behavior: 'instant' });
+                  navigate("/");
+                }} />
+                </FadeInWrapper>
       <ToastContainer />
-      <div className="max-w-7xl mx-auto py-1 md:py-14 lg:py-18 px-4 sm:px-10  pb-8">
-        <div className="sm:hidden mb-4">
-          <BackButton />
-        </div>
-        <div className="space-y-6 mt-15">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 lg:gap-8">
-            <div className="lg:col-span-4 order-1 lg:order-none">
-              <MovieInfo
-                movie={movie}
-                ratingSummary={ratingSummary}
-                onOpenTrailer={() => setIsPopupOpen(true)}
-                onOpenRatingList={() => {
-                  setIsRatingListOpen(true);
-                  handleFetchRatings();
-                }}
-                setRatingSummary={setRatingSummary}
-                onFetchRatings={handleFetchRatings}
-              />
-            </div>
-            <div className="lg:col-span-8 order-2 lg:order-none">
+      
+      <div className="max-w-7xl mx-auto py-6 md:py-8 lg:py-16 px-4 sm:px-10 pb-8">
+        <div className="space-y-6 w-full-screen">
+            
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 lg:gap-8 mt-15">
+            
+            {/* Back Button - Nằm bên trái cùng hàng với content */}
+          
+            
+            {/* Movie Info Section - fade in đầu tiên */}
+            <FadeInWrapper delay={200} className="lg:col-span-4 order-1 lg:order-1">
+              <AnimatedWrapper
+                enableStars={true}
+                enableTilt={false}
+                enableMagnetism={false}
+                clickEffect={true}
+                enableBorderGlow={false}
+                particleCount={6}
+                glowColor="132, 0, 255"
+              >
+                <MovieInfo
+                  movie={movie}
+                  ratingSummary={ratingSummary}
+                  onOpenTrailer={() => setIsPopupOpen(true)}
+                  onOpenRatingList={() => {
+                    setIsRatingListOpen(true);
+                    handleFetchRatings();
+                  }}
+                  setRatingSummary={setRatingSummary}
+                  onFetchRatings={handleFetchRatings}
+                />
+              </AnimatedWrapper>
+            </FadeInWrapper>
+
+            {/* Main Booking Section - fade in thứ hai */}
+            <FadeInWrapper delay={400} className="lg:col-span-8 order-2 lg:order-2">
               <div className="bg-white/5 backdrop-blur-md rounded-3xl p-4 md:p-6 lg:p-8 border border-white/10 shadow-2xl h-full">
-                <div className="h-full flex flex-col">
-                  <div className="mb-6 md:mb-8">
-                    <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 bg-gradient-to-r from-white via-purple-100 to-pink-100 bg-clip-text text-transparent">
-                      {movie?.NameOfEnglish}
-                    </h1>
-                    <p className="text-gray-300 text-base md:text-lg font-medium mb-4">
-                      ({movie?.NameOfVietnamese})
-                    </p>
-                  </div>
-                  <ShowtimeSelector
-                    showtimes={showtimes}
-                    dateIndex={dateIndex}
-                    selectedDate={selectedDate}
-                    timeOptions={timeOptions}
-                    selectedShowtimeId={selectedShowtimeId}
-                    selectedRoom={selectedRoom}
-                    setDateIndex={setDateIndex}
-                    dispatch={dispatch}
-                  />
-                  <SeatMap
-                    seatsData={seatsData}
-                    selectedSeats={selectedSeats}
-                    seatQuantity={seatQuantity}
-                    selectedShowtimeId={selectedShowtimeId}
-                    lastRefreshTime={lastRefreshTime}
-                    isRefreshing={isRefreshing}
-                    seatMapLoading={seatMapLoading}
-                    user={user}
-                    onRefresh={refreshSeats}
-                    dispatch={dispatch}
-                    navigate={navigate}
-                  />
+                <div className="h-full flex flex-col rounded-3xl">
+                  <AnimatedWrapper
+                    enableStars={true}
+                    enableTilt={false}
+                    enableMagnetism={false}
+                    clickEffect={true}
+                    enableBorderGlow={false}
+                    particleCount={6}
+                    glowColor="132, 0, 255"
+                  >
+                    {/* Title Section */}
+                    <FadeInWrapper delay={600} className="mb-6 md:mb-8">
+                      <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 bg-gradient-to-r from-white via-purple-100 to-pink-100 bg-clip-text text-transparent">
+                        {movie?.NameOfEnglish}
+                      </h1>
+                      <p className="text-gray-300 text-base md:text-lg font-medium mb-4">
+                        ({movie?.NameOfVietnamese})
+                      </p>
+                    </FadeInWrapper>
+
+                    {/* Showtime Selector */}
+                    <FadeInWrapper delay={800}>
+                      <ShowtimeSelector
+                        showtimes={showtimes}
+                        dateIndex={dateIndex}
+                        selectedDate={selectedDate}
+                        timeOptions={timeOptions}
+                        selectedShowtimeId={selectedShowtimeId}
+                        selectedRoom={selectedRoom}
+                        setDateIndex={setDateIndex}
+                        dispatch={dispatch}
+                      />
+                    </FadeInWrapper>
+
+                    {/* Seat Map */}
+                    <FadeInWrapper delay={1000}>
+                      <SeatMap
+                        seatsData={seatsData}
+                        selectedSeats={selectedSeats}
+                        seatQuantity={seatQuantity}
+                        selectedShowtimeId={selectedShowtimeId}
+                        lastRefreshTime={lastRefreshTime}
+                        isRefreshing={isRefreshing}
+                        seatMapLoading={seatMapLoading}
+                        user={user}
+                        onRefresh={refreshSeats}
+                        dispatch={dispatch}
+                        navigate={navigate}
+                      />
+                    </FadeInWrapper>
+                  </AnimatedWrapper>
                 </div>
               </div>
-            </div>
+            </FadeInWrapper>
           </div>
-          <ProductsSection
-            product={product}
-            selectedProducts={selectedProducts}
-            onProductSelect={handleProductSelect}
-          />
-          <OrderSummary
-            selectedSeats={selectedSeats}
-            selectedProducts={selectedProducts}
-            calculatedTotalPrice={calculatedTotalPrice}
-            totalProductPrice={totalProductPrice}
-            totalAmount={totalAmount}
-            movie={movie}
-            selectedDate={selectedDate}
-            selectedTime={selectedTime}
-            formatPrice={formatPrice}
-            onContinue={handleContinue}
-          />
+
+          {/* Products Section */}
+          <FadeInWrapper delay={1200}>
+            <AnimatedWrapper
+              enableStars={true}
+              enableTilt={false}
+              enableMagnetism={false}
+              clickEffect={true}
+              enableBorderGlow={false}
+              particleCount={6}
+              glowColor="132, 0, 255"
+            >
+              <ProductsSection
+                product={product}
+                selectedProducts={selectedProducts}
+                onProductSelect={handleProductSelect}
+              />
+            </AnimatedWrapper>
+          </FadeInWrapper>
+
+          {/* Order Summary */}
+          <FadeInWrapper delay={1400}>
+            <OrderSummary
+              selectedSeats={selectedSeats}
+              selectedProducts={selectedProducts}
+              calculatedTotalPrice={calculatedTotalPrice}
+              totalProductPrice={totalProductPrice}
+              totalAmount={totalAmount}
+              movie={movie}
+              selectedDate={selectedDate}
+              selectedTime={selectedTime}
+              formatPrice={formatPrice}
+              onContinue={handleContinue}
+            />
+          </FadeInWrapper>
         </div>
       </div>
+
+      {/* Modals - không cần fade in vì chúng xuất hiện theo action */}
       <VideoPopup
         isOpen={isPopupOpen}
         movie={movie}
         popupVideoRef={popupVideoRef}
         onClose={() => setIsPopupOpen(false)}
       />
+      
       <FeedbackModal
         isOpen={isFeedbackOpen}
         feedbackRating={feedbackRating}
@@ -493,6 +572,7 @@ const BookingPage = () => {
           }
         }}
       />
+      
       <RatingListModal
         isOpen={isRatingListOpen}
         ratingsList={ratingsList}

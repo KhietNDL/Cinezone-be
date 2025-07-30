@@ -90,7 +90,7 @@ const OrderSummary = ({
             <button
               disabled={selectedSeats.length === 0}
               onClick={onContinue}
-              className="px-8 py-4 bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 hover:from-purple-700 hover:via-purple-600 hover:to-pink-600 shadow-xl hover:shadow-2xl hover:shadow-purple-500/20 transform hover:scale-[1.02] transition-all duration-300 ease-out border border-purple-400/20 text-white font-semibold rounded-4xl disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-lg"
+              className="px-8 py-4 bg-gradient-to-r from-purple-600/10 via-purple-500/80 to-purple-600/10 hover:from-purple-700/30 hover:via-purple-600 hover:to-purple-800/30 shadow-xl hover:shadow-2xl hover:shadow-purple-500/20 transform hover:scale-[1.02] transition-all duration-300 ease-out border border-purple-400/20 text-white font-semibold rounded-4xl disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-lg"
             >
               <FaTicketAlt className="inline-block mr-2" />
               Continue to Confirm

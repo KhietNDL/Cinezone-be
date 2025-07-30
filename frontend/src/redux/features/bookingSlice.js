@@ -6,6 +6,7 @@ const initialState = {
   setProducts: [],
   orderProductsId: [],
   bookingId: [],
+  paymentId: [],
   calculatedTotalPrice: 0,
   selectedRoom: "",
   selectedDate: "",
@@ -70,6 +71,9 @@ const bookingSlice = createSlice({
     setOrderProductsId(state, action) {
       state.orderProductsId = action.payload;
     } ,
+     setPaymentId(state, action) {
+      state.paymentId = action.payload;
+    } ,
      setProductDetail(state, action) {
       state.productDetail = action.payload;
     },
@@ -95,6 +99,7 @@ export const {
   setProduct,
   setProductDetail,
   setBookingId,
+  setPaymentId,
   setOrderProductsId,
   setFinalTotalPrice,
   resetBooking,
