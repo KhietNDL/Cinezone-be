@@ -8,7 +8,7 @@ class UserManagement {
     if (!allowedSortFields.includes(sortBy)) sortBy = 'FullName';
     sortOrder = sortOrder.toLowerCase() === 'desc' ? 'DESC' : 'ASC';
 
-    let usersQuery = `SELECT * FROM Users WHERE Role = 1 AND IsDeleted = 0 ORDER BY ${sortBy} ${sortOrder}`;
+    let usersQuery = `SELECT * FROM Users WHERE Role = 1 ORDER BY ${sortBy} ${sortOrder}`;
     let usersParams = [];
     if (limit > 0) {
       const offset = (page - 1) * limit;
@@ -80,14 +80,40 @@ class UserManagement {
     return rows[0];
   }
 
-  static async getUserByEmail(email) {
-    const [rows] = await db
-      .promise()
-      .query(
-        "SELECT * FROM Users WHERE Email = ? AND Role = 1 AND IsDeleted = 0",
-        [email]
+  static async getUserByEmail(email, page = 1, limit = 0, sortBy = 'FullName', sortOrder = 'asc') {
+    const allowedSortFields = ['FullName', 'DateOfBirth', 'Email', 'PhoneNumber', 'CreatedAt'];
+    if (!allowedSortFields.includes(sortBy)) sortBy = 'FullName';
+    sortOrder = sortOrder.toLowerCase() === 'desc' ? 'DESC' : 'ASC';
+
+    let usersQuery = `SELECT * FROM Users WHERE LOWER(Email) LIKE LOWER(?) AND Role = 1 AND IsDeleted = 0 ORDER BY ${sortBy} ${sortOrder}`;
+    let usersParams = [`%${email}%`];
+
+    if (limit > 0) {
+      const offset = (page - 1) * limit;
+      usersQuery += " LIMIT ? OFFSET ?";
+      usersParams.push(limit, offset);
+    }
+
+    const [users] = await db.promise().query(usersQuery, usersParams);
+
+    let totalUsers = users.length;
+    if (limit > 0) {
+      const [countResult] = await db.promise().query(
+        "SELECT COUNT(*) as total FROM Users WHERE LOWER(Email) LIKE LOWER(?) AND Role = 1 AND IsDeleted = 0",
+        [`%${email}%`]
       );
-    return rows[0];
+      totalUsers = countResult[0].total;
+    }
+
+    return {
+      users,
+      pagination: {
+        total: totalUsers,
+        currentPage: page,
+        totalPages: limit > 0 ? Math.ceil(totalUsers / limit) : 1,
+        limit: limit > 0 ? limit : users.length,
+      },
+    };
   }
 
   static async createUser(userData) {
@@ -166,6 +192,69 @@ class UserManagement {
         [phoneNumber]
       );
     return rows[0];
+  }
+
+  static async findUsersByInfo({ email, cccd, phone, name }, page = 1, limit = 0, sortBy = 'FullName', sortOrder = 'asc') {
+    const allowedSortFields = ['FullName', 'DateOfBirth', 'Email', 'PhoneNumber', 'CreatedAt'];
+    if (!allowedSortFields.includes(sortBy)) sortBy = 'FullName';
+    sortOrder = sortOrder.toLowerCase() === 'desc' ? 'DESC' : 'ASC';
+
+    let where = [];
+    let params = [];
+    if (email) {
+      where.push("LOWER(Email) LIKE LOWER(?)");
+      params.push(`%${email}%`);
+    }
+    if (cccd) {
+      where.push("CCCD LIKE ?");
+      params.push(`%${cccd}%`);
+    }
+    if (phone) {
+      where.push("PhoneNumber LIKE ?");
+      params.push(`%${phone}%`);
+    }
+    if (name) {
+      where.push("FullName LIKE ?");
+      params.push(`%${name}%`);
+    }
+    if (where.length === 0) return { users: [], pagination: { total: 0, currentPage: page, totalPages: 0, limit: 0 } };
+
+    let usersQuery = `SELECT * FROM Users WHERE (${where.join(" OR ")}) AND Role = 1 ORDER BY ${sortBy} ${sortOrder}`;
+    if (limit > 0) {
+      const offset = (page - 1) * limit;
+      usersQuery += " LIMIT ? OFFSET ?";
+      params.push(limit, offset);
+    }
+    const [users] = await db.promise().query(usersQuery, params);
+
+    let totalUsers = users.length;
+    if (limit > 0) {
+      const [countResult] = await db.promise().query(
+        `SELECT COUNT(*) as total FROM Users WHERE (${where.join(" OR ")}) AND Role = 1`,
+        params.slice(0, where.length)
+      );
+      totalUsers = countResult[0].total;
+    }
+
+    return {
+      users,
+      pagination: {
+        total: totalUsers,
+        currentPage: page,
+        totalPages: limit > 0 ? Math.ceil(totalUsers / limit) : 1,
+        limit: limit > 0 ? limit : users.length,
+      },
+    };
+  }
+
+  static async unbanUser(userId) {
+    const [result] = await db
+      .promise()
+      .query(
+        "UPDATE Users SET IsDeleted = 0, UpdatedAt = NOW() WHERE UserId = ? AND Role = 1 AND IsDeleted = 1",
+        [userId]
+      );
+    return result.affectedRows > 0;
   }
 }
 

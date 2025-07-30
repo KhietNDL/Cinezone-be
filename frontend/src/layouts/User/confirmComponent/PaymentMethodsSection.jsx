@@ -48,9 +48,9 @@ const PaymentMethodsSection = ({
           <button
             onClick={() => handlePaymentMethod("3")}
             className={`flex flex-col items-center justify-center rounded-2xl p-4 h-20 font-semibold transition-all duration-300 border-2 ${paymentMethod === "3"
-              ? "bg-blue-600/30 border-blue-400 shadow-lg"
+              ? "bg-gradient-to-r from-purple-600/10 via-purple-500/80 to-purple-600/10 border-purple-600 shadow-lg"
               : "bg-white/90 hover:bg-white/95 border-white/20"
-              } focus:outline-none focus:ring-4 focus:ring-blue-500 w-full`}
+              } focus:outline-none focus:ring-2 focus:ring-purple-600 w-full`}
           >
             <img
               src="https://www.thesmbguide.com/images/Stripe-Payments-Review-1024x512-20200129.png"
@@ -65,9 +65,9 @@ const PaymentMethodsSection = ({
           <button
             onClick={() => handlePaymentMethod("4")}
             className={`flex flex-col items-center justify-center rounded-2xl p-4 h-20 font-semibold transition-all duration-300 border-2 ${paymentMethod === "4"
-              ? "bg-blue-600/30 border-blue-400 shadow-lg"
+              ? "bg-gradient-to-r from-purple-600/10 via-purple-500/80 to-purple-600/10 border-purple-600 shadow-lg"
               : "bg-white/90 hover:bg-white/95 border-white/20"
-              } focus:outline-none focus:ring-4 focus:ring-blue-500 w-full`}
+              } focus:outline-none focus:ring-2 focus:ring-purple-600 w-full`}
           >
             <img
               src="https://vectorseek.com/wp-content/uploads/2023/09/Zalopay-Logo-Vector.svg-.png"
@@ -82,9 +82,9 @@ const PaymentMethodsSection = ({
           <button
             onClick={() => handlePaymentMethod("2")}
             className={`flex flex-col items-center justify-center rounded-2xl p-4 h-20 font-semibold transition-all duration-300 border-2 ${paymentMethod === "2"
-              ? "bg-blue-600/30 border-blue-400 shadow-lg"
+              ? "bg-gradient-to-r from-purple-600/10 via-purple-500/80 to-purple-600/10 border-purple-600 shadow-lg"
               : "bg-white/90 hover:bg-white/95 border-white/20"
-              } focus:outline-none focus:ring-4 focus:ring-blue-500 w-full`}
+              } focus:outline-none focus:ring-2 focus:ring-purple-600 w-full`}
           >
             <img
               src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-MoMo-Transparent-1024x1024.png"
@@ -104,11 +104,10 @@ const PaymentMethodsSection = ({
               <button
                 key={card.value}
                 onClick={() => handleCardTypeChange(card.value)}
-                className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 border-2 ${
-                  stripeCardType === card.value
+                className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 border-2 ${stripeCardType === card.value
                     ? "bg-purple-600/30 border-purple-400 shadow-lg"
                     : "bg-white/5 hover:bg-white/10 border-white/20"
-                } focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                  } focus:outline-none focus:ring-2 focus:ring-purple-500`}
               >
                 <img
                   src={card.logo}
@@ -119,7 +118,7 @@ const PaymentMethodsSection = ({
                     e.target.nextSibling.style.display = 'block';
                   }}
                 />
-                <span 
+                <span
                   className="text-xs text-white font-medium text-center hidden"
                   style={{ display: 'none' }}
                 >
@@ -131,7 +130,7 @@ const PaymentMethodsSection = ({
               </button>
             ))}
           </div>
-          
+
           {/* Stripe Processing Status */}
           {stripeLoading && (
             <div className="mt-4 flex items-center justify-center space-x-2 text-purple-400">
@@ -139,13 +138,13 @@ const PaymentMethodsSection = ({
               <span className="text-sm">Setting up payment...</span>
             </div>
           )}
-          
+
           {stripeError && (
             <div className="mt-4 p-3 bg-red-500/20 rounded-lg border border-red-400/30">
               <p className="text-red-400 text-sm">{stripeError}</p>
             </div>
           )}
-          
+
           {stripeClientSecret && !stripeError && (
             <div className="mt-4 p-3 bg-green-500/20 rounded-lg border border-green-400/30">
               <p className="text-green-400 text-sm">✓ Payment ready for {cardTypes.find(c => c.value === stripeCardType)?.name}</p>

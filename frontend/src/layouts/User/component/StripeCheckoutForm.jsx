@@ -84,8 +84,10 @@ function CheckoutForm({ clientSecret, onSuccess, totalAmount }) {
             disabled={!stripe || processing}
             className="group relative w-full overflow-hidden"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 rounded-2xl transition-all duration-300 group-hover:scale-105 group-disabled:opacity-50"></div>
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-600/80 to-pink-500/80 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-purple-500/80
+               to-purple-600/10 hover:from-purple-600/30 hover:via-purple-600 hover:to-purple-800/30 rounded-2xl transition-all duration-300 group-hover:scale-105 group-disabled:opacity-50"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-purple-500/80
+               to-purple-600/10 hover:from-purple-600/30 hover:via-purple-600 hover:to-purple-800/30 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             
             <div className="relative flex items-center justify-center py-4 px-8 text-white font-bold text-lg">
               {processing ? (

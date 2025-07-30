@@ -140,8 +140,8 @@ const holdBooking = async (req, res) => {
       membershipDiscount, // phần trăm giảm giá membership nếu không dùng điểm
       CreatedBy: userId
     });
-    // Nếu dùng điểm, trừ điểm và ghi lịch sử
-    if (pointsUsed > 0) {
+    // Nếu dùng điểm, chỉ trừ điểm và ghi lịch sử nếu không phải role 2 hoặc 3
+    if (pointsUsed > 0 && user.Role !== 2 && user.Role !== 3) {
       await User.updateScoreBalance(userId, newScoreBalance);
       await ScoreHistory.createScoreHistory({
         MemberId: userId,
@@ -172,23 +172,21 @@ const confirmBooking = async (req, res) => {
     console.log('[DEBUG] Booking info:', booking);
 
     if (booking) {
+      // Lấy quyền lợi membership (PointMultiplier)
+      const userInfo = await User.getMembershipInfo(booking.MemberId);
+      console.log('[DEBUG] User membership info:', userInfo);
+      const pointMultiplier = userInfo && userInfo.PointMultiplier ? Number(userInfo.PointMultiplier) : 1;
       // Lấy danh sách ghế và giá gốc từng ghế
       const seatPrices = booking.seatPrices || {}; // { seatNumber: price }
       // Tính tổng tiền gốc
       const originalAmount = Object.values(seatPrices).reduce((sum, price) => sum + Number(price), 0);
       console.log('[DEBUG] originalAmount:', originalAmount);
-
-      // Lấy quyền lợi membership (PointMultiplier)
-      const userInfo = await User.getMembershipInfo(booking.MemberId);
-      console.log('[DEBUG] User membership info:', userInfo);
-      const pointMultiplier = userInfo && userInfo.PointMultiplier ? Number(userInfo.PointMultiplier) : 1;
-
       // Tính điểm dựa trên tổng tiền gốc
       const basePoint = Math.floor((originalAmount || 0) / 10000);
       const earnedPoint = Math.floor(basePoint * pointMultiplier);
       console.log('[DEBUG] basePoint:', basePoint, 'pointMultiplier:', pointMultiplier, 'earnedPoint:', earnedPoint);
-
-      if (earnedPoint > 0) {
+      // Chỉ cộng điểm/nâng hạng nếu không phải role 2 hoặc 3
+      if (earnedPoint > 0 && userInfo.Role !== 2 && userInfo.Role !== 3) {
         // Ghi nhận lịch sử điểm
         await ScoreHistory.createScoreHistory({
           MemberId: booking.MemberId,
@@ -296,9 +294,9 @@ const cancelBooking = async (req, res) => {
 
 const findBookingsByUserInfo = async (req, res) => {
   try {
-    const { email, cccd, phone } = req.query;
-    const bookings = await Booking.findBookingsByUserInfo({ email, cccd, phone });
-    res.json(bookings);
+    const { email, cccd, phone, page = 1, limit = 10, sortBy = "CreatedAt", sortOrder = "desc" } = req.query;
+    const result = await Booking.findBookingsByUserInfo({ email, cccd, phone, page, limit, sortBy, sortOrder });
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -62,6 +62,7 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const { user } = useAuth();
+
   const [notifications, setNotifications] = useState([]);
   const [showNoti, setShowNoti] = useState(false);
   const [newNotiCount, setNewNotiCount] = useState(0);
@@ -150,7 +151,7 @@ const Header = () => {
     async function fetchMemberHistory() {
       try {
         const res = await fetch(
-          `http://localhost:4458/api/payment/history?memberId=${user.userId}&page=1&limit=8&sortBy=CreatedAt&sortOrder=desc`
+          `http://cinezone.info:4458/api/payment/history?memberId=${user.userId}&page=1&limit=8&sortBy=CreatedAt&sortOrder=desc`
         );
 
         // Kiểm tra response status
@@ -186,10 +187,8 @@ const Header = () => {
           // Helper để lấy điểm cộng/trừ
           const getScoreValue = (booking) => {
             if (!booking) return 0;
-            if (booking.pointEarn && booking.pointEarn > 0)
-              return booking.pointEarn;
-            if (booking.pointUse && booking.pointUse > 0)
-              return -booking.pointUse;
+            if (booking.pointEarn && booking.pointEarn > 0) return booking.pointEarn;
+            if (booking.pointUse && booking.pointUse > 0) return -booking.pointUse;
             return 0;
           };
 
@@ -410,7 +409,7 @@ const Header = () => {
       {/* Modern Action Buttons */}
       <div className="flex items-center space-x-3 md:space-x-4">
         {/* Enhanced Search Component */}
-        <div className="relative flex items-center z-50">
+        <div className="relative flex items-center z-10">
           <input
             ref={searchInputRef}
             type="text"
@@ -435,7 +434,7 @@ const Header = () => {
           />
 
           <button
-            className="relative z-20 p-3 bg-gradient-to-r from-[#6a57f5] to-purple-600 hover:from-[#7c6aff] hover:to-purple-700 rounded-2xl shadow-lg shadow-[#6a57f5]/30 hover:shadow-[#6a57f5]/50 transition-all duration-300 ease-out hover:scale-105 active:scale-95 border border-[#6a57f5]/20"
+            className="relative  p-3 bg-gradient-to-r from-[#6a57f5] to-purple-600 hover:from-[#7c6aff] hover:to-purple-700 rounded-2xl shadow-lg shadow-[#6a57f5]/30 hover:shadow-[#6a57f5]/50 transition-all duration-300 ease-out hover:scale-105 active:scale-95 border border-[#6a57f5]/20"
             onClick={toggleSearch}
           >
             <FaSearch size={18} className="text-white" />
@@ -469,7 +468,6 @@ const Header = () => {
             <FaBell
               size={18}
               className="cursor-pointer text-gray-300 group-hover:text-[#6a57f5] transition-colors duration-300"
-              onClick={() => setShowNoti((prev) => !prev)}
             />
             {newNotiCount > 0 && (
               <span className="absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-full px-2 py-1 text-xs font-bold shadow-lg animate-pulse min-w-[20px] text-center leading-none">
@@ -482,7 +480,7 @@ const Header = () => {
             <>
               {/* Backdrop Overlay */}
               <div
-                className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm"
+                className="fixed inset-0 z-40 "
                 onClick={() => setShowNoti(false)}
               />
 
@@ -495,6 +493,12 @@ const Header = () => {
                       <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
                         <FaBell className="text-white" size={16} />
                       </div>
+                      {newNotiCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-full px-1.5 py-0.5 text-xs font-bold shadow-lg animate-pulse min-w-[18px] text-center">
+                          {newNotiCount > 99 ? "99+" : newNotiCount}
+                        </span>
+                      )}
+
                       <div>
                         <h3 className="font-bold text-lg text-white">
                           Notifications
@@ -660,28 +664,34 @@ const Header = () => {
           )}
         </div>
         {/* Enhanced User Profile/Auth Section */}
-        {user && user.avatar_url ? (
-          <div className="flex items-center space-x-3">
-            <div className="relative group">
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#6a57f5] to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
+        {user ? (
+          <div className="flex items-center space-x-2">
+            {user.avatar_url ? (
               <div className="relative">
+                <div className="absolute inset-0 rounded-full border-2 border-white shadow-lg"></div>
                 <img
                   src={user.avatar_url}
                   alt="User Avatar"
-                  className="w-11 h-11 rounded-full object-cover cursor-pointer border-2 border-slate-600 hover:border-[#6a57f5] shadow-lg transition-all duration-300 hover:scale-105 relative z-10"
+                  className="w-10 h-10 rounded-full object-cover cursor-pointer border-solid border-[1px] border-[#6a57f5] shadow-[#6a57f5] shadow-md hover:shadow-lg transition-all duration-300 relative z-10"
                   onClick={() => navigate("/account")}
                 />
-                <div className="absolute inset-0 rounded-full bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </div>
-            </div>
+            ) : (
+              <FaUser
+                size={25}
+                className="cursor-pointer text-white"
+                onClick={() => navigate("/account")}
+              />
+            )}
           </div>
         ) : (
-          <button
+          <div
+            role="button"
             onClick={() => navigate("/login")}
-            className="bg-gradient-to-r from-[#6a57f5] to-purple-600 hover:from-[#7c6aff] hover:to-purple-700 border-2 border-transparent hover:border-white/20 rounded-2xl px-6 py-3 text-white font-semibold shadow-lg shadow-[#6a57f5]/30 hover:shadow-[#6a57f5]/50 active:scale-95 transition-all duration-300 ease-out backdrop-blur-sm"
+            className="bg-transparent border-2 rounded-4xl p-2 px-6 border-[#6a57f5] shadow-[#6a57f5] hover:bg-[#6957f538] shadow-md font-bold active:scale-[1.1] transition-all duration-100"
           >
             Sign In
-          </button>
+          </div>
         )}
       </div>
     </div>

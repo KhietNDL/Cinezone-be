@@ -591,7 +591,7 @@ const TicketBookingManagement = () => {
 
             {/* Table */}
             <div className="bg-white p-2 lg:p-4 rounded-lg shadow-sm">
-              <div className="hidden sm:block">
+              <div className="">
                 <table className="w-full table-auto border-collapse">
                   <thead>
                     <tr className="text-left text-slate-500 text-xs sm:text-sm border-b border-gray-200">

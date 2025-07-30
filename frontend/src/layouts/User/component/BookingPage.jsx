@@ -42,7 +42,6 @@ import { FadeInWrapper } from "../../../component/FadeIn";
 
 // Component wrapper cho fade in animation
 
-
 const BookingPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -70,6 +69,7 @@ const BookingPage = () => {
   const [showtimes, setShowtimes] = useState([]);
   const [timeOptions, setTimeOptions] = useState([]);
   const [dateIndex, setDateIndex] = useState(0);
+  // eslint-disable-next-line no-unused-vars
   const [loading, setLoading] = useState(true);
   const [lastRefreshTime, setLastRefreshTime] = useState(Date.now());
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -85,6 +85,7 @@ const BookingPage = () => {
   const [isRatingListOpen, setIsRatingListOpen] = useState(false);
   const [ratingsList, setRatingsList] = useState([]);
   const [ratingsTotal, setRatingsTotal] = useState(0);
+  // eslint-disable-next-line no-unused-vars
   const [ratingsPage, setRatingsPage] = useState(1);
   const [ratingsLoading, setRatingsLoading] = useState(false);
 
@@ -372,20 +373,26 @@ const BookingPage = () => {
   }, [dispatch]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] text-white">
+    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 via-50% via-purple-950/50 to-slate-900 text-white relative">
+       <FadeInWrapper delay={200} className="lg:col-span-4 order-1 lg:order-1">
+      <BackButton className="absolute top-28 left-14 z-10"
+       onClick={() => {
+                  window.scrollTo({ top: 0, behavior: 'instant' });
+                  navigate("/");
+                }} />
+                </FadeInWrapper>
       <ToastContainer />
       
-      <div className="max-w-7xl mx-auto py-1 md:py-14 lg:py-18 px-4 sm:px-10 pb-8">
-        {/* Back Button với fade in */}
-        <FadeInWrapper delay={200} className="sm:hidden mb-4">
-          <BackButton />
-        </FadeInWrapper>
-
-        <div className="space-y-6 mt-15">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 lg:gap-8">
+      <div className="max-w-7xl mx-auto py-6 md:py-8 lg:py-16 px-4 sm:px-10 pb-8">
+        <div className="space-y-6 w-full-screen">
+            
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 lg:gap-8 mt-15">
+            
+            {/* Back Button - Nằm bên trái cùng hàng với content */}
+          
             
             {/* Movie Info Section - fade in đầu tiên */}
-            <FadeInWrapper delay={200} className="lg:col-span-4 order-1 lg:order-none">
+            <FadeInWrapper delay={200} className="lg:col-span-4 order-1 lg:order-1">
               <AnimatedWrapper
                 enableStars={true}
                 enableTilt={false}
@@ -410,7 +417,7 @@ const BookingPage = () => {
             </FadeInWrapper>
 
             {/* Main Booking Section - fade in thứ hai */}
-            <FadeInWrapper delay={400} className="lg:col-span-8 order-2 lg:order-none">
+            <FadeInWrapper delay={400} className="lg:col-span-8 order-2 lg:order-2">
               <div className="bg-white/5 backdrop-blur-md rounded-3xl p-4 md:p-6 lg:p-8 border border-white/10 shadow-2xl h-full">
                 <div className="h-full flex flex-col rounded-3xl">
                   <AnimatedWrapper

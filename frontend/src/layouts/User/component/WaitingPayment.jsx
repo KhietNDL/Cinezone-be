@@ -195,7 +195,7 @@ const WaitingPayment = () => {
   // }, [state]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] text-white flex items-center justify-center p-25">
+    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 via-50% via-purple-950/50 to-slate-900 text-white flex items-center justify-center p-25">
       <div className="bg-[#1E1B3A] rounded-xl shadow-xl w-full max-w-2xl   text-center">
         <img src={logo} alt="Logo" className="w-40 h-auto mx-auto" />
         

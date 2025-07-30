@@ -159,14 +159,35 @@ class Promotion {
     return result.affectedRows > 0;
   }
 
-  static async searchPromotionsByCode(code) {
-    const [rows] = await db
-      .promise()
-      .query(
-        "SELECT * FROM Promotions WHERE LOWER(Code) LIKE LOWER(?) AND IsDeleted = 0",
-        [`%${code}%`]
-      );
-    return rows;
+  static async searchPromotionsByCode(code, page = 1, limit = 10, sortBy = "CreatedAt", sortOrder = "desc") {
+    const allowedSortFields = ["CreatedAt", "StartTime", "EndTime", "DiscountValue", "Title"];
+    if (!allowedSortFields.includes(sortBy)) sortBy = "CreatedAt";
+    sortOrder = sortOrder.toLowerCase() === "asc" ? "ASC" : "DESC";
+
+    let sql = `SELECT * FROM Promotions WHERE LOWER(Code) LIKE LOWER(?) AND IsDeleted = 0 ORDER BY ${sortBy} ${sortOrder}`;
+    let params = [`%${code}%`];
+    let total = 0;
+
+    if (limit > 0) {
+      const [countRows] = await db
+        .promise()
+        .query("SELECT COUNT(*) as total FROM Promotions WHERE LOWER(Code) LIKE LOWER(?) AND IsDeleted = 0", [`%${code}%`]);
+      total = countRows[0].total;
+      const offset = (page - 1) * limit;
+      sql += " LIMIT ? OFFSET ?";
+      params.push(limit, offset);
+    }
+
+    const [rows] = await db.promise().query(sql, params);
+    return {
+      promotions: rows.map(this.formatPromotionRow),
+      pagination: {
+        total,
+        currentPage: page,
+        totalPages: limit > 0 ? Math.ceil(total / limit) : 1,
+        limit: limit > 0 ? limit : rows.length,
+      },
+    };
   }
 }
 

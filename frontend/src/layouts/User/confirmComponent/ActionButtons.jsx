@@ -10,7 +10,7 @@ const ActionButtons = ({
     <div className="mt-auto space-y-4">
       <button
         type="button"
-        className={`w-full py-4 bg-gradient-to-r from-purple-600 via-purple-500 to-purple-700 hover:from-purple-700 hover:via-purple-600 hover:to-purple-800 shadow-xl hover:shadow-2xl hover:shadow-purple-500/20 transform hover:scale-[1.02] transition-all duration-300 ease-out border border-purple-400/10 text-white font-semibold rounded-2xl text-lg ${(!paymentMethod || isConfirming || (paymentMethod === "3" && !stripeCardType)) ? 'opacity-50 cursor-not-allowed' : ''}`}
+        className={`w-full py-4 bg-gradient-to-r from-purple-600/10 via-purple-500/80 to-purple-600/10 hover:from-purple-700/30 hover:via-purple-600 hover:to-purple-800/30 shadow-xl hover:shadow-2xl hover:shadow-purple-500/20 transform hover:scale-[1.02] transition-all duration-300 ease-out border border-purple-400/10 text-white font-semibold rounded-2xl text-lg ${(!paymentMethod || isConfirming || (paymentMethod === "3" && !stripeCardType)) ? 'opacity-50 cursor-not-allowed' : ''}`}
         onClick={handleConfirm}
         disabled={!paymentMethod || isConfirming || (paymentMethod === "3" && !stripeCardType)}
       >

@@ -39,16 +39,28 @@ exports.getRevenueByQuarter = async (req, res) => {
 };
 exports.getRevenueThisMonth = async (req, res) => {
     try {
-        const total = await Analytics.getRevenueThisMonth();
-        res.json({ total });
+        const data = await Analytics.getRevenueThisMonth();
+
+        const totalRevenue = data.reduce((sum, day) => sum + day.total, 0);
+
+        res.json({
+            totalRevenue,
+            data: data
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 };
 exports.getRevenueThisWeek = async (req, res) => {
     try {
-        const total = await Analytics.getRevenueThisWeek();
-        res.json({ total });
+        const data = await Analytics.getRevenueThisWeek();
+
+        const totalRevenue = data.reduce((sum, day) => sum + day.total, 0);
+
+        res.json({
+            totalRevenue,
+            data: data
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -62,9 +74,21 @@ exports.getRevenueThisQuarter = async (req, res) => {
     }
 };
 exports.getUserAgeGroups = async (req, res) => {
+    try {
+        const data = await Analytics.getAgeGroups();
+        res.json({ data });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+exports.getTicketStats = async (req, res) => {
   try {
-    const data = await Analytics.getAgeGroups();
-    res.json({ data });
+    const { type = 'day', year, month } = req.query;
+    if (!year || (type === 'day' && !month)) {
+      return res.status(400).json({ error: 'Missing year or month' });
+    }
+    const stats = await Analytics.countTicketsByDate({ type, year, month });
+    res.json(stats);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

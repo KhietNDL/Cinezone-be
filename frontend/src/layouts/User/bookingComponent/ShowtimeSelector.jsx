@@ -110,7 +110,7 @@ const ShowtimeSelector = ({
                     className={`flex flex-col items-center justify-center w-16 md:w-20 h-12 md:h-16 rounded-2xl md:rounded-4xl text-xs md:text-sm transition-all duration-200
                       ${
                         isSelected
-                          ? "bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 text-white shadow-lg cursor-pointer"
+                          ? "bg-gradient-to-r from-purple-600/30 via-purple-500/100 to-purple-600/30 text-white shadow-lg cursor-pointer"
                           : "bg-white/10 hover:bg-white/20 text-white/80 cursor-pointer"
                       }`}
                     onClick={() =>

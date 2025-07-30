@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
 
+const blacklistedUserIds = new Set();
+
 const auth = async (req, res, next) => {
     try {
         // Lấy token từ header
@@ -23,23 +25,11 @@ const auth = async (req, res, next) => {
         
         // Kiểm tra user có tồn tại không
         const user = await User.findById(decoded.id || decoded.userId);
-        console.log('User found:', user ? 'Yes' : 'No');
-
-        if (!user) {
-            console.log('User not found in database');
-            return res.status(401).json({ 
-                error: 'Please authenticate.' 
-            });
+        // Check if user is blacklisted (deleted)
+        if (!user || user.IsDeleted || blacklistedUserIds.has(user.UserId)) {
+            return res.status(401).json({ error: 'Account is locked or deleted. Please login again.' });
         }
 
-        // Kiểm tra user có bị khóa không
-        if (user.IsDeleted) {
-            console.log('User account is locked');
-            return res.status(401).json({ 
-                error: 'Account is locked' 
-            });
-        }
-        
         // Thêm thông tin user vào request
         req.user = user;
         req.token = token;
@@ -85,9 +75,16 @@ const isAdminOrEmployee = (req, res, next) => {
   return res.status(403).json({ error: 'Forbidden: Admin or Employee only' });
 }
 
+// Helper to blacklist userId
+const blacklistUserId = (userId) => {
+    blacklistedUserIds.add(userId);
+};
+
 module.exports = {
     auth,
     isAdmin,
     isEmployee,
-    isAdminOrEmployee
+    isAdminOrEmployee,
+    blacklistUserId
 };
+
