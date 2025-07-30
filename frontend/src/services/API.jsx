@@ -225,14 +225,21 @@ export const updatePromotion = async (id, formData) => {
     handleError(error);
   }
 };
-export const searchPromotion = async (code) => {
+export const searchPromotion = async (code, params = {}) => {
   try {
+    const searchParams = {
+      code,
+      ...params, // Thêm các tham số pagination
+    };
+
     const response = await api.get("/promotions/search", {
-      params: { code },
+      params: searchParams,
     });
     return response.data;
   } catch (error) {
+    console.error("Lỗi khi tìm kiếm promotion:", error);
     handleError(error);
+    throw error;
   }
 };
 // API cho Movie
@@ -350,13 +357,13 @@ export const updateEmployee = async (userId, employeeData) => {
     handleError(error);
   }
 };
-export const searchEmployees = async (name) => {
+export const searchEmployeesByInfo = async (searchInfo, params = {}) => {
   try {
-    if (!name || typeof name !== "string" || name.trim() === "") {
-      throw new Error("Name is required and must be a non-empty string");
-    }
-    const response = await api.get(`/employee/searchByName`, {
-      params: { name: name.trim() },
+    const response = await api.get(`/employee/search/info`, {
+      params: {
+        ...searchInfo, // { email, cccd, phone, name }
+        ...params, // Include pagination parameters: page, limit, sortBy, sortOrder
+      },
     });
     return response.data;
   } catch (error) {
@@ -644,9 +651,11 @@ export const searchProductsByName = async (name, params = {}) => {
       ...params, // Thêm các tham số pagination
     };
 
+    console.log("API call searchProductsByName with params:", searchParams);
     const response = await api.get("/products/search", {
       params: searchParams,
     });
+    console.log("API response searchProductsByName:", response.data);
     return response.data;
   } catch (error) {
     console.error("Lỗi khi tìm kiếm sản phẩm:", error);

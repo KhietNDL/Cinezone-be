@@ -10,7 +10,6 @@ import {
   getCinemaRooms,
 } from "../../../services/API";
 import { BiSolidCameraMovie } from "react-icons/bi";
-import debounce from "lodash/debounce";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import HeaderStats from "../movieComponent/HeaderStats";
@@ -67,7 +66,6 @@ const MovieManagement = () => {
   const [versions, setVersions] = useState([{ VersionType: "", Language: "" }]);
   const [iframeUrl, setIframeUrl] = useState("");
   const [loading, setLoading] = useState(false);
-  const [searchLoading, setSearchLoading] = useState(false);
   const posterUploadRef = useRef(null);
   const posterHorizontalUploadRef = useRef(null);
   const trailerUploadRef = useRef(null);
@@ -146,11 +144,6 @@ const MovieManagement = () => {
         return;
       }
 
-      // Don't show search loading if main loading is already active
-      if (!loading) {
-        setSearchLoading(true);
-      }
-
       try {
         const response = await searchMovies({
           name: searchTerm,
@@ -164,12 +157,11 @@ const MovieManagement = () => {
         let moviesData = [];
         let totalPagesData = 1;
         let totalMoviesData = 0;
-        const data = response.data.movies;
-        console.log("🚀 - data:", data);
-        if (response.data.movies) {
+
+        if (response.data && response.data.movies) {
           moviesData = response.data.movies;
           // Check if backend returned pagination info
-          if (response.pagination) {
+          if (response.data.pagination) {
             totalPagesData = response.data.pagination.totalPages;
             totalMoviesData = response.data.pagination.total;
           } else {
@@ -178,6 +170,7 @@ const MovieManagement = () => {
             totalPagesData = Math.ceil(totalMoviesData / itemsPerPage);
           }
         }
+
         setMovies(moviesData);
         setTotalPages(totalPagesData);
         setTotalMovies(totalMoviesData);
@@ -186,40 +179,45 @@ const MovieManagement = () => {
         setMovies([]);
         setTotalPages(0);
         setTotalMovies(0);
-      } finally {
-        setSearchLoading(false);
       }
     },
-    [currentPage, itemsPerPage, getMovieData, loading, sortBy, sortOrder]
+    [currentPage, itemsPerPage, getMovieData, sortBy, sortOrder]
   );
-  const debouncedSearchMovieData = React.useMemo(
-    () => debounce(searchMovieData, 500),
-    [searchMovieData]
-  );
-
+  // Load initial data when component mounts
   useEffect(() => {
-    if (searchMovie.trim()) {
-      debouncedSearchMovieData(searchMovie);
-    } else {
+    if (!searchMovie.trim()) {
       getMovieData();
       getUpcomingMovie();
       fetchCinemaRooms();
     }
+  }, [getMovieData, getUpcomingMovie, fetchCinemaRooms, searchMovie]);
+
+  // Effect riêng cho searchMovie để reset về trang 1
+  useEffect(() => {
+    if (searchMovie !== "") {
+      setCurrentPage(1); // Reset về trang 1 khi có search term mới
+    }
+  }, [searchMovie]);
+
+  // useEffect với debounce cho search
+  useEffect(() => {
+    const searchTimeout = setTimeout(() => {
+      if (searchMovie.trim()) {
+        searchMovieData(searchMovie);
+      } else {
+        getMovieData();
+      }
+    }, 300);
+
+    return () => clearTimeout(searchTimeout);
   }, [
+    searchMovie,
     currentPage,
     sortBy,
     sortOrder,
-    searchMovie,
-    debouncedSearchMovieData,
+    searchMovieData,
     getMovieData,
-    getUpcomingMovie,
-    fetchCinemaRooms,
   ]);
-
-  // Reset to page 1 when search term changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchMovie]);
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
@@ -789,12 +787,7 @@ const MovieManagement = () => {
               />
             </div>
             <div className="block sm:hidden space-y-4">
-              {searchLoading && !loading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin h-8 w-8 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                  <p className="text-gray-500">Searching movies...</p>
-                </div>
-              ) : Array.isArray(movies) && movies.length > 0 ? (
+              {Array.isArray(movies) && movies.length > 0 ? (
                 movies.map((movie) => {
                   const now = new Date();
                   const start = new Date(movie.FromDate);
@@ -1283,7 +1276,7 @@ const MovieManagement = () => {
             </div>
           </div>
         )}
-        {(loading || searchLoading) && (
+        {loading && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999]">
             <div className="bg-white rounded-lg p-4 sm:p-6 flex flex-col items-center shadow-xl">
               <svg

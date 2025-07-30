@@ -3,7 +3,7 @@ import {
   createEmployee,
   deleteEmployee,
   getEmployee,
-  searchEmployees,
+  searchEmployeesByInfo,
   updateEmployee,
 } from "../../../services/API";
 import { ToastContainer, toast } from "react-toastify";
@@ -45,17 +45,13 @@ const EmployeeManagement = () => {
   const [address, setAddress] = useState("");
   const [avatarPreview, setAvatarPreview] = useState(null);
   const avatarUploadRef = useRef(null);
+  const initialLoadRef = useRef(false);
   const [sortBy, setSortBy] = useState("FullName");
   const [sortOrder, setSortOrder] = useState("asc");
-
-  // Removed getEmployees function - now using handleSearchEmployees for all data fetching
-
-  // Initial load - removed since handleSearchEmployees useEffect handles this
 
   const handleSearchEmployees = useCallback(
     async (searchTerm) => {
       try {
-        setLoading(true);
         const params = {
           page: page,
           limit: itemsPerPage,
@@ -63,20 +59,49 @@ const EmployeeManagement = () => {
           sortOrder: sortOrder,
         };
 
+        console.log("handleSearchEmployees called with:", {
+          searchTerm,
+          params,
+          page,
+          sortBy,
+          sortOrder,
+        });
+
         if (searchTerm.trim() === "") {
           const response = await getEmployee(params);
+          console.log("getEmployee response:", response);
           if (response.data) {
+            console.log("Setting employees with data:", response.data);
+            console.log("Data length:", response.data.length);
             setEmployees(response.data);
             if (response.pagination) {
+              console.log("Setting pagination:", response.pagination);
               setTotalPages(response.pagination.totalPages);
               setTotalEmployees(response.pagination.total);
             }
+          } else {
+            console.log("No response.data found");
           }
         } else {
-          const response = await searchEmployees(searchTerm, params);
+          // Use new API that supports multiple search fields
+          const searchInfo = {
+            name: searchTerm.trim(),
+            email: searchTerm.trim(),
+            cccd: searchTerm.trim(),
+            phone: searchTerm.trim(),
+          };
+
+          const response = await searchEmployeesByInfo(searchInfo, params);
+          console.log("searchEmployeesByInfo response:", response);
           if (response.employees) {
+            console.log(
+              "Setting employees with search data:",
+              response.employees
+            );
+            console.log("Search data length:", response.employees.length);
             setEmployees(response.employees);
             if (response.pagination) {
+              console.log("Setting search pagination:", response.pagination);
               setTotalPages(response.pagination.totalPages);
               setTotalEmployees(response.pagination.total);
             } else {
@@ -85,6 +110,11 @@ const EmployeeManagement = () => {
               setTotalEmployees(total);
               setTotalPages(Math.ceil(total / itemsPerPage));
             }
+          } else {
+            console.log("No response.employees found in search");
+            setEmployees([]);
+            setTotalPages(0);
+            setTotalEmployees(0);
           }
         }
       } catch (error) {
@@ -93,45 +123,51 @@ const EmployeeManagement = () => {
         setEmployees([]);
         setTotalPages(0);
         setTotalEmployees(0);
-      } finally {
-        setLoading(false);
       }
     },
-    [page, itemsPerPage, sortBy, sortOrder]
+    [page, itemsPerPage, sortBy, sortOrder] // Keep these dependencies stable
   );
 
-  const searchTimeoutRef = useRef(null);
-  const isSearchTermChanging = useRef(false);
-
-  // Handle search term changes with debounce
+  // Load initial data when component mounts
   useEffect(() => {
-    isSearchTermChanging.current = true;
-
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
+    if (!initialLoadRef.current && !searchEmployee.trim()) {
+      initialLoadRef.current = true;
+      handleSearchEmployees("");
     }
+  }, [handleSearchEmployees, searchEmployee]);
 
-    searchTimeoutRef.current = setTimeout(() => {
-      handleSearchEmployees(searchEmployee);
-      isSearchTermChanging.current = false;
+  // Effect riêng cho searchEmployee để reset về trang 1
+  useEffect(() => {
+    if (searchEmployee !== "") {
+      setPage(1); // Reset về trang 1 khi có search term mới
+    }
+  }, [searchEmployee]);
+
+  // useEffect với debounce cho search và pagination - skip nếu đang initial load
+  useEffect(() => {
+    if (!initialLoadRef.current) return;
+
+    const searchTimeout = setTimeout(() => {
+      if (searchEmployee.trim()) {
+        handleSearchEmployees(searchEmployee);
+      } else {
+        handleSearchEmployees("");
+      }
     }, 300);
 
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, [searchEmployee, handleSearchEmployees]);
+    return () => clearTimeout(searchTimeout);
+  }, [searchEmployee, page, sortBy, sortOrder, handleSearchEmployees]);
 
-  // Handle page, sortBy, sortOrder changes without debounce
+  // Debug useEffect to track employees state changes
   useEffect(() => {
-    if (!isSearchTermChanging.current) {
-      handleSearchEmployees(searchEmployee);
-    }
-  }, [page, sortBy, sortOrder, handleSearchEmployees, searchEmployee]);
-
-  // Remove client-side filtering and sorting since we now handle this server-side
-  // Server-side pagination - use employees directly
+    console.log("Employees state updated:", {
+      employeesLength: employees.length,
+      employees: employees,
+      page: page,
+      totalPages: totalPages,
+      totalEmployees: totalEmployees,
+    });
+  }, [employees, page, totalPages, totalEmployees]);
 
   const validateForm = () => {
     if (!fullName || fullName.length < 6 || fullName.length > 100) {
@@ -398,10 +434,7 @@ const EmployeeManagement = () => {
           <HeaderStats totalEmployees={totalEmployees} />
           <SearchAndAdd
             searchEmployee={searchEmployee}
-            setSearchEmployee={(term) => {
-              setSearchEmployee(term);
-              setPage(1); // Reset to first page when searching
-            }}
+            setSearchEmployee={setSearchEmployee}
             setPage={setPage}
             resetForm={resetForm}
             setShowAddForm={setShowAddForm}
@@ -412,8 +445,6 @@ const EmployeeManagement = () => {
             <div className="hidden sm:block">
               <EmployeeTable
                 employees={employees} // Use server-side paginated data
-                page={page}
-                itemsPerPage={itemsPerPage}
                 handleEdit={handleEdit}
                 handleDelete={handleDelete}
                 handleRowClick={handleRowClick}

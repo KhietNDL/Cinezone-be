@@ -57,15 +57,26 @@ const ProductManagement = () => {
         sortBy: "CreatedAt",
         sortOrder: "desc",
       };
+      console.log("Fetching products with params:", params);
       const response = await getAllProducts(params);
-      setProducts(response.products || response.data || []);
+      console.log("Fetch response:", response);
+
+      const productsList = response.products || response.data || [];
+      setProducts(productsList);
+      console.log("Products fetched:", productsList);
+
       if (response.pagination) {
         setTotalPages(response.pagination.totalPages);
         setTotalProducts(response.pagination.total);
+        console.log("Pagination from response:", response.pagination);
       } else {
-        const productsList = response.Products || response.data || [];
-        setTotalProducts(productsList.length);
-        setTotalPages(Math.ceil(productsList.length / itemsPerPage));
+        const fallbackProducts = response.Products || response.data || [];
+        setTotalProducts(fallbackProducts.length);
+        setTotalPages(Math.ceil(fallbackProducts.length / itemsPerPage));
+        console.log("Fallback pagination:", {
+          total: fallbackProducts.length,
+          pages: Math.ceil(fallbackProducts.length / itemsPerPage),
+        });
       }
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -90,16 +101,21 @@ const ProductManagement = () => {
           sortOrder: "asc",
         };
 
+        console.log("Searching products with:", { searchTerm, params });
         const response = await searchProductsByName(searchTerm, params);
+        console.log("Search response:", response);
+
         if (response) {
-          setProducts(response.products || response.data || []);
+          const productsList = response.products || response.data || [];
+          setProducts(productsList);
+          console.log("Products set:", productsList);
 
           // Xử lý pagination từ response
           if (response.pagination) {
             setTotalProducts(response.pagination.total);
             setTotalPages(response.pagination.totalPages);
+            console.log("Pagination:", response.pagination);
           } else {
-            const productsList = response.products || response.data || [];
             setTotalProducts(productsList.length);
             setTotalPages(Math.ceil(productsList.length / itemsPerPage));
           }
@@ -133,10 +149,13 @@ const ProductManagement = () => {
 
   // useEffect với debounce cho search
   useEffect(() => {
+    console.log("Debounce effect triggered with:", { searchTerm, currentPage });
     const delayDebounceFn = setTimeout(() => {
       if (searchTerm) {
+        console.log("Calling searchProducts with:", searchTerm);
         searchProducts(searchTerm);
       } else {
+        console.log("Calling fetchProducts");
         fetchProducts();
       }
     }, 300);

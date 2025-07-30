@@ -1,27 +1,32 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { FaStar, FaRegStar, FaStarHalfAlt } from 'react-icons/fa';
+import React, { useEffect, useState } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import {
+  FaStar,
+  FaRegStar,
+  FaStarHalfAlt,
+  FaClock,
+  FaCalendarAlt,
+  FaFilm,
+  FaUsers,
+} from "react-icons/fa";
 import { LuChartBar } from "react-icons/lu";
 import { GiTrophyCup } from "react-icons/gi";
-import { getCurrentMovies } from '../../../services/APIForStaff/API';
-import ItemCard from "../component/ItemCard";
-import { Swiper, SwiperSlide } from "swiper/react";
-import "swiper/css";
-import "swiper/css/navigation";
-import "swiper/css/pagination";
-import { Navigation, Pagination } from "swiper/modules";
-import '../component/SwiperButton.css';
-import { toast } from 'react-toastify';
-import BackButton from '../component/BackButton';
-import VersionCard from '../component/VersionCard';
+import { IoTicketOutline } from "react-icons/io5";
+import { Card, Badge, Divider, Spin } from "antd";
+import { getCurrentMovies } from "../../../services/APIForStaff/API";
+import MovieSwiper from "../component/MovieSwiper";
+import "../component/SwiperButton.css";
+import { toast } from "react-toastify";
+import BackButton from "../component/BackButton";
+import VersionCard from "../component/VersionCard";
 
 export default function MovieDetail() {
-  const {slug } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
 
   const [movie, setMovie] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [hoveredIndex, setHoveredIndex] = useState(null);
+
   const [imageError, setImageError] = useState({});
   const [recommended, setRecommended] = useState([]);
   const [topMovies, setTopMovies] = useState([]);
@@ -29,16 +34,17 @@ export default function MovieDetail() {
   const toSlug = (str) =>
     str
       .toLowerCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
 
   const fetchMovie = async () => {
     setLoading(true);
     try {
       const res = await getCurrentMovies();
       if (res.data) {
-        const found = res.data.find(m => toSlug(m.NameOfEnglish) === slug);
+        const found = res.data.find((m) => toSlug(m.NameOfEnglish) === slug);
         setMovie(found || null);
       } else {
         setMovie(null);
@@ -56,15 +62,17 @@ export default function MovieDetail() {
       const res = await getCurrentMovies();
       if (res.data) {
         const sortedMovies = res.data
-          .filter(movie => movie.AverageRating)
-          .sort((a, b) => parseFloat(b.AverageRating) - parseFloat(a.AverageRating))
-          .slice(0, 10)
+          .filter((movie) => movie.AverageRating)
+          .sort(
+            (a, b) => parseFloat(b.AverageRating) - parseFloat(a.AverageRating)
+          )
+          .slice(0, 5)
           .map((movie, index) => ({
             MovieId: movie.MovieId,
             name: movie.NameOfEnglish,
             image: movie.PosterImage,
             rating: movie.AverageRating,
-            index
+            index,
           }));
         setTopMovies(sortedMovies);
       }
@@ -79,12 +87,15 @@ export default function MovieDetail() {
     try {
       const res = await getCurrentMovies();
       if (res.data) {
-        const currentGenres = movie.Genres?.split(',').map(g => g.trim().toLowerCase()) || [];
+        const currentGenres =
+          movie.Genres?.split(",").map((g) => g.trim().toLowerCase()) || [];
         const filtered = res.data.filter(
-          m =>
+          (m) =>
             m.MovieId !== movie.MovieId &&
             m.Genres &&
-            m.Genres.split(',').some(g => currentGenres.includes(g.trim().toLowerCase()))
+            m.Genres.split(",").some((g) =>
+              currentGenres.includes(g.trim().toLowerCase())
+            )
         );
         setRecommended(filtered);
       }
@@ -103,8 +114,39 @@ export default function MovieDetail() {
     fetchRecommended();
   }, [movie]);
 
-  if (loading) return <div className="p-8 text-center">Loading...</div>;
-  if (!movie) return <div className="p-8 text-center">Movie not found.</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Spin size="large" />
+          <h3 className="mt-4 text-lg font-medium text-gray-700">
+            Loading Movie Details
+          </h3>
+          <p className="mt-2 text-gray-500">
+            Please wait while we fetch the movie information...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!movie) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-20 h-20 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FaFilm className="text-3xl text-red-400" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-700 mb-2">
+            Movie Not Found
+          </h3>
+          <p className="text-gray-500">
+            The requested movie could not be found.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const versions = Array.isArray(movie.versions) ? movie.versions : [];
 
@@ -137,125 +179,303 @@ export default function MovieDetail() {
     return `${day}/${month}/${year}`;
   };
 
-  const swiperBreakpoints = {
-    320: { slidesPerView: 1, spaceBetween: 50 },
-    640: { slidesPerView: 2, spaceBetween: 30 },
-    768: { slidesPerView: 3, spaceBetween: 40 },
-    1024: { slidesPerView: 5, spaceBetween: 50 },
-  };
-
   return (
-    <div className='w-full flex flex-col p-[20px]'>
-      <div className="flex flex-row items-start justify-between gap-4 mb-6">
-        <div className='w-[20%]'><BackButton /></div>
-        <h1 className="mx-auto lg:mx-0 text-3xl font-bold text-[#9810FA] flex flex-col lg:items-start items-center">
-          Movie Detail
-        </h1>
-        <div className='w-[20%]'></div>
+    <div className="min-h-screen">
+      {/* Header Section */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 bg-white shadow-md rounded-lg">
+        <div className="flex flex-row items-center gap-3 lg:gap-4">
+          <BackButton /> {/* Left: Logo/Brand */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
+              <FaFilm className="text-white text-lg sm:text-xl" />
+            </div>
+            <div>
+              <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent">
+                Movie Details
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">
+                Staff Portal - Cinema Management
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className='flex gap-5 w-full lg:flex-row flex-col'>
-        <div className='w-full lg:w-[70%] flex flex-col'>
-          <div className='flex lg:flex-row flex-col w-full'>
-            <div className='w-full lg:w-[30%] lg:aspect-[2/3] lg:py-4 px-4'>
-              <img className='rounded-2xl w-full h-auto lg:h-[350px] object-cover'
-                src={movie.PosterImage}
-                alt={movie.NameOfEnglish}
-              />
-            </div>
-            <div className='w-full lg:w-[70%] p-4'>
-              <div className='flex flex-col border-b border-gray-500 items-center lg:items-start pb-4 w-full font-semibold'>
-                <p className='text-3xl '>{movie.NameOfEnglish} </p>
-                <p className='text-[20px]'>({movie.NameOfVietnamese})</p>
-              </div>
-              <div className='mt-4 space-y-2'>
-                <p className='flex gap-6 w-full font-semibold'>Director: <span className='font-normal'>{movie.Director}</span></p>
-                <p className='flex gap-9 w-full font-semibold'>Actors: <span className='font-normal'>{movie.Actors}</span></p>
-                <p className='flex gap-8 w-full font-semibold'>Genres: <span className='font-normal'>{movie.Genres}</span></p>
-                <p className='flex gap-12 w-full font-semibold'>Date: <span className='font-normal'>{formatDate(movie.FromDate)} - {formatDate(movie.ToDate)}</span></p>
-                <p className='flex gap-5 w-full font-semibold'>Duration: <span className='font-normal'>{movie.RunningTime}m</span></p>
-                <div className="flex gap-3 flex-wrap">
-                  {versions.map((ver, index) => (
-                    <VersionCard key={index} version={ver.VersionType} selectedVersion={null} readonly={true} />
-                  ))}
+      <div className="pb-6 mt-6">
+        <div className="flex gap-6 w-full lg:flex-row flex-col">
+          {/* Main Movie Information */}
+          <Card className="w-full lg:w-[70%] shadow-lg border-0 rounded-xl overflow-hidden">
+            <div className="flex lg:flex-row flex-col w-full">
+              {/* Movie Poster */}
+              <div className="w-full lg:w-[35%] ">
+                <div className="relative group">
+                  <img
+                    className="rounded-xl w-full h-auto lg:h-[400px] object-cover shadow-lg transition-transform group-hover:scale-105"
+                    src={movie.PosterImage}
+                    alt={movie.NameOfEnglish}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 </div>
-                <div className="flex items-center gap-8">
-                  <span className="text-lg font-semibold ">Rating:</span>
-                  <div className='flex gap-1 items-center'>
-                    <div className="flex">{renderStars(movie.AverageRating)}</div>
-                    <span className="text-sm text-gray-500 ml-2">({movie.AverageRating})</span>
+              </div>
+
+              {/* Movie Details */}
+              <div className="w-full lg:w-[65%] lg:pl-10">
+                <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-lg mb-6">
+                  <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                    {movie.NameOfEnglish}
+                  </h2>
+                  <p className="text-lg text-gray-600">
+                    ({movie.NameOfVietnamese})
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <FaUsers className="text-purple-600 flex-shrink-0" />
+                      <div>
+                        <p className="font-semibold text-gray-700">Director</p>
+                        <p className="text-gray-600">{movie.Director}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <FaClock className="text-purple-600 flex-shrink-0" />
+                      <div>
+                        <p className="font-semibold text-gray-700">Duration</p>
+                        <p className="text-gray-600">
+                          {movie.RunningTime} minutes
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <FaCalendarAlt className="text-purple-600 flex-shrink-0" />
+                      <div>
+                        <p className="font-semibold text-gray-700">
+                          Show Period
+                        </p>
+                        <p className="text-gray-600">
+                          {formatDate(movie.FromDate)} -{" "}
+                          {formatDate(movie.ToDate)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <p className="font-semibold text-gray-700 mb-2">Genres</p>
+                      <div className="flex flex-wrap gap-2">
+                        {movie.Genres?.split(",").map((genre, index) => (
+                          <Badge
+                            key={index}
+                            color="purple"
+                            text={genre.trim()}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="font-semibold text-gray-700 mb-2">
+                        Versions Available
+                      </p>
+                      <div className="flex gap-2 flex-wrap">
+                        {versions.map((ver, index) => (
+                          <VersionCard
+                            key={index}
+                            version={ver.VersionType}
+                            selectedVersion={null}
+                            readonly={true}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="font-semibold text-gray-700 mb-2">Rating</p>
+                      <div className="flex items-center gap-2">
+                        <div className="flex">
+                          {renderStars(movie.AverageRating)}
+                        </div>
+                        <span className="text-lg font-semibold text-gray-700">
+                          ({movie.AverageRating})
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
+
+                <div>
+                  <p className="font-semibold text-gray-700 mb-2">Cast</p>
+                  <p className="text-gray-600 leading-relaxed">
+                    {movie.Actors}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-          <div className='px-4 pb-4 w-full border-b border-gray-700'>
-            <div className='font-semibold flex items-center gap-1'><LuChartBar /> Describe:</div>
-            <p className='pt-2'>{movie.ContentSynopsis}</p>
-          </div>
+
+            <Divider />
+
+            {/* Synopsis */}
+
+            <div className="flex items-center gap-2 mb-3">
+              <LuChartBar className="text-purple-600" />
+              <h3 className="font-semibold text-gray-800">Synopsis</h3>
+            </div>
+            <p className="text-gray-600 leading-relaxed">
+              {movie.ContentSynopsis}
+            </p>
+          </Card>
+
+          {/* Top Movies Sidebar */}
+          <Card className="w-full lg:w-[30%] shadow-lg border-0 rounded-xl">
+            <div className="">
+              {/* Header */}
+              <div className="flex items-center gap-3 justify-center mb-6 pb-4 border-b border-gray-100">
+                <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
+                  <GiTrophyCup className="text-white text-lg" />
+                </div>
+                <div className="text-center">
+                  <h3 className="text-lg font-bold text-gray-800">
+                    Top 5 Movies
+                  </h3>
+                  <p className="text-xs text-gray-500">Highest rated films</p>
+                </div>
+              </div>
+
+              {/* Movies List */}
+              <div className="space-y-3">
+                {topMovies.map((top, index) => (
+                  <div
+                    key={top.MovieId}
+                    className="relative group cursor-pointer"
+                    onClick={() => navigate(`/staff/movie/${toSlug(top.name)}`)}
+                  >
+                    <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-purple-50 transition-all duration-300 border border-transparent hover:border-purple-200 hover:shadow-md">
+                      {/* Rank Badge */}
+                      <div className="flex-shrink-0">
+                        <div
+                          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-sm ${
+                            index === 0
+                              ? "bg-gradient-to-r from-yellow-400 to-yellow-500 text-white"
+                              : index === 1
+                              ? "bg-gradient-to-r from-gray-400 to-gray-500 text-white"
+                              : index === 2
+                              ? "bg-gradient-to-r from-orange-400 to-orange-500 text-white"
+                              : "bg-gradient-to-r from-purple-500 to-purple-600 text-white"
+                          }`}
+                        >
+                          {index === 0 && <span>🥇</span>}
+                          {index === 1 && <span>🥈</span>}
+                          {index === 2 && <span>🥉</span>}
+                          {index > 2 && <span>{index + 1}</span>}
+                        </div>
+                      </div>
+
+                      {/* Movie Info */}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-sm text-gray-800 group-hover:text-purple-700 transition-colors duration-300 line-clamp-2 mb-1">
+                          {top.name}
+                        </h4>
+
+                        {/* Rating */}
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
+                            <FaStar className="text-yellow-400 text-xs" />
+                            <span className="text-xs font-medium text-gray-600">
+                              {top.rating}
+                            </span>
+                          </div>
+                          <div className="flex">
+                            {[...Array(5)].map((_, i) => (
+                              <FaStar
+                                key={i}
+                                className={`text-xs ${
+                                  i < Math.floor(top.rating)
+                                    ? "text-yellow-400"
+                                    : "text-gray-200"
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Movie Poster Preview */}
+                      <div className="flex-shrink-0 w-10 h-14 rounded-md overflow-hidden shadow-sm border border-gray-200 group-hover:shadow-md transition-all duration-300">
+                        <img
+                          src={imageError[index] ? fallbackImage : top.image}
+                          onError={() =>
+                            setImageError((prev) => ({
+                              ...prev,
+                              [index]: true,
+                            }))
+                          }
+                          alt={top.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
         </div>
 
-        <div className='w-full lg:w-[25%]'>
-          <div className='w-full flex font-semibold text-xl items-center gap-2 justify-center mb-4'><GiTrophyCup /> Top 10 Movies</div>
-          <ul className='flex flex-col'>
-            {topMovies.map((top, index) => (
-              <li
-                key={top.MovieId}
-                className='relative flex items-center gap-3 p-2 rounded hover:bg-purple-100 transition group cursor-pointer'
-                onClick={() => navigate(`/staff/movie/${toSlug(top.name)}`)}
-                onMouseEnter={() => setHoveredIndex(index)}
-                onMouseLeave={() => setHoveredIndex(null)}
-                title={top.name}
-              >
-                <span className='text-lg font-bold w-6 text-center text-purple-600'>
-                  {index === 0 && <span role="img" aria-label="gold">🥇</span>}
-                  {index === 1 && <span role="img" aria-label="silver">🥈</span>}
-                  {index === 2 && <span role="img" aria-label="bronze">🥉</span>}
-                  {index > 2 && index + 1}
-                </span>
-                <span className='text-sm font-medium text-gray-800 hover:text-purple-700'>{top.name}</span>
-                {hoveredIndex === index && (
-                  <img
-                    src={imageError[index] ? fallbackImage : top.image}
-                    onError={() => setImageError(prev => ({ ...prev, [index]: true }))}
-                    alt={top.name}
-                    className="absolute right-[-40px] w-20 h-28 object-cover rounded-md shadow-lg border"
-                  />
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
+        {/* Recommended Movies */}
+        <Card
+          style={{ marginTop: 30 }}
+          className="shadow-lg border-0 rounded-xl"
+        >
+          {/* Header */}
+          <div className="flex items-center gap-3 justify-center mb-6 pb-4 border-b border-gray-100">
+            <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
+              <FaFilm className="text-white text-lg" />
+            </div>
+            <div className="text-center">
+              <h3 className="text-lg font-bold text-gray-800">
+                Recommended Movies
+              </h3>
+              <p className="text-xs text-gray-500">
+                Movies you might also like
+              </p>
+            </div>
+          </div>
 
-      <div className='w-full '>
-        <div className="text-xl font-bold lg:mt-8 mb-2 text-[#9810FA] lg:text-start text-center">Recommended Movies</div>
-        <div className="relative">
-          {recommended.length === 0 ? (
-            <div className="text-gray-500">No recommended movies found.</div>
-          ) : (
-            <Swiper
-              modules={[Navigation, Pagination]}
-              navigation
-              pagination={{ clickable: true }}
-              slidesPerView={5}
-              style={{ padding: "0 50px", minHeight: 300 }}
-              breakpoints={swiperBreakpoints}
-              className="custom-swiper-nav"
-            >
-              {recommended.map((rec) => (
-                <SwiperSlide
-                  key={rec.MovieId}
-                  style={{ height: 270, display: 'flex', alignItems: 'center' }}
-                >
-                  <Link to={`/staff/movie/${toSlug(rec.NameOfEnglish)}`}>
-                    <ItemCard item={rec} type="movie" small />
-                  </Link>
-                </SwiperSlide>
-              ))}
-            </Swiper>
-          )}
-        </div>
+          {/* Content */}
+          <div className="px-6 pb-6">
+            {recommended.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="relative mx-auto mb-6">
+                  <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-blue-100 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+                    <FaFilm className="text-3xl text-purple-500" />
+                  </div>
+                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-orange-400 to-red-400 rounded-full flex items-center justify-center shadow-lg">
+                    <span className="text-white text-xs font-bold">!</span>
+                  </div>
+                </div>
+                <h4 className="text-xl font-semibold text-gray-700 mb-2">
+                  No Recommendations Yet
+                </h4>
+                <p className="text-gray-500 max-w-md mx-auto leading-relaxed">
+                  We're working on finding the perfect movie recommendations for
+                  you. Check back later for personalized suggestions!
+                </p>
+              </div>
+            ) : (
+              <MovieSwiper
+                movies={recommended}
+                useLink={false}
+                onSelectMovie={(movie) =>
+                  navigate(`/staff/movie/${toSlug(movie.NameOfEnglish)}`)
+                }
+              />
+            )}
+          </div>
+        </Card>
       </div>
     </div>
   );

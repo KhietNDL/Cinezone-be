@@ -1,11 +1,12 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { toast } from "react-toastify";
 import {
   getAllUsers,
   createUser,
   editUser,
   deleteUser,
-  searchUserByName,
+  unbanUser,
+  searchUserByInfo,
 } from "../services/APIForAdmin/API";
 
 // Constants
@@ -48,9 +49,10 @@ export const useUserManagement = () => {
 
   // UI states
   const [uiState, setUiState] = useState({
-    loading: true,
+    loading: false, // Only for initial load, not for search/pagination
     deleteLoading: false,
     addLoading: false,
+    unbanLoading: false,
     currentPage: 1,
     searchTerm: "",
     sortBy: "FullName",
@@ -59,9 +61,6 @@ export const useUserManagement = () => {
 
   // Form state
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
-
-  const searchTimeout = useRef();
-  const isSearchTermChanging = useRef(false);
 
   // Utility functions
   const resetForm = useCallback(() => {
@@ -135,8 +134,7 @@ export const useUserManagement = () => {
     });
   }, []);
 
-  const loadUsers = useCallback(async () => {
-    setUiState((prev) => ({ ...prev, loading: true }));
+  const getUserData = useCallback(async () => {
     try {
       const params = {
         page: uiState.currentPage,
@@ -164,13 +162,16 @@ export const useUserManagement = () => {
         totalPages: 0,
         totalItems: 0,
       }));
-    } finally {
-      setUiState((prev) => ({ ...prev, loading: false }));
     }
   }, [uiState.currentPage, uiState.sortBy, uiState.sortOrder]);
 
-  const handleSearchUser = useCallback(
+  const searchUserData = useCallback(
     async (keyword) => {
+      if (!keyword.trim()) {
+        getUserData();
+        return;
+      }
+
       try {
         const params = {
           page: uiState.currentPage,
@@ -179,12 +180,15 @@ export const useUserManagement = () => {
           sortOrder: uiState.sortOrder,
         };
 
-        let res;
-        if (keyword && keyword.trim()) {
-          res = await searchUserByName(keyword, params);
-        } else {
-          res = await getAllUsers(params);
-        }
+        // Use new API that supports multiple search fields
+        const searchInfo = {
+          name: keyword.trim(),
+          email: keyword.trim(),
+          cccd: keyword.trim(),
+          phone: keyword.trim(),
+        };
+
+        const res = await searchUserByInfo(searchInfo, params);
 
         if (res.users) {
           setUserState((prev) => ({
@@ -198,7 +202,6 @@ export const useUserManagement = () => {
         }
       } catch (error) {
         console.error("Search error:", error);
-        toast.error("Failed to search users");
         setUserState((prev) => ({
           ...prev,
           users: [],
@@ -207,39 +210,42 @@ export const useUserManagement = () => {
         }));
       }
     },
-    [uiState.currentPage, uiState.sortBy, uiState.sortOrder]
+    [uiState.currentPage, uiState.sortBy, uiState.sortOrder, getUserData]
   );
 
+  // Load initial data when component mounts
   useEffect(() => {
-    if (!isSearchTermChanging.current) {
-      if (uiState.searchTerm?.trim()) {
-        handleSearchUser(uiState.searchTerm);
-      } else {
-        loadUsers();
-      }
+    if (!uiState.searchTerm.trim()) {
+      getUserData();
     }
+  }, [getUserData, uiState.searchTerm]);
+
+  // Effect riêng cho searchTerm để reset về trang 1
+  useEffect(() => {
+    if (uiState.searchTerm !== "") {
+      setUiState((prev) => ({ ...prev, currentPage: 1 }));
+    }
+  }, [uiState.searchTerm]);
+
+  // useEffect với debounce cho search
+  useEffect(() => {
+    const searchTimeout = setTimeout(() => {
+      if (uiState.searchTerm.trim()) {
+        searchUserData(uiState.searchTerm);
+      } else {
+        getUserData();
+      }
+    }, 300);
+
+    return () => clearTimeout(searchTimeout);
   }, [
+    uiState.searchTerm,
     uiState.currentPage,
     uiState.sortBy,
     uiState.sortOrder,
-    uiState.searchTerm,
-    handleSearchUser,
-    loadUsers,
+    searchUserData,
+    getUserData,
   ]);
-
-  // Effect riêng cho search term thay đổi
-  const prevSearchTerm = useRef("");
-  useEffect(() => {
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    searchTimeout.current = setTimeout(() => {
-      if (uiState.searchTerm?.trim()) {
-        handleSearchUser(uiState.searchTerm);
-      }
-      prevSearchTerm.current = uiState.searchTerm;
-    }, SEARCH_DEBOUNCE_DELAY);
-
-    return () => clearTimeout(searchTimeout.current);
-  }, [uiState.searchTerm, handleSearchUser, loadUsers]);
 
   const handleAddUser = async () => {
     try {
@@ -266,10 +272,11 @@ export const useUserManagement = () => {
 
       const response = await createUser(formDataToSend);
       if (response) {
+        // Refresh current data
         if (uiState.searchTerm?.trim()) {
-          await handleSearchUser(uiState.searchTerm);
+          await searchUserData(uiState.searchTerm);
         } else {
-          await loadUsers();
+          await getUserData();
         }
         handleModal("showAdd", false);
         resetForm();
@@ -309,10 +316,11 @@ export const useUserManagement = () => {
 
       await editUser(userState.selectedUser.UserId, formDataToSend);
 
+      // Refresh current data
       if (uiState.searchTerm?.trim()) {
-        await handleSearchUser(uiState.searchTerm);
+        await searchUserData(uiState.searchTerm);
       } else {
-        await loadUsers();
+        await getUserData();
       }
 
       handleModal("showEdit", false);
@@ -336,10 +344,11 @@ export const useUserManagement = () => {
 
       handleModal("showDelete", false);
 
+      // Refresh current data
       if (uiState.searchTerm?.trim()) {
-        await handleSearchUser(uiState.searchTerm);
+        await searchUserData(uiState.searchTerm);
       } else {
-        await loadUsers();
+        await getUserData();
       }
     } catch (error) {
       console.error("Delete error:", error);
@@ -348,6 +357,29 @@ export const useUserManagement = () => {
       setUiState((prev) => ({ ...prev, deleteLoading: false }));
     }
   };
+
+  const handleUnbanUser = useCallback(
+    async (userId) => {
+      setUiState((prev) => ({ ...prev, unbanLoading: true }));
+      try {
+        await unbanUser(userId);
+        toast.success("User unbanned successfully!");
+
+        // Refresh current data
+        if (uiState.searchTerm.trim()) {
+          searchUserData(uiState.searchTerm);
+        } else {
+          getUserData();
+        }
+      } catch (error) {
+        console.error("Unban error:", error);
+        toast.error("Failed to unban user");
+      } finally {
+        setUiState((prev) => ({ ...prev, unbanLoading: false }));
+      }
+    },
+    [uiState.searchTerm, searchUserData, getUserData]
+  );
 
   const handleEditUser = useCallback(
     (user) => {
@@ -408,7 +440,7 @@ export const useUserManagement = () => {
   );
 
   const handleSearchTermChange = useCallback((term) => {
-    setUiState((prev) => ({ ...prev, searchTerm: term, currentPage: 1 }));
+    setUiState((prev) => ({ ...prev, searchTerm: term }));
   }, []);
 
   const handleFormDataChange = useCallback((field, value) => {
@@ -435,6 +467,7 @@ export const useUserManagement = () => {
     handleAddUser,
     handleUpdateUser,
     confirmDeleteUser,
+    handleUnbanUser,
     resetForm,
 
     // Utilities

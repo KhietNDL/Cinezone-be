@@ -8,7 +8,12 @@ import React, {
 import { useNavigate, Link } from "react-router-dom";
 import { Button, Tag, Spin, message } from "antd";
 import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
-import { FaCalendarDays, FaClock, FaCouch, FaLocationDot } from "react-icons/fa6";
+import {
+  FaCalendarDays,
+  FaClock,
+  FaCouch,
+  FaLocationDot,
+} from "react-icons/fa6";
 import { LayoutSelectSeat } from "../../../component/LayoutSelectSeat";
 import {
   getMovieById,
@@ -70,7 +75,7 @@ const SelectSeatsPage = () => {
     bookingData?.selectedMovie?.MovieId,
     bookingData?.showtimeId,
     navigate,
-    dispatch
+    dispatch,
   ]);
 
   useEffect(() => {
@@ -163,170 +168,236 @@ const SelectSeatsPage = () => {
     );
 
   return (
-
-    <div className="p-4 mx-auto w-full bg-[#fafbfc]">
-      <div className="flex items-center justify-between gap-4 mb-6">
-       
-        <div className="w-[20%]">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header Section */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 bg-white shadow-md rounded-lg mb-6">
+        <div className="flex flex-row items-center gap-3 lg:gap-4">
           <BackButton />
-        </div>
-        <h1 className="mx-auto lg:mx-0 text-3xl font-bold text-[#9810FA] flex lg:items-start items-center lg:justify-start justify-center flex-col">
-          Select Seats
-        </h1>
-        <div className="w-[20%]"></div>
-      </div>
-
-      {/* Movie Info */}
-      <div className="flex items-center sm:items-start gap-4 border-b border-gray-300 pb-4 flex-col sm:flex-row">
-        <img
-          src={movieInfo.PosterImage}
-          alt={movieInfo.NameOfEnglish || ""}
-          className="w-40 h-auto rounded-xl shadow"
-        />
-        <div className="flex flex-col items-center sm:items-start">
-          <div className="flex items-center gap-2">
-            <div
-              className="px-3 py-2 rounded-full shadow-md  flex items-center justify-center 
-                               bg-[linear-gradient(to_right,_#FACC15,_#DDB61A,_#DBBB3B,_#CDB03D,_#B1900C)]"
-            >
-              <p className="font-bold text-sm leading-4 text-[#FFF8A7] [text-shadow:_0_1px_2px_orange]">
-                Now Showing
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
+              <FaCouch className="text-white text-lg sm:text-xl" />
+            </div>
+            <div>
+              <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent">
+                Select Seats
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">
+                Staff Portal - Ticket Selling
               </p>
             </div>
-            {bookingData.selectedVersion && (
-              <VersionCard
-                version={bookingData.selectedVersion}
-                readonly
-                className="text-sm"
-              />
-            )}
-          </div>
-          <div className="flex flex-col lg:flex-row items-center justify-center gap-2 mt-2 py-4">
-            <h2 className="text-3xl font-bold">{movieInfo.NameOfEnglish}</h2>
-            {movieInfo.NameOfVietnamese && (
-              <p className="text-xl font-semibold">
-                ({movieInfo.NameOfVietnamese})
-              </p>
-            )}
-          </div>
-          <div className="text-sm mt-1 flex gap-4">
-            {bookingData.selectedDay && (
-              <span className="py-2 flex items-center justify-center gap-1">
-                <FaCalendarDays className="text-lg" /> <p className="text-lg">{bookingData.selectedDay}</p>
-              </span>
-            )}
-            {bookingData.selectedTime && (
-              <span className="py-2 flex items-center justify-center gap-1">
-                <FaClock className="text-lg" /> <p className="text-lg">{bookingData.selectedTime}</p>
-              </span>
-            )}
-            {bookingData.room && (
-              <span className="py-2 flex items-center justify-center gap-1">
-                <FaLocationDot className="text-lg" /> <p className="text-lg">{bookingData.room}</p>
-              </span>
-            )}
-            <span className="py-2 flex items-center justify-center gap-1">
-              <FaCouch className="text-lg" /> <p className="text-lg"> Row: A-J</p>
-            </span>
           </div>
         </div>
       </div>
 
-      {/* Main layout */}
-      <div className="flex flex-col lg:flex-row gap-10 justify-center bg-white mt-4">
-        <div className="w-full  flex justify-center overflow-x-auto">
-          <div className="min-w-[300px] mx-auto">
-            <LayoutSelectSeat
-              seatDataFromAPI={seatData}
-              initialSelectedSeats={selectedSeats}
-              onSeatSelect={handleSeatSelect}
-              textColor="text-[#6A57F5]"
-              width={30}
-              height={30}
-              widthDouble={42}
-              heightDouble={24}
-              seatColors={{
-                available: "text-gray-500",
-                selected: "text-[#5341DB]",
-                taken: "text-[#6A7282]",
-                holding: "text-green-800",
-                vip: "text-yellow-500",
-                normal: "text-gray-700",
-                couple: "text-pink-500",
-              }}
-              showInfo={false}
-              className="w-full px-2"
-            />
+      <div className="max-w-7xl mx-auto px-3 sm:px-6">
+        `{/* Movie Info Card */}
+        <div className="bg-white rounded-xl shadow-lg border-0 overflow-hidden mb-6">
+          <div className="flex items-center sm:items-start gap-6 p-6 flex-col sm:flex-row">
+            <div className="flex-shrink-0">
+              <img
+                src={movieInfo.PosterImage}
+                alt={movieInfo.NameOfEnglish || ""}
+                className="w-32 h-48 rounded-xl shadow-lg object-cover"
+              />
+            </div>
+
+            <div className="flex-1 flex flex-col items-center sm:items-start">
+              {/* Movie Status and Version */}
+              <div className="flex items-center gap-3 mb-4 w-full">
+                <div className="px-4 w-[190px] md:w-[160px] lg:w-[140px] py-2 bg-gradient-to-r from-green-500 to-green-600 rounded-full shadow-md">
+                  <p className="font-semibold text-sm text-white">
+                    Now Showing
+                  </p>
+                </div>
+                {bookingData.selectedVersion && (
+                  <VersionCard
+                    version={bookingData.selectedVersion}
+                    readonly
+                    className="text-sm"
+                  />
+                )}
+              </div>
+
+              {/* Movie Title */}
+              <div className="text-center sm:text-left mb-4">
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">
+                  {movieInfo.NameOfEnglish}
+                </h2>
+                {movieInfo.NameOfVietnamese && (
+                  <p className="text-lg font-medium text-gray-600">
+                    ({movieInfo.NameOfVietnamese})
+                  </p>
+                )}
+              </div>
+
+              {/* Booking Details */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full">
+                {bookingData.selectedDay && (
+                  <div className="flex items-center gap-2 p-3 bg-purple-50 rounded-lg">
+                    <FaCalendarDays className="text-purple-600 text-lg" />
+                    <div>
+                      <p className="text-xs text-gray-500 font-medium">Date</p>
+                      <p className="text-sm font-semibold text-gray-800">
+                        {bookingData.selectedDay}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {bookingData.selectedTime && (
+                  <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
+                    <FaClock className="text-blue-600 text-lg" />
+                    <div>
+                      <p className="text-xs text-gray-500 font-medium">Time</p>
+                      <p className="text-sm font-semibold text-gray-800">
+                        {bookingData.selectedTime}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {bookingData.room && (
+                  <div className="flex items-center gap-2 p-3 bg-orange-50 rounded-lg">
+                    <FaLocationDot className="text-orange-600 text-lg" />
+                    <div>
+                      <p className="text-xs text-gray-500 font-medium">Room</p>
+                      <p className="text-sm font-semibold text-gray-800">
+                        {bookingData.room}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                  <FaCouch className="text-gray-600 text-lg" />
+                  <div>
+                    <p className="text-xs text-gray-500 font-medium">Rows</p>
+                    <p className="text-sm font-semibold text-gray-800">A - J</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+        {/* Main Layout - Seat Selection */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Seat Layout */}
+          <div className="flex-1 bg-white rounded-xl shadow-lg border-0 overflow-hidden">
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-bold text-gray-800 mb-2">
+                  Cinema Screen
+                </h3>
+                <div className="w-full h-2 bg-gradient-to-r from-purple-600 to-purple-700 rounded-full mb-6"></div>
+              </div>
 
-        {/* Seat Info Panel */}
-        <div className="w-full lg:w-[30%] h-[50%] rounded-2xl border border-gray-300 bg-white shadow-md p-4">
-          <div className="flex flex-col gap-2">
-            <h5 className="font-bold">
-              <i className="fa-solid fa-couch"></i> Seat Information
-            </h5>
-            <div>
-              <div className="border-b">
-                <p className="flex justify-between my-2">
-                  Total seats:{" "}
-                  <span className="text-[#8A2BE2] font-bold">
+              <div className="flex justify-center overflow-x-auto">
+                <div className="min-w-[300px]">
+                  <LayoutSelectSeat
+                    seatDataFromAPI={seatData}
+                    initialSelectedSeats={selectedSeats}
+                    onSeatSelect={handleSeatSelect}
+                    textColor="text-purple-600"
+                    width={30}
+                    height={30}
+                    widthDouble={42}
+                    heightDouble={24}
+                    seatColors={{
+                      available: "text-gray-400",
+                      selected: "text-purple-600",
+                      taken: "text-red-500",
+                      holding: "text-green-600",
+                      vip: "text-yellow-500",
+                      normal: "text-gray-600",
+                      couple: "text-pink-500",
+                    }}
+                    showInfo={false}
+                    className="w-full px-2"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Seat Information Panel */}
+          <div className="w-full lg:w-80 bg-white rounded-xl shadow-lg border-0 overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
+                  <FaCouch className="text-white text-sm" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-800">
+                  Seat Information
+                </h3>
+              </div>
+
+              {/* Seat Statistics */}
+              <div className="space-y-3 mb-6">
+                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                  <span className="text-gray-600">Total seats:</span>
+                  <span className="font-bold text-gray-800">
                     {seatStats.totalSeats}
                   </span>
-                </p>
-                <p className="flex justify-between my-2">
-                  Available seats:{" "}
-                  <span className="text-blue-500 font-bold">
+                </div>
+                <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                  <span className="text-blue-600">Available:</span>
+                  <span className="font-bold text-blue-700">
                     {seatStats.selectableSeats}
                   </span>
-                </p>
-                <p className="flex justify-between my-2">
-                  Sold seats:{" "}
-                  <span className="text-red-600 font-bold">
+                </div>
+                <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                  <span className="text-red-600">Sold:</span>
+                  <span className="font-bold text-red-700">
                     {seatStats.lockedSeats}
                   </span>
-                </p>
-                <p className="flex justify-between my-2">
-                  Selected seats:{" "}
-                  <span className="text-green-600 font-bold">
+                </div>
+                <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                  <span className="text-green-600">Selected:</span>
+                  <span className="font-bold text-green-700">
                     {seatStats.selectedCount}
                   </span>
-                </p>
+                </div>
               </div>
-              <p className="flex justify-between my-2">
-                Total price:{" "}
-                <span className="text-green-600 font-bold">
-                  {formatPrice(seatStats.totalPrice)} VNĐ
-                </span>
-              </p>
-            </div>
 
-            {seatStats.selectedCount > 0 && (
-              <div className="mt-4">
-                <h6 className="font-semibold mb-2">Selected seats:</h6>
-                <div className="flex flex-wrap gap-2">{selectedSeatTags}</div>
+              {/* Total Price */}
+              <div className="p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg mb-6">
+                <div className="flex justify-between items-center">
+                  <span className="text-purple-700 font-semibold">
+                    Total Price:
+                  </span>
+                  <span className="text-xl font-bold text-purple-800">
+                    {formatPrice(seatStats.totalPrice)} VNĐ
+                  </span>
+                </div>
               </div>
-            )}
 
-            <div className="mt-4 flex justify-center gap-2 py-5">
-              <Button
-                type="primary"
-                icon={<CheckOutlined />}
-                onClick={handleContinue}
-                disabled={seatStats.selectedCount === 0}
-                className="font-semibold px-4 py-2"
-              >
-                Continue
-              </Button>
-              <Button
-                danger
-                type="default"
-                icon={<CloseOutlined />}
-                onClick={handleCancel}
-                className="font-semibold px-4 py-2"
-              >
-                Cancel
-              </Button>
+              {/* Selected Seats Tags */}
+              {seatStats.selectedCount > 0 && (
+                <div className="mb-6">
+                  <h4 className="font-semibold text-gray-800 mb-3">
+                    Selected Seats:
+                  </h4>
+                  <div className="flex flex-wrap gap-2">{selectedSeatTags}</div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="space-y-3">
+                <Button
+                  type="primary"
+                  icon={<CheckOutlined />}
+                  onClick={handleContinue}
+                  disabled={seatStats.selectedCount === 0}
+                  className="w-full h-12 bg-gradient-to-r from-purple-600 to-purple-700 border-0 hover:from-purple-700 hover:to-purple-800 font-semibold text-white rounded-lg"
+                >
+                  Continue to Payment
+                </Button>
+                <Button
+                  danger
+                  icon={<CloseOutlined />}
+                  onClick={handleCancel}
+                  className="w-full h-12 font-semibold rounded-lg border-red-300 text-red-600 hover:bg-red-50"
+                >
+                  Cancel Booking
+                </Button>
+              </div>
             </div>
           </div>
         </div>
