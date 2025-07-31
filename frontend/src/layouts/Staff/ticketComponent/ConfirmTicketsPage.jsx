@@ -199,13 +199,8 @@ const ConfirmTicketsPage = () => {
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
       setSubmitting(true);
-      // Validate chỉ các trường cần thiết
-      const validationContext = {
-        convertToTicket: values.convertToTicket,
-        paymentMethod: values.paymentMethod
-      };
-      await validationSchema.validate(validationContext, { abortEarly: false });
-      // await validationSchema.validate(values, { abortEarly: false });
+
+      await validationSchema.validate(values, { abortEarly: false });
 
       if (!bookingData?.selectedSeats?.length || !bookingData.showtimeId) {
         throw new Error("Invalid ticket data, please select again");
@@ -230,13 +225,8 @@ const ConfirmTicketsPage = () => {
         discountTicket
       );
 
-      // Kiểm tra điểm khi chọn chuyển đổi
-      if (values.convertToTicket === "Agree") {
-        if (memberChecked && PointsToUse > (member?.score || 0)) {
-          throw new Error("Not enough points to complete this transaction");
-        }
-        // Nếu chuyển đổi điểm thành công, coi như paymentMethod là "Points"
-        values.paymentMethod = "Convert Score";
+      if (values.convertToTicket === "Agree" && memberChecked && PointsToUse > (member?.score || 0)) {
+        throw new Error("Not enough points to complete this transaction");
       }
 
       const seatIds = bookingData.selectedSeats.map((seat) => {
@@ -287,8 +277,6 @@ const ConfirmTicketsPage = () => {
         successUrl = "/staff/ticket-selling/ticket-information";
       } else if (values.paymentMethod === "Stripe") {
         successUrl = "/staff/ticket-selling/waiting-payment";
-      } else if (values.paymentMethod === "Convert Score") {
-        successUrl = "/staff/ticket-selling/ticket-information";
       }
 
       const paymentResult = await processPayment({
@@ -354,14 +342,9 @@ const ConfirmTicketsPage = () => {
         ),
     }),
 
-    paymentMethod: Yup.string().when("convertToTicket", {
-      is: "Disagree", // Chỉ yêu cầu paymentMethod khi không chuyển đổi điểm
-      then: (schema) =>
-        schema
-          .required("Please select payment method")
-          .oneOf(["Cash", "Momo", "VNPay", "ZaloPay", "Stripe"], "Invalid payment method"),
-      otherwise: (schema) => schema.notRequired(),
-    }),
+    paymentMethod: Yup.string()
+      .required("Please select payment method")
+      .oneOf(["Cash", "Momo", "VNPay", "ZaloPay", "Stripe"], "Invalid payment method"),
 
     cardType: Yup.string().when("paymentMethod", {
       is: "Stripe",
@@ -720,21 +703,19 @@ function ConfirmFormBody({
               <FaMoneyBillWave /> Payment Method
             </h2>
             {/* PaymentOptions inline */}
-            {values.convertToTicket !== "Agree" && (
-              <div className="mb-6">
-                <h3 className="font-semibold mb-3 text-xl">
-                  Select Payment method: <span className="text-red-500">*</span>
-                </h3>
-                <PaymentMethod
-                  value={values.paymentMethod}
-                  onChange={val => setFieldValue('paymentMethod', val)}
-                  showCardType={values.paymentMethod === "Stripe"}
-                  cardType={values.cardType}
-                  onCardTypeChange={val => setFieldValue("cardType", val)}
-                  cardTypeError={!values.cardType ? "Please select a card type" : ""}
-                />
-              </div>
-            )}
+            <div className="mb-6">
+              <h3 className="font-semibold mb-3 text-xl">
+                Select Payment method: <span className="text-red-500">*</span>
+              </h3>
+              <PaymentMethod
+                value={values.paymentMethod}
+                onChange={val => setFieldValue('paymentMethod', val)}
+                showCardType={values.paymentMethod === "Stripe"}
+                cardType={values.cardType}
+                onCardTypeChange={val => setFieldValue("cardType", val)}
+                cardTypeError={!values.cardType ? "Please select a card type" : ""}
+              />
+            </div>
             {/* PriceSummary inline */}
             <div className="bg-white p-4 rounded-lg mb-6">
               <h3 className="font-semibold mb-3 text-lg">Payment Summary</h3>
@@ -827,7 +808,7 @@ function ConfirmFormBody({
                 htmlType="submit"
                 disabled={
                   isSubmitting ||
-                  (values.convertToTicket === "Disagree" && !values.paymentMethod) ||
+                  !values.paymentMethod ||
                   (memberChecked &&
                     values.convertToTicket === "Agree" &&
                     PointsToUse > member.score)
