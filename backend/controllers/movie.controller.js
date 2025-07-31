@@ -574,7 +574,7 @@ const getTopMoviesByRatingOrImdb = async (req, res) => {
 
     if (type === 'imdb') {
       const imdbApiUrl = 'https://api.imdbapi.dev/search/titles';
-      movies = movies.slice(0, 50);
+      movies = movies.slice(0, 200);
 
       const imdbResults = await Promise.all(movies.map(async (movie) => {
         let imdbRating = null;
@@ -583,11 +583,23 @@ const getTopMoviesByRatingOrImdb = async (req, res) => {
         let imdbId = null;
         let imdbImage = null;
         try {
+          // Lấy năm phát hành nếu có
+          const year = movie.FromDate ? new Date(movie.FromDate).getFullYear() : undefined;
+          // Không dùng encodeURIComponent ở đây
           const resp = await axios.get(imdbApiUrl, {
-            params: { query: encodeURIComponent(movie.NameOfEnglish), limit: 1 }
+            params: {
+              query: movie.NameOfEnglish,
+              limit: 5,
+              year: year
+            }
           });
           if (resp.data && Array.isArray(resp.data.titles) && resp.data.titles.length > 0) {
-            const first = resp.data.titles[0];
+            // Ưu tiên chọn phim đúng năm phát hành
+            let first = resp.data.titles[0];
+            if (year) {
+              const found = resp.data.titles.find(t => t.startYear == year);
+              if (found) first = found;
+            }
             imdbRating = first.rating && first.rating.aggregateRating ? Number(first.rating.aggregateRating) : null;
             imdbTitle = first.primaryTitle;
             imdbYear = first.startYear;
@@ -595,10 +607,18 @@ const getTopMoviesByRatingOrImdb = async (req, res) => {
             imdbImage = first.primaryImage?.url;
           } else if (movie.NameOfVietnamese) {
             const respVN = await axios.get(imdbApiUrl, {
-              params: { query: encodeURIComponent(movie.NameOfVietnamese), limit: 1 }
+              params: {
+                query: movie.NameOfVietnamese,
+                limit: 5,
+                year: year
+              }
             });
             if (respVN.data && Array.isArray(respVN.data.titles) && respVN.data.titles.length > 0) {
-              const firstVN = respVN.data.titles[0];
+              let firstVN = respVN.data.titles[0];
+              if (year) {
+                const foundVN = respVN.data.titles.find(t => t.startYear == year);
+                if (foundVN) firstVN = foundVN;
+              }
               imdbRating = firstVN.rating && firstVN.rating.aggregateRating ? Number(firstVN.rating.aggregateRating) : null;
               imdbTitle = firstVN.primaryTitle;
               imdbYear = firstVN.startYear;

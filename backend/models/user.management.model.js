@@ -19,7 +19,7 @@ class UserManagement {
 
     let totalUsers = users.length;
     if (limit > 0) {
-      const [countResult] = await db.promise().query("SELECT COUNT(*) as total FROM Users WHERE Role = 1 AND IsDeleted = 0");
+      const [countResult] = await db.promise().query("SELECT COUNT(*) as total FROM Users WHERE Role = 1");
       totalUsers = countResult[0].total;
     }
 
