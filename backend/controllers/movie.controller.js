@@ -1,8 +1,6 @@
 const Movie = require("../models/movie.model");
 const bucket = require('../config/firebase');
-<<<<<<< Updated upstream
-const axios = require('axios');
-=======
+
 const axios = require('axios'); // Thêm nếu chưa có
 const { formatDateTimeString } = require("../utils/date");
 
@@ -17,7 +15,7 @@ function normalizeMovieDates(movie) {
     UpdatedAt: formatDateTimeString(movie.UpdatedAt),
   };
 }
->>>>>>> Stashed changes
+
 
 const getAllMovies = async (req, res) => {
   try {
