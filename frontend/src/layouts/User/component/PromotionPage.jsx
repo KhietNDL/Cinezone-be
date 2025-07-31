@@ -238,7 +238,7 @@ const MoviePromotions = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 via-50% via-purple-950/50 to-slate-900 relative overflow-hidden">
       {/* Enhanced Background Animation */}
       <div className="absolute inset-0">
         <div className="absolute top-0 left-0 w-[800px] h-[800px] bg-gradient-radial from-purple-600/30 to-transparent rounded-full blur-3xl animate-pulse"></div>

@@ -3,6 +3,14 @@ import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import MoviePromotions from "../../layouts/User/component/PromotionPage";
 import * as api from "../../services/API";
+import { BrowserRouter } from "react-router-dom";
+
+// Mock useNavigate
+const mockNavigate = jest.fn();
+jest.mock("react-router-dom", () => ({
+  ...jest.requireActual("react-router-dom"),
+  useNavigate: () => mockNavigate,
+}));
 
 // Mock API
 jest.mock("../../services/API", () => ({
@@ -13,17 +21,25 @@ jest.mock("../../services/API", () => ({
 describe("MoviePromotions", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Mock clipboard API
+    Object.assign(navigator, {
+      clipboard: { writeText: jest.fn() },
+    });
   });
+
+  const renderWithRouter = (component) => {
+    return render(<BrowserRouter>{component}</BrowserRouter>);
+  };
 
   it("renders page title", async () => {
     api.getPromotion.mockResolvedValue({ data: [] });
-    render(<MoviePromotions />);
+    renderWithRouter(<MoviePromotions />);
     expect(await screen.findByText(/movie promotions/i)).toBeInTheDocument();
   });
 
   it("shows loading state", () => {
     api.getPromotion.mockReturnValue(new Promise(() => {}));
-    render(<MoviePromotions />);
+    renderWithRouter(<MoviePromotions />);
     expect(screen.getByText(/loading promotions/i)).toBeInTheDocument();
   });
 
@@ -41,14 +57,14 @@ describe("MoviePromotions", () => {
         },
       ],
     });
-    render(<MoviePromotions />);
+    renderWithRouter(<MoviePromotions />);
     expect(await screen.findByText(/discount 10%/i)).toBeInTheDocument();
     expect(screen.getByText(/promo1/i)).toBeInTheDocument();
   });
 
   it("shows no promotions available message", async () => {
     api.getPromotion.mockResolvedValue({ data: [] });
-    render(<MoviePromotions />);
+    renderWithRouter(<MoviePromotions />);
     expect(
       await screen.findByText(/no promotions available/i)
     ).toBeInTheDocument();
@@ -69,11 +85,12 @@ describe("MoviePromotions", () => {
         },
       ],
     });
-    render(<MoviePromotions />);
-    // Mở search box
-    fireEvent.click(screen.getByLabelText(/open search/i));
-    // Nhập từ khóa
-    fireEvent.change(screen.getByPlaceholderText(/search magical deals/i), {
+    renderWithRouter(<MoviePromotions />);
+    // Tìm search input
+    const searchInput = screen.getByPlaceholderText(
+      /search for amazing movie deals/i
+    );
+    fireEvent.change(searchInput, {
       target: { value: "PROMO2" },
     });
     // Đợi debounce và fetch
@@ -84,9 +101,11 @@ describe("MoviePromotions", () => {
   it("shows no promotions found when search returns empty", async () => {
     api.getPromotion.mockResolvedValue({ data: [] });
     api.searchPromotion.mockResolvedValue({ promotions: [] });
-    render(<MoviePromotions />);
-    fireEvent.click(screen.getByLabelText(/open search/i));
-    fireEvent.change(screen.getByPlaceholderText(/search magical deals/i), {
+    renderWithRouter(<MoviePromotions />);
+    const searchInput = screen.getByPlaceholderText(
+      /search for amazing movie deals/i
+    );
+    fireEvent.change(searchInput, {
       target: { value: "NOTFOUND" },
     });
     expect(await screen.findByText(/no promotions found/i)).toBeInTheDocument();
@@ -106,11 +125,7 @@ describe("MoviePromotions", () => {
         },
       ],
     });
-    // Mock clipboard
-    Object.assign(navigator, {
-      clipboard: { writeText: jest.fn() },
-    });
-    render(<MoviePromotions />);
+    renderWithRouter(<MoviePromotions />);
     expect(await screen.findByText(/discount 30%/i)).toBeInTheDocument();
     const copyBtn = screen.getByTitle(/copy code/i);
     fireEvent.click(copyBtn);

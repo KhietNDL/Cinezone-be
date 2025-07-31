@@ -1,15 +1,12 @@
 import React from "react";
+import { FaClock, FaStar, FaCheckCircle } from "react-icons/fa";
+import { IoTicketOutline } from "react-icons/io5";
 
 const ItemCard = ({ item, type, onSelect, selected, small, disabled }) => {
-
   const handleClick = () => {
     if (!disabled) {
       onSelect && onSelect(item);
     }
-  };
-
-  const formatPrice = (price) => {
-    return price?.toLocaleString('vi-VN');
   };
 
   if (!item) return null;
@@ -19,110 +16,120 @@ const ItemCard = ({ item, type, onSelect, selected, small, disabled }) => {
     return text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
   };
 
+  // FIX: Sử dụng đúng field names
   const displayNameEN =
     type === "movie"
-      ? truncateText(item?.NameOfEnglish, small ? 15 : 20)
-      : truncateText(item?.name, small ? 15 : 20);
+      ? truncateText(item?.Title || item?.NameOfEnglish, small ? 12 : 18)
+      : truncateText(item?.name, small ? 12 : 18);
 
   const displayNameVN =
     type === "movie"
-      ? truncateText(item?.NameOfVietnamese, small ? 15 : 20)
+      ? truncateText(item?.NameOfVietnamese, small ? 12 : 18)
       : null;
 
-  const fullName = type === "movie" ? item?.NameOfEnglish : item?.name;
-
-  // Xác định màu cho quantity
-  let quantityColor = "text-green-700";
-  if (item?.quantity === 0) {
-    quantityColor = "text-gray-700";
-  } else if (item?.quantity < 5) {
-    quantityColor = "text-red-600";
-  } else if (item?.quantity < 10) {
-    quantityColor = "text-orange-500";
-  } else if (item?.quantity >= 11) {
-    quantityColor = "text-green-700";
-  }
-
-  const getCardSizeClass = (type, small) => {
-    if (type === "movie") {
-      return small
-        ? "w-[170px] h-[280px] min-h-[220px]"
-        : "w-[250px] h-auto min-h-[350px]";
-    } else {
-      return small
-        ? "w-[140px] h-[180px]"
-        : "w-[250px] h-[300px] min-h-[380px]";
-    }
-  };
+  const fullName =
+    type === "movie" ? item?.Title || item?.NameOfEnglish : item?.name;
 
   return (
     <div
       onClick={handleClick}
-      className={`cursor-pointer rounded-xl border border-gray-300 
-                 transition-transform duration-300 ease-in-out hover:scale-105
-        ${selected ? "shadow-[0_10px_10px_gray]" : "none"}
-        ${getCardSizeClass(type, small)}`}
+      className={`
+        relative cursor-pointer rounded-xl overflow-hidden
+        transition-all duration-300 ease-in-out
+        ${
+          selected
+            ? "ring-2 ring-purple-500 shadow-xl transform translate-y-[-4px] bg-gradient-to-br from-purple-50 to-purple-100"
+            : "hover:shadow-lg hover:translate-y-[-2px] bg-white border border-gray-200 hover:border-purple-300"
+        }
+        ${disabled ? "opacity-50 cursor-not-allowed" : ""}
+        ${
+          type === "movie"
+            ? small
+              ? "w-[200px] h-[320px]"
+              : "w-[250px] h-[360px]"
+            : small
+            ? "w-[180px] h-[260px]"
+            : "w-[240px] h-[320px]"
+        }
+      `}
       title={fullName}
-      style={{ position: "relative", overflow: "hidden" }}
     >
-      {type === "movie" ? (
-        <img
-          alt={item?.NameOfEnglish}
-          src={item?.PosterImage}
-          loading="lazy"
-          className={`w-full ${small ? "h-[230px]" : "h-auto"} object-cover rounded-tl-xl rounded-tr-xl mx-auto`}
-        />
-      ) : (
-        <div style={{ position: "relative" }}>
-          <img
-            alt={item?.name}
-            src={item?.image}
-            className={`w-full object-cover rounded-tl-xl rounded-tr-xl mx-auto
-                      ${small ? "h-[100px] max-h-[100px]" : "h-[250px] max-h-[250px]"}
-                      ${item?.quantity === 0 ? "opacity-40 grayscale" : ""}`
-            }
-          />
-          {item?.quantity === 0 && (
-            <div
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: small ? "100px" : "250px",
-                background: "rgba(0,0,0,0.5)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#fff",
-                fontWeight: "bold",
-                fontSize: small ? 24 : 40,
-                letterSpacing: 2,
-                zIndex: 2,
-                borderRadius: "12px"
-              }}
-            >
-              SOLD
-            </div>
-          )}
+      {/* Selection Indicator */}
+      {selected && (
+        <div className="absolute top-2 right-2 z-20">
+          <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center shadow-lg">
+            <FaCheckCircle className="text-white text-xs" />
+          </div>
         </div>
       )}
 
-      <div className={`p-2 font-semibold text-center uppercase flex flex-col text-gray-700 ${small ? "text-[11px]" : "text-md"}`}>
-        <div>{displayNameEN}</div>
-        <div>{displayNameVN}</div>
+      {/* Image Section - FIX: Better image fit */}
+      <div className="relative overflow-hidden">
+        <img
+          alt={displayNameEN}
+          src={item?.PosterImage || item?.image}
+          loading="lazy"
+          onError={(e) => {
+            e.target.src =
+              "https://via.placeholder.com/250x350/f0f0f0/666?text=No+Image";
+          }}
+          className={`w-full object-cover object-center ${
+            small ? "h-[200px]" : type === "movie" ? "h-[300px]" : "h-[240px]"
+          }`}
+          style={{
+            objectPosition: "center top", // Đảm bảo focus vào phần trên của poster
+          }}
+        />
+
+        {/* Overlay with rating for movies or quantity for combo */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+          {type === "movie" && item?.AverageRating ? (
+            <div className="flex items-center justify-center gap-1 text-yellow-400 text-xs">
+              <FaStar />
+              <span className="text-white font-medium">
+                {item.AverageRating}
+              </span>
+            </div>
+          ) : type === "combo" && item?.quantity !== undefined ? (
+            <div className="flex items-center justify-center gap-1 text-xs">
+              <span className="text-white font-medium">
+                {item.quantity > 0 ? `Stock: ${item.quantity}` : "Out of Stock"}
+              </span>
+            </div>
+          ) : null}
+        </div>
       </div>
 
-      {type === "combo" && (
-        <div className="flex flex-col items-center justify-center p-2 gap-2 size-auto">
-          <div className="text-xl font-bold text-center uppercase text-green-700">
-            {formatPrice(item?.price?.toFixed ? item.price : item.price)} VNĐ
+      {/* Content Section - Clean Layout */}
+      <div className="p-3 h-[60px] flex flex-col justify-between">
+        {/* Title */}
+        <h3
+          className={`font-semibold text-gray-800 text-center leading-tight ${
+            small ? "text-xs" : "text-sm"
+          }`}
+          title={fullName}
+        >
+          {displayNameEN}
+        </h3>
+        {/* Vietnamese name for movies only */}
+        {type === "movie" && displayNameVN && (
+          <p className="text-xs text-gray-500 text-center mt-1">
+            {displayNameVN}
+          </p>
+        )}
+        {/* Price for combo items */}
+        {type === "combo" && item?.price && (
+          <div className="bg-purple-100 rounded-md px-2 py-1 mt-2">
+            <p
+              className={`text-purple-700 font-bold text-center ${
+                small ? "text-xs" : "text-sm"
+              }`}
+            >
+              {item.price.toLocaleString("vi-VN")} ₫
+            </p>
           </div>
-          <div className={`font-bold ${quantityColor}`}>
-            Quantity: {item?.quantity}
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

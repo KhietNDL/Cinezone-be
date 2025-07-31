@@ -1,14 +1,18 @@
 import React from "react";
 import { FaRegEdit } from "react-icons/fa";
 import { RiDeleteBin5Line } from "react-icons/ri";
+import { FaUnlock } from "react-icons/fa";
+
 const UserTable = ({
   users,
   handleEditUser,
   handleDeleteUser,
+  handleUnbanUser,
   sortBy,
   sortOrder,
   handleSort,
   formatDate,
+  unbanLoading,
 }) => {
   return (
     <div className="hidden sm:block">
@@ -109,7 +113,10 @@ const UserTable = ({
             <th className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] shrink-0 text-center">
               Phone
             </th>
-            <th className="py-2 px-2 sm:px-4 w-[80px] shrink-0 text-center">
+            <th className="py-2 px-2 sm:px-4 w-[80px] sm:w-[100px] shrink-0 text-center">
+              Status
+            </th>
+            <th className="py-2 px-2 sm:px-4 w-[120px] shrink-0 text-center">
               Actions
             </th>
           </tr>
@@ -164,8 +171,21 @@ const UserTable = ({
               <td className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] shrink-0 text-center">
                 {user.PhoneNumber || "N/A"}
               </td>
-              <td className="py-2 px-2 sm:px-4 w-[80px] shrink-0 text-center">
-                <div className="flex justify-center space-x-2 sm:space-x-3">
+              <td className="py-2 px-2 sm:px-4 w-[80px] sm:w-[100px] shrink-0 text-center">
+                <span
+                  className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    user.IsDeleted === 0 || user.IsDeleted === false
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                  }`}
+                >
+                  {user.IsDeleted === 0 || user.IsDeleted === false
+                    ? "Active"
+                    : "Expired"}
+                </span>
+              </td>
+              <td className="py-2 px-2 sm:px-4 w-[120px] shrink-0 text-center">
+                <div className="flex justify-center space-x-1 sm:space-x-2">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -175,7 +195,7 @@ const UserTable = ({
                     title="Edit"
                     aria-label={`Edit ${user.FullName || "user"}`}
                   >
-                    <FaRegEdit size={18} sm={20} />
+                    <FaRegEdit size={16} />
                   </button>
                   <button
                     onClick={(e) => {
@@ -186,8 +206,22 @@ const UserTable = ({
                     title="Delete"
                     aria-label={`Delete ${user.FullName || "user"}`}
                   >
-                    <RiDeleteBin5Line size={18} sm={20} />
+                    <RiDeleteBin5Line size={16} />
                   </button>
+                  {(user.IsDeleted === 1 || user.IsDeleted === true) && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUnbanUser(user.UserId);
+                      }}
+                      disabled={unbanLoading}
+                      className="text-green-500 hover:text-green-700 p-1 sm:p-2 disabled:opacity-50"
+                      title="Unban"
+                      aria-label={`Unban ${user.FullName || "user"}`}
+                    >
+                      <FaUnlock size={16} />
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>

@@ -8,7 +8,6 @@ const Booking = require('../models/booking.model');
 const OrderProduct = require('../models/orderProduct.model');
 const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
-const bookingController = require('./booking.controller');
 
 const getPaymentMethods = async (req, res) => {
   try {
@@ -42,8 +41,7 @@ const confirmPayment = async (req, res) => {
     let bookingDetail = null;
     if (payment.BookingId) {
       await Booking.updateStatus(payment.BookingId, BOOKING_STATUS.PAID, payment.Amount);
-      // Gọi controller để xử lý logic điểm/membership/email
-      await bookingController.confirmBooking({ params: { bookingId: payment.BookingId } }, { json: () => {} });
+      await Booking.confirmBooking(payment.BookingId);
       bookingDetail = await Booking.getBookingDetail(payment.BookingId);
     }
 
@@ -77,11 +75,7 @@ const confirmPayment = async (req, res) => {
               ? getOrderMessage(orderProductDetail.status)
               : getPaymentMessage(PAYMENT_STATUS.COMPLETED),
         createdAt: payment.CreatedAt,
-        scoreValue: bookingDetail?.pointEarn
-          ? bookingDetail.pointEarn
-          : bookingDetail?.pointUse
-            ? -bookingDetail.pointUse
-            : 0,
+        scoreValue: bookingDetail?.pointUse ? -bookingDetail.pointUse : 0,
         bookingStatus: bookingDetail?.status,
         orderStatus: orderProductDetail?.status,
       });
@@ -387,6 +381,15 @@ const handleMomoCallback = async (req, res) => {
       .update(rawSignature)
       .digest('hex');
 
+    if (signature !== checkSignature) {
+      console.error("Chữ ký không hợp lệ trong callback MoMo");
+      console.error("Signature nhận được:", signature);
+      console.error("Signature tính toán:", checkSignature);
+      return res.status(400).json({
+        error: "Chữ ký không hợp lệ"
+      });
+    }
+
     let extraDataObj;
     try {
       const decodedExtraData = Buffer.from(extraData, 'base64').toString();
@@ -402,24 +405,12 @@ const handleMomoCallback = async (req, res) => {
         });
       }
     }
-    console.log("Raw extraData:", extraData);
-    try {
-      const directParse = JSON.parse(extraData);
-      console.log("Direct parse result:", directParse);
-    } catch (e1) {
-      console.log("Direct parse failed, trying base64 decode");
-      try {
-        const decoded = Buffer.from(extraData, 'base64').toString();
-        console.log("Decoded extraData:", decoded);
-        const parsedDecoded = JSON.parse(decoded);
-        console.log("Parsed decoded result:", parsedDecoded);
-      } catch (e2) {
-        console.log("Base64 decode failed too");
-      }
-    }
-
+    
+    // Loại bỏ phần log debug không cần thiết
+    
     const paymentId = extraDataObj.paymentId;
     const bookingId = extraDataObj.bookingId;
+    const orderProductId = extraDataObj.orderProductId; // Thêm orderProductId
 
     const payment = await Payment.getPaymentById(paymentId);
     if (!payment) {
@@ -429,20 +420,32 @@ const handleMomoCallback = async (req, res) => {
     }
 
     if (resultCode === '0') {
-
+      // Thanh toán thành công
       await Payment.updatePaymentStatus(
         paymentId,
         PAYMENT_STATUS.COMPLETED
       );
 
-      const bookingCheck = await Booking.updateStatus(
-        bookingId,
-        BOOKING_STATUS.PAID,
-        payment.Amount
-      );
+      // Xử lý booking nếu có
+      if (bookingId) {
+        const bookingCheck = await Booking.updateStatus(
+          bookingId,
+          BOOKING_STATUS.PAID,
+          payment.Amount
+        );
 
-      if (!bookingCheck.success) {
-        console.error("Failed to update booking status:", bookingCheck.message);
+        if (!bookingCheck.success) {
+          console.error("Failed to update booking status:", bookingCheck.message);
+        }
+      }
+
+      // Xử lý orderProduct nếu có
+      if (orderProductId) {
+        try {
+          await OrderProduct.confirmOrder(orderProductId);
+        } catch (orderError) {
+          console.error("Failed to confirm order product:", orderError.message);
+        }
       }
 
       res.status(200).json({
@@ -450,12 +453,25 @@ const handleMomoCallback = async (req, res) => {
         message: "Payment completed successfully"
       });
     } else {
+      // Thanh toán thất bại
       await Payment.updatePaymentStatus(
         paymentId,
         PAYMENT_STATUS.FAILED
       );
 
-      await Booking.updateStatus(bookingId, BOOKING_STATUS.PAYMENT_FAILED);
+      // Xử lý booking nếu có
+      if (bookingId) {
+        await Booking.updateStatus(bookingId, BOOKING_STATUS.PAYMENT_FAILED);
+      }
+      
+      // Xử lý orderProduct nếu có
+      if (orderProductId) {
+        try {
+          await OrderProduct.cancelOrder(orderProductId);
+        } catch (orderError) {
+          console.error("Failed to cancel order product:", orderError.message);
+        }
+      }
 
       res.status(200).json({
         status: "failed",

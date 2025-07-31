@@ -14,29 +14,21 @@ class Showtime {
             WHERE IsDeleted = 0 OR IsDeleted IS NULL
         `;
         try {
-            console.log('Executing findAll query:', query);
             const [rows] = await db.promise().query(query);
-            console.log('Raw query result:', JSON.stringify(rows, null, 2));
-            
             // Kiểm tra cấu trúc bảng
             const [tableInfo] = await db.promise().query('SHOW COLUMNS FROM Showtimes');
-            console.log('Table columns:', JSON.stringify(tableInfo, null, 2));
-
             // Kiểm tra dữ liệu mẫu với điều kiện IsDeleted
             const [sampleData] = await db.promise().query(`
                 SELECT * FROM Showtimes 
                 WHERE IsDeleted = 0 OR IsDeleted IS NULL
                 LIMIT 1
             `);
-            console.log('Sample data with IsDeleted condition:', JSON.stringify(sampleData, null, 2));
-
             return rows;
         } catch (error) {
             console.error('Error in findAll:', error);
             throw error;
         }
     }
-
     static async findById(id) {
         const query = `
             SELECT * FROM Showtimes

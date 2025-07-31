@@ -13,11 +13,12 @@ const PromotionCards = ({
     const now = new Date();
     const start = new Date(startTime);
     const end = new Date(endTime);
+
     if (end < now)
       return { status: "Expired", class: "bg-rose-200 text-red-700" };
     if (start <= now && now <= end)
       return { status: "Active", class: "bg-green-100 text-green-700" };
-    return { status: "Upcoming", class: "bg-yellow-100 text-yellow-700" };
+    return { status: "Coming Soon", class: "bg-yellow-100 text-yellow-700" };
   };
 
   return (
@@ -52,6 +53,12 @@ const PromotionCards = ({
               </div>
             </div>
             <div className="mt-4 text-xs grid grid-cols-2 space-x-2 space-y-4 text-gray-700">
+              <p>
+                <strong>Code:</strong>{" "}
+                <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs">
+                  {promotion.Code || "N/A"}
+                </span>
+              </p>
               <p>
                 <strong>Value:</strong>{" "}
                 {promotion.DiscountValue

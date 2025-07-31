@@ -36,7 +36,11 @@ const HeaderAdmin = ({ onToggleSidebar, isSidebarOpen }) => {
           onClick={onToggleSidebar}
           className="lg:hidden p-2 rounded-lg hover:bg-gray-100 mr-2 z-50"
         >
-          {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
+          {isSidebarOpen ? (
+            <X size={24} data-testid="lucide-x" />
+          ) : (
+            <Menu size={24} data-testid="lucide-menu" />
+          )}
         </button>
 
         {/* Logo */}
@@ -60,6 +64,7 @@ const HeaderAdmin = ({ onToggleSidebar, isSidebarOpen }) => {
           <div
             className="flex items-center space-x-1 md:space-x-2 cursor-pointer hover:bg-gray-50 rounded-lg p-1 md:p-2 transition-all duration-200 ease-in-out transform hover:scale-[1.02]"
             onClick={toggleDropdown}
+            data-testid="profile-trigger"
           >
             <div className="border-[1px] border-solid border-amber-500 rounded-full w-[32px] h-[32px] md:w-[40px] md:h-[40px] ring-2 ring-transparent hover:ring-amber-200 transition-all duration-300">
               <img
@@ -97,6 +102,7 @@ const HeaderAdmin = ({ onToggleSidebar, isSidebarOpen }) => {
 
           {/* Dropdown Menu */}
           <div
+            data-testid="dropdown-menu"
             className={`absolute right-0 mt-2 w-48 md:w-58 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden transition-all duration-300 ease-out transform origin-top ${
               showDropdown
                 ? "opacity-100 scale-100 translate-y-0"
@@ -153,6 +159,7 @@ const HeaderAdmin = ({ onToggleSidebar, isSidebarOpen }) => {
         <div
           className="fixed inset-0 z-40 transition-all duration-300"
           onClick={() => setShowDropdown(false)}
+          role="presentation"
         />
       )}
     </div>

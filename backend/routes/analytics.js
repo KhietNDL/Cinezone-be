@@ -142,6 +142,55 @@ router.get('/revenue/this-quarter', analyticsController.getRevenueThisQuarter);
 
 /**
  * @swagger
+ * /api/analytics/revenue/today:
+ *   get:
+ *     summary: Get revenue of today
+ *     tags: [Analytics]
+ *     responses:
+ *       200:
+ *         description: Revenue of today
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalRevenue:
+ *                   type: number
+ *                   example: 1250000
+ *                 bookingCount:
+ *                   type: integer
+ *                   example: 5
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     date:
+ *                       type: string
+ *                       example: "2025-07-31"
+ *                     dayOfWeek:
+ *                       type: integer
+ *                       example: 4
+ *                     dayName:
+ *                       type: string
+ *                       example: "Thursday"
+ *                     dayNameVN:
+ *                       type: string
+ *                       example: "Thứ Năm"
+ *                     total:
+ *                       type: number
+ *                       example: 1250000
+ *                     bookingCount:
+ *                       type: integer
+ *                       example: 5
+ *                     timeRange:
+ *                       type: string
+ *                       example: "08:30:00 - 17:45:22"
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/revenue/today', analyticsController.getRevenueThisDay);
+
+/**
+ * @swagger
  * /api/analytics/user/age-groups:
  *   get:
  *     summary: Get ticket buyer age groups
@@ -169,41 +218,5 @@ router.get('/revenue/this-quarter', analyticsController.getRevenueThisQuarter);
  *         description: Internal server error
  */
 router.get('/user/age-groups', analyticsController.getUserAgeGroups);
-
-/**
- * @swagger
- * /api/analytics/tickets/stats:
- *   get:
- *     summary: Get ticket statistics by day, month, or year
- *     tags: [Analytics]
- *     parameters:
- *       - in: query
- *         name: type
- *         schema:
- *           type: string
- *           enum: [day, month, year]
- *         required: true
- *         description: Statistic type (day, month, year)
- *       - in: query
- *         name: year
- *         schema:
- *           type: integer
- *         required: true
- *         description: Year for statistics
- *       - in: query
- *         name: month
- *         schema:
- *           type: integer
- *         required: false
- *         description: Month for statistics (required if type=day)
- *     responses:
- *       200:
- *         description: Statistic result list
- *       400:
- *         description: Missing parameters
- *       500:
- *         description: Internal server error
- */
-router.get('/tickets/stats', analyticsController.getTicketStats);
 
 module.exports = router;

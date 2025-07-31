@@ -18,7 +18,7 @@ const SearchAndAdd = ({
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="p-1 sm:p-2 focus:outline-none w-full text-sm sm:text-base"
-          placeholder="Search by name"
+          placeholder="Search by code"
         />
       </div>
       {!isEdit && (

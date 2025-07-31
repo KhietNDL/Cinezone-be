@@ -2,7 +2,7 @@
 // frontend/src/testComponent/User/MovieHeroSwiper.test.jsx
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import MovieHeroSwiper from "../../layouts/User/component/MovieHeroSwiper";
+import MovieHeroSwiper from "../../layouts/User/landingComponent/MovieHeroSwiper";
 import { MemoryRouter } from "react-router-dom";
 
 // Mock useNavigate
