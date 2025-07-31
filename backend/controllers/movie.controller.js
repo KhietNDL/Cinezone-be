@@ -1,6 +1,6 @@
 const Movie = require("../models/movie.model");
 const bucket = require('../config/firebase');
-const axios = require('axios'); // Thêm nếu chưa có
+const axios = require('axios');
 
 const getAllMovies = async (req, res) => {
   try {

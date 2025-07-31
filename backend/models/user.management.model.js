@@ -39,7 +39,7 @@ class UserManagement {
     if (!allowedSortFields.includes(sortBy)) sortBy = 'FullName';
     sortOrder = sortOrder.toLowerCase() === 'desc' ? 'DESC' : 'ASC';
 
-    let usersQuery = `SELECT * FROM Users WHERE FullName LIKE ? AND Role = 1 AND IsDeleted = 0 ORDER BY ${sortBy} ${sortOrder}`;
+    let usersQuery = `SELECT * FROM Users WHERE FullName LIKE ? AND Role = 1 ORDER BY ${sortBy} ${sortOrder}`;
     let usersParams = [`%${name}%`];
     
     if (limit > 0) {
@@ -53,7 +53,7 @@ class UserManagement {
     let totalUsers = users.length;
     if (limit > 0) {
       const [countResult] = await db.promise().query(
-        "SELECT COUNT(*) as total FROM Users WHERE FullName LIKE ? AND Role = 1 AND IsDeleted = 0",
+        "SELECT COUNT(*) as total FROM Users WHERE FullName LIKE ? AND Role = 1",
         [`%${name}%`]
       );
       totalUsers = countResult[0].total;
@@ -74,7 +74,7 @@ class UserManagement {
     const [rows] = await db
       .promise()
       .query(
-        "SELECT * FROM Users WHERE UserId = ? AND Role = 1 AND IsDeleted = 0",
+        "SELECT * FROM Users WHERE UserId = ? AND Role = 1",
         [userId]
       );
     return rows[0];
@@ -85,7 +85,7 @@ class UserManagement {
     if (!allowedSortFields.includes(sortBy)) sortBy = 'FullName';
     sortOrder = sortOrder.toLowerCase() === 'desc' ? 'DESC' : 'ASC';
 
-    let usersQuery = `SELECT * FROM Users WHERE LOWER(Email) LIKE LOWER(?) AND Role = 1 AND IsDeleted = 0 ORDER BY ${sortBy} ${sortOrder}`;
+    let usersQuery = `SELECT * FROM Users WHERE LOWER(Email) LIKE LOWER(?) AND Role = 1 ORDER BY ${sortBy} ${sortOrder}`;
     let usersParams = [`%${email}%`];
 
     if (limit > 0) {
@@ -99,7 +99,7 @@ class UserManagement {
     let totalUsers = users.length;
     if (limit > 0) {
       const [countResult] = await db.promise().query(
-        "SELECT COUNT(*) as total FROM Users WHERE LOWER(Email) LIKE LOWER(?) AND Role = 1 AND IsDeleted = 0",
+        "SELECT COUNT(*) as total FROM Users WHERE LOWER(Email) LIKE LOWER(?) AND Role = 1",
         [`%${email}%`]
       );
       totalUsers = countResult[0].total;
@@ -178,7 +178,7 @@ class UserManagement {
     const [rows] = await db
       .promise()
       .query(
-        "SELECT * FROM Users WHERE CCCD = ? AND Role = 1 AND IsDeleted = 0",
+        "SELECT * FROM Users WHERE CCCD = ? AND Role = 1",
         [cccd]
       );
     return rows[0];
@@ -188,7 +188,7 @@ class UserManagement {
     const [rows] = await db
       .promise()
       .query(
-        "SELECT * FROM Users WHERE PhoneNumber = ? AND Role = 1 AND IsDeleted = 0",
+        "SELECT * FROM Users WHERE PhoneNumber = ? AND Role = 1",
         [phoneNumber]
       );
     return rows[0];
