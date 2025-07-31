@@ -1,5 +1,17 @@
 const db = require('../config/database');
 const { v4: uuidv4 } = require('uuid');
+const { formatDateTime, formatDateTimeString } = require("../utils/date");
+
+// Helper để chuẩn hóa ngày tháng khi trả dữ liệu orderProductDetail ra ngoài
+function normalizeOrderProductDetailDates(detail) {
+  if (!detail) return detail;
+  return {
+    ...detail,
+    CreatedAt: formatDateTimeString(detail.CreatedAt),
+    UpdatedAt: formatDateTimeString(detail.UpdatedAt),
+    DeletedAt: formatDateTimeString(detail.DeletedAt),
+  };
+}
 
 class OrderProductDetail {
   static async getAll() {

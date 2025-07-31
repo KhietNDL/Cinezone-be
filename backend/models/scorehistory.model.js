@@ -1,5 +1,17 @@
 const db = require("../config/database");
 const { v4: uuidv4 } = require('uuid');
+const { formatDateTime, formatDateTimeString } = require("../utils/date");
+
+// Helper để chuẩn hóa ngày tháng khi trả dữ liệu scorehistory ra ngoài
+function normalizeScoreHistoryDates(score) {
+  if (!score) return score;
+  return {
+    ...score,
+    ChangeDate: formatDateTimeString(score.ChangeDate),
+    CreatedAt: formatDateTimeString(score.CreatedAt),
+    UpdatedAt: formatDateTimeString(score.UpdatedAt),
+  };
+}
 
 class ScoreHistory {
   // Lấy tất cả lịch sử điểm
