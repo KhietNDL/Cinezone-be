@@ -1,11 +1,5 @@
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  useMemo,
-} from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button, Tag, Spin, message } from "antd";
 import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
 import {
@@ -15,10 +9,7 @@ import {
   FaLocationDot,
 } from "react-icons/fa6";
 import { LayoutSelectSeat } from "../../../component/LayoutSelectSeat";
-import {
-  getMovieById,
-  getSeatsByShowtimeId,
-} from "../../../services/APIForStaff/API";
+import { getMovieById, getSeatsByShowtimeId } from "../../../services/APIForStaff/API";
 import { useDispatch, useSelector } from "react-redux";
 import {
   setSelectedSeats,
@@ -34,8 +25,7 @@ const SelectSeatsPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const bookingData = useSelector((state) => state.selling);
-  const seatData = bookingData.seatData;
-  const selectedSeats = bookingData.selectedSeats;
+  const { seatData, selectedSeats, selectedMovie, showtimeId } = bookingData;
 
   const [movieInfo, setMovieInfo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -43,7 +33,7 @@ const SelectSeatsPage = () => {
   const hasFetchedData = useRef(false);
 
   useEffect(() => {
-    if (!bookingData?.selectedMovie?.MovieId || !bookingData?.showtimeId) {
+    if (!selectedMovie?.MovieId || !showtimeId) {
       message.error("No booking data found");
       navigate("/staff/ticket-selling");
       return;
@@ -54,10 +44,10 @@ const SelectSeatsPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const movieRes = await getMovieById(bookingData.selectedMovie.MovieId);
-        setMovieInfo(movieRes.data || bookingData.selectedMovie);
+        const movieRes = await getMovieById(selectedMovie.MovieId);
+        setMovieInfo(movieRes.data || selectedMovie);
 
-        const seatsRes = await getSeatsByShowtimeId(bookingData.showtimeId);
+        const seatsRes = await getSeatsByShowtimeId(showtimeId);
         dispatch(setSeatData(seatsRes.seats || []));
 
         hasFetchedData.current = true;
@@ -70,19 +60,7 @@ const SelectSeatsPage = () => {
     };
 
     fetchData();
-  }, [
-    bookingData?.selectedMovie,
-    bookingData?.selectedMovie?.MovieId,
-    bookingData?.showtimeId,
-    navigate,
-    dispatch,
-  ]);
-
-  useEffect(() => {
-    return () => {
-      hasFetchedData.current = false;
-    };
-  }, [bookingData?.selectedMovie?.MovieId, bookingData?.showtimeId]);
+  }, [selectedMovie?.MovieId, showtimeId, navigate, dispatch, selectedMovie]);
 
   const formatPrice = useCallback((price) => {
     return price.toLocaleString("vi-VN");
@@ -90,9 +68,7 @@ const SelectSeatsPage = () => {
 
   const handleSeatSelect = useCallback(
     (selection) => {
-      const newSelectedSeats = Array.from(
-        selection.seats.map((s) => s.seatNumber)
-      );
+      const newSelectedSeats = selection.seats.map((s) => s.seatNumber);
       dispatch(setSelectedSeats(newSelectedSeats));
     },
     [dispatch]
@@ -121,24 +97,15 @@ const SelectSeatsPage = () => {
 
   const seatStats = useMemo(() => {
     const totalSeats = seatData.length;
-    const lockedSeats = seatData.filter(
-      (seat) => seat.status === "taken"
-    ).length;
+    const lockedSeats = seatData.filter((seat) => seat.status === "taken").length;
     const selectableSeats = totalSeats - lockedSeats;
     const selectedCount = selectedSeats.length;
-
     const totalPrice = selectedSeats.reduce((total, seatNumber) => {
       const seat = seatData.find((s) => s.seatNumber === seatNumber);
       return total + (seat ? seat.price : 0);
     }, 0);
 
-    return {
-      totalSeats,
-      lockedSeats,
-      selectableSeats,
-      selectedCount,
-      totalPrice,
-    };
+    return { totalSeats, lockedSeats, selectableSeats, selectedCount, totalPrice };
   }, [seatData, selectedSeats]);
 
   const selectedSeatTags = useMemo(() => {
@@ -152,20 +119,17 @@ const SelectSeatsPage = () => {
     });
   }, [selectedSeats, seatData, formatPrice]);
 
-  if (loading)
+  if (loading || !movieInfo) {
     return (
       <div className="text-center my-8">
         <Spin size="large" />
       </div>
     );
-  if (error)
+  }
+
+  if (error) {
     return <div className="text-center my-8 text-red-500">{error}</div>;
-  if (!movieInfo || !bookingData)
-    return (
-      <div className="text-center my-8">
-        <Spin size="large" />
-      </div>
-    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -204,7 +168,7 @@ const SelectSeatsPage = () => {
             <div className="flex-1 flex flex-col items-center sm:items-start">
               {/* Movie Status and Version */}
               <div className="flex items-center gap-3 mb-4 w-full">
-                <div className="px-4 w-[190px] md:w-[160px] lg:w-[140px] py-2 bg-gradient-to-r from-green-500 to-green-600 rounded-full shadow-md">
+                <div className="px-4 w-[190px] md:w-[160px] lg:w-[140px] text-center py-2 bg-gradient-to-r from-green-500 to-green-600 rounded-full shadow-md">
                   <p className="font-semibold text-sm text-white">
                     Now Showing
                   </p>
@@ -281,12 +245,6 @@ const SelectSeatsPage = () => {
           {/* Seat Layout */}
           <div className="flex-1 bg-white rounded-xl shadow-lg border-0 overflow-hidden">
             <div className="p-6">
-              <div className="text-center mb-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-2">
-                  Cinema Screen
-                </h3>
-                <div className="w-full h-2 bg-gradient-to-r from-purple-600 to-purple-700 rounded-full mb-6"></div>
-              </div>
 
               <div className="flex justify-center overflow-x-auto">
                 <div className="min-w-[300px]">

@@ -97,21 +97,22 @@ const TicketInformation = () => {
       }
 
       // VISA hoặc truy cập trực tiếp
-      else {
-        if (visaResponse?.status === "succeeded" || res?.status === 2) {
-          if (paymentId) {
-            try {
-              await confirmPayment(paymentId);
-            } catch (err) {
-              console.warn("Confirm failed:", err.message);
-            }
+      else if (visaResponse?.status === "succeeded") {
+        if (paymentId) {
+          try {
+            await confirmPayment(paymentId);
+          } catch (err) {
+            console.warn("Confirm failed:", err.message);
           }
-          status = "succeeded";
-          toast.success("Payment successful!");
-        } else {
-          toast.error("Payment failed!");
         }
+        status = "succeeded";
+        toast.success("Payment successful!");
+      } else if (res?.status === 2) {
+        status = "succeeded";
+      } else {
+        toast.error("Payment failed!");
       }
+
 
       setPaymentStatus(status);
       window.history.replaceState({}, document.title, window.location.pathname);
