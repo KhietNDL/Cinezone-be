@@ -197,7 +197,6 @@ const deleteUser = async (req, res) => {
   try {
     const result = await UserManagement.deleteUser(userId);
     if (result) {
-      blacklistUserId(userId); // Force logout for deleted user
       res.status(200).json({ message: "User deleted successfully" });
     } else {
       res.status(404).json({ message: "User not found or already deleted" });

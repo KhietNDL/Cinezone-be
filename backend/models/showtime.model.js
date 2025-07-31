@@ -263,7 +263,7 @@ class Showtime {
     static async getSeatsWithStatusByShowtime(showtimeId) {
         // 1. Lấy CinemaRoomId và Name từ Showtime JOIN CinemaRooms
         const [showtimeRows] = await db.promise().query(
-            `SELECT st.CinemaRoomId, cr.Name , cr.SeatQuantity
+            `SELECT st.CinemaRoomId, cr.Name , cr.SeatQuantity, cr.Row, cr.Col
              FROM Showtimes st 
              JOIN CinemaRooms cr ON st.CinemaRoomId = cr.CinemaRoomId 
              WHERE st.ShowtimeId = ? AND (st.IsDeleted = 0 OR st.IsDeleted IS NULL)`,
@@ -275,6 +275,8 @@ class Showtime {
         const cinemaRoomId = showtimeRows[0].CinemaRoomId;
         const roomName = showtimeRows[0].Name;
         const seatQuantity = showtimeRows[0].SeatQuantity;
+        const row = showtimeRows[0].Row;
+        const col = showtimeRows[0].Col;
         // 2. Lấy tất cả ghế của phòng chiếu này
         const [seatRows] = await db.promise().query(
             'SELECT SeatId, SeatNumber, Type, Price FROM Seats WHERE CinemaRoomId = ? AND IsDeleted = 0',
@@ -301,6 +303,8 @@ class Showtime {
             cinemaRoomId,
             roomName,
             seatQuantity,
+            row,
+            col,
             seats: seatRows.map(seat => ({
                 seatId: seat.SeatId,
                 seatNumber: seat.SeatNumber,
