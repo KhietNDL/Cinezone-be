@@ -142,6 +142,55 @@ router.get('/revenue/this-quarter', analyticsController.getRevenueThisQuarter);
 
 /**
  * @swagger
+ * /api/analytics/revenue/today:
+ *   get:
+ *     summary: Get revenue of today
+ *     tags: [Analytics]
+ *     responses:
+ *       200:
+ *         description: Revenue of today
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalRevenue:
+ *                   type: number
+ *                   example: 1250000
+ *                 bookingCount:
+ *                   type: integer
+ *                   example: 5
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     date:
+ *                       type: string
+ *                       example: "2025-07-31"
+ *                     dayOfWeek:
+ *                       type: integer
+ *                       example: 4
+ *                     dayName:
+ *                       type: string
+ *                       example: "Thursday"
+ *                     dayNameVN:
+ *                       type: string
+ *                       example: "Thứ Năm"
+ *                     total:
+ *                       type: number
+ *                       example: 1250000
+ *                     bookingCount:
+ *                       type: integer
+ *                       example: 5
+ *                     timeRange:
+ *                       type: string
+ *                       example: "08:30:00 - 17:45:22"
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/revenue/today', analyticsController.getRevenueThisDay);
+
+/**
+ * @swagger
  * /api/analytics/user/age-groups:
  *   get:
  *     summary: Get ticket buyer age groups
