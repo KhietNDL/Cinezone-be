@@ -37,7 +37,7 @@ class Employee {
     const [rows] = await db
       .promise()
       .query(
-        "SELECT * FROM Users WHERE FullName LIKE ? AND Role = 2 AND IsDeleted = 0",
+        "SELECT * FROM Users WHERE FullName LIKE ? AND Role = 2",
         [`%${name}%`]
       );
     return rows;
@@ -46,7 +46,7 @@ class Employee {
     const [rows] = await db
       .promise()
       .query(
-        "SELECT * FROM Users WHERE UserId = ? AND Role = 2 AND IsDeleted = 0",
+        "SELECT * FROM Users WHERE UserId = ? AND Role = 2",
         [userId]
       );
     return rows[0];
@@ -55,7 +55,7 @@ class Employee {
     const [rows] = await db
       .promise()
       .query(
-        "SELECT * FROM Users WHERE Email = ? AND Role = 2 AND IsDeleted = 0",
+        "SELECT * FROM Users WHERE Email = ? AND Role = 2",
         [email]
       );
     return rows[0];
