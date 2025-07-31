@@ -28,7 +28,6 @@ async function cleanupExpiredBookings() {
     );
 
     await connection.commit();
-    console.log(`Cleaned up ${expiredIds.length} expired bookings`);
   } catch (err) {
     await connection.rollback();
     console.error('Cleanup error:', err);
