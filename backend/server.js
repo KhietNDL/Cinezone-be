@@ -20,7 +20,6 @@ global._io = io; // Gán vào global sau khi đã khởi tạo
 app.set("io", io);
 
 io.on("connection", (socket) => {
-  console.log("Socket connected:", socket.id); // Thêm dòng này để debug
   socket.on("join", (userId) => {
     if (userId) socket.join(userId);
   });

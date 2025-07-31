@@ -42,6 +42,7 @@ const getUsersbyName = async (req, res) => {
       avatar_url: user.avatar_url,
       ScoreBalance: user.ScoreBalance,
       CreatedAt: user.CreatedAt,
+      IsDeleted: user.IsDeleted
     }));
 
     res.status(200).json({
@@ -197,7 +198,10 @@ const deleteUser = async (req, res) => {
   try {
     const result = await UserManagement.deleteUser(userId);
     if (result) {
-      blacklistUserId(userId); // Force logout for deleted user
+      // Emit force-logout event to this user
+      if (global._io) {
+        global._io.to(userId).emit("force-logout", { reason: "deleted" });
+      }
       res.status(200).json({ message: "User deleted successfully" });
     } else {
       res.status(404).json({ message: "User not found or already deleted" });
@@ -357,6 +361,7 @@ const findUsersByInfo = async (req, res) => {
       avatar_url: user.avatar_url,
       ScoreBalance: user.ScoreBalance,
       CreatedAt: user.CreatedAt,
+      IsDeleted: user.IsDeleted
     }));
 
     res.status(200).json({
