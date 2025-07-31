@@ -34,6 +34,8 @@ const RoomManagement = () => {
   const [roomId, setRoomId] = useState("");
   const [roomName, setRoomName] = useState("");
   const [seatQuantity, setSeatQuantity] = useState("");
+  const [roomRow, setRoomRow] = useState("");
+  const [roomCol, setRoomCol] = useState("");
   const [roomType, setRoomType] = useState("Normal");
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -108,6 +110,8 @@ const RoomManagement = () => {
     setRoomId(room.CinemaRoomId || "");
     setRoomName(room.Name || "");
     setSeatQuantity(room.SeatQuantity?.toString() || "");
+    setRoomRow(room.Row?.toString() || "");
+    setRoomCol(room.Col?.toString() || "");
     setRoomType(room.Type || "Normal");
     setShowEditModal(true);
   };
@@ -121,18 +125,47 @@ const RoomManagement = () => {
     setRoomId("");
     setRoomName("");
     setSeatQuantity("");
+    setRoomRow("");
+    setRoomCol("");
     setRoomType("Normal");
     setShowAddModal(true);
   };
 
   const handleSaveRoom = async () => {
     const seatNum = Number(seatQuantity);
-    if (!roomName.trim() || !seatQuantity || seatNum < 60 || seatNum > 150) {
+    const rowNum = Number(roomRow);
+    const colNum = Number(roomCol);
+    const maxCapacity = rowNum * colNum;
+    const minRequiredSeats = Math.ceil(maxCapacity * 0.9);
+
+    // Validation
+    if (!roomName.trim()) {
+      toast.error("Room name is required!");
+      return;
+    }
+
+    if (!roomRow || rowNum < 5 || rowNum > 20) {
+      toast.error("Row must be between 5 and 20!");
+      return;
+    }
+
+    if (!roomCol || colNum < 8 || colNum > 20) {
+      toast.error("Column must be between 8 and 20!");
+      return;
+    }
+
+    if (maxCapacity > 300) {
+      toast.error("Maximum capacity (Row × Column) cannot exceed 300!");
+      return;
+    }
+
+    if (!seatQuantity || seatNum < minRequiredSeats || seatNum > maxCapacity) {
       toast.error(
-        "Room name is required and seat quantity must be between 60 and 150!"
+        `Seat quantity must be between ${minRequiredSeats} and ${maxCapacity} (90-100% of capacity)!`
       );
       return;
     }
+
     const isDuplicate = rooms.some(
       (room) =>
         room.Name.trim().toLowerCase() === roomName.trim().toLowerCase() &&
@@ -145,6 +178,8 @@ const RoomManagement = () => {
     try {
       const payload = {
         Name: roomName.trim(),
+        Row: rowNum,
+        Col: colNum,
         SeatQuantity: seatNum,
         Type: roomType,
       };
@@ -160,6 +195,8 @@ const RoomManagement = () => {
       setRoomId("");
       setRoomName("");
       setSeatQuantity("");
+      setRoomRow("");
+      setRoomCol("");
       setRoomType("Normal");
       const data = await getCinemaRooms({
         page: currentPage,
@@ -209,6 +246,8 @@ const RoomManagement = () => {
     setRoomId("");
     setRoomName("");
     setSeatQuantity("");
+    setRoomRow("");
+    setRoomCol("");
     setRoomType("Normal");
   };
 
@@ -284,6 +323,12 @@ const RoomManagement = () => {
                       <th className="py-2 text-center px-2 sm:px-4 w-[150px] sm:w-[180px] md:w-[200px] shrink-0">
                         Room Name
                       </th>
+                      <th className="py-2 px-2 sm:px-4 w-[60px] shrink-0 text-center hidden md:table-cell">
+                        Row
+                      </th>
+                      <th className="py-2 px-2 sm:px-4 w-[60px] shrink-0 text-center hidden md:table-cell">
+                        Col
+                      </th>
                       <th
                         onClick={() =>
                           setSortOrder(sortOrder === "asc" ? "desc" : "asc")
@@ -324,6 +369,12 @@ const RoomManagement = () => {
                                 ? `${room.Name.slice(0, 20)}...`
                                 : room.Name || "N/A"}
                             </span>
+                          </td>
+                          <td className="py-2 px-2 sm:px-4 w-[60px] shrink-0 text-center hidden md:table-cell">
+                            {room.Row || "N/A"}
+                          </td>
+                          <td className="py-2 px-2 sm:px-4 w-[60px] shrink-0 text-center hidden md:table-cell">
+                            {room.Col || "N/A"}
                           </td>
                           <td className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] shrink-0 text-center">
                             {room.SeatQuantity || "N/A"}
@@ -373,7 +424,7 @@ const RoomManagement = () => {
                     ) : (
                       <tr>
                         <td
-                          colSpan="5"
+                          colSpan="7"
                           className="py-4 text-center text-gray-500"
                         >
                           No rooms available
@@ -398,6 +449,9 @@ const RoomManagement = () => {
                               ? `${room.Name.slice(0, 20)}...`
                               : room.Name || "N/A"}
                           </h3>
+                          <p className="text-xs text-gray-500 truncate">
+                            Row: {room.Row || "N/A"} × Col: {room.Col || "N/A"}
+                          </p>
                           <p className="text-xs text-gray-500 truncate">
                             Seats: {room.SeatQuantity || "N/A"}
                           </p>
@@ -486,19 +540,55 @@ const RoomManagement = () => {
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Rows (5 - 20)
+                  </label>
+                  <input
+                    type="number"
+                    min={5}
+                    max={20}
+                    placeholder="Enter rows"
+                    value={roomRow}
+                    onChange={(e) => setRoomRow(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Columns (8 - 20)
+                  </label>
+                  <input
+                    type="number"
+                    min={8}
+                    max={20}
+                    placeholder="Enter columns"
+                    value={roomCol}
+                    onChange={(e) => setRoomCol(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Seat Quantity (60 - 150)
+                  Seat Quantity (90-100% of Row × Col, max 300)
                 </label>
                 <input
                   type="number"
-                  min={60}
-                  max={150}
                   placeholder="Enter seat quantity"
                   value={seatQuantity}
                   onChange={(e) => setSeatQuantity(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 />
+                {roomRow && roomCol && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Capacity: {Number(roomRow) * Number(roomCol)} seats (Min:{" "}
+                    {Math.ceil(Number(roomRow) * Number(roomCol) * 0.9)}, Max:{" "}
+                    {Number(roomRow) * Number(roomCol)})
+                  </p>
+                )}
               </div>
 
               <div>
@@ -558,19 +648,55 @@ const RoomManagement = () => {
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Rows (5 - 20)
+                  </label>
+                  <input
+                    type="number"
+                    min={5}
+                    max={20}
+                    placeholder="Enter rows"
+                    value={roomRow}
+                    onChange={(e) => setRoomRow(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Columns (8 - 20)
+                  </label>
+                  <input
+                    type="number"
+                    min={8}
+                    max={20}
+                    placeholder="Enter columns"
+                    value={roomCol}
+                    onChange={(e) => setRoomCol(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Seat Quantity (60 - 150)
+                  Seat Quantity (90-100% of Row × Col, max 300)
                 </label>
                 <input
                   type="number"
-                  min={60}
-                  max={150}
                   placeholder="Enter seat quantity"
                   value={seatQuantity}
                   onChange={(e) => setSeatQuantity(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 />
+                {roomRow && roomCol && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Capacity: {Number(roomRow) * Number(roomCol)} seats (Min:{" "}
+                    {Math.ceil(Number(roomRow) * Number(roomCol) * 0.9)}, Max:{" "}
+                    {Number(roomRow) * Number(roomCol)})
+                  </p>
+                )}
               </div>
 
               <div>
@@ -655,8 +781,9 @@ const RoomManagement = () => {
                     {selectedRoom.Name} Details
                   </h2>
                   <p className="text-sm text-gray-500">
-                    Room ID: {selectedRoom.CinemaRoomId} • Total Seats:{" "}
-                    {selectedRoom.SeatQuantity} • Type:{" "}
+                    Room ID: {selectedRoom.CinemaRoomId} • Dimensions:{" "}
+                    {selectedRoom.Row || "N/A"} × {selectedRoom.Col || "N/A"} •
+                    Total Seats: {selectedRoom.SeatQuantity} • Type:{" "}
                     {selectedRoom.Type || "Normal"}
                   </p>
                 </div>

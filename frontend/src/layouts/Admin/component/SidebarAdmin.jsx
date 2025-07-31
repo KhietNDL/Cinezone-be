@@ -8,7 +8,7 @@ import { AiOutlineProduct } from "react-icons/ai";
 const SidebarAdmin = ({ onClose }) => {
   const menu = [
     {
-      label: "Over View",
+      label: "Overview",
       icon: <MdOutlineAvTimer size={20} />,
       to: "/admin/dashboard",
     },

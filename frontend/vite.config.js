@@ -11,4 +11,7 @@ export default defineConfig({
   define: {
     "process.env": {}, // Shim process.env to an empty object
   },
+  build: {
+    target: "esnext", // Support modern features including top-level await
+  },
 });
