@@ -1,5 +1,5 @@
-const Booking = require('../models/booking.model');
-const { create } = require('../models/orderProduct.model');
+const Booking = require("../models/booking.model");
+const { create } = require("../models/orderProduct.model");
 const ScoreHistory = require("../models/scorehistory.model");
 const User = require("../models/user.model");
 const Seat = require("../models/seat.moddel.js");
@@ -8,7 +8,7 @@ const getBookingById = async (req, res) => {
   const { bookingId } = req.params;
   try {
     const booking = await Booking.getBookingById(bookingId);
-    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
     res.json(booking);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -18,13 +18,18 @@ const getBookingById = async (req, res) => {
 const getBookingsByMemberId = async (req, res) => {
   const { memberId } = req.params;
   // Lấy các tham số phân trang và sort từ query string
-  const { page = 1, limit = 10, sortBy = "CreatedAt", sortOrder = "desc" } = req.query;
+  const {
+    page = 1,
+    limit = 10,
+    sortBy = "CreatedAt",
+    sortOrder = "desc",
+  } = req.query;
   try {
     const bookings = await Booking.getBookingsByMemberId(memberId, {
       page: Number(page),
       limit: Number(limit),
       sortBy,
-      sortOrder
+      sortOrder,
     });
     res.json(bookings);
   } catch (error) {
@@ -35,8 +40,8 @@ const getBookingsByMemberId = async (req, res) => {
 const createBooking = async (req, res) => {
   try {
     const success = await Booking.createBooking(req.body);
-    if (!success) return res.status(404).json({ error: 'Booking not found' });
-    res.json({ message: 'Booking created' });
+    if (!success) return res.status(404).json({ error: "Booking not found" });
+    res.json({ message: "Booking created" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -46,8 +51,8 @@ const updateBooking = async (req, res) => {
   const { bookingId } = req.params;
   try {
     const success = await Booking.updateBooking(bookingId, req.body);
-    if (!success) return res.status(404).json({ error: 'Booking not found' });
-    res.json({ message: 'Booking updated' });
+    if (!success) return res.status(404).json({ error: "Booking not found" });
+    res.json({ message: "Booking updated" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -57,8 +62,8 @@ const deleteBooking = async (req, res) => {
   const { bookingId } = req.params;
   try {
     const success = await Booking.deleteBooking(bookingId);
-    if (!success) return res.status(404).json({ error: 'Booking not found' });
-    res.json({ message: 'Booking deleted' });
+    if (!success) return res.status(404).json({ error: "Booking not found" });
+    res.json({ message: "Booking deleted" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -66,12 +71,17 @@ const deleteBooking = async (req, res) => {
 
 const getAllBookings = async (req, res) => {
   try {
-    const { page = 1, limit = 0, sortBy = 'CreatedAt', sortOrder = 'desc' } = req.query;
+    const {
+      page = 1,
+      limit = 0,
+      sortBy = "CreatedAt",
+      sortOrder = "desc",
+    } = req.query;
     const result = await Booking.getAllBookings({
       page: Number(page),
       limit: Number(limit),
       sortBy,
-      sortOrder
+      sortOrder,
     });
     res.json(result);
   } catch (error) {
@@ -83,7 +93,10 @@ const getLatestBookingByMemberId = async (req, res) => {
   const { memberId } = req.params;
   try {
     const booking = await Booking.getLatestBookingByMemberId(memberId);
-    if (!booking) return res.status(404).json({ error: 'No bookings found for this member' });
+    if (!booking)
+      return res
+        .status(404)
+        .json({ error: "No bookings found for this member" });
     res.json(booking);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -92,24 +105,50 @@ const getLatestBookingByMemberId = async (req, res) => {
 
 const holdBooking = async (req, res) => {
   try {
-    const { userId, showtimeId, seatIds, productIds, promotionCode, PointsToUse } = req.body;
+    const {
+      userId,
+      showtimeId,
+      seatIds,
+      productIds,
+      promotionCode,
+      PointsToUse,
+    } = req.body;
     // Kiểm tra chỉ được dùng 1 trong 2: điểm hoặc promotion
     if (promotionCode && PointsToUse) {
-      return res.status(400).json({ error: 'Chỉ được dùng 1 trong 2: điểm hoặc promotion!' });
+      return res
+        .status(400)
+        .json({ error: "Chỉ được dùng 1 trong 2: điểm hoặc promotion!" });
     }
     // Lấy user và quyền lợi membership
     const user = await User.getMembershipInfo(userId);
     let membershipDiscount = 0;
-    if (!PointsToUse && user && user.DiscountTicket !== undefined && user.DiscountTicket !== null) {
+    if (
+      !PointsToUse &&
+      user &&
+      user.DiscountTicket !== undefined &&
+      user.DiscountTicket !== null
+    ) {
       membershipDiscount = Number(user.DiscountTicket);
     }
     // Lấy thông tin loại ghế từ seatIds
-    const seatTypeToPoint = { normal: 90, vip: 150, Couple: 250, Normal: 90, VIP: 150, Couple: 250 };
+    const seatTypeToPoint = {
+      normal: 90,
+      vip: 150,
+      Couple: 250,
+      Normal: 90,
+      VIP: 150,
+      Couple: 250,
+    };
     const seatTypes = [];
     for (const seatId of seatIds) {
       const seat = await Seat.getSeatById(seatId);
       if (!seat || !seatTypeToPoint[seat.Type]) {
-        return res.status(400).json({ error: 'Chỉ cho phép đổi điểm cho các loại ghế: normal, vip, double!' });
+        return res
+          .status(400)
+          .json({
+            error:
+              "Chỉ cho phép đổi điểm cho các loại ghế: normal, vip, double!",
+          });
       }
       seatTypes.push(seat.Type);
     }
@@ -118,12 +157,20 @@ const holdBooking = async (req, res) => {
     let discount = 0;
     // Nếu dùng điểm
     if (PointsToUse) {
-      const totalRequiredPoints = seatTypes.reduce((sum, type) => sum + seatTypeToPoint[type], 0);
+      const totalRequiredPoints = seatTypes.reduce(
+        (sum, type) => sum + seatTypeToPoint[type],
+        0
+      );
       if (PointsToUse != totalRequiredPoints) {
-        return res.status(400).json({ error: 'Số điểm phải đúng bằng tổng số điểm quy định cho từng loại ghế!' });
+        return res
+          .status(400)
+          .json({
+            error:
+              "Số điểm phải đúng bằng tổng số điểm quy định cho từng loại ghế!",
+          });
       }
       if (!user || user.ScoreBalance < PointsToUse) {
-        return res.status(400).json({ error: 'Không đủ điểm để sử dụng!' });
+        return res.status(400).json({ error: "Không đủ điểm để sử dụng!" });
       }
       discount = PointsToUse * 1000;
       pointsUsed = PointsToUse;
@@ -138,7 +185,7 @@ const holdBooking = async (req, res) => {
       promotionCode,
       discount, // discount từ điểm nếu có
       membershipDiscount, // phần trăm giảm giá membership nếu không dùng điểm
-      CreatedBy: userId
+      CreatedBy: userId,
     });
     // Nếu dùng điểm, chỉ trừ điểm và ghi lịch sử nếu không phải role 2 hoặc 3
     if (pointsUsed > 0 && user.Role !== 2 && user.Role !== 3) {
@@ -147,16 +194,17 @@ const holdBooking = async (req, res) => {
         MemberId: userId,
         RelatedBookingId: result.bookingId,
         ScoreValue: -pointsUsed,
-        ChangeType: '2',
+        ChangeType: "2",
         ChangeDate: new Date(),
-        CreatedBy: userId
+        CreatedBy: userId,
       });
     }
     res.json({
       ...result,
       pointsUsed,
-      newScoreBalance: newScoreBalance !== null ? newScoreBalance : user.ScoreBalance,
-      discount
+      newScoreBalance:
+        newScoreBalance !== null ? newScoreBalance : user.ScoreBalance,
+      discount,
     });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -169,22 +217,23 @@ const confirmBooking = async (req, res) => {
     await Booking.confirmBooking(bookingId);
     // Lấy thông tin booking chi tiết (bao gồm danh sách ghế và giá gốc)
     const booking = await Booking.getBookingDetail(bookingId);
-    console.log('[DEBUG] Booking info:', booking);
-
     if (booking) {
       // Lấy quyền lợi membership (PointMultiplier)
       const userInfo = await User.getMembershipInfo(booking.MemberId);
-      console.log('[DEBUG] User membership info:', userInfo);
-      const pointMultiplier = userInfo && userInfo.PointMultiplier ? Number(userInfo.PointMultiplier) : 1;
+      const pointMultiplier =
+        userInfo && userInfo.PointMultiplier
+          ? Number(userInfo.PointMultiplier)
+          : 1;
       // Lấy danh sách ghế và giá gốc từng ghế
       const seatPrices = booking.seatPrices || {}; // { seatNumber: price }
       // Tính tổng tiền gốc
-      const originalAmount = Object.values(seatPrices).reduce((sum, price) => sum + Number(price), 0);
-      console.log('[DEBUG] originalAmount:', originalAmount);
+      const originalAmount = Object.values(seatPrices).reduce(
+        (sum, price) => sum + Number(price),
+        0
+      );
       // Tính điểm dựa trên tổng tiền gốc
       const basePoint = Math.floor((originalAmount || 0) / 10000);
       const earnedPoint = Math.floor(basePoint * pointMultiplier);
-      console.log('[DEBUG] basePoint:', basePoint, 'pointMultiplier:', pointMultiplier, 'earnedPoint:', earnedPoint);
       // Chỉ cộng điểm/nâng hạng nếu không phải role 2 hoặc 3
       if (earnedPoint > 0 && userInfo.Role !== 2 && userInfo.Role !== 3) {
         // Ghi nhận lịch sử điểm
@@ -192,17 +241,18 @@ const confirmBooking = async (req, res) => {
           MemberId: booking.MemberId,
           RelatedBookingId: bookingId,
           ScoreValue: +earnedPoint,
-          ChangeType: '1',
+          ChangeType: "1",
           ChangeDate: new Date(),
-          CreatedBy: booking.MemberId
+          CreatedBy: booking.MemberId,
         });
         // Cộng điểm vào user (cả ScoreBalance và TotalAccumulatedPoints)
         await User.updateScoreAndAccumulated(booking.MemberId, earnedPoint);
-        console.log('[DEBUG] Updated user score with earnedPoint:', earnedPoint);
         // Tự động nâng hạng nếu đủ điểm
-        const [membershipTypes] = await require('../config/database').promise().query(
-          'SELECT * FROM MembershipType WHERE IsDeleted = 0 ORDER BY MinPoint ASC'
-        );
+        const [membershipTypes] = await require("../config/database")
+          .promise()
+          .query(
+            "SELECT * FROM MembershipType WHERE IsDeleted = 0 ORDER BY MinPoint ASC"
+          );
         let newType = null;
         for (const type of membershipTypes) {
           if (userInfo.TotalAccumulatedPoints + earnedPoint >= type.MinPoint) {
@@ -216,13 +266,11 @@ const confirmBooking = async (req, res) => {
             new Date(),
             null
           );
-          console.log('[DEBUG] Upgraded membership to:', newType);
         }
       }
     }
-    res.json({ message: 'Booking confirmed successfully' });
+    res.json({ message: "Booking confirmed successfully" });
   } catch (err) {
-    console.error('[DEBUG] Error in confirmBooking:', err);
     res.status(400).json({ error: err.message });
   }
 };
@@ -252,38 +300,13 @@ const getBookingDetail = async (req, res) => {
 };
 
 const cancelBooking = async (req, res) => {
-  const { bookingId } = req.params;
   try {
-    // Lấy thông tin booking
-    const booking = await Booking.getBookingById(bookingId);
-    if (!booking) return res.status(404).json({ error: 'Booking not found' });
-    // Tìm lịch sử điểm đã trừ cho booking này
-    const [scoreRows] = await require('../config/database').promise().query(
-      "SELECT * FROM ScoreHistory WHERE RelatedBookingId = ? AND ScoreValue < 0 AND IsDeleted = 0",
-      [bookingId]
-    );
-    let pointsRefunded = 0;
-    if (scoreRows.length > 0) {
-      pointsRefunded = Math.abs(scoreRows.reduce((sum, row) => sum + row.ScoreValue, 0));
-      // Cộng lại điểm cho user
-      const user = await User.findById(booking.MemberId);
-      if (user) {
-        const newScoreBalance = (user.ScoreBalance || 0) + pointsRefunded;
-        await User.updateScoreBalance(booking.MemberId, newScoreBalance);
-        // Ghi lịch sử hoàn điểm
-        await ScoreHistory.createScoreHistory({
-          MemberId: booking.MemberId,
-          RelatedBookingId: bookingId,
-          ScoreValue: pointsRefunded,
-          ChangeType: 4,
-          ChangeDate: new Date(),
-          CreatedBy: booking.MemberId
-        });
-      }
-    }
+    const { bookingId } = req.params;
     const result = await Booking.cancelBooking(bookingId);
     if (result) {
-      res.status(200).json({ message: "Booking cancelled successfully", pointsRefunded });
+      res
+        .status(200)
+        .json({ message: "Booking cancelled successfully"});
     } else {
       res.status(400).json({ message: "Cancel booking failed" });
     }
@@ -294,8 +317,24 @@ const cancelBooking = async (req, res) => {
 
 const findBookingsByUserInfo = async (req, res) => {
   try {
-    const { email, cccd, phone, page = 1, limit = 10, sortBy = "CreatedAt", sortOrder = "desc" } = req.query;
-    const result = await Booking.findBookingsByUserInfo({ email, cccd, phone, page, limit, sortBy, sortOrder });
+    const {
+      email,
+      cccd,
+      phone,
+      page = 1,
+      limit = 10,
+      sortBy = "CreatedAt",
+      sortOrder = "desc",
+    } = req.query;
+    const result = await Booking.findBookingsByUserInfo({
+      email,
+      cccd,
+      phone,
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+    });
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });

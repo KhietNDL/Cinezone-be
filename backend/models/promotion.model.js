@@ -1,39 +1,30 @@
 const db = require("../config/database");
 const { v4: uuidv4 } = require("uuid");
+const { formatDateTime, formatDateTimeString } = require("../utils/date");
 
-// Hàm helper để format datetime cho MySQL
-const formatDateTime = (date) => {
-  return date.toISOString().slice(0, 19).replace("T", " "); // Chuyển từ "2025-06-09T13:44:47.586Z" thành "2025-06-09 13:44:47"
-};
+// Helper để chuẩn hóa ngày tháng khi trả dữ liệu promotion ra ngoài
+function normalizePromotionDates(promotion) {
+  if (!promotion) return promotion;
+  return {
+    ...promotion,
+    StartTime: formatDateTimeString(promotion.StartTime),
+    EndTime: formatDateTimeString(promotion.EndTime),
+    CreatedAt: formatDateTimeString(promotion.CreatedAt),
+    UpdatedAt: formatDateTimeString(promotion.UpdatedAt),
+    DeletedAt: formatDateTimeString(promotion.DeletedAt),
+  };
+}
 
 class Promotion {
-  static formatDateTimeString(date) {
-    if (!date) return null;
-    const d = new Date(date);
-    return (
-      d.getFullYear() +
-      "-" +
-      String(d.getMonth() + 1).padStart(2, "0") +
-      "-" +
-      String(d.getDate()).padStart(2, "0") +
-      " " +
-      String(d.getHours()).padStart(2, "0") +
-      ":" +
-      String(d.getMinutes()).padStart(2, "0") +
-      ":" +
-      String(d.getSeconds()).padStart(2, "0")
-    );
-  }
-
   static formatPromotionRow(row) {
     if (!row) return row;
     return {
       ...row,
-      StartTime: Promotion.formatDateTimeString(row.StartTime),
-      EndTime: Promotion.formatDateTimeString(row.EndTime),
-      CreatedAt: Promotion.formatDateTimeString(row.CreatedAt),
-      UpdatedAt: Promotion.formatDateTimeString(row.UpdatedAt),
-      DeletedAt: Promotion.formatDateTimeString(row.DeletedAt),
+      StartTime: formatDateTimeString(row.StartTime),
+      EndTime: formatDateTimeString(row.EndTime),
+      CreatedAt: formatDateTimeString(row.CreatedAt),
+      UpdatedAt: formatDateTimeString(row.UpdatedAt),
+      DeletedAt: formatDateTimeString(row.DeletedAt),
     };
   }
 

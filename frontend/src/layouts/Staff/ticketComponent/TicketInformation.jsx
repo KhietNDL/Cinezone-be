@@ -6,7 +6,7 @@ import { FaTicket, FaCouch, FaLocationDot, FaUser, FaPhone, FaCalendarDays, FaEn
 import { IoReloadOutline, IoTicketSharp, IoTime } from "react-icons/io5";
 import { RiFilmAiFill, RiMovie2AiFill, RiDiscountPercentFill } from "react-icons/ri";
 import { FaMoneyBillWave, FaIdCard, FaRegEye } from "react-icons/fa";
-import { checkInfoBookingById, cancelBookingById, getUserByPhone, getMovieById, confirmPayment } from "../../../services/APIForStaff/API";
+import { checkInfoBookingById, cancelBookingById, getMovieById, confirmPayment, getUserByEmail } from "../../../services/APIForStaff/API";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useDispatch, useSelector } from 'react-redux';
@@ -78,6 +78,7 @@ const TicketInformation = () => {
       if (resultCode !== null) {
         if (resultCode === "0") {
           if (paymentId) await confirmPayment(paymentId);
+          console.log("Payment Id:", paymentId);
           status = "succeeded";
           toast.success("MoMo payment successful!");
         } else {
@@ -97,27 +98,29 @@ const TicketInformation = () => {
       }
 
       // VISA hoặc truy cập trực tiếp
-      else {
-        if (visaResponse?.status === "succeeded" || res?.status === 2) {
-          if (paymentId) {
-            try {
-              await confirmPayment(paymentId);
-            } catch (err) {
-              console.warn("Confirm failed:", err.message);
-            }
+      else if (visaResponse?.status === "succeeded") {
+        if (paymentId) {
+          try {
+            await confirmPayment(paymentId);
+          } catch (err) {
+            console.warn("Confirm failed:", err.message);
           }
-          status = "succeeded";
-          toast.success("Payment successful!");
-        } else {
-          toast.error("Payment failed!");
         }
+        status = "succeeded";
+        toast.success("Payment successful!");
+      } else if (res?.status === 2) {
+        status = "succeeded";
+      } else {
+        toast.error("Payment failed!");
       }
+
 
       setPaymentStatus(status);
       window.history.replaceState({}, document.title, window.location.pathname);
       // Fetch thêm thông tin khách hàng
-      if (memberData?.member?.phone) {
-        const customerData = await getUserByPhone(memberData?.member?.phone);
+      if (memberData?.member?.email) {
+        const customerData = await getUserByEmail(memberData?.member?.email);
+        console.log("Customer Data:", customerData);
         setApiCustomerData(customerData);
       }
     } catch (error) {
@@ -319,53 +322,58 @@ const TicketInformation = () => {
               <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                 <FaUser /> Customer Information
               </h2>
-              {!memberData?.member && (
+             
+              {!memberData?.member && !apiCustomerData?.users?.[0] && (
                 <p className="text-gray-500 italic">No customer information</p>
               )}
-              {memberData?.member && (
+              {(memberData?.member || apiCustomerData?.users?.[0] || apiBookingData?.buyerName) && (
                 <div className="space-y-4">
-                  {memberData?.member?.fullName && (
+                  {(memberData?.member?.fullName || apiCustomerData?.users?.[0]?.FullName || apiBookingData?.buyerName) && (
                     <div className="flex items-center justify-between">
                       <p className="text-gray-600 flex items-center gap-2">
                         <FaUser /> Full Name:
                       </p>
-                      <p className="font-medium">{apiBookingData?.buyerName}</p>
+                      <p className="font-medium">
+                        {apiCustomerData?.users?.[0]?.FullName || memberData?.member?.fullName || apiBookingData?.buyerName}
+                      </p>
                     </div>
                   )}
 
-                  {memberData?.member?.identityCard && (
+                  {(memberData?.member?.identityCard || apiCustomerData?.users?.[0]?.CCCD) && (
                     <div className="flex items-center justify-between">
                       <p className="text-gray-600 flex items-center gap-2">
                         <FaIdCard /> ID Card:
                       </p>
-                      <p className="font-medium">{apiCustomerData?.user?.CCCD}</p>
+                      <p className="font-medium">{apiCustomerData?.users?.[0]?.CCCD || memberData?.member?.identityCard}</p>
                     </div>
                   )}
 
-                  {memberData?.member?.phone && (
+                  {(memberData?.member?.phone || apiBookingData?.buyerPhone) && (
                     <div className="flex items-center justify-between">
                       <p className="text-gray-600 flex items-center gap-2">
                         <FaPhone /> Phone:
                       </p>
-                      <p className="font-medium">{apiBookingData?.buyerPhone}</p>
+                      <p className="font-medium">{apiBookingData?.buyerPhone || memberData?.member?.phone}</p>
                     </div>
                   )}
 
-                  {memberData?.member?.email && (
+                  {(memberData?.member?.email || apiCustomerData?.users?.[0]?.Email) && (
                     <div className="flex items-center justify-between">
                       <p className="text-gray-600 flex items-center gap-2">
                         <FaEnvelope /> Email:
                       </p>
-                      <p className="font-medium">{apiCustomerData?.user?.Email}</p>
+                      <p className="font-medium">{apiCustomerData?.users?.[0]?.Email || memberData?.member?.email}</p>
                     </div>
                   )}
 
-                  {memberData?.member?.score !== undefined && (
+                  {(memberData?.member?.score !== undefined || apiCustomerData?.users?.[0]?.ScoreBalance !== undefined) && (
                     <div className="flex items-center justify-between">
                       <p className="text-gray-600 flex items-center gap-2">
                         <FaStar /> Points:
                       </p>
-                      <p className="font-medium flex items-center gap-1 text-green-600"><FaFire /> {apiCustomerData?.user?.ScoreBalance}</p>
+                      <p className="font-medium flex items-center gap-1 text-green-600">
+                        <FaFire /> {apiCustomerData?.users?.[0]?.ScoreBalance || memberData?.member?.score || 0}
+                      </p>
                     </div>
                   )}
                 </div>

@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { getUser, logout } from "../services/API";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
+import { io } from "socket.io-client";
 
 export const AuthContext = createContext();
 
@@ -10,6 +11,7 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   // eslint-disable-next-line no-unused-vars
   const navigate = useNavigate();
+  const socketRef = useRef(null);
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -38,6 +40,32 @@ export const AuthProvider = ({ children }) => {
 
     initializeAuth();
   }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("userId");
+
+    if (token && userId) {
+      if (!socketRef.current) {
+        socketRef.current = io("http://localhost:4458");
+        socketRef.current.emit("join", userId);
+      }
+      socketRef.current.off("force-logout");
+      socketRef.current.on("force-logout", () => {
+        // Không dùng async/await ở đây, chỉ gọi signOut()
+        signOut();
+      });
+    }
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+    // Đừng để signOut trong dependency!
+    // eslint-disable-next-line
+  }, [user?.UserId]);
 
   const signIn = async (token, userId) => {
     localStorage.setItem("token", token);

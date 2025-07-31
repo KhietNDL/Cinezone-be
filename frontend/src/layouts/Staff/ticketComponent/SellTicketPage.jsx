@@ -7,6 +7,7 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "../component/SwiperButton.css";
 import { IoTime, IoSearchOutline } from "react-icons/io5";
+import { FaCouch } from "react-icons/fa6";
 import {
   getCurrentMovies,
   searchMovies,
@@ -35,6 +36,7 @@ import {
 import { MdEventSeat, MdCancel } from "react-icons/md";
 import MovieSwiper from "../component/MovieSwiper";
 import { CheckCircleOutlined } from "@ant-design/icons";
+// import ScrollTopButton from "../component/ScollTopButton";
 
 const SellTicketPage = () => {
   const dispatch = useDispatch();
@@ -204,164 +206,6 @@ const SellTicketPage = () => {
 
   return (
     <div className="min-h-screen ">
-      {/* Floating Progress Sidebar */}
-      <div className="fixed right-3 lg:right-6 lg:top-2/3 top-3/4 transform -translate-y-1/2 z-50 bg-white rounded-xl lg:rounded-2xl shadow-2xl p-2 lg:p-4 border border-gray-100">
-        <div className="flex flex-col gap-3 lg:gap-6">
-          {/* Step 1: Movie */}
-          <div
-            className={`relative flex flex-col items-center cursor-pointer transition-all duration-300 ${
-              getCurrentStep() >= 0 ? "opacity-100" : "opacity-50"
-            }`}
-            onClick={() => {
-              // Scroll to movie section
-              document
-                .querySelector('[data-step="movie"]')
-                ?.scrollIntoView({ behavior: "smooth" });
-            }}
-          >
-            <div
-              className={`w-8 h-8 lg:w-12 lg:h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
-                getCurrentStep() >= 0
-                  ? "bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg scale-110"
-                  : "bg-gray-200 text-gray-400"
-              } ${
-                getCurrentStep() === 0
-                  ? "ring-2 lg:ring-4 ring-purple-200 animate-pulse"
-                  : ""
-              }`}
-            >
-              <FaFilm className="text-sm lg:text-lg" />
-            </div>
-            <span
-              className={`mt-1 lg:mt-2 text-xs font-medium text-center hidden lg:block ${
-                getCurrentStep() >= 0 ? "text-gray-800" : "text-gray-400"
-              }`}
-            >
-              Movie
-            </span>
-            {getCurrentStep() > 0 && (
-              <div className="absolute -bottom-3 lg:-bottom-6 w-px h-3 lg:h-6 bg-gradient-to-b from-purple-500 to-purple-600"></div>
-            )}
-          </div>
-
-          {/* Step 2: Date */}
-          <div
-            className={`relative flex flex-col items-center cursor-pointer transition-all duration-300 ${
-              getCurrentStep() >= 1 ? "opacity-100" : "opacity-50"
-            }`}
-            onClick={() => {
-              if (selectedMovie) {
-                document
-                  .querySelector('[data-step="date"]')
-                  ?.scrollIntoView({ behavior: "smooth" });
-              }
-            }}
-          >
-            <div
-              className={`w-8 h-8 lg:w-12 lg:h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
-                getCurrentStep() >= 1
-                  ? "bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg scale-110"
-                  : "bg-gray-200 text-gray-400"
-              } ${
-                getCurrentStep() === 1
-                  ? "ring-2 lg:ring-4 ring-purple-200 animate-pulse"
-                  : ""
-              }`}
-            >
-              <FaCalendarDays className="text-sm lg:text-lg" />
-            </div>
-            <span
-              className={`mt-1 lg:mt-2 text-xs font-medium text-center hidden lg:block ${
-                getCurrentStep() >= 1 ? "text-gray-800" : "text-gray-400"
-              }`}
-            >
-              Date
-            </span>
-            {getCurrentStep() > 1 && (
-              <div className="absolute -bottom-3 lg:-bottom-6 w-px h-3 lg:h-6 bg-gradient-to-b from-purple-500 to-purple-600"></div>
-            )}
-          </div>
-
-          {/* Step 3: Time */}
-          <div
-            className={`relative flex flex-col items-center cursor-pointer transition-all duration-300 ${
-              getCurrentStep() >= 2 ? "opacity-100" : "opacity-50"
-            }`}
-            onClick={() => {
-              if (selectedMovie && selectedDay) {
-                document
-                  .querySelector('[data-step="time"]')
-                  ?.scrollIntoView({ behavior: "smooth" });
-              }
-            }}
-          >
-            <div
-              className={`w-8 h-8 lg:w-12 lg:h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
-                getCurrentStep() >= 2
-                  ? "bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg scale-110"
-                  : "bg-gray-200 text-gray-400"
-              } ${
-                getCurrentStep() === 2
-                  ? "ring-2 lg:ring-4 ring-purple-200 animate-pulse"
-                  : ""
-              }`}
-            >
-              <IoTime className="text-sm lg:text-lg" />
-            </div>
-            <span
-              className={`mt-1 lg:mt-2 text-xs font-medium text-center hidden lg:block ${
-                getCurrentStep() >= 2 ? "text-gray-800" : "text-gray-400"
-              }`}
-            >
-              Time
-            </span>
-            {getCurrentStep() > 2 && (
-              <div className="absolute -bottom-3 lg:-bottom-6 w-px h-3 lg:h-6 bg-gradient-to-b from-purple-500 to-purple-600"></div>
-            )}
-          </div>
-
-          {/* Step 4: Seats */}
-          <div
-            className={`flex flex-col items-center cursor-pointer transition-all duration-300 ${
-              getCurrentStep() >= 3 ? "opacity-100" : "opacity-50"
-            }`}
-            onClick={() => {
-              if (
-                selectedMovie &&
-                selectedDay &&
-                selectedTime &&
-                selectedVersion
-              ) {
-                document
-                  .querySelector('[data-step="seats"]')
-                  ?.scrollIntoView({ behavior: "smooth" });
-              }
-            }}
-          >
-            <div
-              className={`w-8 h-8 lg:w-12 lg:h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
-                getCurrentStep() >= 3
-                  ? "bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg scale-110"
-                  : "bg-gray-200 text-gray-400"
-              } ${
-                getCurrentStep() === 3
-                  ? "ring-2 lg:ring-4 ring-purple-200 animate-pulse"
-                  : ""
-              }`}
-            >
-              <MdEventSeat className="text-sm lg:text-lg" />
-            </div>
-            <span
-              className={`mt-1 lg:mt-2 text-xs font-medium text-center hidden lg:block ${
-                getCurrentStep() >= 3 ? "text-gray-800" : "text-gray-400"
-              }`}
-            >
-              Seats
-            </span>
-          </div>
-        </div>
-      </div>
-
       {/* Header Section */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 bg-white shadow-md rounded-lg">
         <div className="flex flex-col md:flex-row justify-between items-center gap-3 lg:gap-4">
@@ -400,6 +244,147 @@ const SellTicketPage = () => {
           </div>
         </div>
       </div>
+      {/* Floating Progress Sidebar */}
+      {/* <div className="fixed right-3 lg:right-6 lg:top-2/3 top-3/4 transform -translate-y-1/2 z-50 bg-white rounded-xl lg:rounded-2xl shadow-2xl p-2 lg:p-4 border border-gray-100"> */}
+      <div className="flex flex-row justify-center items-center gap-3 lg:gap-9 pt-6">
+        {/* Step 1: Movie */}
+        <div
+          className={`relative flex flex-col items-center cursor-pointer transition-all duration-300 ${getCurrentStep() >= 0 ? "opacity-100" : "opacity-50"
+            }`}
+          onClick={() => {
+            // Scroll to movie section
+            document
+              .querySelector('[data-step="movie"]')
+              ?.scrollIntoView({ behavior: "smooth" });
+          }}
+        >
+          <div
+            className={`w-8 h-8 lg:w-12 lg:h-12 rounded-full flex items-center justify-center transition-all duration-300 ${getCurrentStep() >= 0
+              ? "bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg scale-110"
+              : "bg-gray-200 text-gray-400"
+              } ${getCurrentStep() === 0
+                ? "ring-2 lg:ring-4 ring-purple-200 animate-pulse"
+                : ""
+              }`}
+          >
+            <FaFilm className="text-sm lg:text-lg" />
+          </div>
+          <span
+            className={`mt-1 lg:mt-2 text-xs font-medium text-center hidden lg:block ${getCurrentStep() >= 0 ? "text-gray-800" : "text-gray-400"
+              }`}
+          >
+            Movie
+          </span>
+          {getCurrentStep() > 0 && (
+            <div className="absolute left-13 top-2/6 -translate-y-1/2 h-px w-3 lg:w-6 bg-gradient-to-r from-purple-500 to-purple-600"></div>
+          )}
+        </div>
+
+        {/* Step 2: Date */}
+        <div
+          className={`relative flex flex-col items-center cursor-pointer transition-all duration-300 ${getCurrentStep() >= 1 ? "opacity-100" : "opacity-50"
+            }`}
+          onClick={() => {
+            if (selectedMovie) {
+              document
+                .querySelector('[data-step="date"]')
+                ?.scrollIntoView({ behavior: "smooth" });
+            }
+          }}
+        >
+          <div
+            className={`w-8 h-8 lg:w-12 lg:h-12 rounded-full flex items-center justify-center transition-all duration-300 ${getCurrentStep() >= 1
+              ? "bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg scale-110"
+              : "bg-gray-200 text-gray-400"
+              } ${getCurrentStep() === 1
+                ? "ring-2 lg:ring-4 ring-purple-200 animate-pulse"
+                : ""
+              }`}
+          >
+            <FaCalendarDays className="text-sm lg:text-lg" />
+          </div>
+          <span
+            className={`mt-1 lg:mt-2 text-xs font-medium text-center hidden lg:block ${getCurrentStep() >= 1 ? "text-gray-800" : "text-gray-400"
+              }`}
+          >
+            Date
+          </span>
+          {getCurrentStep() > 1 && (
+            <div className="absolute left-13 top-2/6 -translate-y-1/2 h-px w-3 lg:w-6 bg-gradient-to-r from-purple-500 to-purple-600"></div>
+          )}
+        </div>
+
+        {/* Step 3: Time */}
+        <div
+          className={`relative flex flex-col items-center cursor-pointer transition-all duration-300 ${getCurrentStep() >= 2 ? "opacity-100" : "opacity-50"
+            }`}
+          onClick={() => {
+            if (selectedMovie && selectedDay) {
+              document
+                .querySelector('[data-step="time"]')
+                ?.scrollIntoView({ behavior: "smooth" });
+            }
+          }}
+        >
+          <div
+            className={`w-8 h-8 lg:w-12 lg:h-12 rounded-full flex items-center justify-center transition-all duration-300 ${getCurrentStep() >= 2
+              ? "bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg scale-110"
+              : "bg-gray-200 text-gray-400"
+              } ${getCurrentStep() === 2
+                ? "ring-2 lg:ring-4 ring-purple-200 animate-pulse"
+                : ""
+              }`}
+          >
+            <IoTime className="text-sm lg:text-lg" />
+          </div>
+          <span
+            className={`mt-1 lg:mt-2 text-xs font-medium text-center hidden lg:block ${getCurrentStep() >= 2 ? "text-gray-800" : "text-gray-400"
+              }`}
+          >
+            Time
+          </span>
+          {getCurrentStep() > 2 && (
+            <div className="absolute left-13 top-2/6 -translate-y-1/2 h-px w-3 lg:w-6 bg-gradient-to-r from-purple-500 to-purple-600"></div>
+          )}
+        </div>
+
+        {/* Step 4: Seats */}
+        <div
+          className={`flex flex-col items-center cursor-pointer transition-all duration-300 ${getCurrentStep() >= 3 ? "opacity-100" : "opacity-50"
+            }`}
+          onClick={() => {
+            if (
+              selectedMovie &&
+              selectedDay &&
+              selectedTime &&
+              selectedVersion
+            ) {
+              document
+                .querySelector('[data-step="seats"]')
+                ?.scrollIntoView({ behavior: "smooth" });
+            }
+          }}
+        >
+          <div
+            className={`w-8 h-8 lg:w-12 lg:h-12 rounded-full flex items-center justify-center transition-all duration-300 ${getCurrentStep() >= 3
+              ? "bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg scale-110"
+              : "bg-gray-200 text-gray-400"
+              } ${getCurrentStep() === 3
+                ? "ring-2 lg:ring-4 ring-purple-200 animate-pulse"
+                : ""
+              }`}
+          >
+            <FaCouch className="text-sm lg:text-lg" />
+          </div>
+          <span
+            className={`mt-1 lg:mt-2 text-xs font-medium text-center hidden lg:block ${getCurrentStep() >= 3 ? "text-gray-800" : "text-gray-400"
+              }`}
+          >
+            Seats
+          </span>
+        </div>
+      </div>
+      {/* </div> */}
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto py-6">
@@ -515,22 +500,22 @@ const SellTicketPage = () => {
               </div>
             </div>
 
-            <div className="py-6">
+            <div className="p-6">
               <div>
                 {versionsAndTimes.map((ver) => (
-                  <VersionCard
-                    key={ver.version}
-                    version={ver.version}
-                    selectedVersion={selectedVersion}
-                  >
-                    <ShowtimeButton
-                      parentVersion={ver.version}
-                      selectedTime={selectedTime}
-                      onSelectTime={handleSelectTime}
-                      times={ver.showtimes}
-                      showTime
-                    />
-                  </VersionCard>
+                  // <VersionCard
+                  //   key={ver.version}
+                  //   version={ver.version}
+                  //   selectedVersion={selectedVersion}
+                  // >
+                  <ShowtimeButton
+                    parentVersion={ver.version}
+                    selectedTime={selectedTime}
+                    onSelectTime={handleSelectTime}
+                    times={ver.showtimes}
+                    showTime
+                  />
+                  // </VersionCard>
                 ))}
               </div>
             </div>
@@ -596,7 +581,7 @@ const SellTicketPage = () => {
           <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-6 border-b border-gray-100">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
-                <MdEventSeat className="text-white text-sm" />
+                <FaCouch className="text-white text-sm" />
               </div>
               <div>
                 <h2 className="text-xl font-bold text-gray-800">
@@ -624,7 +609,7 @@ const SellTicketPage = () => {
                     !selectedVersion ||
                     !selectedTime
                   }
-                  icon={<MdEventSeat className="text-base" />}
+                  icon={<FaCouch className="text-base" />}
                   className="w-full sm:w-auto px-6 py-2 h-auto font-medium bg-gradient-to-r from-purple-600 to-purple-700 border-0 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
                 >
                   Proceed to Seat Selection

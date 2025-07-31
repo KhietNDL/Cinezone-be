@@ -22,7 +22,10 @@ const StaffLayout = () => {
           onToggle={() => setIsSidebarOpen(false)}
         />
         <div className="overflow-y-auto h-full p-4 w-full lg:ml-0">
+          {/* Scroll to Top Button */}
+
           <Outlet />
+          
         </div>
       </div>
     </div>

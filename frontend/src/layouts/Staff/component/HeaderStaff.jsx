@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import logo from "../../../assets/logoWeb.svg";
+import logo from "../../../assets/logoWhite.png";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { FaCircleUser, FaXmark, FaBars } from "react-icons/fa6";
@@ -47,7 +47,7 @@ const HeaderStaff = ({ onToggleSidebar }) => {
   }, []);
 
   return (
-    <div className="flex w-full px-3 sm:px-6 py-2 sm:py-3 justify-between items-center bg-gradient-to-r from-slate-50 to-gray-50 shadow-md border-b border-gray-200">
+    <div className="flex w-full px-3 sm:px-6 py-2 sm:py-3 justify-between items-center bg-gradient-to-r from-[#6466F1] via-[#8B5CF6] to-[#4F46E5] shadow-md border-b border-gray-200">
       <div className="flex items-center">
         {/* Mobile menu button */}
         <button
@@ -55,7 +55,7 @@ const HeaderStaff = ({ onToggleSidebar }) => {
           className="lg:hidden p-1.5 sm:p-2 rounded-lg hover:bg-gray-200 mr-2 sm:mr-3"
           aria-label="Toggle sidebar"
         >
-          <FaBars size={18} className="text-gray-600 sm:text-xl" />
+          <FaBars size={18} className="text-white sm:text-xl" />
         </button>
 
         <div role="button" className="flex items-center group">
@@ -70,10 +70,10 @@ const HeaderStaff = ({ onToggleSidebar }) => {
             className="w-[80px] h-[40px] sm:w-[100px] sm:h-[50px] md:w-[140px] md:h-[70px] object-cover"
           />
           <div className="ml-2 sm:ml-4 hidden md:block">
-            <h1 className="text-lg sm:text-xl font-bold text-gray-800">
+            <h1 className="text-lg sm:text-xl font-bold text-white">
               Staff Portal
             </h1>
-            <p className="text-xs sm:text-sm text-gray-500">
+            <p className="text-xs sm:text-sm text-gray-300">
               Cinema Management System
             </p>
           </div>
@@ -129,8 +129,8 @@ const HeaderStaff = ({ onToggleSidebar }) => {
             </div>
 
             {isDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-full bg-white border border-gray-200 rounded-lg sm:rounded-xl shadow-xl z-10 overflow-hidden">
-                <div className="py-2">
+              <div className="absolute right-0 mt-2 lg:w-full md:w-[200px] w-[150px] bg-white border border-gray-200 rounded-lg sm:rounded-xl shadow-xl z-10 overflow-hidden">
+                <div className="">
                   <div className="px-3 sm:px-4 py-2 sm:py-3 border-b border-gray-100">
                     <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">
                       {user.fullName || user.FullName || "Staff"}
@@ -144,7 +144,7 @@ const HeaderStaff = ({ onToggleSidebar }) => {
                       setIsOpen(true);
                       setIsDropdownOpen(false);
                     }}
-                    className="w-full text-left px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 sm:gap-3 font-medium transition-colors duration-200"
+                    className="w-full text-left px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-red-600 rounded-lg hover:bg-red-100 flex items-center gap-2 sm:gap-3 font-medium transition-colors duration-200 cursor-pointer hover:text-red-700"
                   >
                     <MdOutlineLogout className="text-base sm:text-lg" />
                     <span>Sign Out</span>
