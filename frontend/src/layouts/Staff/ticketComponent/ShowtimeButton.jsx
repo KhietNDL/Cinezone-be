@@ -130,9 +130,8 @@ const ShowtimeButton = ({
                   const [hb, mb] = b.time.split(":").map(Number);
                   return ha * 60 + ma - (hb * 60 + mb);
                 })
-                .map((timeObj, index) => {
+                .map((timeObj) => {
                   const isSelected = selectedTime === timeObj.time;
-                  const isPeak = index % 3 === 0; // Example: every 3rd slot is peak time
 
                   return (
                     <Tooltip
@@ -164,16 +163,6 @@ const ShowtimeButton = ({
                             {timeObj.time}
                           </span>
                         </div>
-
-                        {isPeak && (
-                          <div
-                            className={`text-xs mb-1 font-medium ${
-                              isSelected ? "text-white" : "text-purple-400"
-                            }`}
-                          >
-                            Peak Time
-                          </div>
-                        )}
 
                         {timeObj.roomName && (
                           <div

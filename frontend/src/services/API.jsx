@@ -630,7 +630,7 @@ export const getPaymentHistory = async (memberId) => {
         Authorization: `Bearer ${token}`,
       },
       params: {
-        memberId,       
+        memberId,
         page: 1,
         limit: 10,
         sortBy: "CreatedAt",
@@ -646,9 +646,6 @@ export const getPaymentHistory = async (memberId) => {
     throw error;
   }
 };
-
-
-
 
 export const getMembership = async (userId) => {
   try {
@@ -864,6 +861,16 @@ export const getRevenueThisQuarter = async () => {
     handleError(error);
   }
 };
+
+export const getRevenueToday = async () => {
+  try {
+    const response = await api.get("/analytics/revenue/today");
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
 // API cho Rating
 export const createMovieRating = async ({ movieId, rating, comment }) => {
   try {

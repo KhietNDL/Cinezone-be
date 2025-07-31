@@ -13,7 +13,7 @@ const scoreHistoryRoutes = require("./routes/scorehistory");
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, { cors: { origin: '*' } });
+const io = socketIo(server, { cors: { origin: "*" } });
 
 global._io = io; // Gán vào global sau khi đã khởi tạo
 
@@ -38,6 +38,7 @@ const allowedOrigins = [
   "http://cinezone.info:4458",
   "http://cinezone.info",
   "http://localhost:4458",
+  "http://localhost:4173",
 ];
 
 app.use(
