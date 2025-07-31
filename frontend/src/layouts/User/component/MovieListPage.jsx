@@ -199,7 +199,7 @@ const MovieListPage = () => {
   };
 
   return (
-    <div className="pt-24 pb-15 px-4 min-h-screen bg-slate-900">
+    <div className="pt-24 pb-15 px-4 min-h-screenbg-gradient-to-b from-black via-gray-900 via-50% via-purple-950/50 to-slate-900">
       {/* Screen 3D Effect */}
       <div className="w-full mb-8 px-4">
         <div className="w-full h-[40px] relative overflow-hidden group">

@@ -13,11 +13,12 @@ const PromotionTable = ({
     const now = new Date();
     const start = new Date(startTime);
     const end = new Date(endTime);
+
     if (end < now)
       return { status: "Expired", class: "bg-rose-200 text-red-700" };
     if (start <= now && now <= end)
       return { status: "Active", class: "bg-green-100 text-green-700" };
-    return { status: "Upcoming", class: "bg-yellow-100 text-yellow-700" };
+    return { status: "Coming Soon", class: "bg-yellow-100 text-yellow-700" };
   };
 
   return (
@@ -27,6 +28,7 @@ const PromotionTable = ({
           <tr className="text-left text-slate-500 text-sm border-b border-slate-200">
             <th className="py-2 text-center w-[200px] shrink-0">Image</th>
             <th className="py-2 px-2 w-[200px] shrink-0">Promotion Name</th>
+            <th className="py-2 text-center w-[120px] shrink-0">Code</th>
             <th className="py-2 text-center w-[150px] shrink-0">Value</th>
             <th className="py-2 text-center w-[60px] md:w-[100px] shrink-0">
               Start Date
@@ -69,6 +71,11 @@ const PromotionTable = ({
                       {promotion.Detail}
                     </div>
                   </div>
+                </td>
+                <td className="py-2 text-center w-[120px] shrink-0">
+                  <span className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
+                    {promotion.Code}
+                  </span>
                 </td>
                 <td className="py-2 text-center w-[150px] shrink-0">
                   {promotion.DiscountValue

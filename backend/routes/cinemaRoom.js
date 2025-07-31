@@ -24,6 +24,8 @@ const { auth, isAdmin } = require('../middlewares/auth.middleware');
  *       type: object
  *       required:
  *         - Name
+ *         - Row
+ *         - Col
  *         - SeatQuantity
  *         - Type
  *       properties:
@@ -36,7 +38,17 @@ const { auth, isAdmin } = require('../middlewares/auth.middleware');
  *           description: The name of the cinema room
  *         SeatQuantity:
  *           type: integer
- *           description: Total number of seats in the room
+ *           description: Number of seats to create (must be 90-100% of Row×Col)
+ *         Row:
+ *           type: integer
+ *           minimum: 5
+ *           maximum: 20
+ *           description: Number of rows (5-20)
+ *         Col:
+ *           type: integer
+ *           minimum: 8
+ *           maximum: 20
+ *           description: Number of columns (8-20)
  *         Type:
  *           type: string
  *           description: Type of the cinema room (2D, 3D, IMAX, etc.)
@@ -210,8 +222,8 @@ router.get('/:id', auth, isAdmin, (req, res, next) => { console.log('Hit /:id ro
  * @swagger
  * /api/cinema-rooms/create:
  *   post:
- *     summary: Create new cinema room with automatic seat generation
- *     description: Add a new cinema room to the system and automatically generate seats based on the specified quantity. Seats are created in a grid pattern (A-J rows, 1-12 columns) with automatic type assignment (A-C=Normal, D-I=VIP, J=Couple).
+ *     summary: Create new cinema room with custom seat quantity
+ *     description: Add a new cinema room to the system and generate seats based on specified quantity. SeatQuantity must be between 90-100% of Row×Col. Seats are created optimally (center-out priority) with automatic type assignment (first 3 rows=Normal, last row=Couple, middle rows=VIP).
  *     tags: [Cinema Room Management]
  *     security:
  *       - bearerAuth: []
@@ -223,17 +235,28 @@ router.get('/:id', auth, isAdmin, (req, res, next) => { console.log('Hit /:id ro
  *             type: object
  *             required:
  *               - Name
+ *               - Row
+ *               - Col
  *               - SeatQuantity
  *               - Type
  *             properties:
  *               Name:
  *                 type: string
  *                 description: Name of the cinema room
+ *               Row:
+ *                 type: integer
+ *                 minimum: 5
+ *                 maximum: 20
+ *                 description: Number of rows (5-20, A-T)
+ *               Col:
+ *                 type: integer
+ *                 minimum: 8
+ *                 maximum: 20
+ *                 description: Number of columns (8-20)
  *               SeatQuantity:
  *                 type: integer
- *                 minimum: 1
- *                 maximum: 120
- *                 description: Total number of seats (max 120 - grid capacity 10 rows × 12 columns)
+ *                 description: Number of seats to create (must be 90-100% of Row×Col)
+ *                 example: 95
  *               Type:
  *                 type: string
  *                 description: Type of the cinema room (e.g. 2D, 3D, VIP, etc.)
@@ -249,11 +272,23 @@ router.get('/:id', auth, isAdmin, (req, res, next) => { console.log('Hit /:id ro
  *                   type: string
  *                 room:
  *                   $ref: '#/components/schemas/CinemaRoom'
- *                 seatsGenerated:
- *                   type: integer
- *                   description: Number of seats automatically generated
+ *                 layout:
+ *                   type: object
+ *                   properties:
+ *                     designedCapacity:
+ *                       type: integer
+ *                       description: Maximum possible seats (Row×Col)
+ *                     actualSeats:
+ *                       type: integer
+ *                       description: Number of seats actually created
+ *                     efficiency:
+ *                       type: string
+ *                       description: Seat utilization percentage
+ *                     minRequired:
+ *                       type: integer
+ *                       description: Minimum required seats (90% of capacity)
  *       400:
- *         description: Bad request (invalid input, duplicate name, or seat quantity exceeds limit)
+ *         description: Bad request (invalid input, seat quantity below 90%, or limits exceeded)
  *       401:
  *         description: Unauthorized - Authentication required
  *       403:
@@ -266,7 +301,7 @@ router.post('/create', auth, isAdmin, createCinemaRoom);
  * /api/cinema-rooms/update/{id}:
  *   put:
  *     summary: Update cinema room
- *     description: Modify information of an existing cinema room
+ *     description: Modify information of an existing cinema room. SeatQuantity must be between 90-100% of Row×Col.
  *     tags: [Cinema Room Management]
  *     security:
  *       - bearerAuth: []
@@ -284,13 +319,29 @@ router.post('/create', auth, isAdmin, createCinemaRoom);
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - Name
+ *               - Row
+ *               - Col
+ *               - SeatQuantity
+ *               - Type
  *             properties:
  *               Name:
  *                 type: string
  *                 description: New name for the cinema room
+ *               Row:
+ *                 type: integer
+ *                 minimum: 5
+ *                 maximum: 20
+ *                 description: Number of rows (5-20)
+ *               Col:
+ *                 type: integer
+ *                 minimum: 8
+ *                 maximum: 20
+ *                 description: Number of columns (8-20)
  *               SeatQuantity:
  *                 type: integer
- *                 description: Updated total number of seats
+ *                 description: Number of seats (must be 90-100% of Row×Col)
  *               Type:
  *                 type: string
  *                 description: Updated type of the cinema room
@@ -301,6 +352,8 @@ router.post('/create', auth, isAdmin, createCinemaRoom);
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/CinemaRoom'
+ *       400:
+ *         description: Bad request (invalid input or seat quantity validation failed)
  *       404:
  *         description: Cinema room not found
  *       401:

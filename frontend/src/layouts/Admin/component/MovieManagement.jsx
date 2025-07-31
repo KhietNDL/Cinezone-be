@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   createMovie,
   getMovies,
@@ -10,7 +10,6 @@ import {
   getCinemaRooms,
 } from "../../../services/API";
 import { BiSolidCameraMovie } from "react-icons/bi";
-import debounce from "lodash/debounce";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import HeaderStats from "../movieComponent/HeaderStats";
@@ -55,23 +54,27 @@ const MovieManagement = () => {
   const [genres, setGenres] = useState("");
   const [contentSynopsis, setContentSynopsis] = useState("");
   const [posterImage, setPosterImage] = useState(null);
+  const [posterImageHorizontal, setPosterImageHorizontal] = useState(null);
   const [trailerUrl, setTrailerUrl] = useState(null);
   const [posterFileName, setPosterFileName] = useState("");
+  const [posterHorizontalFileName, setPosterHorizontalFileName] = useState("");
   const [trailerFileName, setTrailerFileName] = useState("");
   const [upcomingMovies, setUpcomingMovies] = useState([]);
   const [posterPreview, setPosterPreview] = useState(null);
+  const [posterHorizontalPreview, setPosterHorizontalPreview] = useState(null);
   const [trailerPreview, setTrailerPreview] = useState(null);
   const [versions, setVersions] = useState([{ VersionType: "", Language: "" }]);
   const [iframeUrl, setIframeUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const posterUploadRef = useRef(null);
+  const posterHorizontalUploadRef = useRef(null);
   const trailerUploadRef = useRef(null);
   const [cinemaRooms, setCinemaRooms] = useState([]);
   const [selectedRoomId, setSelectedRoomId] = useState("");
   const [showtimeDate, setShowtimeDate] = useState("");
   const [showtimeTimes, setShowtimeTimes] = useState([""]);
 
-  const getMovieData = async () => {
+  const getMovieData = useCallback(async () => {
     try {
       const response = await getMovies({
         page: currentPage,
@@ -80,16 +83,21 @@ const MovieManagement = () => {
         sortOrder,
       });
       if (response.data) {
-        setMovies(response.data);
+        const moviesArray = Array.isArray(response.data) ? response.data : [];
+        setMovies(moviesArray);
+
         if (response.pagination) {
           setTotalPages(response.pagination.totalPages);
           setTotalMovies(response.pagination.total);
         }
+      } else {
+        setMovies([]);
       }
     } catch (error) {
       console.error("Error fetching movies:", error);
+      setMovies([]);
     }
-  };
+  }, [currentPage, itemsPerPage, sortBy, sortOrder]);
 
   const handleSort = (column) => {
     if (sortBy === column) {
@@ -101,21 +109,24 @@ const MovieManagement = () => {
     setCurrentPage(1);
   };
 
-  const getUpcomingMovie = async () => {
+  const getUpcomingMovie = useCallback(async () => {
     try {
       const response = await getUpcomingMovies({
         limit: itemsPerPage,
         page: currentPage,
       });
       if (response.data) {
-        setUpcomingMovies(response.data);
+        setUpcomingMovies(Array.isArray(response.data) ? response.data : []);
+      } else {
+        setUpcomingMovies([]);
       }
     } catch (error) {
       console.error("Error fetching upcoming movies:", error);
+      setUpcomingMovies([]);
     }
-  };
+  }, [itemsPerPage, currentPage]);
 
-  const fetchCinemaRooms = async () => {
+  const fetchCinemaRooms = useCallback(async () => {
     try {
       const response = await getCinemaRooms();
       if (response.data) {
@@ -124,38 +135,89 @@ const MovieManagement = () => {
     } catch (error) {
       console.error("Error fetching cinema rooms:", error);
     }
-  };
+  }, []);
 
-  useEffect(() => {
-    getMovieData();
-    getUpcomingMovie();
-    fetchCinemaRooms();
-  }, [currentPage, sortBy, sortOrder]);
+  const searchMovieData = useCallback(
+    async (searchTerm) => {
+      if (!searchTerm.trim()) {
+        getMovieData();
+        return;
+      }
 
+      try {
+        const response = await searchMovies({
+          name: searchTerm,
+          page: currentPage,
+          limit: itemsPerPage,
+          sortBy: sortBy,
+          sortOrder: sortOrder,
+        });
+
+        // Backend search now returns paginated structure
+        let moviesData = [];
+        let totalPagesData = 1;
+        let totalMoviesData = 0;
+
+        if (response.data && response.data.movies) {
+          moviesData = response.data.movies;
+          // Check if backend returned pagination info
+          if (response.data.pagination) {
+            totalPagesData = response.data.pagination.totalPages;
+            totalMoviesData = response.data.pagination.total;
+          } else {
+            // Fallback to simple calculation
+            totalMoviesData = moviesData.length;
+            totalPagesData = Math.ceil(totalMoviesData / itemsPerPage);
+          }
+        }
+
+        setMovies(moviesData);
+        setTotalPages(totalPagesData);
+        setTotalMovies(totalMoviesData);
+      } catch (error) {
+        console.error("Error searching movies:", error);
+        setMovies([]);
+        setTotalPages(0);
+        setTotalMovies(0);
+      }
+    },
+    [currentPage, itemsPerPage, getMovieData, sortBy, sortOrder]
+  );
+  // Load initial data when component mounts
   useEffect(() => {
-    setCurrentPage(1);
-    debouncedSearchMovieData(searchMovie);
+    if (!searchMovie.trim()) {
+      getMovieData();
+      getUpcomingMovie();
+      fetchCinemaRooms();
+    }
+  }, [getMovieData, getUpcomingMovie, fetchCinemaRooms, searchMovie]);
+
+  // Effect riêng cho searchMovie để reset về trang 1
+  useEffect(() => {
+    if (searchMovie !== "") {
+      setCurrentPage(1); // Reset về trang 1 khi có search term mới
+    }
   }, [searchMovie]);
 
-  const searchMovieData = async (searchTerm) => {
-    if (!searchTerm.trim()) {
-      getMovieData();
-      return;
-    }
-    try {
-      const response = await searchMovies({ name: searchTerm });
-      if (response.data.data) {
-        const normalizedMovies = response.data.data;
-        setMovies(normalizedMovies);
-        setTotalPages(response.data.totalPages);
+  // useEffect với debounce cho search
+  useEffect(() => {
+    const searchTimeout = setTimeout(() => {
+      if (searchMovie.trim()) {
+        searchMovieData(searchMovie);
+      } else {
+        getMovieData();
       }
-    } catch (error) {
-      console.error("Error searching movies:", error);
-      setMovies([]);
-      setTotalPages(0);
-    }
-  };
-  const debouncedSearchMovieData = debounce(searchMovieData, 500);
+    }, 300);
+
+    return () => clearTimeout(searchTimeout);
+  }, [
+    searchMovie,
+    currentPage,
+    sortBy,
+    sortOrder,
+    searchMovieData,
+    getMovieData,
+  ]);
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
@@ -220,7 +282,10 @@ const MovieManagement = () => {
   const handleFileChange = (field, e) => {
     const file = e.target.files[0];
     if (file) {
-      if (field === "PosterImage" && file.size > 10 * 1024 * 1024) {
+      if (
+        (field === "PosterImage" || field === "PosterImageHorizontal") &&
+        file.size > 10 * 1024 * 1024
+      ) {
         alert("Poster image must be less than 10MB");
         return;
       }
@@ -232,6 +297,10 @@ const MovieManagement = () => {
         setPosterImage(file);
         setPosterFileName(file.name);
         setPosterPreview(URL.createObjectURL(file));
+      } else if (field === "PosterImageHorizontal") {
+        setPosterImageHorizontal(file);
+        setPosterHorizontalFileName(file.name);
+        setPosterHorizontalPreview(URL.createObjectURL(file));
       } else if (field === "TrailerUrl") {
         setTrailerUrl(file);
         setTrailerFileName(file.name);
@@ -253,6 +322,10 @@ const MovieManagement = () => {
       { value: genres, name: "Genres" },
       { value: contentSynopsis, name: "Content" },
       { value: posterImage || posterFileName, name: "Poster Image" },
+      {
+        value: posterImageHorizontal || posterHorizontalFileName,
+        name: "Horizontal Poster Image",
+      },
       { value: trailerUrl || trailerFileName, name: "Trailer URL" },
       { value: iframeUrl, name: "Trailer Iframe URL" },
     ];
@@ -340,7 +413,26 @@ const MovieManagement = () => {
       movieData.append("IframeUrl", iframeUrl.trim());
       movieData.append("versions", JSON.stringify(versions));
       if (posterImage) movieData.append("poster", posterImage);
+      else if (posterFileName && !posterImage)
+        movieData.append("poster", posterFileName);
+      if (posterImageHorizontal)
+        movieData.append("posterHorizontal", posterImageHorizontal);
+      else if (posterHorizontalFileName && !posterImageHorizontal)
+        movieData.append("posterHorizontal", posterHorizontalFileName);
       if (trailerUrl) movieData.append("trailer", trailerUrl);
+      else if (trailerFileName && !trailerUrl)
+        movieData.append("trailer", trailerFileName);
+
+      // Debug log
+      console.log("FormData contents:", {
+        posterImage: !!posterImage,
+        posterFileName,
+        posterImageHorizontal: !!posterImageHorizontal,
+        posterHorizontalFileName,
+        trailerUrl: !!trailerUrl,
+        trailerFileName,
+      });
+
       const newMovie = await createMovie(movieData);
       setMovies((prev) => [...prev, newMovie]);
       getMovieData();
@@ -397,12 +489,20 @@ const MovieManagement = () => {
     }
     setVersions(loadedVersions);
     setPosterFileName(movie.PosterImage || "");
+    setPosterHorizontalFileName(movie.PosterImageHorizontal || "");
     setTrailerFileName(movie.TrailerUrl || "");
     setPosterImage(null);
+    setPosterImageHorizontal(null);
     setTrailerUrl(null);
     setPosterPreview(
       movie.PosterImage && movie.PosterImage.startsWith("http")
         ? movie.PosterImage
+        : null
+    );
+    setPosterHorizontalPreview(
+      movie.PosterImageHorizontal &&
+        movie.PosterImageHorizontal.startsWith("http")
+        ? movie.PosterImageHorizontal
         : null
     );
     setTrailerPreview(
@@ -434,6 +534,10 @@ const MovieManagement = () => {
       if (posterImage) movieData.append("poster", posterImage);
       else if (posterFileName && !posterImage)
         movieData.append("poster", posterFileName);
+      if (posterImageHorizontal)
+        movieData.append("posterHorizontal", posterImageHorizontal);
+      else if (posterHorizontalFileName && !posterImageHorizontal)
+        movieData.append("posterHorizontal", posterHorizontalFileName);
       if (trailerUrl) movieData.append("trailer", trailerUrl);
       else if (trailerFileName && !trailerUrl)
         movieData.append("trailer", trailerFileName);
@@ -486,10 +590,13 @@ const MovieManagement = () => {
     setGenres("");
     setContentSynopsis("");
     setPosterImage(null);
+    setPosterImageHorizontal(null);
     setTrailerUrl(null);
     setPosterFileName("");
+    setPosterHorizontalFileName("");
     setTrailerFileName("");
     setPosterPreview(null);
+    setPosterHorizontalPreview(null);
     setTrailerPreview(null);
     setVersions([{ VersionType: "", Language: "" }]);
     setIframeUrl("");
@@ -656,8 +763,8 @@ const MovieManagement = () => {
         <div className="w-[90%] md:w-[95%] lg:w-[95%] max-w-7xl space-y-4">
           <HeaderStats
             totalMovies={totalMovies}
-            upcomingMovies={upcomingMovies}
-            movies={movies}
+            upcomingMovies={Array.isArray(upcomingMovies) ? upcomingMovies : []}
+            movies={Array.isArray(movies) ? movies : []}
           />
           <SearchAndAdd
             searchMovie={searchMovie}
@@ -668,7 +775,7 @@ const MovieManagement = () => {
           <div className="bg-white rounded-md shadow-sm">
             <div className="hidden sm:block">
               <MovieTable
-                movies={movies}
+                movies={Array.isArray(movies) ? movies : []}
                 handleSort={handleSort}
                 sortBy={sortBy}
                 sortOrder={sortOrder}
@@ -680,133 +787,152 @@ const MovieManagement = () => {
               />
             </div>
             <div className="block sm:hidden space-y-4">
-              {movies.map((movie) => {
-                const now = new Date();
-                const start = new Date(movie.FromDate);
-                const end = new Date(movie.ToDate);
-                const status =
-                  end < now ? "Expired" : start <= now ? "Active" : "Upcoming";
-                const statusClass =
-                  status === "Expired"
-                    ? "bg-rose-200 text-red-700"
-                    : status === "Active"
-                    ? "bg-green-100 text-green-700"
-                    : "bg-yellow-100 text-yellow-700";
+              {Array.isArray(movies) && movies.length > 0 ? (
+                movies.map((movie) => {
+                  const now = new Date();
+                  const start = new Date(movie.FromDate);
+                  const end = new Date(movie.ToDate);
+                  const status =
+                    end < now
+                      ? "Expired"
+                      : start <= now
+                      ? "Active"
+                      : "Upcoming";
+                  const statusClass =
+                    status === "Expired"
+                      ? "bg-rose-200 text-red-700"
+                      : status === "Active"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-yellow-100 text-yellow-700";
 
-                return (
-                  <article
-                    key={movie.MovieId}
-                    className="bg-white p-4 rounded-lg shadow-sm border border-slate-200"
-                    onClick={(e) => handleRowClick(movie, e)}
-                  >
-                    <div className="flex items-center gap-4 w-full">
-                      {movie.PosterImage ? (
-                        <img
-                          src={movie.PosterImage}
-                          alt={movie.NameOfEnglish}
-                          className="w-20 h-20 object-cover rounded"
-                        />
-                      ) : (
-                        <span className="text-gray-400 italic">No image</span>
-                      )}
-                      <div className="flex-1 w-[200px]">
-                        <h3 className="text-sm font-semibold text-gray-900 break-words">
-                          {movie.NameOfEnglish}
-                        </h3>
-                        <p className="text-xs text-gray-500 break-words">
-                          {movie.NameOfVietnamese}
+                  return (
+                    <article
+                      key={movie.MovieId}
+                      className="bg-white p-4 rounded-lg shadow-sm border border-slate-200"
+                      onClick={(e) => handleRowClick(movie, e)}
+                    >
+                      <div className="flex items-center gap-4 w-full">
+                        {movie.PosterImage ? (
+                          <img
+                            src={movie.PosterImage}
+                            alt={movie.NameOfEnglish}
+                            className="w-20 h-20 object-cover rounded"
+                          />
+                        ) : (
+                          <span className="text-gray-400 italic">No image</span>
+                        )}
+                        <div className="flex-1 w-[200px]">
+                          <h3 className="text-sm font-semibold text-gray-900 break-words">
+                            {movie.NameOfEnglish}
+                          </h3>
+                          <p className="text-xs text-gray-500 break-words">
+                            {movie.NameOfVietnamese}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-4 text-xs grid grid-cols-2 space-x-2 space-y-4 text-gray-700">
+                        <p>
+                          <strong>Duration:</strong> {movie.RunningTime} mins
+                        </p>
+                        <p>
+                          <strong>Start:</strong> {formatDate(movie.FromDate)}
+                        </p>
+                        <p>
+                          <strong>End:</strong> {formatDate(movie.ToDate)}
+                        </p>
+                        <p>
+                          <strong>Status:</strong>{" "}
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs ${statusClass}`}
+                          >
+                            {status}
+                          </span>
+                        </p>
+                        <p className="col-span-2">
+                          <strong>Version:</strong>{" "}
+                          {Array.isArray(movie.versions) &&
+                          movie.versions.length > 0
+                            ? movie.versions.map((v, idx) => (
+                                <span key={idx}>
+                                  {v.VersionType}
+                                  {v.Language ? ` - ${v.Language}` : ""}
+                                  {idx < movie.versions.length - 1 ? ", " : ""}
+                                </span>
+                              ))
+                            : "N/A"}
                         </p>
                       </div>
-                    </div>
-                    <div className="mt-4 text-xs grid grid-cols-2 space-x-2 space-y-4 text-gray-700">
-                      <p>
-                        <strong>Duration:</strong> {movie.RunningTime} mins
-                      </p>
-                      <p>
-                        <strong>Start:</strong> {formatDate(movie.FromDate)}
-                      </p>
-                      <p>
-                        <strong>End:</strong> {formatDate(movie.ToDate)}
-                      </p>
-                      <p>
-                        <strong>Status:</strong>{" "}
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs ${statusClass}`}
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRowClick(movie, e);
+                          }}
+                          className="text-blue-500 hover:text-blue-700"
+                          aria-label="View movie"
                         >
-                          {status}
-                        </span>
-                      </p>
-                      <p className="col-span-2">
-                        <strong>Version:</strong>{" "}
-                        {Array.isArray(movie.versions) &&
-                        movie.versions.length > 0
-                          ? movie.versions.map((v, idx) => (
-                              <span key={idx}>
-                                {v.VersionType}
-                                {v.Language ? ` - ${v.Language}` : ""}
-                                {idx < movie.versions.length - 1 ? ", " : ""}
-                              </span>
-                            ))
-                          : "N/A"}
-                      </p>
-                    </div>
-                    <div className="flex gap-2 mt-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRowClick(movie, e);
-                        }}
-                        className="text-blue-500 hover:text-blue-700"
-                        aria-label="View movie"
-                      >
-                        <IoEyeOutline size={16} />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(movie);
-                        }}
-                        className="text-blue-500 hover:text-blue-700"
-                        aria-label="Edit movie"
-                      >
-                        <FaRegEdit size={16} />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(movie);
-                        }}
-                        className="text-red-400 hover:text-red-600"
-                        aria-label="Delete movie"
-                      >
-                        <RiDeleteBin5Line size={16} />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openAddShowtimePopup(movie);
-                        }}
-                        className="text-green-500 hover:text-green-700"
-                        aria-label="Add showtime"
-                      >
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
+                          <IoEyeOutline size={16} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(movie);
+                          }}
+                          className="text-blue-500 hover:text-blue-700"
+                          aria-label="Edit movie"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 4v16m8-8H4"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  </article>
-                );
-              })}
+                          <FaRegEdit size={16} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(movie);
+                          }}
+                          className="text-red-400 hover:text-red-600"
+                          aria-label="Delete movie"
+                        >
+                          <RiDeleteBin5Line size={16} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openAddShowtimePopup(movie);
+                          }}
+                          className="text-green-500 hover:text-green-700"
+                          aria-label="Add showtime"
+                        >
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 4v16m8-8H4"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <div className="text-lg font-semibold mb-2">
+                    {searchMovie.trim()
+                      ? "No movies found for your search"
+                      : "No movies found"}
+                  </div>
+                  <p className="text-sm">
+                    {searchMovie.trim()
+                      ? `Try searching with different terms or add new movies.`
+                      : "Try adjusting your search criteria or add new movies."}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
           <Pagination
@@ -830,10 +956,12 @@ const MovieManagement = () => {
             genres={genres}
             contentSynopsis={contentSynopsis}
             posterPreview={posterPreview}
+            posterHorizontalPreview={posterHorizontalPreview}
             trailerPreview={trailerPreview}
             versions={versions}
             iframeUrl={iframeUrl}
             posterUploadRef={posterUploadRef}
+            posterHorizontalUploadRef={posterHorizontalUploadRef}
             trailerUploadRef={trailerUploadRef}
             handleInputChange={handleInputChange}
             handleVersionChange={handleVersionChange}
@@ -844,6 +972,8 @@ const MovieManagement = () => {
             handleEditMovie={handleEditMovie}
             setPosterFileName={setPosterFileName}
             setPosterPreview={setPosterPreview}
+            setPosterHorizontalFileName={setPosterHorizontalFileName}
+            setPosterHorizontalPreview={setPosterHorizontalPreview}
             setTrailerFileName={setTrailerFileName}
             setTrailerPreview={setTrailerPreview}
             loading={loading}
@@ -967,7 +1097,7 @@ const MovieManagement = () => {
 
                   {/* Duration Display */}
                   <div className="group">
-                    <label className="block text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                    <label className="flex text-lg font-semibold text-gray-800 mb-3 items-center">
                       <svg
                         className="w-5 h-5 mr-2 text-purple-600"
                         fill="none"
@@ -1012,7 +1142,7 @@ const MovieManagement = () => {
 
                   {/* Cinema Room Selection */}
                   <div className="group">
-                    <label className="block text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                    <label className="flex text-lg font-semibold text-gray-800 mb-3 items-center">
                       <svg
                         className="w-5 h-5 mr-2 text-purple-600"
                         fill="none"
@@ -1169,7 +1299,7 @@ const MovieManagement = () => {
                 />
               </svg>
               <div className="font-semibold text-base sm:text-lg text-indigo-700">
-                Đang xử lý, vui lòng chờ...
+                {loading ? "Đang xử lý, vui lòng chờ..." : "Đang tìm kiếm..."}
               </div>
             </div>
           </div>

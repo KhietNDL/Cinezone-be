@@ -1,29 +1,34 @@
-import React, { useState } from "react";
+import React from "react";
 import { NavLink } from "react-router-dom";
-import { PiPopcornDuotone } from "react-icons/pi";
 import { BsQrCodeScan } from "react-icons/bs";
-import { FaBars } from "react-icons/fa6";
+import { MdLocalMovies, MdDashboard } from "react-icons/md";
+import { IoTicketOutline, IoFastFoodOutline } from "react-icons/io5";
+import { FaTimes } from "react-icons/fa";
 
-const SidebarStaff = () => {
-  const [open, setOpen] = useState(false);
-
+const SidebarStaff = ({ isOpen, onToggle }) => {
   const menu = [
     {
-      label: "Movie",
-      icon: <i className="fa-solid fa-film"></i>,
+      label: "Dashboard",
+      icon: <MdDashboard />,
+      to: "/staff",
+      end: true, // Thêm thuộc tính này để chỉ active khi đúng chính xác route
+    },
+    {
+      label: "Movies",
+      icon: <MdLocalMovies />,
       to: "/staff/movie",
     },
     {
-      label: "Ticket Selling",
-      icon: <i className="fa-solid fa-ticket"></i>,
+      label: "Ticket Sales",
+      icon: <IoTicketOutline />,
       to: "/staff/ticket-selling",
     },
     {
-      label: "Combo Food",
-      icon: <PiPopcornDuotone />,
+      label: "Food & Combos",
+      icon: <IoFastFoodOutline />,
       to: "/staff/combo-selling",
     },
-     {
+    {
       label: "Check-in",
       icon: <BsQrCodeScan />,
       to: "/staff/check-in",
@@ -32,58 +37,53 @@ const SidebarStaff = () => {
 
   return (
     <>
-      {/* Nút mở sidebar trên mobile */}
-      <button
-        className="block md:hidden fixed top-25 left-4 z-50 bg-purple-600 text-white p-2 rounded"
-        onClick={() => setOpen(true)}
-        aria-label="Open sidebar"
-      >
-        <FaBars size={24} />
-      </button>
-      {/* Overlay khi mở sidebar trên mobile */}
-      {open && (
+      {/* Overlay for mobile and tablet */}
+      {isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-40 z-40 md:hidden"
-          onClick={() => setOpen(false)}
+          className="fixed inset-0 bg-black/40 bg-opacity-50 z-40 md:bg-black/20 lg:hidden"
+          onClick={onToggle}
         />
       )}
+
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 h-full w-[200px] border-r border-gray-200 bg-white
-           rounded-r-[10px] shadow-md z-50 transform transition-transform duration-300
-        ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 md:static md:block`}
+        className={`fixed top-0 shrink-0 left-0 h-full bg-white shadow-lg z-50 w-[260px] md:w-[308px] transform transition-transform duration-300 ease-in-out
+          ${
+            isOpen ? "translate-x-0" : "-translate-x-full"
+          } lg:translate-x-0 lg:static lg:block`}
       >
-        {/* Nút đóng sidebar trên mobile */}
-        <div className="flex justify-end md:hidden p-2">
+        {/* Close button for mobile and tablet */}
+        <div className="flex justify-end p-4 md:p-6 lg:hidden">
           <button
-            className="text-purple-600 text-2xl"
-            onClick={() => setOpen(false)}
-            aria-label="Close sidebar"
+            onClick={onToggle}
+            className="p-2 md:p-3 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
           >
-            &times;
+            <FaTimes size={20} className="md:w-6 md:h-6" />
           </button>
         </div>
-        <div className="flex flex-col gap-2 p-4">
-          <div className="flex flex-col items-center">
-            <h1 className="text-[20px] font-bold text-purple-600">Hello Staff!</h1>
-            <p className="text-[14px] text-gray-500">Manage your cinema</p>
-          </div>
-          {menu.map((item) => (
-            <NavLink
-              to={item.to}
-              key={item.label}
-              className={({ isActive }) =>
-                `text-[16px] p-2 rounded flex items-center transition-colors ${
-                  isActive
-                    ? "bg-purple-100 text-purple-600"
-                    : "text-gray-800 hover:bg-gray-100"
-                }`
-              }
-              onClick={() => setOpen(false)} 
-            >
-              <div className="mr-2">{item.icon}</div> {item.label}
-            </NavLink>
-          ))}
+
+        {/* Navigation Menu */}
+        <div className="p-4 md:p-6 pt-0 lg:pt-4 md:lg:pt-6">
+          <nav className="space-y-2 md:space-y-3">
+            {menu.map((item) => (
+              <NavLink
+                to={item.to}
+                end={item.end} // Sử dụng thuộc tính end nếu có
+                key={item.label}
+                className={({ isActive }) =>
+                  `flex items-center space-x-3 md:space-x-4 px-4 md:px-6 py-3 md:py-4 rounded-lg transition-all duration-200 ${
+                    isActive
+                      ? "bg-purple-100 text-purple-700 border-l-4 border-purple-600"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`
+                }
+                onClick={() => onToggle && onToggle()}
+              >
+                <span className="text-lg md:text-xl">{item.icon}</span>
+                <span className="font-medium md:text-lg">{item.label}</span>
+              </NavLink>
+            ))}
+          </nav>
         </div>
       </div>
     </>

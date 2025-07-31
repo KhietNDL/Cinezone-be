@@ -100,7 +100,7 @@ export function BlogList({
             />
           </div>
           <span className="text-white font-medium group-hover:text-[#6a57f5] transition-colors duration-300">
-            Back to Home
+            Back 
           </span>
         </button>
 

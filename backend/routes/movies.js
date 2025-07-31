@@ -12,6 +12,7 @@ const {
   patchMovie,
   getCurrentMovies,
   getUpcomingMovies,
+  getTopMoviesByRatingOrImdb // Thêm controller mới
 } = require('../controllers/movie.controller');
 const { auth, isAdmin } = require('../middlewares/auth.middleware');
 const { validateMovie, validatePatchMovie } = require('../middlewares/movie.validator');
@@ -218,6 +219,34 @@ router.get('/current', getCurrentMovies);
  *         description: Server error
  */
 router.get('/upcoming', getUpcomingMovies);
+
+/**
+ * @swagger
+ * /api/movie/top:
+ *   get:
+ *     summary: Get top movies by rating or imdb
+ *     tags: [Movies]
+ *     parameters:
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [rating, imdb]
+ *           default: rating
+ *         description: "Type of ranking (rating: internal, imdb: external)"
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: "Number of top movies to return (max 50)"
+ *     responses:
+ *       200:
+ *         description: Top movies by rating or imdb
+ *       500:
+ *         description: Server error
+ */
+router.get('/top', getTopMoviesByRatingOrImdb);
 
 /**
  * @swagger

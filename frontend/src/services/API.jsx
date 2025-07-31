@@ -33,28 +33,66 @@ const handleError = (error) => {
     request: error.request,
   });
 
-  let errorMessage = error.message || "Unknown error";
+  // Nếu có response từ server
   if (error.response) {
-    // Try to parse response data
-    if (typeof error.response.data === "string") {
-      // Handle HTML or plain text responses
-      if (error.response.data.includes("MulterError: Unexpected field")) {
-        errorMessage =
-          "Invalid file field names. Please check poster and trailer fields.";
-      } else {
-        errorMessage = "Server returned an unexpected response";
-      }
-    } else if (error.response.data?.message) {
-      errorMessage = error.response.data.message;
-    } else if (error.response.data?.errors) {
-      // Preserve backend validation errors
-      throw error.response.data; // Pass through for handleCreateMovie to process
-    }
-  } else if (error.request) {
-    errorMessage = "No response from server";
-  }
+    const { status, data } = error.response;
 
-  throw new Error(errorMessage);
+    // Xử lý validation errors từ backend
+    if (data.errors && Array.isArray(data.errors)) {
+      throw error.response.data; // Pass through validation errors
+    }
+
+    // Xử lý error message từ backend
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
+    // Xử lý message từ backend
+    if (data.message) {
+      throw new Error(data.message);
+    }
+
+    // Xử lý HTML hoặc plain text responses
+    if (typeof data === "string") {
+      if (data.includes("MulterError: Unexpected field")) {
+        throw new Error(
+          "Invalid file field names. Please check poster and trailer fields."
+        );
+      } else {
+        throw new Error("Server returned an unexpected response");
+      }
+    }
+
+    // Xử lý theo status code
+    switch (status) {
+      case 400:
+        throw new Error("Bad request. Please check your input.");
+      case 401:
+        throw new Error("Unauthorized. Please login again.");
+      case 403:
+        throw new Error(
+          "Forbidden. You don't have permission to access this resource."
+        );
+      case 404:
+        throw new Error("Resource not found.");
+      case 409:
+        throw new Error("Conflict. The resource already exists.");
+      case 422:
+        throw new Error("Validation failed. Please check your input.");
+      case 500:
+        throw new Error("Internal server error. Please try again later.");
+      default:
+        throw new Error(`Server error (${status}). Please try again.`);
+    }
+  }
+  // Network error - không có response từ server
+  else if (error.request) {
+    throw new Error("No response from server. Please check your connection.");
+  }
+  // Other errors
+  else {
+    throw new Error(error.message || "Unknown error occurred.");
+  }
 };
 
 // API cho Auth
@@ -187,14 +225,21 @@ export const updatePromotion = async (id, formData) => {
     handleError(error);
   }
 };
-export const searchPromotion = async (code) => {
+export const searchPromotion = async (code, params = {}) => {
   try {
+    const searchParams = {
+      code,
+      ...params, // Thêm các tham số pagination
+    };
+
     const response = await api.get("/promotions/search", {
-      params: { code },
+      params: searchParams,
     });
     return response.data;
   } catch (error) {
+    console.error("Lỗi khi tìm kiếm promotion:", error);
     handleError(error);
+    throw error;
   }
 };
 // API cho Movie
@@ -262,7 +307,12 @@ export const deleteMovie = async (movieId) => {
   }
 };
 export const searchMovies = async (params) => {
-  return api.get("/movie/search", { params });
+  try {
+    const response = await api.get("/movie/search", { params });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
 };
 
 // API cho Employee
@@ -307,13 +357,13 @@ export const updateEmployee = async (userId, employeeData) => {
     handleError(error);
   }
 };
-export const searchEmployees = async (name) => {
+export const searchEmployeesByInfo = async (searchInfo, params = {}) => {
   try {
-    if (!name || typeof name !== "string" || name.trim() === "") {
-      throw new Error("Name is required and must be a non-empty string");
-    }
-    const response = await api.get(`/employee/searchByName`, {
-      params: { name: name.trim() },
+    const response = await api.get(`/employee/search/info`, {
+      params: {
+        ...searchInfo, // { email, cccd, phone, name }
+        ...params, // Include pagination parameters: page, limit, sortBy, sortOrder
+      },
     });
     return response.data;
   } catch (error) {
@@ -527,16 +577,19 @@ export const getBookingById = async (bookingId) => {
     throw error;
   }
 };
-export const searchBookingsByUser = async (searchTerm) => {
+export const searchBookingsByUser = async (searchTerm, params = {}) => {
   try {
+    const searchParams = {
+      [searchTerm.includes("@")
+        ? "email"
+        : searchTerm.length === 12
+        ? "cccd"
+        : "phone"]: searchTerm,
+      ...params, // Thêm các tham số pagination
+    };
+
     const response = await api.get("/bookings/search/user", {
-      params: {
-        [searchTerm.includes("@")
-          ? "email"
-          : searchTerm.length === 12
-          ? "cccd"
-          : "phone"]: searchTerm,
-      },
+      params: searchParams,
     });
     return response.data;
   } catch (error) {
@@ -568,6 +621,35 @@ export const getBookingHistory = async (memberId) => {
   }
 };
 
+export const getPaymentHistory = async (memberId) => {
+  try {
+    const token = localStorage.getItem("token");
+
+    const response = await api.get(`/payment/history`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        memberId,       
+        page: 1,
+        limit: 10,
+        sortBy: "CreatedAt",
+        sortOrder: "desc",
+      },
+    });
+
+    console.log("Payment History :", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy lịch sử payment:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+
+
+
 export const getMembership = async (userId) => {
   try {
     const response = await api.get(`/user/${userId}/membership`);
@@ -586,6 +668,26 @@ export const getAllProducts = async (params) => {
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy danh sách sản phẩm owr API:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const searchProductsByName = async (name, params = {}) => {
+  try {
+    const searchParams = {
+      name,
+      ...params, // Thêm các tham số pagination
+    };
+
+    console.log("API call searchProductsByName with params:", searchParams);
+    const response = await api.get("/products/search", {
+      params: searchParams,
+    });
+    console.log("API response searchProductsByName:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi tìm kiếm sản phẩm:", error);
     handleError(error);
     throw error;
   }
