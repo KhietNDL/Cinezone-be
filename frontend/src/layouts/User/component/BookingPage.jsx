@@ -40,8 +40,6 @@ import MagicBento from "../../../component/MagicBentoAnimation";
 import AnimatedWrapper from "../../../component/MagicBentoAnimation";
 import { FadeInWrapper } from "../../../component/FadeIn";
 
-// Component wrapper cho fade in animation
-
 const BookingPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -56,7 +54,6 @@ const BookingPage = () => {
     selectedSeats,
     selectedRoom,
     selectedDate,
-    // eslint-disable-next-line no-unused-vars
     selectedTime,
     selectedShowtimeId,
     seatQuantity,
@@ -69,7 +66,6 @@ const BookingPage = () => {
   const [showtimes, setShowtimes] = useState([]);
   const [timeOptions, setTimeOptions] = useState([]);
   const [dateIndex, setDateIndex] = useState(0);
-  // eslint-disable-next-line no-unused-vars
   const [loading, setLoading] = useState(true);
   const [lastRefreshTime, setLastRefreshTime] = useState(Date.now());
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -85,18 +81,14 @@ const BookingPage = () => {
   const [isRatingListOpen, setIsRatingListOpen] = useState(false);
   const [ratingsList, setRatingsList] = useState([]);
   const [ratingsTotal, setRatingsTotal] = useState(0);
-  // eslint-disable-next-line no-unused-vars
   const [ratingsPage, setRatingsPage] = useState(1);
   const [ratingsLoading, setRatingsLoading] = useState(false);
 
-  // Thêm state để theo dõi việc loading seat map
   const [seatMapLoading, setSeatMapLoading] = useState(false);
   const [previousDate, setPreviousDate] = useState(null);
 
-  // State cho animation
   const [pageLoaded, setPageLoaded] = useState(false);
 
-  // Trigger animation sau khi page load
   useEffect(() => {
     const timer = setTimeout(() => {
       setPageLoaded(true);
@@ -104,7 +96,6 @@ const BookingPage = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Theo dõi thay đổi ngày và reset time selection
   useEffect(() => {
     if (previousDate !== null && previousDate !== selectedDate) {
       // Reset time selection khi ngày thay đổi
@@ -122,7 +113,6 @@ const BookingPage = () => {
     setPreviousDate(selectedDate);
   }, [selectedDate, previousDate, dispatch]);
 
-  // Tắt loading seat map khi không có showtime được chọn
   useEffect(() => {
     if (!selectedShowtimeId) {
       setSeatMapLoading(false);
@@ -240,54 +230,47 @@ const BookingPage = () => {
     fetchTimeByDay();
   }, [selectedDate, movie]);
 
-  useEffect(() => {
-    const fetchSeatsByShowtimeId = async () => {
-      if (!selectedShowtimeId) return;
-      setIsRefreshing(true);
-      setSeatMapLoading(true);
-      try {
-        const response = await getSeatsByShowtimeId(selectedShowtimeId);
-        dispatch(setSeatsData(response.seats));
-        dispatch(setSeatQuantity(response.seatQuantity));
-        dispatch(setSelectedSeats([]));
-        dispatch(setCalculatedTotalPrice(0));
-        dispatch(setSeatIds([]));
-        setLastRefreshTime(Date.now());
-      } catch (error) {
-        console.error("Error fetching seats:", error);
-        toast.error("Failed to load seat data", {
-          duration: 4000,
-          position: "top-center",
-        });
-      } finally {
-        setIsRefreshing(false);
-        setSeatMapLoading(false);
-      }
-    };
-    fetchSeatsByShowtimeId();
-  }, [selectedShowtimeId, dispatch]);
+ // Tạo hàm dùng chung để load seats
+const loadSeats = async (showtimeId, showLoading = true) => {
+  if (!showtimeId) return;
 
-  const refreshSeats = async () => {
-    if (!selectedShowtimeId) return;
-    setIsRefreshing(true);
-    try {
-      const response = await getSeatsByShowtimeId(selectedShowtimeId);
-      dispatch(setSeatsData(response.seats));
-      dispatch(setSeatQuantity(response.seatQuantity));
-      dispatch(setSelectedSeats([]));
-      dispatch(setCalculatedTotalPrice(0));
-      dispatch(setSeatIds([]));
-      setLastRefreshTime(Date.now());
-    } catch (error) {
-      console.error("Error refreshing seats:", error);
-      toast.error("Failed to refresh seats", {
-        duration: 4000,
-        position: "top-center",
-      });
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
+  setIsRefreshing(true);
+  if (showLoading) setSeatMapLoading(true);
+
+  try {
+    const response = await getSeatsByShowtimeId(showtimeId);
+    console.log("SEATS DATA:", response);
+
+    // Reset state ghế
+    dispatch(setSeatsData(response.seats));
+    dispatch(setSeatQuantity(response.seatQuantity));
+    dispatch(setSelectedSeats([]));
+    dispatch(setCalculatedTotalPrice(0));
+    dispatch(setSeatIds([]));
+
+    setLastRefreshTime(Date.now());
+  } catch (error) {
+    console.error("Error loading seats:", error);
+    toast.error("Failed to load seat data", {
+      duration: 4000,
+      position: "top-center",
+    });
+  } finally {
+    setIsRefreshing(false);
+    if (showLoading) setSeatMapLoading(false);
+  }
+};
+
+// Gọi loadSeats trong useEffect khi selectedShowtimeId thay đổi
+useEffect(() => {
+  loadSeats(selectedShowtimeId);
+}, [selectedShowtimeId, dispatch]);
+
+// Dùng cùng hàm này cho nút Refresh
+const refreshSeats = () => {
+  loadSeats(selectedShowtimeId, false); // false để không set loading cho seat map (chỉ icon refresh)
+};
+
 
   const handleContinue = async () => {
     if (!user) {
@@ -374,7 +357,7 @@ const BookingPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 via-50% via-purple-950/50 to-slate-900 text-white relative">
-       <FadeInWrapper delay={200} className="lg:col-span-4 order-1 lg:order-1">
+       <FadeInWrapper delay={100} className="lg:col-span-4 order-1 lg:order-1">
       <BackButton className="absolute top-28 left-14 z-10"
        onClick={() => {
                   window.scrollTo({ top: 0, behavior: 'instant' });
@@ -388,7 +371,7 @@ const BookingPage = () => {
             
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 lg:gap-8 mt-15">
             
-            {/* Back Button - Nằm bên trái cùng hàng với content */}
+            
           
             
             {/* Movie Info Section - fade in đầu tiên */}

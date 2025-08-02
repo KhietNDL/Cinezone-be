@@ -31,6 +31,8 @@ export const LayoutSelectSeat = ({
   );
   const [seatLayout, setSeatLayout] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [showWarning, setShowWarning] = useState(false);
+  const [warningMessage, setWarningMessage] = useState("");
 
   // Tạo seat map từ API data với seatId làm key
   const seatMap = {};
@@ -44,7 +46,7 @@ export const LayoutSelectSeat = ({
 
     seatDataFromAPI.forEach((seat) => {
       const row = seat.seatNumber[0]; // A, B, C...
-      const number = parseInt(seat.seatNumber.slice(1)); // 1, 2, 3...
+      const number = parseInt(seat.seatNumber.slice(1));
 
       if (!rows[row]) {
         rows[row] = [];
@@ -57,7 +59,6 @@ export const LayoutSelectSeat = ({
       });
     });
 
-    // Sort rows A-Z và tạo layout cân đối
     const sortedRows = Object.entries(rows)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([row, seats]) => {
@@ -75,7 +76,106 @@ export const LayoutSelectSeat = ({
         };
       });
 
-    return sortedRows;
+    // **Assign type based on row index**
+    return sortedRows.map((rowData, index, arr) => {
+      // 3 hàng đầu => Normal
+      if (index < 3) {
+        rowData.seats.forEach((seat) => (seat.type = "Normal"));
+      }
+      // Hàng cuối => Couple
+      else if (index === arr.length - 1) {
+        rowData.seats.forEach((seat) => (seat.type = "Couple"));
+      }
+      // Còn lại => VIP
+      else {
+        rowData.seats.forEach((seat) => (seat.type = "VIP"));
+      }
+      return rowData;
+    });
+  };
+
+  // Kiểm tra xem việc chọn ghế có tạo ra khoảng trống không
+  const wouldCreateGap = (seatNumber, currentSelectedSeats) => {
+    const seat = seatMap[seatNumber];
+    if (!seat) return false;
+
+    const row = seat.seatNumber[0];
+    
+    // Lấy tất cả ghế trong hàng hiện tại
+    const rowSeats = seatDataFromAPI
+      .filter(s => s.seatNumber[0] === row)
+      .sort((a, b) => parseInt(a.seatNumber.slice(1)) - parseInt(b.seatNumber.slice(1)));
+
+    // Lấy ghế đã chọn + taken + holding trong hàng này
+    const occupiedInRow = rowSeats
+      .filter(s => currentSelectedSeats.has(s.seatNumber) || s.status === 'taken' || s.status === 'holding')
+      .map(s => parseInt(s.seatNumber.slice(1)));
+
+    if (occupiedInRow.length === 0) return false;
+
+    // Thêm ghế hiện tại vào danh sách để kiểm tra
+    const currentSeatNumber = parseInt(seatNumber.slice(1));
+    const allOccupied = [...occupiedInRow, currentSeatNumber].sort((a, b) => a - b);
+
+    // Kiểm tra xem có khoảng trống ĐÚNG 1 ghế giữa các ghế không
+    for (let i = 0; i < allOccupied.length - 1; i++) {
+      const currentNum = allOccupied[i];
+      const nextNum = allOccupied[i + 1];
+      
+      // Chỉ kiểm tra nếu khoảng cách là đúng 2 (tức là có đúng 1 ghế ở giữa)
+      if (nextNum - currentNum === 2) {
+        const gapSeatNum = currentNum + 1;
+        const seatToCheck = `${row}${gapSeatNum}`;
+        const seatData = seatMap[seatToCheck];
+        
+        // Nếu ghế ở giữa tồn tại và available thì cấm
+        if (seatData && seatData.status === 'available') {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  };
+
+  // Kiểm tra xem việc bỏ chọn ghế có tạo ra khoảng trống không
+  const wouldCreateGapOnDeselect = (seatNumber, currentSelectedSeats) => {
+    const seat = seatMap[seatNumber];
+    if (!seat) return false;
+
+    const row = seat.seatNumber[0];
+    
+    // Tạo set mới không bao gồm ghế đang bỏ chọn
+    const newSelectedSeats = new Set(currentSelectedSeats);
+    newSelectedSeats.delete(seatNumber);
+
+    // Lấy ghế đã chọn + taken + holding trong hàng này sau khi bỏ chọn
+    const occupiedInRow = seatDataFromAPI
+      .filter(s => s.seatNumber[0] === row && (newSelectedSeats.has(s.seatNumber) || s.status === 'taken' || s.status === 'holding'))
+      .map(s => parseInt(s.seatNumber.slice(1)))
+      .sort((a, b) => a - b);
+
+    if (occupiedInRow.length <= 1) return false;
+
+    // Kiểm tra xem có khoảng trống ĐÚNG 1 ghế giữa các ghế còn lại không
+    for (let i = 0; i < occupiedInRow.length - 1; i++) {
+      const currentNum = occupiedInRow[i];
+      const nextNum = occupiedInRow[i + 1];
+      
+      // Chỉ kiểm tra nếu khoảng cách là đúng 2 (tức là có đúng 1 ghế ở giữa)
+      if (nextNum - currentNum === 2) {
+        const gapSeatNum = currentNum + 1;
+        const seatToCheck = `${row}${gapSeatNum}`;
+        const seatData = seatMap[seatToCheck];
+        
+        // Nếu ghế ở giữa tồn tại và available thì cấm bỏ chọn
+        if (seatData && seatData.status === 'available') {
+          return true;
+        }
+      }
+    }
+
+    return false;
   };
 
   useEffect(() => {
@@ -91,8 +191,26 @@ export const LayoutSelectSeat = ({
     const seat = seatMap[seatNumber];
     if (!seat || seat.status === "taken" || seat.status === "holding") return;
 
+    const isCurrentlySelected = selectedSeats.has(seatNumber);
+    
+    if (isCurrentlySelected) {
+      // Kiểm tra việc bỏ chọn có tạo khoảng trống không
+      if (wouldCreateGapOnDeselect(seatNumber, selectedSeats)) {
+        setWarningMessage("Cannot deselect this seat as it will create a gap between the selected seats in the same row!");
+        setShowWarning(true);
+        return;
+      }
+    } else {
+      // Kiểm tra việc chọn có tạo khoảng trống không
+      if (wouldCreateGap(seatNumber, selectedSeats)) {
+        setWarningMessage("Cannot select this seat because it will create a gap between the seats in the same row!");
+        setShowWarning(true);
+        return;
+      }
+    }
+
     const newSelectedSeats = new Set(selectedSeats);
-    if (newSelectedSeats.has(seatNumber)) {
+    if (isCurrentlySelected) {
       newSelectedSeats.delete(seatNumber);
     } else {
       newSelectedSeats.add(seatNumber);
@@ -119,26 +237,7 @@ export const LayoutSelectSeat = ({
     });
   };
 
-  const getSeatColor = (seat) => {
-    const { seatNumber, status, type } = seat;
-
-    if (status === "taken") return seatColors.taken;
-    else if (status === "holding") return seatColors.holding;
-    else if (selectedSeats.has(seatNumber)) return seatColors.selected;
-
-    switch (type) {
-      case "VIP":
-        return seatColors.vip;
-      case "Normal":
-        return seatColors.normal;
-      case "Couple":
-        return seatColors.couple;
-      default:
-        return "text-purple-300";
-    }
-  };
-
-  const renderSeat = (seat) => {
+  const renderSeat = (seat, rowIndex) => {
     const { seatId, seatNumber, status, type, price } = seat;
     const isSelected = selectedSeats.has(seatNumber);
     const isTaken = status === "taken";
@@ -146,58 +245,67 @@ export const LayoutSelectSeat = ({
     const isCouple = type === "Couple";
     const isClickable = !isTaken && !isHolding;
 
+    // Chọn màu dựa vào hàng
+    const getSeatColorByRow = () => {
+      if (status === "taken") return seatColors.taken;
+      if (status === "holding") return seatColors.holding;
+      if (isSelected) return seatColors.selected;
+
+      if (rowIndex < 3) return "text-[#752090]";       // 3 hàng đầu = Normal
+      if (rowIndex === seatLayout.length - 1) return "text-[#C957BC]"; // Hàng cuối = Couple
+      return "text-[#FFE3B3]/70";                         // Còn lại = VIP
+    };
+
+    const seatColor = getSeatColorByRow();
+
     // Ghế đôi
-   // Ghế đôi - FIXED VERSION
-if (isCouple) {
-  return (
-    <div
-      key={seatId}
-      className="inline-block"
-      style={{
-        marginRight: `${seatSpacingCouple}px`,
-        width: `${widthDouble}px`,
-        height: `${heightDouble}px`,
-        position: "relative",
-      }}
-    >
-     
-      <div
-        onClick={isClickable ? () => handleSeatClick(seatNumber) : undefined} 
-        className={`
-          ${getSeatColor(seat)} 
-          transition-opacity duration-200
-          ${!isClickable ? "opacity-50" : "opacity-100"}
-          ${!isClickable ? "cursor-not-allowed" : "cursor-pointer"}
-          group relative
-        `}
-        style={{
-          width: `${widthDouble}px`,
-          height: `${heightDouble}px`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-        title={`${type} Seat ${seatNumber} - ${price.toLocaleString()}đ - ${status}`}
-      >
-        <MdOutlineChair
+    if (isCouple) {
+      return (
+        <div
+          key={seatId}
+          className="inline-block"
           style={{
+            marginRight: `${seatSpacingCouple}px`,
             width: `${widthDouble}px`,
             height: `${heightDouble}px`,
-            display: "block",
-            pointerEvents: "none", 
+            position: "relative",
           }}
-        />
-
-        {/* Tooltip */}
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-          {seatNumber} - {price.toLocaleString()}đ
+        >
+          <div
+            onClick={isClickable ? () => handleSeatClick(seatNumber) : undefined}
+            className={`
+              ${seatColor}
+              transition-opacity duration-200
+              ${!isClickable ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+              group relative
+            `}
+            style={{
+              width: `${widthDouble}px`,
+              height: `${heightDouble}px`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            title={`${type} Seat ${seatNumber} - ${price.toLocaleString()}đ - ${status}`}
+          >
+            <MdOutlineChair
+              style={{
+                width: `${widthDouble}px`,
+                height: `${heightDouble}px`,
+                display: "block",
+                pointerEvents: "none",
+              }}
+            />
+            {/* Tooltip */}
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+              {seatNumber} - {price.toLocaleString()}đ
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  );
-}
+      );
+    }
 
-    // Ghế đơn (Normal/VIP)
+    // Ghế đơn
     return (
       <div
         key={seatId}
@@ -209,14 +317,12 @@ if (isCouple) {
           position: "relative",
         }}
       >
-        {/* Click area chính xác trên icon */}
         <div
           onClick={isClickable ? () => handleSeatClick(seatNumber) : undefined}
           className={`
-            ${getSeatColor(seat)} 
+            ${seatColor}
             transition-opacity duration-200
-            ${!isClickable ? "opacity-50" : "opacity-100"}
-            ${!isClickable ? "cursor-not-allowed" : "cursor-pointer"}
+            ${!isClickable ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
             group relative
           `}
           style={{
@@ -317,7 +423,7 @@ if (isCouple) {
                 transitionDelay: `${index * 100 + seatIndex * 50}ms`,
               }}
             >
-              {renderSeat(seat)}
+              {renderSeat(seat, index)}
             </div>
           ))}
         </div>
@@ -327,7 +433,7 @@ if (isCouple) {
           className="flex items-center justify-center"
           style={{ width: `${aisleWidth}px` }}
         >
-          <div className="w-px h-4 bg-gray-600 opacity-30"></div>
+          <div className="w-px h-0 bg-gray-600 opacity-30"></div>
         </div>
 
         {/* Right side seats */}
@@ -347,7 +453,7 @@ if (isCouple) {
                 }ms`,
               }}
             >
-              {renderSeat(seat)}
+              {renderSeat(seat, index)}
             </div>
           ))}
         </div>
@@ -412,15 +518,15 @@ if (isCouple) {
       <div className="mt-8 overflow-x-auto w-full flex items-center justify-center">
         <div className="flex justify-center items-center flex-wrap gap-4 sm:gap-6 text-sm sm:text-lg w-full sm:px-3 max-w-full px-5">
           <div className="flex items-center space-x-2 min-w-fit">
-            <PiArmchairLight className={seatColors.normal} size={20} />
+            <PiArmchairLight className="text-[#752090]" size={20} />
             <span className="text-gray-400">Normal</span>
           </div>
           <div className="flex items-center space-x-2 min-w-fit">
-            <PiArmchairLight className={seatColors.vip} size={20} />
+            <PiArmchairLight className="text-[#FFE3B3]/70" size={20} />
             <span className="text-gray-400">VIP</span>
           </div>
           <div className="flex items-center space-x-2 min-w-fit">
-            <MdOutlineChair className={seatColors.couple} size={20} />
+            <MdOutlineChair className="text-[#C957BC]" size={20} />
             <span className="text-gray-400">Couple</span>
           </div>
           <div className="flex items-center space-x-2 min-w-fit">
@@ -440,13 +546,34 @@ if (isCouple) {
 
       <style>{`
         @keyframes fade-in {
-          from { opacity: 0; t    ransform: translateY(10px); }
+          from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-in {
           animation: fade-in 0.5s ease-out forwards;
         }
       `}</style>
+
+      {/* Warning Popup */}
+      {showWarning && (
+        <div className="fixed inset-0 bg-transparent bg-opacity-50 flex items-center justify-center z-[1000]">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl transform transition-all duration-300">
+            <div className="flex items-center mb-4">
+              
+              <h3 className="text-lg font-semibold text-gray-900">Note!</h3>
+            </div>
+            <p className="text-gray-700 mb-6">{warningMessage}</p>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowWarning(false)}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200 font-medium"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -15,6 +15,7 @@ import { X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import EnhancedSortDropdown from "../../../component/EnhancedSortDropdown";
 import EnhancedSearchForm from "../../../component/EnhancedSearchForm";
+import BackButton from "../../../component/BackButton";
 
 const MOVIES_PER_PAGE = 8;
 
@@ -258,27 +259,7 @@ const MovieListPage = () => {
 
       {/* Back Button and Title */}
       <div className="flex items-center justify-between mb-8">
-        <button
-          onClick={handleBackToLanding}
-          className="flex items-center gap-3 bg-slate-800/80 backdrop-blur-sm hover:bg-slate-700/80 
-                   border border-slate-700/50 hover:border-[#6a57f5]/30 
-                   rounded-xl px-4 py-3 transition-all duration-300 group
-                   shadow-lg hover:shadow-xl hover:shadow-[#6a57f5]/10"
-        >
-          <div
-            className="flex items-center justify-center w-8 h-8 rounded-lg 
-                        bg-[#6a57f5]/20 group-hover:bg-[#6a57f5]/30 
-                        transition-all duration-300"
-          >
-            <FaArrowLeft
-              size={16}
-              className="text-[#6a57f5] group-hover:translate-x-[-2px] transition-transform duration-300"
-            />
-          </div>
-          <span className="text-white font-medium group-hover:text-[#6a57f5] transition-colors duration-300">
-            Back to Home
-          </span>
-        </button>
+        <BackButton/>
 
         <h1 className="text-3xl font-bold text-white">All Movies</h1>
 
