@@ -341,3 +341,36 @@ exports.getShowtimesByVersionId = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+// API: Lấy trạng thái của mảng ghế theo showtimeId và seatIds
+exports.getSeatsStatusByShowtime = async (req, res) => {
+  try {
+    const { showtimeId } = req.params;
+    const { seatIds } = req.body;
+    if (!Array.isArray(seatIds) || seatIds.length === 0) {
+      return res.status(400).json({ error: "seatIds must be a non-empty array" });
+    }
+
+    // Lấy trạng thái ghế từ SeatShowtime
+    const db = require('../config/database');
+    const [rows] = await db.promise().query(
+      `SELECT SeatId, Status 
+       FROM SeatShowtime 
+       WHERE ShowtimeId = ? AND SeatId IN (?)`,
+      [showtimeId, seatIds]
+    );
+    // Map kết quả cho từng seatId (nếu không có thì status = 'available')
+    const statusMap = {};
+    rows.forEach(row => {
+      statusMap[row.SeatId] = row.Status;
+    });
+    const result = seatIds.map(seatId => ({
+      seatId,
+      status: statusMap[seatId] || 'available'
+    }));
+
+    res.json({ showtimeId, seats: result });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
