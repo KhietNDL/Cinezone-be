@@ -1,12 +1,26 @@
 const db = require("../config/database");
 const bcrypt = require("bcryptjs");
 const { v4: uuidv4 } = require("uuid");
+const { formatDateTime, formatDateTimeString } = require("../utils/date");
+
+// Helper để chuẩn hóa ngày tháng khi trả dữ liệu user ra ngoài
+function normalizeUserDates(user) {
+  if (!user) return user;
+  return {
+    ...user,
+    DateOfBirth: formatDateTimeString(user.DateOfBirth),
+    MembershipStartDate: formatDateTimeString(user.MembershipStartDate),
+    MembershipEndDate: formatDateTimeString(user.MembershipEndDate),
+    CreatedAt: formatDateTimeString(user.CreatedAt),
+    UpdatedAt: formatDateTimeString(user.UpdatedAt),
+  };
+}
 
 class User {
   static async findByEmail(email) {
     const [rows] = await db
       .promise()
-      .query("SELECT * FROM Users WHERE Email = ? AND IsDeleted = 0", [email]);
+      .query("SELECT * FROM Users WHERE Email = ?", [email]);
     return rows[0];
   }
 

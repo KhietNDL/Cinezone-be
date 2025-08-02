@@ -225,14 +225,21 @@ export const updatePromotion = async (id, formData) => {
     handleError(error);
   }
 };
-export const searchPromotion = async (code) => {
+export const searchPromotion = async (code, params = {}) => {
   try {
+    const searchParams = {
+      code,
+      ...params, // Thêm các tham số pagination
+    };
+
     const response = await api.get("/promotions/search", {
-      params: { code },
+      params: searchParams,
     });
     return response.data;
   } catch (error) {
+    console.error("Lỗi khi tìm kiếm promotion:", error);
     handleError(error);
+    throw error;
   }
 };
 // API cho Movie
@@ -300,7 +307,12 @@ export const deleteMovie = async (movieId) => {
   }
 };
 export const searchMovies = async (params) => {
-  return api.get("/movie/search", { params });
+  try {
+    const response = await api.get("/movie/search", { params });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
 };
 
 // API cho Employee
@@ -345,13 +357,13 @@ export const updateEmployee = async (userId, employeeData) => {
     handleError(error);
   }
 };
-export const searchEmployees = async (name) => {
+export const searchEmployeesByInfo = async (searchInfo, params = {}) => {
   try {
-    if (!name || typeof name !== "string" || name.trim() === "") {
-      throw new Error("Name is required and must be a non-empty string");
-    }
-    const response = await api.get(`/employee/searchByName`, {
-      params: { name: name.trim() },
+    const response = await api.get(`/employee/search/info`, {
+      params: {
+        ...searchInfo, // { email, cccd, phone, name }
+        ...params, // Include pagination parameters: page, limit, sortBy, sortOrder
+      },
     });
     return response.data;
   } catch (error) {
@@ -566,16 +578,19 @@ export const getBookingById = async (bookingId) => {
     throw error;
   }
 };
-export const searchBookingsByUser = async (searchTerm) => {
+export const searchBookingsByUser = async (searchTerm, params = {}) => {
   try {
+    const searchParams = {
+      [searchTerm.includes("@")
+        ? "email"
+        : searchTerm.length === 12
+        ? "cccd"
+        : "phone"]: searchTerm,
+      ...params, // Thêm các tham số pagination
+    };
+
     const response = await api.get("/bookings/search/user", {
-      params: {
-        [searchTerm.includes("@")
-          ? "email"
-          : searchTerm.length === 12
-          ? "cccd"
-          : "phone"]: searchTerm,
-      },
+      params: searchParams,
     });
     return response.data;
   } catch (error) {
@@ -616,7 +631,7 @@ export const getPaymentHistory = async (memberId) => {
         Authorization: `Bearer ${token}`,
       },
       params: {
-        memberId,       
+        memberId,
         page: 1,
         limit: 10,
         sortBy: "CreatedAt",
@@ -632,9 +647,6 @@ export const getPaymentHistory = async (memberId) => {
     throw error;
   }
 };
-
-
-
 
 export const getMembership = async (userId) => {
   try {
@@ -654,6 +666,26 @@ export const getAllProducts = async (params) => {
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy danh sách sản phẩm owr API:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const searchProductsByName = async (name, params = {}) => {
+  try {
+    const searchParams = {
+      name,
+      ...params, // Thêm các tham số pagination
+    };
+
+    console.log("API call searchProductsByName with params:", searchParams);
+    const response = await api.get("/products/search", {
+      params: searchParams,
+    });
+    console.log("API response searchProductsByName:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi tìm kiếm sản phẩm:", error);
     handleError(error);
     throw error;
   }
@@ -830,6 +862,16 @@ export const getRevenueThisQuarter = async () => {
     handleError(error);
   }
 };
+
+export const getRevenueToday = async () => {
+  try {
+    const response = await api.get("/analytics/revenue/today");
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
 // API cho Rating
 export const createMovieRating = async ({ movieId, rating, comment }) => {
   try {

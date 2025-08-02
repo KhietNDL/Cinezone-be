@@ -6,6 +6,8 @@ const { v4: uuidv4, validate: uuidValidate } = require("uuid");
 const bucket = require("../config/firebase");
 const ScoreHistory = require("../models/scorehistory.model");
 const admin = require("firebase-admin");
+const {formatDateTimeString } = require("../utils/date");
+
 
 // Define error codes
 const ERROR_CODES = {
@@ -27,7 +29,7 @@ const removeSensitiveData = (user) => {
     fullName: user.FullName,
     email: user.Email,
     phoneNumber: user.PhoneNumber,
-    dateOfBirth: user.DateOfBirth,
+    dateOfBirth: formatDateTimeString(user.DateOfBirth),
     sex: user.Sex,
     cccd: user.CCCD,
     address: user.Address,
@@ -35,6 +37,8 @@ const removeSensitiveData = (user) => {
     scoreBalance: user.ScoreBalance,
     TotalAccumulatedPoints: user.TotalAccumulatedPoints,
     membershipTypeId: user.MembershipTypeId,
+    MembershipStartDate: formatDateTimeString(user.MembershipStartDate),
+    MembershipEndDate: formatDateTimeString(user.MembershipEndDate),
   };
 };
 
@@ -100,7 +104,6 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-
     // Find user by email
     const user = await User.findByEmail(email);
     if (!user) {
@@ -111,7 +114,7 @@ const login = async (req, res) => {
     }
 
     // Check if user is active
-    if (user.IsDeleted) {
+    if (user.IsDeleted == 1) {
       return res.status(401).json({
         error: "Account is locked",
         code: ERROR_CODES.ACCOUNT_LOCKED,
@@ -154,12 +157,6 @@ const login = async (req, res) => {
 const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-
-    console.log("=== Forgot Password Debug ===");
-    console.log("Request body:", req.body);
-    console.log("Session ID:", req.sessionID);
-    console.log("Session before:", req.session);
-
     // Check if user exists
     const user = await User.findByEmail(email);
     if (!user) {
@@ -188,14 +185,10 @@ const forgotPassword = async (req, res) => {
           console.error("Session save error:", err);
           reject(err);
         } else {
-          console.log("Session saved successfully");
           resolve();
         }
       });
     });
-
-    console.log("Session after setting reset data:", req.session);
-
     // Configure email transporter
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -318,24 +311,14 @@ const verifyOtp = async (req, res) => {
   try {
     const { resetCode } = req.body;
     const sessionData = req.session.reset;
-
-    console.log("=== Verify OTP Debug ===");
-    console.log("Request body:", req.body);
-    console.log("Session data:", sessionData);
-    console.log("Full session:", req.session);
-    console.log("Session ID:", req.sessionID);
-
     // Check if session data exists
     if (!sessionData || !sessionData.email) {
-      console.log("Session validation failed - no session data or email");
       return res.status(400).json({
         error: "Session expired or invalid. Please request a new reset code.",
         code: ERROR_CODES.INVALID_RESET_CODE,
       });
     }
-
     const { email } = sessionData;
-
     // Find user by email
     const user = await User.findByEmail(email);
     if (
@@ -363,7 +346,6 @@ const verifyOtp = async (req, res) => {
           console.error("Session save error in verifyOtp:", err);
           reject(err);
         } else {
-          console.log("Session saved successfully in verifyOtp");
           resolve();
         }
       });
@@ -467,34 +449,19 @@ const updateProfile = async (req, res) => {
       try {
         if (existingUserEdit.avatar_url) {
           try {
-            console.log("Avatar URL hiện tại:", existingUserEdit.avatar_url);
-
             const fileNameMatch = existingUserEdit.avatar_url.match(
               /firebasestorage\.app\/([^?]+)/
             );
             if (fileNameMatch && fileNameMatch[1]) {
               const oldFilePath = fileNameMatch[1];
-              console.log("Extracted path using regex:", oldFilePath);
-
               if (oldFilePath) {
-                console.log("Attempting to delete old avatar:", oldFilePath);
-
                 try {
                   await bucket.file(oldFilePath).delete();
-                  console.log("Successfully deleted old avatar");
-                } catch (deleteError) {
-                  console.log(
-                    "Failed to delete old avatar:",
-                    deleteError.message
-                  );
-                }
+                } catch (deleteError) {}
               }
             } else {
-              console.log("Could not extract file path from URL using regex");
             }
-          } catch (error) {
-            console.log("Error processing old avatar URL:", error);
-          }
+          } catch (error) {}
         }
 
         const avatarFile = req.files.avatar[0];
@@ -825,7 +792,7 @@ const getMembershipInfo = async (req, res) => {
   try {
     const { userId } = req.params;
     const info = await User.getMembershipInfo(userId);
-    if (!info) return res.status(404).json({ error: 'User not found' });
+    if (!info) return res.status(404).json({ error: "User not found" });
     res.json({ membership: info });
   } catch (error) {
     res.status(500).json({ error: error.message });

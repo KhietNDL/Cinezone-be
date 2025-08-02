@@ -1,6 +1,21 @@
 const Movie = require("../models/movie.model");
 const bucket = require('../config/firebase');
+
 const axios = require('axios'); // Thêm nếu chưa có
+const { formatDateTimeString } = require("../utils/date");
+
+// Helper để chuẩn hóa ngày tháng cho movie object
+function normalizeMovieDates(movie) {
+  if (!movie) return movie;
+  return {
+    ...movie,
+    FromDate: formatDateTimeString(movie.FromDate),
+    ToDate: formatDateTimeString(movie.ToDate),
+    CreatedAt: formatDateTimeString(movie.CreatedAt),
+    UpdatedAt: formatDateTimeString(movie.UpdatedAt),
+  };
+}
+
 
 const getAllMovies = async (req, res) => {
   try {
@@ -32,7 +47,7 @@ const getAllMovies = async (req, res) => {
 
     res.status(200).json({
       status: "success",
-      data: result.movies,
+      data: result.movies.map(normalizeMovieDates),
       pagination: result.pagination
     });
   } catch (error) {
@@ -59,7 +74,7 @@ const getMoviesByName = async (req, res) => {
 
     res.status(200).json({
       status: "success",
-      data: movies
+      data: movies.map(normalizeMovieDates)
     });
   } catch (error) {
     console.error("Get movies by name error:", error);
@@ -76,7 +91,7 @@ const getMovieById = async (req, res) => {
     }
     res.status(200).json({
       status: "success",
-      data: movie
+      data: normalizeMovieDates(movie)
     });
   } catch (error) {
     console.error("Get movie by ID error:", error);
@@ -115,7 +130,7 @@ const getMoviesByGenre = async (req, res) => {
 
     res.status(200).json({
       status: "success",
-      data: result.movies,
+      data: result.movies.map(normalizeMovieDates),
       pagination: result.pagination
     });
   } catch (error) {
@@ -219,7 +234,7 @@ const createMovie = async (req, res) => {
     res.status(201).json({
       status: "success",
       message: "Movie created successfully",
-      data: movie
+      data: normalizeMovieDates(movie)
     });
   } catch (error) {
     console.error("Create movie error:", error);
@@ -382,7 +397,7 @@ const updateMovie = async (req, res) => {
     res.status(200).json({
       status: "success",
       message: "Movie updated successfully",
-      data: updatedMovie
+      data: normalizeMovieDates(updatedMovie)
     });
   } catch (error) {
     console.error("Update movie error:", error);
@@ -490,7 +505,7 @@ const patchMovie = async (req, res) => {
     res.status(200).json({
       status: "success",
       message: "Movie updated successfully",
-      data: updatedMovie
+      data: normalizeMovieDates(updatedMovie)
     });
   } catch (error) {
     console.error("Patch movie error:", error);
@@ -522,7 +537,7 @@ const getCurrentMovies = async (req, res) => {
 
     res.status(200).json({
       status: "success",
-      data: result.movies,
+      data: result.movies.map(normalizeMovieDates),
       pagination: result.pagination
     });
   } catch (error) {
@@ -555,7 +570,7 @@ const getUpcomingMovies = async (req, res) => {
 
     res.status(200).json({
       status: "success",
-      data: result.movies,
+      data: result.movies.map(normalizeMovieDates),
       pagination: result.pagination
     });
   } catch (error) {
@@ -574,7 +589,7 @@ const getTopMoviesByRatingOrImdb = async (req, res) => {
 
     if (type === 'imdb') {
       const imdbApiUrl = 'https://api.imdbapi.dev/search/titles';
-      movies = movies.slice(0, 50);
+      movies = movies.slice(0, 200);
 
       const imdbResults = await Promise.all(movies.map(async (movie) => {
         let imdbRating = null;
@@ -583,11 +598,23 @@ const getTopMoviesByRatingOrImdb = async (req, res) => {
         let imdbId = null;
         let imdbImage = null;
         try {
+          // Lấy năm phát hành nếu có
+          const year = movie.FromDate ? new Date(movie.FromDate).getFullYear() : undefined;
+          // Không dùng encodeURIComponent ở đây
           const resp = await axios.get(imdbApiUrl, {
-            params: { query: encodeURIComponent(movie.NameOfEnglish), limit: 1 }
+            params: {
+              query: movie.NameOfEnglish,
+              limit: 5,
+              year: year
+            }
           });
           if (resp.data && Array.isArray(resp.data.titles) && resp.data.titles.length > 0) {
-            const first = resp.data.titles[0];
+            // Ưu tiên chọn phim đúng năm phát hành
+            let first = resp.data.titles[0];
+            if (year) {
+              const found = resp.data.titles.find(t => t.startYear == year);
+              if (found) first = found;
+            }
             imdbRating = first.rating && first.rating.aggregateRating ? Number(first.rating.aggregateRating) : null;
             imdbTitle = first.primaryTitle;
             imdbYear = first.startYear;
@@ -595,10 +622,18 @@ const getTopMoviesByRatingOrImdb = async (req, res) => {
             imdbImage = first.primaryImage?.url;
           } else if (movie.NameOfVietnamese) {
             const respVN = await axios.get(imdbApiUrl, {
-              params: { query: encodeURIComponent(movie.NameOfVietnamese), limit: 1 }
+              params: {
+                query: movie.NameOfVietnamese,
+                limit: 5,
+                year: year
+              }
             });
             if (respVN.data && Array.isArray(respVN.data.titles) && respVN.data.titles.length > 0) {
-              const firstVN = respVN.data.titles[0];
+              let firstVN = respVN.data.titles[0];
+              if (year) {
+                const foundVN = respVN.data.titles.find(t => t.startYear == year);
+                if (foundVN) firstVN = foundVN;
+              }
               imdbRating = firstVN.rating && firstVN.rating.aggregateRating ? Number(firstVN.rating.aggregateRating) : null;
               imdbTitle = firstVN.primaryTitle;
               imdbYear = firstVN.startYear;

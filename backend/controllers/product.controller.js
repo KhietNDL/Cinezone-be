@@ -112,6 +112,9 @@ const updateProduct = async (req, res) => {
       });
 
       data.ImageUrl = url;
+    } else {
+      // Nếu không upload ảnh mới, giữ lại ảnh cũ
+      data.ImageUrl = oldProduct?.ImageUrl;
     }
 
     const updated = await Product.updateProduct(productId, data);

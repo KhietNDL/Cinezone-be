@@ -1,11 +1,18 @@
 const db = require('../config/database');
 const { v4: uuidv4 } = require('uuid');
 const Movie = require('./movie.model');
+const { formatDateTime, formatDateTimeString } = require("../utils/date");
 
-// Hàm helper để format datetime cho MySQL
-const formatDateTime = (date) => {
-    return date.toISOString().slice(0, 19).replace("T", " ");
-};
+// Helper để chuẩn hóa ngày tháng khi trả dữ liệu showtime ra ngoài
+function normalizeShowtimeDates(showtime) {
+  if (!showtime) return showtime;
+  return {
+    ...showtime,
+    Day: formatDateTimeString(showtime.Day),
+    CreatedAt: formatDateTimeString(showtime.CreatedAt),
+    UpdatedAt: formatDateTimeString(showtime.UpdatedAt),
+  };
+}
 
 class Showtime {
     static async findAll() {
@@ -14,29 +21,21 @@ class Showtime {
             WHERE IsDeleted = 0 OR IsDeleted IS NULL
         `;
         try {
-            console.log('Executing findAll query:', query);
             const [rows] = await db.promise().query(query);
-            console.log('Raw query result:', JSON.stringify(rows, null, 2));
-            
             // Kiểm tra cấu trúc bảng
             const [tableInfo] = await db.promise().query('SHOW COLUMNS FROM Showtimes');
-            console.log('Table columns:', JSON.stringify(tableInfo, null, 2));
-
             // Kiểm tra dữ liệu mẫu với điều kiện IsDeleted
             const [sampleData] = await db.promise().query(`
                 SELECT * FROM Showtimes 
                 WHERE IsDeleted = 0 OR IsDeleted IS NULL
                 LIMIT 1
             `);
-            console.log('Sample data with IsDeleted condition:', JSON.stringify(sampleData, null, 2));
-
             return rows;
         } catch (error) {
             console.error('Error in findAll:', error);
             throw error;
         }
     }
-
     static async findById(id) {
         const query = `
             SELECT * FROM Showtimes
@@ -271,7 +270,7 @@ class Showtime {
     static async getSeatsWithStatusByShowtime(showtimeId) {
         // 1. Lấy CinemaRoomId và Name từ Showtime JOIN CinemaRooms
         const [showtimeRows] = await db.promise().query(
-            `SELECT st.CinemaRoomId, cr.Name , cr.SeatQuantity
+            `SELECT st.CinemaRoomId, cr.Name , cr.SeatQuantity, cr.Row, cr.Col
              FROM Showtimes st 
              JOIN CinemaRooms cr ON st.CinemaRoomId = cr.CinemaRoomId 
              WHERE st.ShowtimeId = ? AND (st.IsDeleted = 0 OR st.IsDeleted IS NULL)`,
@@ -283,6 +282,8 @@ class Showtime {
         const cinemaRoomId = showtimeRows[0].CinemaRoomId;
         const roomName = showtimeRows[0].Name;
         const seatQuantity = showtimeRows[0].SeatQuantity;
+        const row = showtimeRows[0].Row;
+        const col = showtimeRows[0].Col;
         // 2. Lấy tất cả ghế của phòng chiếu này
         const [seatRows] = await db.promise().query(
             'SELECT SeatId, SeatNumber, Type, Price FROM Seats WHERE CinemaRoomId = ? AND IsDeleted = 0',
@@ -309,6 +310,8 @@ class Showtime {
             cinemaRoomId,
             roomName,
             seatQuantity,
+            row,
+            col,
             seats: seatRows.map(seat => ({
                 seatId: seat.SeatId,
                 seatNumber: seat.SeatNumber,

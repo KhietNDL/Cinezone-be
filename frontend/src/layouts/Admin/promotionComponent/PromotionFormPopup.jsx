@@ -15,16 +15,46 @@ const PromotionFormPopup = ({
   setDiscountValue,
   detail,
   setDetail,
+  code,
+  setCode,
+  updatedAt,
   imagePreview,
   handleSubmit,
   handleImageChange,
   resetForm,
   loading,
 }) => {
+  // Debug log to check received props when editing
+  React.useEffect(() => {
+    if (isEdit && showFormPopup) {
+      console.log("Form props for editing:", {
+        title,
+        discountValue,
+        startTime,
+        endTime,
+        detail,
+        code,
+        updatedAt,
+        imagePreview,
+      });
+    }
+  }, [
+    isEdit,
+    showFormPopup,
+    title,
+    discountValue,
+    startTime,
+    endTime,
+    detail,
+    code,
+    updatedAt,
+    imagePreview,
+  ]);
+
   if (!showFormPopup) return null;
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full min-w-[300px] max-w-[90vw] sm:max-w-xl max-h-[95vh] overflow-hidden">
+      <div className="bg-white rounded-xl shadow-2xl w-full min-w-[300px] max-w-[90vw] sm:max-w-2xl max-h-[90vh] overflow-hidden">
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 sm:px-6 py-3 sm:py-4 text-white">
           <div className="flex items-center justify-between">
             <div>
@@ -50,76 +80,85 @@ const PromotionFormPopup = ({
             </button>
           </div>
         </div>
-        <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(95vh-170px)]">
+        <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(90vh-150px)]">
           <form className="space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
-            <div className="bg-gray-50 p-3 sm:p-4 rounded-lg grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-              <div>
-                <label
-                  htmlFor="title"
-                  className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2"
-                >
-                  Promotion Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="title"
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-                  placeholder="Enter promotion name"
-                  required
-                />
+            <div className="bg-gray-50 p-3 sm:p-4 rounded-lg space-y-4">
+              {/* Row 1: Promotion Name and Value */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                <div>
+                  <label
+                    htmlFor="title"
+                    className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2"
+                  >
+                    Promotion Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="title"
+                    type="text"
+                    value={title || ""}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                    placeholder="Enter promotion name"
+                    required
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="discountValue"
+                    className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2"
+                  >
+                    Value <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="discountValue"
+                    type="number"
+                    value={discountValue || ""}
+                    onChange={(e) => setDiscountValue(e.target.value)}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                    placeholder="e.g. 25 or 10"
+                    required
+                  />
+                </div>
               </div>
-              <div>
-                <label
-                  htmlFor="discountValue"
-                  className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2"
-                >
-                  Value <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="discountValue"
-                  type="number"
-                  value={discountValue}
-                  onChange={(e) => setDiscountValue(e.target.value)}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-                  placeholder="e.g. 25 or 10"
-                  required
-                />
+
+              {/* Row 2: Start Date and End Date */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                <div>
+                  <label
+                    htmlFor="startTime"
+                    className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2"
+                  >
+                    Start Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="startTime"
+                    type="date"
+                    value={startTime || ""}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                    required
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="endTime"
+                    className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2"
+                  >
+                    End Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="endTime"
+                    type="date"
+                    value={endTime || ""}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                    required
+                  />
+                </div>
               </div>
+
+              {/* Row 3: Detail */}
               <div>
-                <label
-                  htmlFor="startTime"
-                  className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2"
-                >
-                  Start Date <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="startTime"
-                  type="date"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-                  required
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="endTime"
-                  className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2"
-                >
-                  End Date <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="endTime"
-                  type="date"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-                  required
-                />
-              </div>
-              <div className="md:col-span-2">
                 <label
                   htmlFor="detail"
                   className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2"
@@ -129,13 +168,36 @@ const PromotionFormPopup = ({
                 <input
                   id="detail"
                   type="text"
-                  value={detail}
+                  value={detail || ""}
                   onChange={(e) => setDetail(e.target.value)}
                   className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
                   placeholder="Promotion detail"
                 />
               </div>
-              <div className="md:col-span-2">
+
+              {/* Row 4: Promotion Code and Last Updated */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                <div>
+                  <label
+                    htmlFor="code"
+                    className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2"
+                  >
+                    Promotion Code <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="code"
+                    type="text"
+                    value={code || ""}
+                    onChange={(e) => setCode(e.target.value)}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                    placeholder="e.g. SUMMER2025"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Row 5: Image */}
+              <div>
                 <label
                   htmlFor="image"
                   className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2"

@@ -32,8 +32,6 @@ const MovieTheaterLogin = () => {
     const fetchPosters = async () => {
       try {
         const data = await getCurrentMovies();
-        console.log("Current movies data:", data);
-        // Giả sử mỗi phim có trường posterImage là URL ảnh
         const posters = data?.data
           ?.map((movie) => {
             if (!movie.PosterImageHorizontal) return null;

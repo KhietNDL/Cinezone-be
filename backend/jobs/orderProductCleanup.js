@@ -25,7 +25,6 @@ async function cleanupExpiredOrderProducts() {
     // Có thể gọi lại logic trong OrderProduct.cancelOrder cho từng đơn
 
     await connection.commit();
-    console.log(`Cleaned up ${expiredIds.length} expired order products`);
   } catch (err) {
     await connection.rollback();
     console.error('OrderProduct cleanup error:', err);

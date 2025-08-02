@@ -3,6 +3,18 @@ const { v4: uuidv4 } = require("uuid");
 const { normalizeDate } = require("../middlewares/showtime.validator");
 const Ticket = require("./ticket.model"); // Đảm bảo đã require ở đầu file
 const io = global._io;
+const { formatDateTime, formatDateTimeString } = require("../utils/date");
+
+// Helper để chuẩn hóa ngày tháng khi trả dữ liệu booking ra ngoài
+function normalizeBookingDates(booking) {
+  if (!booking) return booking;
+  return {
+    ...booking,
+    BookingDate: formatDateTimeString(booking.BookingDate),
+    CreatedAt: formatDateTimeString(booking.CreatedAt),
+    UpdatedAt: formatDateTimeString(booking.UpdatedAt),
+  };
+}
 
 class Booking {
   static async getBookingById(bookingId) {
@@ -602,7 +614,7 @@ class Booking {
       [bookingId]
     );
 
-    return {
+    return normalizeBookingDates({
       BookingId: rows[0].BookingId,
       MemberId: rows[0].MemberId,
       TotalAmount: rows[0].TotalAmount,
@@ -629,7 +641,7 @@ class Booking {
       pointEarn: rows[0].ScoreValue > 0 ? rows[0].ScoreValue : undefined,
       pointUse: rows[0].ScoreValue < 0 ? Math.abs(rows[0].ScoreValue) : undefined,
       status: rows[0].Status
-    };
+    });
   }
   static async findBookingsByUserInfo({ email, cccd, phone, page = 1, limit = 10, sortBy = "CreatedAt", sortOrder = "desc" }) {
     let where = [];

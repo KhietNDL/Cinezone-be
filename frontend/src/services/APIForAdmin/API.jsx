@@ -58,7 +58,7 @@ const handleError = (error) => {
 
 export const getAllUsers = async (params) => {
   try {
-    const response = await api.get("/user",{ params });
+    const response = await api.get("/user", { params });
     return response.data;
   } catch (error) {
     handleError(error);
@@ -97,11 +97,33 @@ export const deleteUser = async (userId) => {
     handleError(error);
   }
 };
-export const searchUserByName = async (name, params) => {
+
+export const unbanUser = async (userId) => {
   try {
-    const response = await api.get("/user/searchByName", {
-      params: { name, ...params },
+    const response = await api.post(`/user/unban/${userId}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const searchUserByInfo = async (searchInfo, params = {}) => {
+  try {
+    const response = await api.get("/user/search/info", {
+      params: {
+        ...searchInfo, // { email, cccd, phone, name }
+        ...params, // { page, limit, sortBy, sortOrder }
+      },
     });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const getUserAgeGroups = async () => {
+  try {
+    const response = await api.get("/analytics/user/age-groups");
     return response.data;
   } catch (error) {
     handleError(error);
