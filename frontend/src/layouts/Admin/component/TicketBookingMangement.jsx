@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Users, CheckCircle, Clock, Film, Eye } from "lucide-react";
+import { Users, CheckCircle, Clock, Film, Eye, Ticket } from "lucide-react";
 import { IoSearchOutline } from "react-icons/io5";
 import {
   getAllBookings,
@@ -558,6 +558,26 @@ const TicketBookingManagement = () => {
 
   return (
     <div className="h-full">
+      {/* Header Section with Staff-style Design */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 bg-white shadow-md rounded-lg mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-3 lg:gap-4">
+          {/* Left: Logo/Brand */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
+              <Ticket className="text-white text-lg sm:text-xl" />
+            </div>
+            <div>
+              <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent">
+                Ticket Booking Management
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">
+                Admin Portal - Monitor Booking Activities
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
         <div className="w-[90%] md:w-[95%] lg:w-[95%] max-w-7xl space-y-4">
           {/* Stats Cards */}

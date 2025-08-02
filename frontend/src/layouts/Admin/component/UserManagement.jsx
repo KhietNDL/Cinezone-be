@@ -8,6 +8,7 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
+import { FaUser } from "react-icons/fa6";
 import Pagination from "../movieComponent/Pagination";
 import StatsCards from "../userComponent/StatsCards";
 import SearchAndAdd from "../userComponent/SearchAndAdd";
@@ -58,16 +59,36 @@ const UserManagement = () => {
   }, []);
 
   const COLORS = [
-    "#0088FE",
-    "#00C49F",
-    "#FFBB28",
-    "#FF8042",
-    "#8884d8",
-    "#82ca9d",
+    "#6366F1",
+    "#8B5CF6",
+    "#EC4899",
+    "#10B981",
+    "#F59E0B",
+    "#EF4444",
   ];
 
   return (
-    <div className="h-full">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header Section */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 bg-white shadow-md rounded-lg mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-3 lg:gap-4">
+          {/* Left: Logo/Brand */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
+              <FaUser className="text-white text-lg sm:text-xl" />
+            </div>
+            <div>
+              <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent">
+                User Management
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">
+                Admin Portal - Manage System Users
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
         <div className="w-[90%] md:w-[95%] lg:w-[95%] max-w-7xl space-y-4">
           <StatsCards totalItems={userState.totalItems} />
@@ -80,7 +101,7 @@ const UserManagement = () => {
             resetForm={resetForm}
             setCurrentPage={handlePageChange}
           />
-          <div className="bg-white p-2 sm:p-3 md:p-4 rounded-lg shadow-sm">
+          <div className="bg-white p-2 sm:p-3 md:p-4 rounded-xl shadow-sm border border-gray-100">
             <UserTable
               users={userState.users}
               handleEditUser={handleEditUser}
@@ -108,12 +129,17 @@ const UserManagement = () => {
             handlePageChange={handlePageChange}
           />
           {/* Age Distribution Chart */}
-          <div className="w-full ">
-            <div className="bg-white p-4 rounded-lg shadow-sm">
-              <h3 className="text-lg font-bold text-center text-gray-800">
-                User Age Distribution
-              </h3>
-              <div className="h-[250px]">
+          <div className="w-full">
+            <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100">
+              <div className="mb-6">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
+                  User Age Distribution
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Demographic breakdown of system users
+                </p>
+              </div>
+              <div className="h-[250px] sm:h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -124,7 +150,7 @@ const UserManagement = () => {
                       label={({ ageGroup, percent }) =>
                         `${ageGroup} (${(percent * 100).toFixed(1)}%)`
                       }
-                      outerRadius={100}
+                      outerRadius={80}
                       fill="#8884d8"
                       dataKey="total"
                     >
@@ -140,34 +166,31 @@ const UserManagement = () => {
                       labelStyle={{ color: "#333" }}
                       contentStyle={{
                         backgroundColor: "#fff",
-                        border: "1px solid #ccc",
+                        border: "1px solid #e5e7eb",
                         borderRadius: "8px",
+                        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
                       }}
                     />
-                    {/* <Legend
-                      verticalAlign="bottom"
-                      height={36}
-                      iconType="circle"
-                      wrapperStyle={{ paddingTop: "20px" }}
-                    /> */}
                   </PieChart>
                 </ResponsiveContainer>
               </div>
 
               {/* Summary Stats */}
-              <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="mt-6 pt-4 border-t border-gray-100">
                 <div className="text-sm text-gray-600">
-                  <div className="flex justify-start items-center mb-2">
-                    <span className="font-medium">Total Users:</span>
-                    <span className="font-bold text-gray-800">
+                  <div className="flex justify-between items-center mb-3 p-3 bg-gray-50 rounded-lg">
+                    <span className="font-medium text-gray-700">
+                      Total Users:
+                    </span>
+                    <span className="font-bold text-lg text-purple-600">
                       {ageGroupData.reduce((sum, item) => sum + item.total, 0)}
                     </span>
                   </div>
-                  <div className="space-y-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {ageGroupData.map((group, index) => (
                       <div
                         key={group.ageGroup}
-                        className="flex justify-start items-center"
+                        className="flex justify-between items-center p-2 hover:bg-gray-50 rounded-lg transition-colors duration-200"
                       >
                         <div className="flex items-center">
                           <div
@@ -176,9 +199,9 @@ const UserManagement = () => {
                               backgroundColor: COLORS[index % COLORS.length],
                             }}
                           ></div>
-                          <span>{group.ageGroup}:</span>
+                          <span className="font-medium">{group.ageGroup}:</span>
                         </div>
-                        <span className="font-medium ml-[5px]">
+                        <span className="font-semibold text-gray-800">
                           {group.total} users
                         </span>
                       </div>

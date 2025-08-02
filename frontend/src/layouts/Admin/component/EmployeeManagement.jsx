@@ -15,7 +15,7 @@ import EmployeeForm from "../employeeComponent/EmployeeForm";
 import DeletePopup from "../employeeComponent/DeletePopup";
 import EmployeeTooltip from "../employeeComponent/EmployeeTooltip";
 import { IoEyeOutline } from "react-icons/io5";
-import { FaRegEdit } from "react-icons/fa";
+import { FaRegEdit, FaUser } from "react-icons/fa";
 import { RiDeleteBin5Line } from "react-icons/ri";
 import Pagination from "../movieComponent/Pagination";
 
@@ -396,6 +396,26 @@ const EmployeeManagement = () => {
 
   return (
     <div className="h-full">
+      {/* Header Section with Staff-style Design */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 bg-white shadow-md rounded-lg mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-3 lg:gap-4">
+          {/* Left: Logo/Brand */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
+              <FaUser className="text-white text-lg sm:text-xl" />
+            </div>
+            <div>
+              <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent">
+                Employee Management
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">
+                Admin Portal - Manage Staff Members
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div
         className="flex flex-col lg:flex-row items-center justify-between gap-6"
         onClick={handleOutsideClick}

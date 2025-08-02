@@ -1,100 +1,108 @@
 import React from "react";
+import { NavLink } from "react-router-dom";
 import { MdOutlineAvTimer, MdMovieCreation, MdPeopleAlt } from "react-icons/md";
 import { IoTicketSharp } from "react-icons/io5";
 import { FaDoorOpen, FaTicket, FaUser } from "react-icons/fa6";
-import { NavLink } from "react-router-dom";
-import { X } from "lucide-react";
 import { AiOutlineProduct } from "react-icons/ai";
-const SidebarAdmin = ({ onClose }) => {
+import { FaTimes } from "react-icons/fa";
+
+const SidebarAdmin = ({ isOpen, onToggle }) => {
   const menu = [
     {
-      label: "Overview",
-      icon: <MdOutlineAvTimer size={20} />,
+      label: "Dashboard",
+      icon: <MdOutlineAvTimer />,
       to: "/admin/dashboard",
+      end: true, // Chỉ active khi đúng chính xác route
     },
     {
-      label: "User Management",
-      icon: <FaUser size={20} />,
+      label: "User ",
+      icon: <FaUser />,
       to: "/admin/users",
     },
     {
-      label: "Employee Management",
-      icon: <MdPeopleAlt size={20} />,
+      label: "Employee ",
+      icon: <MdPeopleAlt />,
       to: "/admin/employees",
     },
     {
-      label: "Movie Management",
-      icon: <MdMovieCreation size={20} />,
+      label: "Movie ",
+      icon: <MdMovieCreation />,
       to: "/admin/movies",
     },
     {
-      label: "Cinema Room Management",
-      icon: <FaDoorOpen size={20} />,
+      label: "Cinema Room ",
+      icon: <FaDoorOpen />,
       to: "/admin/rooms",
     },
     {
-      label: "Ticket Booking Management",
-      icon: <IoTicketSharp size={20} />,
+      label: "Ticket Booking ",
+      icon: <IoTicketSharp />,
       to: "/admin/bookings",
     },
     {
-      label: "Product Management",
-      icon: <AiOutlineProduct size={20} />,
+      label: "Product ",
+      icon: <AiOutlineProduct />,
       to: "/admin/products",
     },
     {
-      label: "Promotion Management",
-      icon: <FaTicket size={20} />,
+      label: "Promotion ",
+      icon: <FaTicket />,
       to: "/admin/promotions",
     },
   ];
 
-  const handleLinkClick = () => {
-    // Close sidebar on mobile when a link is clicked
-    if (window.innerWidth < 1024) {
-      onClose();
-    }
-  };
-
   return (
-    <div
-      className={`
-        h-full w-[260px] md:w-[308px] bg-white shadow-md
-        flex flex-col z-50 items-start rounded-br-2xl rounded-bl-2xl
-      `}
-    >
-      {/* Mobile: Header with close button */}
-      <div className="lg:hidden flex items-center justify-between border-gray-200 p-4 border-b w-full">
-        <h2 className="text-lg font-semibold text-gray-800">Menu</h2>
-        <button
-          onClick={onClose}
-          className="p-2 rounded-lg hover:bg-gray-100"
-          aria-label="close menu"
-        >
-          <X size={20} />
-        </button>
-      </div>
-      {/* Menu */}
-      <div className="flex flex-col gap-2 p-4 w-full">
-        {menu.map((item) => (
-          <NavLink
-            to={item.to}
-            key={item.label}
-            onClick={handleLinkClick}
-            className={({ isActive }) =>
-              `font-bold text-[14px] md:text-[16px] p-3 md:p-2 rounded flex items-center transition-all duration-200 transform hover:scale-105 ${
-                isActive
-                  ? "bg-purple-100  text-purple-600"
-                  : "text-gray-800 hover:bg-gray-100"
-              }`
-            }
+    <>
+      {/* Overlay for mobile and tablet */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 bg-opacity-50 z-40 md:bg-black/20 lg:hidden"
+          onClick={onToggle}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div
+        className={`fixed top-0 shrink-0 left-0 h-full bg-white shadow-lg z-50 w-[260px] md:w-[308px] transform transition-transform duration-300 ease-in-out
+          ${
+            isOpen ? "translate-x-0" : "-translate-x-full"
+          } lg:translate-x-0 lg:static lg:block`}
+      >
+        {/* Close button for mobile and tablet */}
+        <div className="flex justify-end p-4 md:p-6 lg:hidden">
+          <button
+            onClick={onToggle}
+            className="p-2 md:p-3 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
           >
-            <div className="mr-3 md:mr-2 flex-shrink-0">{item.icon}</div>
-            <span className="truncate">{item.label}</span>
-          </NavLink>
-        ))}
+            <FaTimes size={20} className="md:w-6 md:h-6" />
+          </button>
+        </div>
+
+        {/* Navigation Menu */}
+        <div className="p-4 md:p-6 pt-0 lg:pt-4 md:lg:pt-6">
+          <nav className="space-y-2 md:space-y-3">
+            {menu.map((item) => (
+              <NavLink
+                to={item.to}
+                end={item.end} // Sử dụng thuộc tính end nếu có
+                key={item.label}
+                className={({ isActive }) =>
+                  `flex items-center space-x-3 md:space-x-4 px-4 md:px-6 py-3 md:py-4 rounded-lg transition-all duration-200 ${
+                    isActive
+                      ? "bg-purple-100 text-purple-700 border-l-4 border-purple-600"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`
+                }
+                onClick={() => onToggle && onToggle()}
+              >
+                <span className="text-lg md:text-xl">{item.icon}</span>
+                <span className="font-medium md:text-lg">{item.label}</span>
+              </NavLink>
+            ))}
+          </nav>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
