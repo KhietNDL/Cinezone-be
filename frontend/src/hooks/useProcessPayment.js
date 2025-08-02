@@ -26,22 +26,6 @@ export async function processPayment({
 }) {
   try {
     switch (paymentMethod) {
-       case "Convert Score":
-        {
-          setIsRedirecting?.(true);
-          let cashRes;
-          if (type === "ticket") {
-            cashRes = await createCashPayment(orderId, amount, `Convert Score-${Date.now()}`);
-            // await confirmBooking(orderId);
-            toast.success("Convert Score successful!");
-            navigate(successUrl);
-          } else if (type === "combo") {
-            cashRes = await createCashPaymentForProduct(orderId, amount, `Payment for combo CASH-${Date.now()}`);
-            toast.success("Convert Score successful!");
-            navigate(successUrl);
-          }
-          return cashRes;
-        }
       case "Cash":
         {
           setIsRedirecting?.(true);

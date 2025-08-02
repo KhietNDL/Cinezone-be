@@ -6,6 +6,8 @@ const { v4: uuidv4, validate: uuidValidate } = require("uuid");
 const bucket = require("../config/firebase");
 const ScoreHistory = require("../models/scorehistory.model");
 const admin = require("firebase-admin");
+const {formatDateTimeString } = require("../utils/date");
+
 
 // Define error codes
 const ERROR_CODES = {
@@ -27,7 +29,7 @@ const removeSensitiveData = (user) => {
     fullName: user.FullName,
     email: user.Email,
     phoneNumber: user.PhoneNumber,
-    dateOfBirth: user.DateOfBirth,
+    dateOfBirth: formatDateTimeString(user.DateOfBirth),
     sex: user.Sex,
     cccd: user.CCCD,
     address: user.Address,
@@ -35,6 +37,8 @@ const removeSensitiveData = (user) => {
     scoreBalance: user.ScoreBalance,
     TotalAccumulatedPoints: user.TotalAccumulatedPoints,
     membershipTypeId: user.MembershipTypeId,
+    MembershipStartDate: formatDateTimeString(user.MembershipStartDate),
+    MembershipEndDate: formatDateTimeString(user.MembershipEndDate),
   };
 };
 
@@ -100,7 +104,6 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-
     // Find user by email
     const user = await User.findByEmail(email);
     if (!user) {
@@ -111,7 +114,7 @@ const login = async (req, res) => {
     }
 
     // Check if user is active
-    if (user.IsDeleted) {
+    if (user.IsDeleted == 1) {
       return res.status(401).json({
         error: "Account is locked",
         code: ERROR_CODES.ACCOUNT_LOCKED,

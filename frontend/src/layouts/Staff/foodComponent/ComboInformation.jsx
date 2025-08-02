@@ -55,11 +55,13 @@ export default function ComboInformation() {
       try {
         if (status === "success" && paymentId) {
           await confirmPayment(paymentId);
+          window.history.replaceState({}, document.title, window.location.pathname);
           console.log("Payment confirmed successfully!");
           console.log("PaymentId:", paymentId);
           toast.success("Payment confirmed successfully!");
         }
       } catch (error) {
+        window.history.replaceState({}, document.title, window.location.pathname);
         toast.error("Failed to confirm payment");
         console.error(error);
       }

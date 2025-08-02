@@ -23,7 +23,6 @@ const handleError = (error) => {
       errorMessage = error.response.data.message;
     } else if (error.response.data?.error) {
       errorMessage = error.response.data.error;
-      throw error.response.data.error;
     }
   } else if (error.request) {
     errorMessage = "No response from server";

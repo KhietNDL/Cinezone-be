@@ -18,43 +18,19 @@ import { FaTicket } from "react-icons/fa6";
 import { IoCalendar } from "react-icons/io5";
 import { RiMoneyDollarCircleFill } from "react-icons/ri";
 import { MdMovieFilter } from "react-icons/md";
-import DeadPoolPoster from "../../../assets/DeadPoolPoster.jpg";
-import TheEndPoster from "../../../assets/TheEndPoster.jpg";
-import DoctorStrangePoster from "../../../assets/DoctorStrangePoster.jpg";
-import SpiderManPoster from "../../../assets/SpiderManPoster.jpg";
-import imageMovie5 from "../../../assets/imageMovie5.jpg";
-import { getRevenueByMonth, getRevenueByQuarter, getRevenueThisMonth, getRevenueThisWeek, getRevenueThisQuarter } from '../../../services/API';
+import {
+  getRevenueByMonth,
+  getRevenueByQuarter,
+  getRevenueThisMonth,
+  getRevenueThisWeek,
+  getRevenueThisQuarter,
+  getRevenueToday,
+  getCurrentMovies,
+} from "../../../services/API";
 
 const DashboardAdmin = () => {
-  const topMovies = [
-    {
-      title: "Deadpools & Wolverine",
-      tickets: 3210,
-      image: DeadPoolPoster,
-    },
-    {
-      title: "The End",
-      tickets: 2850,
-      image: TheEndPoster,
-    },
-    {
-      title: "Doctor Strange",
-      tickets: 1980,
-      image: DoctorStrangePoster,
-    },
-    {
-      title: "Spider-Man No Way Home",
-      tickets: 4520,
-      image: SpiderManPoster,
-    },
-    {
-      title: "Phim hay quá...",
-      tickets: 3210,
-      image: imageMovie5,
-    },
-  ];
-
-  const MovieFillter = [...topMovies].sort((a, b) => b.tickets - a.tickets);
+  const [topMovies, setTopMovies] = useState([]);
+  const [dailyTicketData, setDailyTicketData] = useState([]);
 
   const [salesOverviewData, setSalesOverviewData] = useState([
     { month: "Jan", revenue: 0 },
@@ -79,6 +55,82 @@ const DashboardAdmin = () => {
     "Quarter",
     "This Quarter",
   ];
+
+  useEffect(() => {
+    const fetchTopMovies = async () => {
+      try {
+        // Lấy tất cả phim hiện tại
+        const response = await getCurrentMovies({
+          page: 1,
+          limit: 50, // Lấy nhiều phim để có thể filter ra top 5
+          sortBy: "CreatedAt",
+          sortOrder: "desc",
+        });
+
+        if (response.data) {
+          // Filter và sort phim theo rating, chỉ lấy phim có rating
+          const moviesWithRating = response.data
+            .filter((movie) => movie.AverageRating && movie.AverageRating > 0)
+            .sort((a, b) => b.AverageRating - a.AverageRating)
+            .slice(0, 5); // Lấy top 5
+
+          // Transform data để match với format component
+          const transformedMovies = moviesWithRating.map((movie) => ({
+            title: movie.NameOfEnglish,
+            rating: parseFloat(movie.AverageRating) || 0,
+            image: movie.PosterImage,
+            movieId: movie.MovieId,
+            totalRatings: movie.TotalRatings || 0,
+          }));
+
+          setTopMovies(transformedMovies);
+        }
+      } catch (error) {
+        console.error("Error fetching current movies:", error);
+        setTopMovies([]);
+      }
+    };
+
+    fetchTopMovies();
+  }, []);
+
+  useEffect(() => {
+    const fetchDailyTicketData = async () => {
+      try {
+        const res = await getRevenueThisWeek();
+        if (res && res.data) {
+          // Function to format dates to dd/mm format, only use actual dates
+          const formatToDateOnly = (dateStr) => {
+            // Only process if we have a valid date string
+            if (dateStr && dateStr.includes("-")) {
+              const date = new Date(dateStr);
+              return `${date.getDate()}/${date.getMonth() + 1}`;
+            }
+            return null; // Return null for non-date entries
+          };
+
+          // Transform weekly data to daily ticket format
+          const dailyData = res.data
+            .map((day) => ({
+              date: formatToDateOnly(day.date),
+              tickets: day.bookingCount || 0,
+              revenue: Number(day.total) || 0,
+              originalDate: day.date,
+            }))
+            .filter((item) => item.date !== null); // Only keep items with valid dates
+
+          setDailyTicketData(dailyData);
+        } else {
+          setDailyTicketData([]);
+        }
+      } catch (error) {
+        console.error("Error fetching daily ticket data:", error);
+        setDailyTicketData([]);
+      }
+    };
+
+    fetchDailyTicketData();
+  }, []);
 
   useEffect(() => {
     const fetchRevenueByMonth = async () => {
@@ -121,7 +173,9 @@ const DashboardAdmin = () => {
           });
           setSalesOverviewData(chartData);
         }
-      } catch (err) {}
+      } catch (error) {
+        console.error("Error fetching revenue by month:", error);
+      }
     };
     const fetchRevenueByQuarter = async () => {
       try {
@@ -140,39 +194,108 @@ const DashboardAdmin = () => {
           });
           setSalesOverviewData(chartData);
         }
-      } catch (err) {}
+      } catch (error) {
+        console.error("Error fetching revenue by quarter:", error);
+      }
     };
     const fetchRevenueThisMonth = async () => {
       try {
         const res = await getRevenueThisMonth();
-        if (res && res.total) {
-          setSalesOverviewData([{ month: 'This Month', revenue: Number(res.total) }]);
+        if (res && res.data) {
+          const chartData = res.data.map((week) => ({
+            month: week.label,
+            revenue: Number(week.total) || 0,
+            week: week.week,
+            bookingCount: week.bookingCount || 0,
+            dateRange: week.dateRange,
+          }));
+          setSalesOverviewData(chartData);
+        } else if (res && res.totalRevenue) {
+          // Fallback to total revenue if data array is not available
+          setSalesOverviewData([
+            { month: "This Month", revenue: Number(res.totalRevenue) },
+          ]);
         } else {
-          setSalesOverviewData([{ month: 'This Month', revenue: 0 }]);
+          setSalesOverviewData([{ month: "This Month", revenue: 0 }]);
         }
-      } catch (err) {}
+      } catch (error) {
+        console.error("Error fetching revenue this month:", error);
+      }
     };
     const fetchRevenueThisWeek = async () => {
       try {
         const res = await getRevenueThisWeek();
-        if (res && res.total) {
-          setSalesOverviewData([{ month: 'This Week', revenue: Number(res.total) }]);
+        if (res && res.data) {
+          // Map the daily data to chart format
+          const chartData = res.data.map((day) => ({
+            month: day.dayNameVN || day.dayName, // Use Vietnamese day name, fallback to English
+            revenue: Number(day.total) || 0,
+            date: day.date,
+            bookingCount: day.bookingCount || 0,
+          }));
+          setSalesOverviewData(chartData);
+        } else if (res && res.totalRevenue) {
+          // Fallback to total revenue if data array is not available
+          setSalesOverviewData([
+            { month: "This Week", revenue: Number(res.totalRevenue) },
+          ]);
         } else {
-          setSalesOverviewData([{ month: 'This Week', revenue: 0 }]);
+          setSalesOverviewData([{ month: "This Week", revenue: 0 }]);
         }
-      } catch (err) {}
+      } catch (error) {
+        console.error("Error fetching revenue this week:", error);
+      }
     };
     const fetchRevenueThisQuarter = async () => {
       try {
         const res = await getRevenueThisQuarter();
-        if (res && res.total) {
-          setSalesOverviewData([{ month: 'This Quarter', revenue: Number(res.total) }]);
+        if (res && res.total && res.total.quarters) {
+          // Map the quarterly data to chart format
+          const chartData = res.total.quarters.map((quarter) => ({
+            month: quarter.label, // "Q1", "Q2", "Q3", "Q4"
+            revenue: Number(quarter.total) || 0,
+            quarter: quarter.quarter,
+            monthRange: quarter.monthRange,
+            bookingCount: quarter.bookingCount || 0,
+            dateRange: quarter.dateRange,
+            isCurrent: quarter.isCurrent,
+          }));
+          setSalesOverviewData(chartData);
+        } else if (res && res.total) {
+          // Fallback: if it's just a number or has a different structure
+          const totalRevenue =
+            typeof res.total === "number"
+              ? res.total
+              : res.total.quarters?.find((q) => q.isCurrent)?.total || 0;
+          setSalesOverviewData([
+            { month: "This Quarter", revenue: Number(totalRevenue) },
+          ]);
         } else {
-          setSalesOverviewData([{ month: 'This Quarter', revenue: 0 }]);
+          setSalesOverviewData([{ month: "This Quarter", revenue: 0 }]);
         }
-      } catch (err) {}
+      } catch (error) {
+        console.error("Error fetching revenue this quarter:", error);
+      }
     };
-    if (timeFilter === "Month") {
+
+    const fetchRevenueToday = async () => {
+      try {
+        const res = await getRevenueToday();
+        if (res && res.total) {
+          setSalesOverviewData([
+            { month: "Today", revenue: Number(res.total) },
+          ]);
+        } else {
+          setSalesOverviewData([{ month: "Today", revenue: 0 }]);
+        }
+      } catch (error) {
+        console.error("Error fetching revenue today:", error);
+      }
+    };
+
+    if (timeFilter === "Today") {
+      fetchRevenueToday();
+    } else if (timeFilter === "Month") {
       fetchRevenueByMonth();
     } else if (timeFilter === "Quarter") {
       fetchRevenueByQuarter();
@@ -189,14 +312,6 @@ const DashboardAdmin = () => {
   const handleTimeFilterChange = (e) => {
     setTimeFilter(e.target.value);
   };
-
-  const lineChartData = [
-    { date: "02/03/2025", tickets: 7 },
-    { date: "12/03/2025", tickets: 15 },
-    { date: "19/03/2025", tickets: 28 },
-    { date: "27/03/2025", tickets: 21 },
-    { date: "03/04/2025", tickets: 10 },
-  ];
 
   const pieChartData = [
     { name: "Action", value: 400 },
@@ -297,7 +412,7 @@ const DashboardAdmin = () => {
               <div className="bg-white w-full sm:w-[48%] h-[250px] sm:h-[300px] rounded-lg p-3 sm:p-4 font-bold shadow-sm">
                 <p className="mb-2 text-sm sm:text-base">Daily Ticket Sales</p>
                 <ResponsiveContainer width="100%" height="85%">
-                  <LineChart data={lineChartData}>
+                  <LineChart data={dailyTicketData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" fontSize={12} sm={14} />
                     <YAxis fontSize={12} sm={14} />
@@ -346,30 +461,30 @@ const DashboardAdmin = () => {
           {/* Top 5 Movies */}
           <div className="w-full xl:w-[30%] lg:hidden xl:block bg-white p-4 sm:p-5 rounded-lg shadow-sm">
             <p className="font-bold text-sm sm:text-base mb-3 sm:mb-4">
-              Top 5 Movies by Ticket Sales
+              Top 5 Movies by Average Rating
             </p>
             <div className="w-full space-y-3 sm:space-y-4">
               <div className="flex items-center justify-between text-slate-500 text-xs sm:text-sm">
                 <p>Movie Title</p>
-                <p>Tickets</p>
+                <p>Rating</p>
               </div>
-              {MovieFillter.map((poster, index) => (
+              {topMovies.map((movie, index) => (
                 <div
                   key={index}
                   className="flex items-center justify-between text-xs sm:text-sm font-semibold"
                 >
                   <div className="flex items-center w-[70%] sm:w-[75%]">
                     <img
-                      src={poster.image}
-                      alt={poster.title}
+                      src={movie.image}
+                      alt={movie.title}
                       loading="lazy"
                       className="w-10 sm:w-12 h-10 sm:h-12 object-cover rounded-md mr-2 sm:mr-3"
                     />
-                    <p className="truncate" title={poster.title}>
-                      {poster.title}
+                    <p className="truncate" title={movie.title}>
+                      {movie.title}
                     </p>
                   </div>
-                  <p>{poster.tickets.toLocaleString()}</p>
+                  <p>{movie.rating ? movie.rating.toFixed(1) : "0.0"}</p>
                 </div>
               ))}
             </div>

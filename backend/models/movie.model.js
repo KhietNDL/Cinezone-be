@@ -1,5 +1,18 @@
 const db = require("../config/database");
 const { v4: uuidv4 } = require("uuid");
+const { formatDateTime, formatDateTimeString } = require("../utils/date");
+
+// Helper để chuẩn hóa ngày tháng khi trả dữ liệu movie ra ngoài
+function normalizeMovieDates(movie) {
+  if (!movie) return movie;
+  return {
+    ...movie,
+    FromDate: formatDateTimeString(movie.FromDate),
+    ToDate: formatDateTimeString(movie.ToDate),
+    CreatedAt: formatDateTimeString(movie.CreatedAt),
+    UpdatedAt: formatDateTimeString(movie.UpdatedAt),
+  };
+}
 
 class Movie {
   static async getAllMovies(page = 1, limit = 0, sortBy = 'FromDate', sortOrder = 'desc') {

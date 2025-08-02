@@ -120,3 +120,12 @@ export const searchUserByInfo = async (searchInfo, params = {}) => {
     handleError(error);
   }
 };
+
+export const getUserAgeGroups = async () => {
+  try {
+    const response = await api.get("/analytics/user/age-groups");
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};

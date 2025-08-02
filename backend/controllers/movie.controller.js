@@ -1,6 +1,21 @@
 const Movie = require("../models/movie.model");
 const bucket = require('../config/firebase');
-const axios = require('axios');
+
+const axios = require('axios'); // Thêm nếu chưa có
+const { formatDateTimeString } = require("../utils/date");
+
+// Helper để chuẩn hóa ngày tháng cho movie object
+function normalizeMovieDates(movie) {
+  if (!movie) return movie;
+  return {
+    ...movie,
+    FromDate: formatDateTimeString(movie.FromDate),
+    ToDate: formatDateTimeString(movie.ToDate),
+    CreatedAt: formatDateTimeString(movie.CreatedAt),
+    UpdatedAt: formatDateTimeString(movie.UpdatedAt),
+  };
+}
+
 
 const getAllMovies = async (req, res) => {
   try {
@@ -32,7 +47,7 @@ const getAllMovies = async (req, res) => {
 
     res.status(200).json({
       status: "success",
-      data: result.movies,
+      data: result.movies.map(normalizeMovieDates),
       pagination: result.pagination
     });
   } catch (error) {
@@ -59,7 +74,7 @@ const getMoviesByName = async (req, res) => {
 
     res.status(200).json({
       status: "success",
-      data: movies
+      data: movies.map(normalizeMovieDates)
     });
   } catch (error) {
     console.error("Get movies by name error:", error);
@@ -76,7 +91,7 @@ const getMovieById = async (req, res) => {
     }
     res.status(200).json({
       status: "success",
-      data: movie
+      data: normalizeMovieDates(movie)
     });
   } catch (error) {
     console.error("Get movie by ID error:", error);
@@ -115,7 +130,7 @@ const getMoviesByGenre = async (req, res) => {
 
     res.status(200).json({
       status: "success",
-      data: result.movies,
+      data: result.movies.map(normalizeMovieDates),
       pagination: result.pagination
     });
   } catch (error) {
@@ -219,7 +234,7 @@ const createMovie = async (req, res) => {
     res.status(201).json({
       status: "success",
       message: "Movie created successfully",
-      data: movie
+      data: normalizeMovieDates(movie)
     });
   } catch (error) {
     console.error("Create movie error:", error);
@@ -382,7 +397,7 @@ const updateMovie = async (req, res) => {
     res.status(200).json({
       status: "success",
       message: "Movie updated successfully",
-      data: updatedMovie
+      data: normalizeMovieDates(updatedMovie)
     });
   } catch (error) {
     console.error("Update movie error:", error);
@@ -490,7 +505,7 @@ const patchMovie = async (req, res) => {
     res.status(200).json({
       status: "success",
       message: "Movie updated successfully",
-      data: updatedMovie
+      data: normalizeMovieDates(updatedMovie)
     });
   } catch (error) {
     console.error("Patch movie error:", error);
@@ -522,7 +537,7 @@ const getCurrentMovies = async (req, res) => {
 
     res.status(200).json({
       status: "success",
-      data: result.movies,
+      data: result.movies.map(normalizeMovieDates),
       pagination: result.pagination
     });
   } catch (error) {
@@ -555,7 +570,7 @@ const getUpcomingMovies = async (req, res) => {
 
     res.status(200).json({
       status: "success",
-      data: result.movies,
+      data: result.movies.map(normalizeMovieDates),
       pagination: result.pagination
     });
   } catch (error) {

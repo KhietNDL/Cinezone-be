@@ -1,11 +1,18 @@
 const db = require('../config/database');
 const { v4: uuidv4 } = require('uuid');
 const Movie = require('./movie.model');
+const { formatDateTime, formatDateTimeString } = require("../utils/date");
 
-// Hàm helper để format datetime cho MySQL
-const formatDateTime = (date) => {
-    return date.toISOString().slice(0, 19).replace("T", " ");
-};
+// Helper để chuẩn hóa ngày tháng khi trả dữ liệu showtime ra ngoài
+function normalizeShowtimeDates(showtime) {
+  if (!showtime) return showtime;
+  return {
+    ...showtime,
+    Day: formatDateTimeString(showtime.Day),
+    CreatedAt: formatDateTimeString(showtime.CreatedAt),
+    UpdatedAt: formatDateTimeString(showtime.UpdatedAt),
+  };
+}
 
 class Showtime {
     static async findAll() {
