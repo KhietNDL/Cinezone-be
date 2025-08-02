@@ -245,7 +245,6 @@ router.get('/member/:memberId/latest', bookingController.getLatestBookingByMembe
  */
 router.post(
   '/hold',
-  bookingSeatsValidator, 
   bookingValidator,
   bookingController.holdBooking
 );
