@@ -484,4 +484,39 @@ router.get('/:showtimeId/seats', showtimeController.getSeatsByShowtime);
  */
 router.get('/version/:versionId/day', showtimeController.getShowtimesByVersionId);
 
+
+/**
+ * @swagger
+ * /api/showtimes/status/{showtimeId}:
+ *   post:
+ *     summary: Get status of seats by showtime
+ *     tags: [Showtime Management]
+ *     parameters:
+ *       - in: path
+ *         name: showtimeId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the showtime
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               seatIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       200:
+ *         description: Status of seats for the showtime
+ *       400:
+ *         description: Invalid input
+ *       500:
+ *         description: Internal server error
+ */
+router.post('/status/:showtimeId', showtimeController.getSeatsStatusByShowtime);
+
 module.exports = router;

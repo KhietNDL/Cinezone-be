@@ -137,4 +137,5 @@ router.put('/:seatShowtimeId', auth, isAdminOrEmployee, controller.updateSeatSho
  */
 router.delete('/:seatShowtimeId', auth, isAdminOrEmployee, controller.deleteSeatShowtime);
 
+
 module.exports = router;

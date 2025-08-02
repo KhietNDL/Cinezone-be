@@ -1,6 +1,4 @@
 import { Await, useLocation, useNavigate } from "react-router-dom";
-import { FaStar, FaRegClock, FaCalendarAlt, FaHeart } from "react-icons/fa";
-import { RiMovie2AiLine } from "react-icons/ri";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import { getPromotionByTitle, HoldingSeats, cancelBooking, holdProducts, getMembership, createStripePayment } from "../../../services/API";
@@ -20,9 +18,6 @@ import { FadeInWrapper } from "../../../component/FadeIn";
 import AnimatedWrapper from "../../../component/MagicBentoAnimation";
 import BackButton from "../../../component/BackButton";
 
-// Import components
-
-
 const ConfirmPayment = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
@@ -35,21 +30,18 @@ const ConfirmPayment = () => {
   const [stripeLoading, setStripeLoading] = useState(false);
   const [stripeError, setStripeError] = useState("");
 
-  //MEMbership 
+
   const [userDiscount, setUserDiscount] = useState(0);
 
-  // Promotion states
   const [promoCode, setPromoCode] = useState("");
   const [isLoadingPromotion, setIsLoadingPromotion] = useState(false);
   const [appliedPromotion, setAppliedPromotion] = useState(null);
   const [promotionError, setPromotionError] = useState("");
 
-  // Points states
   const [pointsToUse, setPointsToUse] = useState("");
   const [isUsingPoints, setIsUsingPoints] = useState(false);
   const [pointsError, setPointsError] = useState("");
 
-  // Price states - SEPARATED SEAT AND PRODUCT PRICES
   const [seatPrice, setSeatPrice] = useState(0); // Giá ghế gốc
   const [productPrice, setProductPrice] = useState(0); // Giá product gốc
   const [discountedSeatPrice, setDiscountedSeatPrice] = useState(0); // Giá ghế sau giảm
@@ -58,7 +50,6 @@ const ConfirmPayment = () => {
   const [discountType, setDiscountType] = useState("");
   const [memberPoints, setMemberPoints] = useState(0); // 'promotion' or 'points'
 
-  // Loading state for confirm button
   const [isConfirming, setIsConfirming] = useState(false);
   const dispatch = useDispatch();
 
@@ -103,7 +94,6 @@ const ConfirmPayment = () => {
 
   }, [finalTotalPrice, productTotal, userDiscount]);
 
-  // Stripe integration effect - MODIFIED: Only reset state, don't create intent
   useEffect(() => {
     // Chỉ reset state khi thay đổi payment method, không tạo intent ngay
     if (paymentMethod !== "3") {
@@ -163,12 +153,12 @@ const ConfirmPayment = () => {
       const response = await getPromotionByTitle(promoCode);
       console.log("Promotion response:", response);
       let promotionData = Array.isArray(response.promotions) ? response.promotions[0] : response.promotions;
-      const dayObj = new Date(promotionData?.Endtime);
+      const dayObj = new Date(promotionData?.EndTime);
       const dateToCheck = new Date(dayObj.getFullYear(), dayObj.getMonth(), dayObj.getDate());
       const today = new Date();
       const todayForComparison = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-      if (promotionData?.Code && dateToCheck) {
+      if (promotionData?.Code && todayForComparison <= dateToCheck) {
 
         const seatDiscount = seatPrice * (promotionData.DiscountValue / 100);
         const newSeatPrice = seatPrice - seatDiscount;
@@ -377,8 +367,6 @@ const ConfirmPayment = () => {
     try {
       let holdingResult = null;
       let productHoldResult = null;
-
-      // 1. HOLD SEATS
       holdingResult = await HoldingSeats(
         user.userId,
         selectedShowtimeId,
@@ -391,10 +379,7 @@ const ConfirmPayment = () => {
       dispatch(setBookingId(holdingResult.bookingId))
 
       console.log("HOLDING SEAT SUCCESSSS:", holdingResult);
-
-      // 2. HOLD PRODUCTS - Only if products are selected
       if (product && Array.isArray(product) && product.length > 0) {
-        // Prepare products for API call
         const productsForAPI = product.map((p) => ({
           ProductId: p.ProductId.toString(),
           Quantity: parseInt(p.Quantity || 0),
@@ -430,7 +415,6 @@ const ConfirmPayment = () => {
         seatIds,
         movie,
 
-        // *** UPDATED PRICE DATA ***
         discountType,
         promotionCode: appliedPromotion?.Code || null,
         promotionData: appliedPromotion,
@@ -438,8 +422,8 @@ const ConfirmPayment = () => {
         discountAmount, // Chỉ là discount của ghế
         seatPrice, // Giá ghế gốc
         discountedSeatPrice, // Giá ghế sau giảm
-        productPrice, // Giá product gốc
-        finalPrice, // Tổng cuối = ghế đã giảm + product gốc
+        productPrice,
+        finalPrice,
 
         // Hold results
         bookingId: holdingResult.bookingId,
@@ -453,8 +437,6 @@ const ConfirmPayment = () => {
       };
 
       console.log("Navigating to waiting page with data:", waitingData);
-
-      // Delay navigation slightly to show success message
       setTimeout(() => {
         navigate("/waiting", {
           state: waitingData,
@@ -554,8 +536,6 @@ const ConfirmPayment = () => {
       />
       <div className="max-w-7xl mx-auto py-1 md:py-14 lg:py-18 px-4 sm:px-10 pb-8 ">
         <div className="space-y-6 mt-[80px] sm:mt-[80px] md:mt-[40px]">
-
-          {/* Grid 2 cột với chiều cao bằng nhau */}
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 md:gap-6 lg:gap-8">
             {/* Div trái chứa thông tin phim và user */}
             <div className="xl:col-span-5 order-1 xl:order-none space-y-6">

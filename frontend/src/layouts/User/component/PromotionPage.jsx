@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { getPromotion, searchPromotion } from "../../../services/API";
 import { useNavigate } from "react-router-dom";
+import BackButton from "../../../component/BackButton";
 
 const Copy = ({ className }) => (
   <svg
@@ -275,27 +276,7 @@ const MoviePromotions = () => {
       {/* Search Toggle - Fixed at Top Right */}
       <div className="absolute top-[100px] left-6 z-20">
         {/* Back to Home Button */}
-        <button
-          onClick={() => navigate("/")}
-          className="group relative flex items-center gap-3 bg-slate-800/80 backdrop-blur-sm hover:bg-slate-700/80 
-                   border border-slate-700/50 hover:border-[#6a57f5]/30 
-                   rounded-xl px-4 py-3 transition-all duration-300
-                   shadow-lg hover:shadow-xl hover:shadow-[#6a57f5]/10 mb-4"
-        >
-          <div
-            className="flex items-center justify-center w-8 h-8 rounded-lg 
-                        bg-[#6a57f5]/20 group-hover:bg-[#6a57f5]/30 
-                        transition-all duration-300"
-          >
-            <ArrowLeft
-              size={16}
-              className="text-[#6a57f5] group-hover:translate-x-[-2px] transition-transform duration-300"
-            />
-          </div>
-          <span className="text-white font-medium group-hover:text-[#6a57f5] transition-colors duration-300">
-            Back to Home
-          </span>
-        </button>
+       <BackButton/>
       </div>
 
       <div className="relative z-10 p-6 md:p-12 pt-48 lg:pt-50 md:pt-45 ">
