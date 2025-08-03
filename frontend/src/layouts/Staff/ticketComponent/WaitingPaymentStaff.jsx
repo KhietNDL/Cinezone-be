@@ -117,13 +117,13 @@ export default function WaitingPaymentStaff() {
                   onSuccess={(paymentIntent) => {
                     if (isCombo) {
                       dispatch(setComboVisaResponse(paymentIntent));
-                      toast.success("Payment successful!");
+                      // toast.success("Payment successful!");
                       setTimeout(() => {
                         navigate("/staff/combo-selling/combo-information");
                       }, 1000);
                     } else {
                       dispatch(setVisaResponse(paymentIntent));
-                      toast.success("Payment successful!");
+                      // toast.success("Payment successful!");
                       setTimeout(() => {
                         navigate("/staff/ticket-selling/ticket-information");
                       }, 1000);
@@ -156,7 +156,7 @@ export default function WaitingPaymentStaff() {
         <div className="mt-6 text-center">
           <button
             onClick={handleCancel}
-            className="inline-flex items-center gap-2 px-6 py-3 text-gray-600 hover:text-red-600 font-medium transition-colors duration-200"
+            className="cursor-pointer inline-flex items-center gap-2 px-6 py-3 text-gray-600 hover:text-red-600 font-medium transition-colors duration-200"
           >
             <span>Cancel Payment</span>
           </button>

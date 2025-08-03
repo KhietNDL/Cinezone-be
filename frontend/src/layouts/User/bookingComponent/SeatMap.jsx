@@ -66,7 +66,7 @@ const SeatMap = ({
             <LayoutSelectSeat
               key={`${selectedShowtimeId}-${lastRefreshTime}`}
               initialSelectedSeats={selectedSeats}
-              
+
               seatDataFromAPI={seatsData}
               totalSeats={seatQuantity}
               onSeatSelect={({ seats, totalPrice, seatIds }) => {
@@ -98,6 +98,10 @@ const SeatMap = ({
                 available: "text-gray-500",
                 selected: "text-[#5341DB]",
                 taken: "text-[#6A7282]",
+                holding: "text-blue-600",
+                vip: "text-[#FFE3B3]/70",
+                normal: "text-[#752090]",
+                couple: "text-[#C957BC]",
               }}
             />
           </div>
