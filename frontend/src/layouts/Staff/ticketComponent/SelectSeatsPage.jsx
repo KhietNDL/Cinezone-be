@@ -241,13 +241,13 @@ const SelectSeatsPage = () => {
           </div>
         </div>
         {/* Main Layout - Seat Selection */}
-        <div className="flex flex-col lg:flex-row  gap-6">
+        <div className="flex flex-col lg:flex-row gap-3">
           {/* Seat Layout */}
           <div className="flex-1 bg-white rounded-xl shadow-lg border-0 overflow-hidden">
             <div className="p-6">
 
               <div className="flex justify-center overflow-x-auto">
-                <div className="min-w-[300px]">
+                <div className="min-w-[50%]">
                   <LayoutSelectSeat
                     seatDataFromAPI={seatData}
                     initialSelectedSeats={selectedSeats}
@@ -275,7 +275,7 @@ const SelectSeatsPage = () => {
           </div>
 
           {/* Seat Information Panel */}
-          <div className="w-full lg:w-80 bg-white rounded-xl shadow-lg border-0 overflow-hidden">
+          <div className="w-full lg:w-[25%] bg-white rounded-xl shadow-lg border-0 overflow-hidden">
             <div className="p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">

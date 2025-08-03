@@ -19,7 +19,7 @@ import ConfirmPayment from "./layouts/User/component/ConfirmPayment";
 import ComboPage from "./layouts/Staff/foodComponent/ComboPage";
 import TicketInformation from "./layouts/Staff/ticketComponent/TicketInformation";
 import PrintTicket from "./layouts/Staff/ticketComponent/PrintTicket";
-import ConfirmTicketsPage from "./layouts/Staff/ticketComponent/ConfirmTicketsPage";
+import ConfirmTicketsPage from "./layouts/Staff/ticketComponent/confirmTicketsPage/ConfirmTicketsPage";
 import MoviePage from "./layouts/Staff/movieComponent/MoviePage";
 import MovieDetail from "./layouts/Staff/movieComponent/MovieDetail";
 import CheckOutComboPage from "./layouts/Staff/foodComponent/CheckOutComboPage";
