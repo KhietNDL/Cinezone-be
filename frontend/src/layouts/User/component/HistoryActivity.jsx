@@ -190,6 +190,7 @@ const HistoryActivity = () => {
       setLoading(true);
       const response = await getPaymentHistory(user.userId);
       const rawData = response?.data || [];
+      console.log("Payment History in HistoryPage:", rawData);
 
       // Lọc trùng theo bookingId thủ công
       const seen = new Set();
@@ -211,11 +212,8 @@ const HistoryActivity = () => {
   };
 
   fetchPaymentHistory();
-}, [user]);
 
-
-  useEffect(() => {
-    const fetchScoreHistory = async () => {
+   const fetchScoreHistory = async () => {
       if (!user?.userId) {
         setLoading(false);
         return;
@@ -234,12 +232,14 @@ const HistoryActivity = () => {
     };
 
     fetchScoreHistory();
-  }, [user]);
+}, [user]);
 
+
+  
   // Apply filters whenever filter states change
   useEffect(() => {
     applyFilters();
-  }, [searchTerm, statusFilter, dateFilter, paymentHistory]); // Thay đổi từ historyData thành paymentHistory
+  }, [searchTerm, statusFilter, dateFilter, paymentHistory]);
 
   useEffect(() => {
     applyPointsFilters();
@@ -260,7 +260,7 @@ const HistoryActivity = () => {
         return "bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-medium";
       case 4:
         return "bg-red-100 text-red-700 px-4 py-2 rounded-full text-sm font-medium";
-      case "Waiting":
+      case 1:
         return "bg-yellow-100 text-yellow-700 px-4 py-2 rounded-full text-sm font-medium";
       default:
         return "bg-gray-100 text-gray-700 px-4 py-2 rounded-full text-sm font-medium";
@@ -280,7 +280,7 @@ const HistoryActivity = () => {
         return "Success";
       case 4:
         return "Canceled";
-      case "Waiting":
+      case 1:
         return "Waiting";
       default:
         return "Unknown";
