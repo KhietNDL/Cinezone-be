@@ -451,6 +451,7 @@ export const getTimeByDay = async (movieId, day) => {
 export const getSeatsByShowtimeId = async (showtimeId) => {
   try {
     const response = await api.get(`/showtimes/${showtimeId}/seats`);
+    console.log("getSeatsByShowtimeId Response:", response.data);
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy seats theo showtimeID:", error);

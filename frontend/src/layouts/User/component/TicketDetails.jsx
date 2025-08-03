@@ -152,7 +152,7 @@ const TicketDetails = () => {
   if (isCancelled) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 via-50% via-purple-950/50 to-slate-900 flex flex-col items-center justify-center text-center text-white p-10">
-        <div className="w-1/2 bg-gradient-to-b from-black via-gray-900 via-50% via-purple-950/50 to-slate-900 p-8 flex flex-col justify-between border-1 border-white/20 shadow-2xl rounded-2xl">
+        <div className="w-1/2 bg-transparent p-8 flex flex-col justify-between border-1 border-white/20 shadow-2xl rounded-2xl">
           <h1 className="text-4xl font-bold text-red-500/80 mb-4">
             Ticket Cancelled
           </h1>
