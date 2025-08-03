@@ -132,10 +132,10 @@ export default function PrintTicket() {
           <div className="flex justify-center">
             <div ref={componentRef} className="w-full max-w-5xl">
               <div className="overflow-x-auto">
-                <div className="min-w-[800px] bg-gradient-to-br from-yellow-400 via-yellow-300 to-yellow-500 rounded-xl p-3 sm:p-5">
+                <div className="min-w-[800px] bg-[linear-gradient(to_bottom_right,_#facc15,_#fde047,_#fbbf24)] rounded-xl p-3 sm:p-5">
                   <div className="relative flex h-[200px] sm:h-[250px] lg:h-[300px]">
                     {/* Left Section - Movie Info */}
-                    <div className="w-[63%] h-full bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 p-3 sm:p-4 rounded-tl-xl rounded-bl-xl">
+                    <div className="w-[63%] h-full bg-[linear-gradient(to_right,_#4f46e5,_#7c3aed,_#2563eb)] p-3 sm:p-4 rounded-tl-xl rounded-bl-xl">
                       <div className="flex items-start gap-2 sm:gap-4 border-b border-white pb-2 w-[95%] text-white">
                         <div className="flex-1">
                           <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
@@ -145,7 +145,7 @@ export default function PrintTicket() {
                               className="w-[15%] sm:w-[20%] h-[25px] sm:h-[35px] object-cover"
                               style={{ filter: "brightness(0) invert(1)" }}
                             />
-                            <div className="px-2 sm:px-3 rounded-full shadow-md flex items-center justify-center bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-yellow-900">
+                            <div className="px-2 sm:px-3 rounded-full shadow-md flex items-center justify-center bg-[linear-gradient(to_right,_#facc15,_#eab308,_#ca8a04)] text-[#713f12]">
                               <p className="font-bold p-1 sm:p-2 text-xs sm:text-sm leading-4">
                                 Now Showing
                               </p>
@@ -193,9 +193,9 @@ export default function PrintTicket() {
                     </div>
 
                     {/* Right Section - Ticket Details */}
-                    <div className="w-[37%] h-full bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 rounded-tr-xl rounded-br-xl">
+                    <div className="w-[37%] h-full bg-[linear-gradient(to_right,_#4f46e5,_#7c3aed,_#2563eb)] rounded-tr-xl rounded-br-xl">
                       <div className="flex flex-col justify-center h-full text-white p-2 sm:p-4 space-y-1 sm:space-y-2">
-                        <div className="text-center border-b border-white/20 pb-2 mb-2 hidden sm:block">
+                        <div className="text-center pb-2 mb-2 hidden sm:block">
                           <h3 className="font-bold text-sm lg:text-base">
                             Ticket Details
                           </h3>
@@ -221,9 +221,9 @@ export default function PrintTicket() {
                         ].map((item, index) => (
                           <div
                             key={index}
-                            className="flex justify-between text-xs sm:text-sm border-b border-white/10 pb-1"
+                            className="flex justify-between text-xs sm:text-sm pb-1"
                           >
-                            <strong className="text-white/90">
+                            <strong className="text-[#E9E9E9]">
                               {item.label}:
                             </strong>
                             <span className="text-right ml-1 break-all">
@@ -235,11 +235,11 @@ export default function PrintTicket() {
                     </div>
 
                     {/* Perforated circles */}
-                    <div className="absolute w-[30px] sm:w-[40px] lg:w-[50px] h-[30px] sm:h-[40px] lg:h-[50px] rounded-full bg-gray-50 top-[-15px] sm:top-[-20px] lg:top-[-25px] right-[35%] sm:right-[37%] transform translate-x-1/2"></div>
-                    <div className="absolute w-[30px] sm:w-[40px] lg:w-[50px] h-[30px] sm:h-[40px] lg:h-[50px] rounded-full bg-gray-50 bottom-[-15px] sm:bottom-[-20px] lg:bottom-[-25px] right-[35%] sm:right-[37%] transform translate-x-1/2"></div>
+                    <div className="absolute w-[30px] sm:w-[40px] lg:w-[50px] h-[30px] sm:h-[40px] lg:h-[50px] rounded-full bg-white top-[-25px] sm:top-[-35px] lg:top-[-40px] right-[37%] sm:right-[37%] transform translate-x-1/2"></div>
+                    <div className="absolute w-[30px] sm:w-[40px] lg:w-[50px] h-[30px] sm:h-[40px] lg:h-[50px] rounded-full bg-white bottom-[-25px] sm:bottom-[-35px] lg:bottom-[-40px] right-[37%] sm:right-[37%] transform translate-x-1/2"></div>
 
                     {/* Dashed line */}
-                    <div className="absolute h-[80%] sm:h-[90%] top-[10%] sm:top-[5%] border-dashed border-white border-2 right-[37%] transform translate-x-1/2"></div>
+                    <div className="absolute h-[100%] sm:h-[90%] top-[10%] sm:top-[5%] border-dashed border-white border-2 right-[37%] transform translate-x-1/2"></div>
                   </div>
                 </div>
               </div>
@@ -251,6 +251,7 @@ export default function PrintTicket() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">
             <Button
+              type="primary"
               onClick={handleExportPdf}
               size="large"
               className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 border-purple-600 hover:border-purple-700 text-white font-medium px-6 sm:px-8"
