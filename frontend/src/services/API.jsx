@@ -371,6 +371,15 @@ export const searchEmployeesByInfo = async (searchInfo, params = {}) => {
     throw error;
   }
 };
+
+export const unbanEmployee = async (userId) => {
+  try {
+    const response = await api.post(`/employee/unban/${userId}`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
 export default api;
 
 //API cho RoomManagement

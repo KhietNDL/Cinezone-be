@@ -10,10 +10,11 @@ import {
   getCinemaRooms,
 } from "../../../services/API";
 import { BiSolidCameraMovie } from "react-icons/bi";
+import { IoSearchOutline } from "react-icons/io5";
+import { GoPlus } from "react-icons/go";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import HeaderStats from "../movieComponent/HeaderStats";
-import SearchAndAdd from "../movieComponent/SearchAndAdd";
 import MovieTable from "../movieComponent/MovieTable";
 import Pagination from "../movieComponent/Pagination";
 import MovieForm from "../movieComponent/MovieForm";
@@ -756,211 +757,235 @@ const MovieManagement = () => {
 
   return (
     <div className="h-full">
-      {/* Header Section with Staff-style Design */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 bg-white shadow-md rounded-lg mb-6">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-3 lg:gap-4">
-          {/* Left: Logo/Brand */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
-              <BiSolidCameraMovie className="text-white text-lg sm:text-xl" />
+      {/* Header Section */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 mb-6">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-purple-600 to-purple-700 rounded-xl flex items-center justify-center shadow-lg">
+                <BiSolidCameraMovie className="text-white text-xl sm:text-2xl" />
+              </div>
+              <div>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent">
+                  Movie Management
+                </h1>
+                <p className="text-sm sm:text-base text-gray-500">
+                  Manage cinema content and showtimes
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent">
-                Movie Management
-              </h1>
-              <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">
-                Admin Portal - Cinema Content Management
-              </p>
+          </div>
+          
+          {/* Search and Add Section */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 w-full pt-2 border-t border-gray-100">
+            <div className="relative flex items-center w-full max-w-md">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <IoSearchOutline className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                value={searchMovie}
+                onChange={(e) => setSearchMovie(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 text-sm bg-white shadow-sm hover:border-gray-400"
+                placeholder="Search by movie name (ENG or VN)"
+              />
             </div>
+            {!showEditForm && (
+              <button
+                onClick={() => setShowAddForm(true)}
+                className="flex items-center px-4 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-xl font-medium transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 w-full sm:w-auto text-sm"
+              >
+                <GoPlus size={18} className="mr-2" />
+                Add Movie
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      <div
-        className="flex flex-col lg:flex-row items-center justify-between gap-6"
-        onClick={handleOutsideClick}
-      >
-        <div className="w-[90%] md:w-[95%] lg:w-[95%] max-w-7xl space-y-4">
-          <HeaderStats
-            totalMovies={totalMovies}
-            upcomingMovies={Array.isArray(upcomingMovies) ? upcomingMovies : []}
-            movies={Array.isArray(movies) ? movies : []}
-          />
-          <SearchAndAdd
-            searchMovie={searchMovie}
-            setSearchMovie={setSearchMovie}
-            setShowAddForm={setShowAddForm}
-            showEditForm={showEditForm}
-          />
-          <div className="bg-white rounded-md shadow-sm">
-            <div className="hidden sm:block">
-              <MovieTable
-                movies={Array.isArray(movies) ? movies : []}
-                handleSort={handleSort}
-                sortBy={sortBy}
-                sortOrder={sortOrder}
-                handleEdit={handleEdit}
-                handleDelete={handleDelete}
-                handleRowClick={handleRowClick}
-                formatDate={formatDate}
-                openAddShowtimePopup={openAddShowtimePopup}
-              />
-            </div>
-            <div className="block sm:hidden space-y-4">
-              {Array.isArray(movies) && movies.length > 0 ? (
-                movies.map((movie) => {
-                  const now = new Date();
-                  const start = new Date(movie.FromDate);
-                  const end = new Date(movie.ToDate);
-                  const status =
-                    end < now
-                      ? "Expired"
-                      : start <= now
-                      ? "Active"
-                      : "Upcoming";
-                  const statusClass =
-                    status === "Expired"
-                      ? "bg-rose-200 text-red-700"
-                      : status === "Active"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-yellow-100 text-yellow-700";
-
-                  return (
-                    <article
-                      key={movie.MovieId}
-                      className="bg-white p-4 rounded-lg shadow-sm border border-slate-200"
-                      onClick={(e) => handleRowClick(movie, e)}
-                    >
-                      <div className="flex items-center gap-4 w-full">
-                        {movie.PosterImage ? (
-                          <img
-                            src={movie.PosterImage}
-                            alt={movie.NameOfEnglish}
-                            className="w-20 h-20 object-cover rounded"
-                          />
-                        ) : (
-                          <span className="text-gray-400 italic">No image</span>
-                        )}
-                        <div className="flex-1 w-[200px]">
-                          <h3 className="text-sm font-semibold text-gray-900 break-words">
-                            {movie.NameOfEnglish}
-                          </h3>
-                          <p className="text-xs text-gray-500 break-words">
-                            {movie.NameOfVietnamese}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="mt-4 text-xs grid grid-cols-2 space-x-2 space-y-4 text-gray-700">
-                        <p>
-                          <strong>Duration:</strong> {movie.RunningTime} mins
-                        </p>
-                        <p>
-                          <strong>Start:</strong> {formatDate(movie.FromDate)}
-                        </p>
-                        <p>
-                          <strong>End:</strong> {formatDate(movie.ToDate)}
-                        </p>
-                        <p>
-                          <strong>Status:</strong>{" "}
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs ${statusClass}`}
-                          >
-                            {status}
-                          </span>
-                        </p>
-                        <p className="col-span-2">
-                          <strong>Version:</strong>{" "}
-                          {Array.isArray(movie.versions) &&
-                          movie.versions.length > 0
-                            ? movie.versions.map((v, idx) => (
-                                <span key={idx}>
-                                  {v.VersionType}
-                                  {v.Language ? ` - ${v.Language}` : ""}
-                                  {idx < movie.versions.length - 1 ? ", " : ""}
-                                </span>
-                              ))
-                            : "N/A"}
-                        </p>
-                      </div>
-                      <div className="flex gap-2 mt-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRowClick(movie, e);
-                          }}
-                          className="text-blue-500 hover:text-blue-700"
-                          aria-label="View movie"
-                        >
-                          <IoEyeOutline size={16} />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEdit(movie);
-                          }}
-                          className="text-blue-500 hover:text-blue-700"
-                          aria-label="Edit movie"
-                        >
-                          <FaRegEdit size={16} />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(movie);
-                          }}
-                          className="text-red-400 hover:text-red-600"
-                          aria-label="Delete movie"
-                        >
-                          <RiDeleteBin5Line size={16} />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openAddShowtimePopup(movie);
-                          }}
-                          className="text-green-500 hover:text-green-700"
-                          aria-label="Add showtime"
-                        >
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M12 4v16m8-8H4"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    </article>
-                  );
-                })
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <div className="text-lg font-semibold mb-2">
-                    {searchMovie.trim()
-                      ? "No movies found for your search"
-                      : "No movies found"}
-                  </div>
-                  <p className="text-sm">
-                    {searchMovie.trim()
-                      ? `Try searching with different terms or add new movies.`
-                      : "Try adjusting your search criteria or add new movies."}
-                  </p>
-                </div>
-              )}
-            </div>
+      <div className="space-y-6" onClick={handleOutsideClick}>
+        <HeaderStats
+          totalMovies={totalMovies}
+          upcomingMovies={Array.isArray(upcomingMovies) ? upcomingMovies : []}
+          movies={Array.isArray(movies) ? movies : []}
+        />
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+          <div className="hidden sm:block">
+            <MovieTable
+              movies={Array.isArray(movies) ? movies : []}
+              handleSort={handleSort}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              handleEdit={handleEdit}
+              handleDelete={handleDelete}
+              handleRowClick={handleRowClick}
+              formatDate={formatDate}
+              openAddShowtimePopup={openAddShowtimePopup}
+            />
           </div>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            handlePageChange={handlePageChange}
-          />
+          <div className="block sm:hidden space-y-4 p-4">
+            {Array.isArray(movies) && movies.length > 0 ? (
+              movies.map((movie) => {
+                const now = new Date();
+                const start = new Date(movie.FromDate);
+                const end = new Date(movie.ToDate);
+                const status =
+                  end < now ? "Expired" : start <= now ? "Active" : "Upcoming";
+                const statusClass =
+                  status === "Expired"
+                    ? "bg-red-100 text-red-700"
+                    : status === "Active"
+                    ? "bg-green-100 text-green-700"
+                    : "bg-yellow-100 text-yellow-700";
+
+                return (
+                  <article
+                    key={movie.MovieId}
+                    className="bg-gradient-to-br from-white to-gray-50 p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200"
+                    onClick={(e) => handleRowClick(movie, e)}
+                  >
+                    <div className="flex items-center gap-4 w-full">
+                      {movie.PosterImage ? (
+                        <img
+                          src={movie.PosterImage}
+                          alt={movie.NameOfEnglish}
+                          className="w-20 h-20 object-cover rounded-xl border border-gray-200"
+                        />
+                      ) : (
+                        <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center border border-gray-200">
+                          <span className="text-gray-400 text-xs">
+                            No image
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex-1 w-[200px]">
+                        <h3 className="text-sm font-semibold text-gray-900 break-words mb-1">
+                          {movie.NameOfEnglish}
+                        </h3>
+                        <p className="text-xs text-gray-600 break-words">
+                          {movie.NameOfVietnamese}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-4 text-xs grid grid-cols-2 space-x-2 space-y-4 text-gray-700">
+                      <p>
+                        <strong>Duration:</strong> {movie.RunningTime} mins
+                      </p>
+                      <p>
+                        <strong>Start:</strong> {formatDate(movie.FromDate)}
+                      </p>
+                      <p>
+                        <strong>End:</strong> {formatDate(movie.ToDate)}
+                      </p>
+                      <p>
+                        <strong>Status:</strong>{" "}
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs ${statusClass}`}
+                        >
+                          {status}
+                        </span>
+                      </p>
+                      <p className="col-span-2">
+                        <strong>Version:</strong>{" "}
+                        {Array.isArray(movie.versions) &&
+                        movie.versions.length > 0
+                          ? movie.versions.map((v, idx) => (
+                              <span key={idx}>
+                                {v.VersionType}
+                                {v.Language ? ` - ${v.Language}` : ""}
+                                {idx < movie.versions.length - 1 ? ", " : ""}
+                              </span>
+                            ))
+                          : "N/A"}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRowClick(movie, e);
+                        }}
+                        className="flex items-center justify-center w-8 h-8 text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md"
+                        title="View Movie"
+                        aria-label={`View ${movie.NameOfEnglish || "movie"}`}
+                      >
+                        <IoEyeOutline size={14} />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(movie);
+                        }}
+                        className="flex items-center justify-center w-8 h-8 text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md"
+                        title="Edit Movie"
+                        aria-label={`Edit ${movie.NameOfEnglish || "movie"}`}
+                      >
+                        <FaRegEdit size={14} />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(movie);
+                        }}
+                        className="flex items-center justify-center w-8 h-8 text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md"
+                        title="Delete Movie"
+                        aria-label={`Delete ${movie.NameOfEnglish || "movie"}`}
+                      >
+                        <RiDeleteBin5Line size={14} />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openAddShowtimePopup(movie);
+                        }}
+                        className="flex items-center justify-center w-8 h-8 text-green-500 hover:text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md"
+                        title="Add Showtime"
+                        aria-label={`Add showtime for ${
+                          movie.NameOfEnglish || "movie"
+                        }`}
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 4v16m8-8H4"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </article>
+                );
+              })
+            ) : (
+              <div className="text-center py-12 text-gray-500">
+                <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <BiSolidCameraMovie className="w-8 h-8 text-gray-400" />
+                </div>
+                <div className="text-lg font-semibold mb-2 text-gray-700">
+                  {searchMovie.trim()
+                    ? "No movies found for your search"
+                    : "No movies found"}
+                </div>
+                <p className="text-sm text-gray-500">
+                  {searchMovie.trim()
+                    ? `Try searching with different terms or add new movies.`
+                    : "Try adjusting your search criteria or add new movies."}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          handlePageChange={handlePageChange}
+        />
         {(showAddForm || showEditForm) && (
           <MovieForm
             showEditForm={showEditForm}
@@ -1297,10 +1322,10 @@ const MovieManagement = () => {
           </div>
         )}
         {loading && (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999]">
-            <div className="bg-white rounded-lg p-4 sm:p-6 flex flex-col items-center shadow-xl">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999]">
+            <div className="bg-white rounded-xl p-6 sm:p-8 flex flex-col items-center shadow-2xl border border-gray-100">
               <svg
-                className="animate-spin h-6 sm:h-8 w-6 sm:w-8 text-indigo-600 mb-3 sm:mb-4"
+                className="animate-spin h-8 sm:h-10 w-8 sm:w-10 text-purple-600 mb-4 sm:mb-6"
                 viewBox="0 0 24 24"
               >
                 <circle
@@ -1318,8 +1343,8 @@ const MovieManagement = () => {
                   d="M4 12a8 8 0 018-8v8z"
                 />
               </svg>
-              <div className="font-semibold text-base sm:text-lg text-indigo-700">
-                {loading ? "Đang xử lý, vui lòng chờ..." : "Đang tìm kiếm..."}
+              <div className="font-semibold text-lg sm:text-xl text-purple-700 text-center">
+                {loading ? "Processing, please wait..." : "Searching..."}
               </div>
             </div>
           </div>

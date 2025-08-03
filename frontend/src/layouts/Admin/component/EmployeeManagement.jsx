@@ -5,6 +5,7 @@ import {
   getEmployee,
   searchEmployeesByInfo,
   updateEmployee,
+  unbanEmployee,
 } from "../../../services/API";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -15,7 +16,7 @@ import EmployeeForm from "../employeeComponent/EmployeeForm";
 import DeletePopup from "../employeeComponent/DeletePopup";
 import EmployeeTooltip from "../employeeComponent/EmployeeTooltip";
 import { IoEyeOutline } from "react-icons/io5";
-import { FaRegEdit, FaUser } from "react-icons/fa";
+import { FaRegEdit, FaUser, FaUnlock } from "react-icons/fa";
 import { RiDeleteBin5Line } from "react-icons/ri";
 import Pagination from "../movieComponent/Pagination";
 
@@ -49,6 +50,16 @@ const EmployeeManagement = () => {
   const [sortBy, setSortBy] = useState("FullName");
   const [sortOrder, setSortOrder] = useState("asc");
 
+  // Add filter state
+  const [activeFilter, setActiveFilter] = useState(null);
+  const [employeeStats, setEmployeeStats] = useState({
+    total: 0,
+    active: 0,
+    inactive: 0,
+    newHires: 0,
+  });
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
+
   const handleSearchEmployees = useCallback(
     async (searchTerm) => {
       try {
@@ -59,23 +70,12 @@ const EmployeeManagement = () => {
           sortOrder: sortOrder,
         };
 
-        console.log("handleSearchEmployees called with:", {
-          searchTerm,
-          params,
-          page,
-          sortBy,
-          sortOrder,
-        });
-
         if (searchTerm.trim() === "") {
           const response = await getEmployee(params);
-          console.log("getEmployee response:", response);
+
           if (response.data) {
-            console.log("Setting employees with data:", response.data);
-            console.log("Data length:", response.data.length);
             setEmployees(response.data);
             if (response.pagination) {
-              console.log("Setting pagination:", response.pagination);
               setTotalPages(response.pagination.totalPages);
               setTotalEmployees(response.pagination.total);
             }
@@ -92,16 +92,10 @@ const EmployeeManagement = () => {
           };
 
           const response = await searchEmployeesByInfo(searchInfo, params);
-          console.log("searchEmployeesByInfo response:", response);
+
           if (response.employees) {
-            console.log(
-              "Setting employees with search data:",
-              response.employees
-            );
-            console.log("Search data length:", response.employees.length);
             setEmployees(response.employees);
             if (response.pagination) {
-              console.log("Setting search pagination:", response.pagination);
               setTotalPages(response.pagination.totalPages);
               setTotalEmployees(response.pagination.total);
             } else {
@@ -168,6 +162,23 @@ const EmployeeManagement = () => {
       totalEmployees: totalEmployees,
     });
   }, [employees, page, totalPages, totalEmployees]);
+
+  // Close sort dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        showSortDropdown &&
+        !event.target.closest(".sort-dropdown-container")
+      ) {
+        setShowSortDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showSortDropdown]);
 
   const validateForm = () => {
     if (!fullName || fullName.length < 6 || fullName.length > 100) {
@@ -329,6 +340,28 @@ const EmployeeManagement = () => {
     setShowDeletePopup(true);
   };
 
+  const handleUnban = async (employee) => {
+    try {
+      await unbanEmployee(employee.UserId);
+
+      // Update local state immediately
+      setEmployees((prev) =>
+        prev.map((emp) =>
+          emp.UserId === employee.UserId ? { ...emp, isDeleted: 0 } : emp
+        )
+      );
+
+      toast.success("Employee unbanned successfully!");
+      // Refresh current search results to get updated data
+      handleSearchEmployees(searchEmployee);
+    } catch (error) {
+      console.error("Failed to unban employee:", error);
+      toast.error(
+        `Failed to unban employee: ${error.message || "Please try again."}`
+      );
+    }
+  };
+
   const confirmDelete = async () => {
     try {
       await deleteEmployee(selectedEmployee.UserId);
@@ -354,11 +387,6 @@ const EmployeeManagement = () => {
     const rect = event.currentTarget.getBoundingClientRect();
     setTooltipPosition({ x: rect.right + 10, y: rect.top + window.scrollY });
     setSelectedEmployeeForTooltip(employee);
-  };
-
-  const handleOutsideClick = (e) => {
-    if (!e.target.closest("tr") && !e.target.closest(".tooltip"))
-      setSelectedEmployeeForTooltip(null);
   };
 
   const resetForm = () => {
@@ -394,10 +422,100 @@ const EmployeeManagement = () => {
     setPage(1); // Reset to first page when sorting changes
   };
 
+  // Handle filter changes
+  const handleFilterChange = (filterType) => {
+    setActiveFilter(filterType);
+    setPage(1); // Reset to first page when filter changes
+  };
+
+  // Calculate employee statistics from current employees data
+  useEffect(() => {
+    if (employees && employees.length > 0) {
+      const today = new Date();
+      const thirtyDaysAgo = new Date(
+        today.getTime() - 30 * 24 * 60 * 60 * 1000
+      );
+
+      const stats = employees.reduce(
+        (acc, employee) => {
+          const createdDate = employee.CreatedAt
+            ? new Date(employee.CreatedAt)
+            : null;
+
+          // New hires (created in last 30 days)
+          if (
+            createdDate &&
+            createdDate >= thirtyDaysAgo &&
+            (employee.isDeleted === 0 || employee.isDeleted === false)
+          ) {
+            acc.newHires++;
+          }
+
+          // Active employees (not deleted)
+          if (employee.isDeleted === 0 || employee.isDeleted === false) {
+            acc.active++;
+          }
+
+          // Inactive employees (deleted/banned)
+          if (employee.isDeleted === 1 || employee.isDeleted === true) {
+            acc.inactive++;
+          }
+
+          return acc;
+        },
+        { total: totalEmployees, active: 0, inactive: 0, newHires: 0 }
+      );
+
+      setEmployeeStats({
+        total: totalEmployees,
+        active: stats.active,
+        inactive: stats.inactive,
+        newHires: stats.newHires,
+      });
+    }
+  }, [employees, totalEmployees]);
+
+  // Filter employees based on active filter
+  const getFilteredEmployees = () => {
+    if (!activeFilter || activeFilter === "total") {
+      return employees;
+    }
+
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    switch (activeFilter) {
+      case "active":
+        return employees.filter(
+          (employee) => employee.isDeleted === 0 || employee.isDeleted === false
+        );
+      case "inactive":
+        return employees.filter(
+          (employee) => employee.isDeleted === 1 || employee.isDeleted === true
+        );
+      case "newHires": {
+        return employees.filter((employee) => {
+          if (employee.CreatedAt) {
+            const createdDate = new Date(employee.CreatedAt);
+            return (
+              createdDate >= thirtyDaysAgo &&
+              (employee.isDeleted === 0 || employee.isDeleted === false)
+            );
+          }
+          return false;
+        });
+      }
+      default:
+        return employees;
+    }
+  };
+
+  const filteredEmployees = getFilteredEmployees();
+
   return (
-    <div className="h-full">
-      {/* Header Section with Staff-style Design */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 bg-white shadow-md rounded-lg mb-6">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header Section */}
+      <div className="max-w-7xl select-none mx-auto px-3 sm:px-6 py-3 sm:py-4 bg-white shadow-md rounded-lg mb-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-3 lg:gap-4">
           {/* Left: Logo/Brand */}
           <div className="flex items-center gap-2 sm:gap-3">
@@ -413,60 +531,87 @@ const EmployeeManagement = () => {
               </p>
             </div>
           </div>
+
+          {/* Right: Search & Actions */}
+          <div className="flex flex-col sm:flex-row items-center gap-3 lg:gap-4 w-full md:w-auto">
+            {/* Search Input */}
+            <div className="relative flex items-center w-full md:w-[350px]">
+              <div className="absolute left-3 z-10">
+                <svg
+                  className="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+              <input
+                type="text"
+                value={searchEmployee}
+                onChange={(e) => {
+                  setPage(1);
+                  setSearchEmployee(e.target.value);
+                }}
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 hover:border-gray-300 shadow-sm"
+                placeholder="Search employees by name or email..."
+              />
+            </div>
+
+            {/* Add Employee Button */}
+            {!showEditForm && (
+              <button
+                onClick={() => {
+                  resetForm();
+                  setShowAddForm(true);
+                }}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-medium text-sm hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 w-full sm:w-auto min-w-[140px] whitespace-nowrap"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
+                </svg>
+                Add Employee
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      <div
-        className="flex flex-col lg:flex-row items-center justify-between gap-6"
-        onClick={handleOutsideClick}
-      >
-        {loading && (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999]">
-            <div className="bg-white rounded-lg p-4 sm:p-6 flex flex-col items-center shadow-xl">
-              <svg
-                className="animate-spin h-6 sm:h-8 w-6 sm:w-8 text-indigo-600 mb-3 sm:mb-4"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  fill="none"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8v8z"
-                />
-              </svg>
-              <div className="font-semibold text-base sm:text-lg text-indigo-700">
-                {showEditForm
-                  ? "Updating employee, please wait..."
-                  : "Adding employee, please wait..."}
-              </div>
-            </div>
-          </div>
-        )}
-        <div className="w-[90%] md:w-[95%] lg:w-[95%] max-w-7xl space-y-4">
-          <HeaderStats totalEmployees={totalEmployees} />
-          <SearchAndAdd
-            searchEmployee={searchEmployee}
-            setSearchEmployee={setSearchEmployee}
-            setPage={setPage}
-            resetForm={resetForm}
-            setShowAddForm={setShowAddForm}
-            showEditForm={showEditForm}
-          />
-          <div className="bg-white rounded-md shadow-sm">
+      <div className="flex flex-col items-center lg:items-start max-w-7xl w-full overflow-x-hidden">
+        <div className="w-[90%] md:w-[95%] lg:w-full max-w-7xl space-y-4 sm:space-y-6">
+          {/* Stats Cards */}
+          <HeaderStats
+            totalEmployees={totalEmployees}
+            activeEmployees={employeeStats.active}
+            inactiveEmployees={employeeStats.inactive}
+            newHires={employeeStats.newHires}
+            onFilterChange={handleFilterChange}
+            activeFilter={activeFilter}
+          />{" "}
+          {/* Employee Table */}
+          <div className="bg-white p-2 sm:p-3 md:p-4 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
             {/* Table Layout for sm and above */}
             <div className="hidden sm:block">
               <EmployeeTable
-                employees={employees} // Use server-side paginated data
+                employees={filteredEmployees}
                 handleEdit={handleEdit}
                 handleDelete={handleDelete}
+                handleUnban={handleUnban}
                 handleRowClick={handleRowClick}
                 formatDate={formatDate}
                 sortBy={sortBy}
@@ -474,147 +619,243 @@ const EmployeeManagement = () => {
                 handleSort={handleSort}
               />
             </div>
+
             {/* Card Layout for Mobile */}
-            <div className="block sm:hidden space-y-4">
-              {employees.map((emp) => (
+            <div className="block sm:hidden space-y-4 sm:space-y-6">
+              {filteredEmployees.map((emp) => (
                 <article
                   key={emp.UserId}
-                  className="bg-white p-4 rounded-lg shadow-sm border border-slate-200"
+                  className="bg-white p-4 sm:p-5 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 cursor-pointer hover:bg-gradient-to-r hover:from-purple-50/30 hover:to-indigo-50/30 group"
                   onClick={(e) => handleRowClick(emp, e)}
                 >
                   <div className="flex items-center gap-4">
-                    <img
-                      src={emp.avatar_url || "/default-avatar.png"}
-                      alt={emp.FullName}
-                      className="w-16 h-16 rounded-full object-cover"
-                    />
-                    <div className="flex-1 w-[200px]">
-                      <h3 className="text-sm font-medium text-gray-900 break-words">
+                    <div className="relative">
+                      <img
+                        src={emp.avatar_url || "/default-avatar.png"}
+                        alt={emp.FullName}
+                        className="w-16 h-16 rounded-xl object-cover shadow-md group-hover:shadow-lg transition-shadow duration-300 ring-2 ring-gray-100 group-hover:ring-purple-200"
+                      />
+                      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-purple-600 to-purple-700 rounded-full flex items-center justify-center">
+                        <svg
+                          className="w-3 h-3 text-white"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-semibold text-gray-900 truncate group-hover:text-purple-700 transition-colors duration-300">
                         {emp.FullName}
                       </h3>
-                      <p className="text-xs text-gray-500 break-words">
+                      <p className="text-xs text-gray-500 truncate group-hover:text-purple-600 transition-colors duration-300">
                         {emp.Email}
+                      </p>
+                      <div className="flex items-center mt-1">
+                        <span
+                          className={`inline-block text-xs font-medium px-2 py-1 rounded-full ${
+                            emp.IsDeleted === 1 || emp.IsDeleted === true
+                              ? "bg-red-100 text-red-700"
+                              : "bg-green-100 text-green-700"
+                          }`}
+                        >
+                          {emp.IsDeleted === 1 || emp.IsDeleted === true
+                            ? "Inactive"
+                            : "Active"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-xs text-gray-600">
+                    <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-3 rounded-lg border border-purple-100">
+                      <p className="font-medium text-purple-700">DOB</p>
+                      <p className="text-purple-600">
+                        {formatDate(emp.DateOfBirth)}
+                      </p>
+                    </div>
+                    <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-3 rounded-lg border border-blue-100">
+                      <p className="font-medium text-blue-700">Gender</p>
+                      <p className="text-blue-600">
+                        {emp.Sex === 1
+                          ? "Male"
+                          : emp.Sex === 2
+                          ? "Female"
+                          : "Other"}
+                      </p>
+                    </div>
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg border border-green-100">
+                      <p className="font-medium text-green-700">Phone</p>
+                      <p className="text-green-600">{emp.PhoneNumber}</p>
+                    </div>
+                    <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-3 rounded-lg border border-orange-100">
+                      <p className="font-medium text-orange-700">Joined</p>
+                      <p className="text-orange-600">
+                        {formatDate(emp.CreatedAt)}
                       </p>
                     </div>
                   </div>
-                  <div className="mt-4 text-xs grid grid-cols-2 gap-x-2 gap-y-4 text-gray-700">
-                    <p>
-                      <strong>DOB:</strong> {formatDate(emp.DateOfBirth)}
-                    </p>
-                    <p>
-                      <strong>Gender:</strong>{" "}
-                      {emp.Sex === 1
-                        ? "Male"
-                        : emp.Sex === 2
-                        ? "Female"
-                        : "Other"}
-                    </p>
-                    <p>
-                      <strong>Phone:</strong> {emp.PhoneNumber}
-                    </p>
-                    <p>
-                      <strong>Joined:</strong> {formatDate(emp.CreatedAt)}
-                    </p>
-                  </div>
-                  <div className="flex gap-2 mt-4">
+
+                  <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-gray-100">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleRowClick(emp, e);
                       }}
-                      className="text-blue-500 hover:text-blue-700"
+                      className="flex items-center justify-center w-8 h-8 text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md"
                       aria-label={`View ${emp.FullName}`}
                     >
                       <IoEyeOutline size={16} />
                     </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEdit(emp);
-                      }}
-                      className="text-blue-500 hover:text-blue-700"
-                      aria-label={`Edit ${emp.FullName}`}
-                    >
-                      <FaRegEdit size={16} />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(emp);
-                      }}
-                      className="text-red-400 hover:text-red-600"
-                      aria-label={`Delete ${emp.FullName}`}
-                    >
-                      <RiDeleteBin5Line size={16} />
-                    </button>
+
+                    {/* Show unban button if employee is deleted/banned */}
+                    {emp.IsDeleted === 1 || emp.IsDeleted === true ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUnban(emp);
+                        }}
+                        className="flex items-center justify-center w-8 h-8 text-green-500 hover:text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md"
+                        aria-label={`Unban ${emp.FullName}`}
+                      >
+                        <FaUnlock size={16} />
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(emp);
+                          }}
+                          className="flex items-center justify-center w-8 h-8 text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md"
+                          aria-label={`Edit ${emp.FullName}`}
+                        >
+                          <FaRegEdit size={16} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(emp);
+                          }}
+                          className="flex items-center justify-center w-8 h-8 text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md"
+                          aria-label={`Delete ${emp.FullName}`}
+                        >
+                          <RiDeleteBin5Line size={16} />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </article>
               ))}
             </div>
           </div>
+          {/* Pagination */}
           <Pagination
             currentPage={page}
             totalPages={totalPages}
             handlePageChange={handlePageChange}
           />
         </div>
-        {(showAddForm || showEditForm) && (
-          <EmployeeForm
-            showEditForm={showEditForm}
-            fullName={fullName}
-            dateOfBirth={dateOfBirth}
-            password={password}
-            sex={sex}
-            cccd={cccd}
-            email={email}
-            phoneNumber={phoneNumber}
-            address={address}
-            avatarPreview={avatarPreview}
-            avatarUploadRef={avatarUploadRef}
-            setFullName={setFullName}
-            setDateOfBirth={setDateOfBirth}
-            setPassword={setPassword}
-            setSex={setSex}
-            setCccd={setCccd}
-            setEmail={setEmail}
-            setPhoneNumber={setPhoneNumber}
-            setAddress={setAddress}
-            handleAvatarChange={handleAvatarChange}
-            handleAdd={handleAdd}
-            handleUpdate={handleUpdate}
-            setShowAddForm={setShowAddForm}
-            setShowEditForm={setShowEditForm}
-            setSelectedEmployee={setSelectedEmployee}
-            resetForm={resetForm}
-            setAvatarFile={setAvatarFile}
-            setAvatarPreview={setAvatarPreview}
-          />
-        )}
-        {showDeletePopup && (
-          <DeletePopup
-            confirmDelete={confirmDelete}
-            setShowDeletePopup={setShowDeletePopup}
-            selectedEmployee={selectedEmployee}
-          />
-        )}
-        {selectedEmployeeForTooltip && (
-          <EmployeeTooltip
-            employee={selectedEmployeeForTooltip}
-            position={tooltipPosition}
-            onClose={() => setSelectedEmployeeForTooltip(null)}
-          />
-        )}
-        <ToastContainer
-          position="top-right"
-          autoClose={2000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-        />
       </div>
+
+      {/* Loading Spinner */}
+      {loading && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999]">
+          <div className="bg-white rounded-xl p-6 flex flex-col items-center shadow-2xl border border-gray-100">
+            <svg
+              className="animate-spin h-8 w-8 text-purple-600 mb-4"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+                fill="none"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v8z"
+              />
+            </svg>
+            <div className="font-semibold text-lg text-purple-700">
+              {showEditForm ? "Updating employee..." : "Adding employee..."}
+            </div>
+            <p className="text-sm text-gray-500 mt-1">Please wait</p>
+          </div>
+        </div>
+      )}
+
+      {/* Modals */}
+      {(showAddForm || showEditForm) && (
+        <EmployeeForm
+          showEditForm={showEditForm}
+          fullName={fullName}
+          dateOfBirth={dateOfBirth}
+          password={password}
+          sex={sex}
+          cccd={cccd}
+          email={email}
+          phoneNumber={phoneNumber}
+          address={address}
+          avatarPreview={avatarPreview}
+          avatarUploadRef={avatarUploadRef}
+          setFullName={setFullName}
+          setDateOfBirth={setDateOfBirth}
+          setPassword={setPassword}
+          setSex={setSex}
+          setCccd={setCccd}
+          setEmail={setEmail}
+          setPhoneNumber={setPhoneNumber}
+          setAddress={setAddress}
+          handleAvatarChange={handleAvatarChange}
+          handleAdd={handleAdd}
+          handleUpdate={handleUpdate}
+          setShowAddForm={setShowAddForm}
+          setShowEditForm={setShowEditForm}
+          setSelectedEmployee={setSelectedEmployee}
+          resetForm={resetForm}
+          setAvatarFile={setAvatarFile}
+          setAvatarPreview={setAvatarPreview}
+        />
+      )}
+
+      {showDeletePopup && (
+        <DeletePopup
+          confirmDelete={confirmDelete}
+          setShowDeletePopup={setShowDeletePopup}
+          selectedEmployee={selectedEmployee}
+        />
+      )}
+
+      {selectedEmployeeForTooltip && (
+        <EmployeeTooltip
+          employee={selectedEmployeeForTooltip}
+          position={tooltipPosition}
+          onClose={() => setSelectedEmployeeForTooltip(null)}
+        />
+      )}
+
+      <ToastContainer
+        position="top-right"
+        autoClose={2000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+      />
     </div>
   );
 };

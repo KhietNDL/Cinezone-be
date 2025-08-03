@@ -63,7 +63,7 @@ const SidebarAdmin = ({ isOpen, onToggle }) => {
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 shrink-0 left-0 h-full bg-white shadow-lg z-50 w-[260px] md:w-[308px] transform transition-transform duration-300 ease-in-out
+        className={`fixed top-0 select-none shrink-0 left-0 h-full bg-white shadow-lg z-50 w-[260px] md:w-[308px] transform transition-transform duration-300 ease-in-out
           ${
             isOpen ? "translate-x-0" : "-translate-x-full"
           } lg:translate-x-0 lg:static lg:block`}

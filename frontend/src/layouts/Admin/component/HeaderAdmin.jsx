@@ -46,7 +46,7 @@ const HeaderAdmin = ({ onToggleSidebar }) => {
   }, []);
 
   return (
-    <div className="flex w-full px-3 sm:px-6 py-2 sm:py-3 justify-between items-center bg-gradient-to-r from-[#6466F1] via-[#8B5CF6] to-[#4F46E5] shadow-md border-b border-gray-200">
+    <div className="flex select-none w-full px-3 sm:px-6 py-2 sm:py-3 justify-between items-center bg-gradient-to-r from-[#6466F1] via-[#8B5CF6] to-[#4F46E5] shadow-md border-b border-gray-200">
       <div className="flex items-center">
         {/* Mobile menu button */}
         <button
@@ -83,7 +83,7 @@ const HeaderAdmin = ({ onToggleSidebar }) => {
         {user ? (
           <div className="relative" ref={dropdownRef}>
             <div
-              className="flex items-center space-x-2 sm:space-x-3 bg-gray-50 hover:bg-gray-100 rounded-lg sm:rounded-xl px-2 sm:px-4 py-1.5 sm:py-2 cursor-pointer transition-all duration-200 group border border-gray-200 hover:border-gray-300"
+              className="flex items-center space-x-2 sm:space-x-3 md:bg-gray-50 hover:bg-gray-100 rounded-lg sm:rounded-xl px-2 sm:px-4 py-1.5 sm:py-2 cursor-pointer transition-all duration-200 group md:border md:border-gray-200 hover:border-gray-300"
               onClick={toggleDropdown}
             >
               <div className="relative">
@@ -164,20 +164,7 @@ const HeaderAdmin = ({ onToggleSidebar }) => {
                   </div>
                 </div>
 
-                <div className="py-1 sm:py-2">
-                  <button
-                    onClick={() => {
-                      setIsDropdownOpen(false);
-                      navigate("/admin/profile");
-                    }}
-                    className="flex items-center w-full px-3 sm:px-4 py-2 sm:py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200 group"
-                  >
-                    <FaRegIdCard className="w-4 h-4 mr-2 sm:mr-3 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                    <span className="font-medium">Profile Settings</span>
-                  </button>
-
-                  <div className="border-t border-gray-100 my-1"></div>
-
+                <div className="">
                   <button
                     onClick={handleLogout}
                     disabled={isLoading}

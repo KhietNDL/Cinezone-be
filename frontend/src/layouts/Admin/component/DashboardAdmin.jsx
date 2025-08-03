@@ -18,6 +18,7 @@ import { FaTicket } from "react-icons/fa6";
 import { IoCalendar } from "react-icons/io5";
 import { RiMoneyDollarCircleFill } from "react-icons/ri";
 import { MdMovieFilter, MdDashboard } from "react-icons/md";
+import CustomSelect from "../../../components/CustomSelect/CustomSelect";
 import {
   getRevenueByMonth,
   getRevenueByQuarter,
@@ -324,7 +325,7 @@ const DashboardAdmin = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header Section */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 bg-white shadow-md rounded-lg mb-6">
+      <div className="max-w-7xl select-none mx-auto px-3 sm:px-6 py-3 sm:py-4 bg-white shadow-md rounded-lg mb-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-3 lg:gap-4">
           {/* Left: Logo/Brand */}
           <div className="flex items-center gap-2 sm:gap-3">
@@ -343,102 +344,99 @@ const DashboardAdmin = () => {
         </div>
       </div>
 
-      <div className="flex flex-col items-center lg:items-start h-auto min-h-screen w-full max-w-full overflow-x-hidden">
-        <div className="w-[90%] md:w-[95%] lg:w-[95%] max-w-7xl space-y-4 sm:space-y-6">
+      <div className="flex flex-col items-center lg:items-start w-full max-w-full ">
+        <div className="w-[90%] md:w-[95%] lg:w-full max-w-7xl space-y-4 sm:space-y-6">
           {/* Stats Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4 w-full">
-            <div className="bg-white rounded-xl p-3 sm:p-4 flex-1 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
+          <div className="grid select-none grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6 w-full">
+            <div className="bg-white rounded-xl p-4 sm:p-6 flex-1 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-amber-50/50 group">
               <div className="flex items-center justify-between">
-                <p className="text-slate-500 text-sm sm:text-base font-medium">
-                  Total Tickets Sold
-                </p>
-                <div className="p-2 sm:p-3 bg-gradient-to-r from-amber-100 to-yellow-100 rounded-lg flex items-center justify-center">
-                  <FaTicket size={18} sm={20} className="text-amber-600" />
+                <div>
+                  <p className="text-slate-600 text-sm sm:text-base font-medium mb-2">
+                    Total Tickets Sold
+                  </p>
+                  <p className="font-bold text-xl sm:text-2xl text-gray-800 group-hover:text-amber-700 transition-colors duration-300">
+                    25,340
+                  </p>
+                </div>
+                <div className="p-3 sm:p-4 bg-gradient-to-r from-amber-100 to-yellow-100 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-110">
+                  <FaTicket size={20} className="text-amber-600" />
                 </div>
               </div>
-              <p className="font-bold text-lg sm:text-xl text-gray-800 mt-2">
-                25,340
-              </p>
-              <p className="text-xs text-green-600 mt-1">
-                +5.2% from last month
-              </p>
             </div>
-            <div className="bg-white rounded-xl p-3 sm:p-4 flex-1 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
+            <div className="bg-white rounded-xl p-4 sm:p-6 flex-1 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-emerald-50/50 group">
               <div className="flex items-center justify-between">
-                <p className="text-slate-500 text-sm sm:text-base font-medium">
-                  Revenue
-                </p>
-                <div className="p-2 sm:p-3 bg-gradient-to-r from-emerald-100 to-green-100 rounded-lg flex items-center justify-center">
+                <div>
+                  <p className="text-slate-600 text-sm sm:text-base font-medium mb-2">
+                    Revenue
+                  </p>
+                  <p className="font-bold text-xl sm:text-2xl text-gray-800 group-hover:text-emerald-700 transition-colors duration-300">
+                    $25,340
+                  </p>
+                </div>
+                <div className="p-3 sm:p-4 bg-gradient-to-r from-emerald-100 to-green-100 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-110">
                   <RiMoneyDollarCircleFill
-                    size={18}
-                    sm={20}
+                    size={20}
                     className="text-emerald-600"
                   />
                 </div>
               </div>
-              <p className="font-bold text-lg sm:text-xl text-gray-800 mt-2">
-                $25,340
-              </p>
-              <p className="text-xs text-green-600 mt-1">
-                +8.1% from last month
-              </p>
             </div>
-            <div className="bg-white rounded-xl p-3 sm:p-4 flex-1 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
+            <div className="bg-white rounded-xl p-4 sm:p-6 flex-1 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-blue-50/50 group">
               <div className="flex items-center justify-between">
-                <p className="text-slate-500 text-sm sm:text-base font-medium">
-                  Active Movies
-                </p>
-                <div className="p-2 sm:p-3 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-lg flex items-center justify-center">
-                  <MdMovieFilter size={18} sm={20} className="text-blue-600" />
+                <div>
+                  <p className="text-slate-600 text-sm sm:text-base font-medium mb-2">
+                    Active Movies
+                  </p>
+                  <p className="font-bold text-xl sm:text-2xl text-gray-800 group-hover:text-blue-700 transition-colors duration-300">
+                    25,340
+                  </p>
+                </div>
+                <div className="p-3 sm:p-4 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-110">
+                  <MdMovieFilter size={20} className="text-blue-600" />
                 </div>
               </div>
-              <p className="font-bold text-lg sm:text-xl text-gray-800 mt-2">
-                25,340
-              </p>
-              <p className="text-xs text-blue-600 mt-1">12 new releases</p>
             </div>
-            <div className="bg-white rounded-xl p-3 sm:p-4 flex-1 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
+            <div className="bg-white rounded-xl p-4 sm:p-6 flex-1 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-purple-50/50 group">
               <div className="flex items-center justify-between">
-                <p className="text-slate-500 text-sm sm:text-base font-medium">
-                  Upcoming Shows
-                </p>
-                <div className="p-2 sm:p-3 bg-gradient-to-r from-purple-100 to-violet-100 rounded-lg flex items-center justify-center">
-                  <IoCalendar size={18} sm={20} className="text-purple-600" />
+                <div>
+                  <p className="text-slate-600 text-sm sm:text-base font-medium mb-2">
+                    Upcoming Shows
+                  </p>
+                  <p className="font-bold text-xl sm:text-2xl text-gray-800 group-hover:text-purple-700 transition-colors duration-300">
+                    25,340
+                  </p>
+                </div>
+                <div className="p-3 sm:p-4 bg-gradient-to-r from-purple-100 to-violet-100 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-110">
+                  <IoCalendar size={20} className="text-purple-600" />
                 </div>
               </div>
-              <p className="font-bold text-lg sm:text-xl text-gray-800 mt-2">
-                25,340
-              </p>
-              <p className="text-xs text-purple-600 mt-1">Next 7 days</p>
             </div>
           </div>
 
           {/* Charts Section */}
           <div className="flex flex-col lg:flex-row items-start justify-between w-full gap-4 sm:gap-6">
-            <div className="w-full xl:w-[70%] space-y-4 sm:space-y-6">
-              <div className="bg-white w-full h-[250px] sm:h-[300px] rounded-xl p-4 sm:p-5 font-bold shadow-sm border border-gray-100 relative">
-                <div className="flex items-center justify-between mb-4">
+            <div className="w-full select-none xl:w-[70%] space-y-4 sm:space-y-6">
+              <div className="bg-white w-full h-[250px] sm:h-[320px] rounded-xl p-4 sm:p-6 font-bold shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-purple-50/30">
+                <div className="flex items-center justify-between mb-6">
                   <div>
-                    <p className="text-lg sm:text-xl font-bold text-gray-800">
+                    <p className="text-lg sm:text-xl font-bold text-gray-800 mb-1">
                       Sales Overview
                     </p>
                     <p className="text-sm text-gray-500">
                       Track your revenue performance
                     </p>
                   </div>
-                  <select
+                  <CustomSelect
                     value={timeFilter}
                     onChange={handleTimeFilterChange}
-                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
-                  >
-                    {timeOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
+                    options={timeOptions}
+                    placeholder="Select time period"
+                    className="min-w-[140px]"
+                    dropdownClassName="border-2 border-purple-100 shadow-xl"
+                    optionClassName="hover:shadow-sm"
+                  />
                 </div>
-                <ResponsiveContainer width="100%" height="80%">
+                <ResponsiveContainer width="100%" height="75%">
                   <AreaChart data={salesOverviewData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis dataKey="month" fontSize={12} stroke="#6b7280" />
@@ -483,16 +481,16 @@ const DashboardAdmin = () => {
                 </ResponsiveContainer>
               </div>
               <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-4 sm:gap-6">
-                <div className="bg-white w-full sm:w-[48%] h-[250px] sm:h-[300px] rounded-xl p-4 sm:p-5 font-bold shadow-sm border border-gray-100">
-                  <div className="mb-4">
-                    <p className="text-lg sm:text-xl font-bold text-gray-800">
+                <div className="bg-white w-full sm:w-[48%] h-[250px] sm:h-[320px] rounded-xl p-4 sm:p-6 font-bold shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-blue-50/30">
+                  <div className="mb-6">
+                    <p className="text-lg sm:text-xl font-bold text-gray-800 mb-1">
                       Daily Ticket Sales
                     </p>
                     <p className="text-sm text-gray-500">
                       Weekly performance overview
                     </p>
                   </div>
-                  <ResponsiveContainer width="100%" height="80%">
+                  <ResponsiveContainer width="100%" height="75%">
                     <LineChart data={dailyTicketData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis dataKey="date" fontSize={12} stroke="#6b7280" />
@@ -516,16 +514,16 @@ const DashboardAdmin = () => {
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="bg-white w-full sm:w-[48%] h-[250px] sm:h-[300px] rounded-xl p-4 sm:p-5 font-bold shadow-sm border border-gray-100">
-                  <div className="mb-4">
-                    <p className="text-lg sm:text-xl font-bold text-gray-800">
+                <div className="bg-white w-full sm:w-[48%] h-[250px] sm:h-[320px] rounded-xl p-4 sm:p-6 font-bold shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-pink-50/30">
+                  <div className="mb-6">
+                    <p className="text-lg sm:text-xl font-bold text-gray-800 mb-1">
                       Genre Distribution
                     </p>
                     <p className="text-sm text-gray-500">
                       Popular movie categories
                     </p>
                   </div>
-                  <ResponsiveContainer width="100%" height="80%">
+                  <ResponsiveContainer width="100%" height="75%">
                     <PieChart>
                       <Pie
                         data={pieChartData}

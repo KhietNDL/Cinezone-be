@@ -9,6 +9,7 @@ import {
   IoTimeOutline,
   IoLocationOutline,
 } from "react-icons/io5";
+import UserAvatar from "../userComponent/UserAvatar";
 
 const EmployeeTooltip = ({ employee, onClose }) => {
   const formatDate = (dateString) =>
@@ -20,11 +21,11 @@ const EmployeeTooltip = ({ employee, onClose }) => {
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-start space-x-4">
             <div className="relative">
-              <img
-                src={employee.avatar_url}
-                alt="Employee"
-                loading="lazy"
-                className="w-20 h-20 rounded-full object-cover border-4 border-blue-100 shadow-lg"
+              <UserAvatar
+                avatarUrl={employee.avatar_url}
+                fullName={employee.FullName}
+                size="md"
+                showHover={true}
               />
               <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
