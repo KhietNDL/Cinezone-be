@@ -6,8 +6,8 @@ import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import { toast } from "react-toastify";
 import ConfirmTicketsPage from "./ConfirmTicketsPage";
-import sellingReducer from "../../../redux/features/sellingSlice";
-import memberReducer from "../../../redux/features/memberSlice";
+import sellingReducer from "../../../../redux/features/sellingSlice";
+import memberReducer from "../../../../redux/features/memberSlice";
 
 // Mock all dependencies
 const mockNavigate = jest.fn();
@@ -277,7 +277,7 @@ describe("ConfirmTicketsPage", () => {
     mockProcessPayment = jest.fn();
 
     // Mock API functions
-    const api = require("../../../services/APIForStaff/API");
+    const api = require("../../../../services/APIForStaff/API");
     api.getMovieById = mockGetMovieById;
     api.cancelBookingById = mockCancelBookingById;
     api.checkPromotion = mockCheckPromotion;
@@ -286,7 +286,7 @@ describe("ConfirmTicketsPage", () => {
     api.getUserInfo = mockGetUserInfo;
 
     // Mock processPayment
-    const processPayment = require("../../../hooks/useProcessPayment");
+    const processPayment = require("../../../../hooks/useProcessPayment");
     processPayment.processPayment = mockProcessPayment;
   });
 

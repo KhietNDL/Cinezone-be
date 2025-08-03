@@ -37,6 +37,18 @@ export default function CheckOutComboPage() {
     return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   }, [cart]);
 
+  const [customerPay, setCustomerPay] = useState("");
+  const [changeAmount, setChangeAmount] = useState(0);
+
+  const handleCustomerPayChange = (value) => {
+    const pay = parseInt(value || 0);
+    setCustomerPay(value);
+
+    const change = pay - totalPrice;
+    setChangeAmount(change > 0 ? change : 0);
+  };
+
+
   const handlePayment = async () => {
     if (!Array.isArray(cart) || cart.length === 0) {
       toast.warning("Cart is empty or missing order number.");
@@ -229,6 +241,29 @@ export default function CheckOutComboPage() {
                 <p className="text-sm text-gray-500">
                   Choose your payment method
                 </p>
+              </div>
+            </div>
+
+            {/* Customer Pay & Change */}
+            <div className="grid sm:grid-cols-2 gap-4 mt-4 py-3">
+              <div>
+                <label className="block mb-1 font-medium text-gray-700">
+                  Customer Pays (VNĐ)
+                </label>
+                <Input
+                  placeholder="Enter cash given by customer"
+                  type="number"
+                  min={0}
+                  value={customerPay}
+                  onChange={(e) => handleCustomerPayChange(e.target.value)}
+                  disabled={paymentMethod !== "Cash"}
+                />
+              </div>
+              <div>
+                <label className="block mb-1 font-medium text-gray-700">Change back</label>
+                <div className="h-[38px] flex items-center px-3 bg-gray-100 rounded-md text-gray-800 font-semibold">
+                  {formatPrice(changeAmount)} VNĐ
+                </div>
               </div>
             </div>
 
