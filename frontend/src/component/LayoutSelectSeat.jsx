@@ -34,7 +34,7 @@ export const LayoutSelectSeat = ({
   const [showWarning, setShowWarning] = useState(false);
   const [warningMessage, setWarningMessage] = useState("");
 
-  // Tạo seat map từ API data với seatId làm key
+
   const seatMap = {};
   seatDataFromAPI.forEach((seat) => {
     seatMap[seat.seatNumber] = seat;
@@ -78,15 +78,12 @@ export const LayoutSelectSeat = ({
 
     // **Assign type based on row index**
     return sortedRows.map((rowData, index, arr) => {
-      // 3 hàng đầu => Normal
       if (index < 3) {
         rowData.seats.forEach((seat) => (seat.type = "Normal"));
       }
-      // Hàng cuối => Couple
       else if (index === arr.length - 1) {
         rowData.seats.forEach((seat) => (seat.type = "Couple"));
       }
-      // Còn lại => VIP
       else {
         rowData.seats.forEach((seat) => (seat.type = "VIP"));
       }
@@ -94,89 +91,146 @@ export const LayoutSelectSeat = ({
     });
   };
 
-  // Kiểm tra xem việc chọn ghế có tạo ra khoảng trống không
   const wouldCreateGap = (seatNumber, currentSelectedSeats) => {
-    const seat = seatMap[seatNumber];
-    if (!seat) return false;
+  const seat = seatMap[seatNumber];
+  if (!seat) return false;
 
-    const row = seat.seatNumber[0];
+  const row = seat.seatNumber[0];
 
-    // Lấy tất cả ghế trong hàng hiện tại
-    const rowSeats = seatDataFromAPI
-      .filter(s => s.seatNumber[0] === row)
-      .sort((a, b) => parseInt(a.seatNumber.slice(1)) - parseInt(b.seatNumber.slice(1)));
+  // Lấy tất cả ghế trong hàng hiện tại
+  const rowSeats = seatDataFromAPI
+    .filter(s => s.seatNumber[0] === row)
+    .sort((a, b) => parseInt(a.seatNumber.slice(1)) - parseInt(b.seatNumber.slice(1)));
 
-    // Lấy ghế đã chọn + taken + holding trong hàng này
-    const occupiedInRow = rowSeats
-      .filter(s => currentSelectedSeats.has(s.seatNumber) || s.status === 'taken' || s.status === 'holding')
-      .map(s => parseInt(s.seatNumber.slice(1)));
+  // Lấy ghế available trong hàng này (không bao gồm ghế đang chọn)
+  const availableSeats = rowSeats
+    .filter(s => s.status === 'available' && s.seatNumber !== seatNumber)
+    .map(s => parseInt(s.seatNumber.slice(1)));
 
-    if (occupiedInRow.length === 0) return false;
+  // Lấy ghế đã chọn + taken + holding trong hàng này
+  const occupiedInRow = rowSeats
+    .filter(s => currentSelectedSeats.has(s.seatNumber) || s.status === 'taken' || s.status === 'holding')
+    .map(s => parseInt(s.seatNumber.slice(1)));
 
-    // Thêm ghế hiện tại vào danh sách để kiểm tra
-    const currentSeatNumber = parseInt(seatNumber.slice(1));
-    const allOccupied = [...occupiedInRow, currentSeatNumber].sort((a, b) => a - b);
+  if (occupiedInRow.length === 0) return false;
 
-    // Kiểm tra xem có khoảng trống ĐÚNG 1 ghế giữa các ghế không
-    for (let i = 0; i < allOccupied.length - 1; i++) {
-      const currentNum = allOccupied[i];
-      const nextNum = allOccupied[i + 1];
+  // Thêm ghế hiện tại vào danh sách để kiểm tra
+  const currentSeatNumber = parseInt(seatNumber.slice(1));
+  const allOccupied = [...occupiedInRow, currentSeatNumber].sort((a, b) => a - b);
 
-      // Chỉ kiểm tra nếu khoảng cách là đúng 2 (tức là có đúng 1 ghế ở giữa)
-      if (nextNum - currentNum === 2) {
-        const gapSeatNum = currentNum + 1;
-        const seatToCheck = `${row}${gapSeatNum}`;
-        const seatData = seatMap[seatToCheck];
+  // Tìm khoảng trống sẽ được tạo ra
+  for (let i = 0; i < allOccupied.length - 1; i++) {
+    const currentNum = allOccupied[i];
+    const nextNum = allOccupied[i + 1];
 
-        // Nếu ghế ở giữa tồn tại và available thì cấm
-        if (seatData && seatData.status === 'available') {
-          return true;
+    // Kiểm tra khoảng cách đúng 2 (có 1 ghế ở giữa)
+    if (nextNum - currentNum === 2) {
+      const gapSeatNum = currentNum + 1;
+      const seatToCheck = `${row}${gapSeatNum}`;
+      const seatData = seatMap[seatToCheck];
+
+      // Nếu ghế ở giữa tồn tại và available
+      if (seatData && seatData.status === 'available') {
+        // **LOGIC THỰC TẾ**: 
+        // - Nếu chỉ còn lại ít ghế available (≤ 3), cho phép chọn
+        // - Nếu không còn cặp ghế kề nhau nào khác, cho phép chọn
+        // - Chỉ cấm khi còn nhiều lựa chọn tốt hơn
+        
+        if (availableSeats.length <= 3) {
+          return false; // Cho phép chọn nếu ít ghế còn lại
         }
+
+        // Kiểm tra xem có cặp ghế kề nhau khác không (không tính ghế gap)
+        const seatsExcludingGap = availableSeats.filter(num => num !== gapSeatNum);
+        let hasConsecutivePair = false;
+        
+        for (let j = 0; j < seatsExcludingGap.length - 1; j++) {
+          if (seatsExcludingGap[j + 1] - seatsExcludingGap[j] === 1) {
+            hasConsecutivePair = true;
+            break;
+          }
+        }
+
+        // Chỉ cấm nếu vẫn còn cặp ghế kề nhau khác
+        return hasConsecutivePair;
       }
     }
+  }
 
-    return false;
-  };
+  return false;
+};
 
-  // Kiểm tra xem việc bỏ chọn ghế có tạo ra khoảng trống không
-  const wouldCreateGapOnDeselect = (seatNumber, currentSelectedSeats) => {
-    const seat = seatMap[seatNumber];
-    if (!seat) return false;
+// **LOGIC CẢI THIỆN CHO BỎ CHỌN GHẾ**
+const wouldCreateGapOnDeselect = (seatNumber, currentSelectedSeats) => {
+  const seat = seatMap[seatNumber];
+  if (!seat) return false;
 
-    const row = seat.seatNumber[0];
+  const row = seat.seatNumber[0];
 
-    // Tạo set mới không bao gồm ghế đang bỏ chọn
-    const newSelectedSeats = new Set(currentSelectedSeats);
-    newSelectedSeats.delete(seatNumber);
+  // Tạo set mới không bao gồm ghế đang bỏ chọn
+  const newSelectedSeats = new Set(currentSelectedSeats);
+  newSelectedSeats.delete(seatNumber);
 
-    // Lấy ghế đã chọn + taken + holding trong hàng này sau khi bỏ chọn
-    const occupiedInRow = seatDataFromAPI
-      .filter(s => s.seatNumber[0] === row && (newSelectedSeats.has(s.seatNumber) || s.status === 'taken' || s.status === 'holding'))
-      .map(s => parseInt(s.seatNumber.slice(1)))
-      .sort((a, b) => a - b);
+  // Nếu sau khi bỏ chọn không còn ghế nào được chọn trong hàng, cho phép
+  const remainingSelectedInRow = seatDataFromAPI
+    .filter(s => s.seatNumber[0] === row && newSelectedSeats.has(s.seatNumber));
+  
+  if (remainingSelectedInRow.length === 0) return false;
 
-    if (occupiedInRow.length <= 1) return false;
+  // Lấy ghế available trong hàng này (bao gồm ghế đang bỏ chọn)
+  const availableSeats = seatDataFromAPI
+    .filter(s => s.seatNumber[0] === row && (s.status === 'available' || s.seatNumber === seatNumber))
+    .map(s => parseInt(s.seatNumber.slice(1)));
 
-    // Kiểm tra xem có khoảng trống ĐÚNG 1 ghế giữa các ghế còn lại không
-    for (let i = 0; i < occupiedInRow.length - 1; i++) {
-      const currentNum = occupiedInRow[i];
-      const nextNum = occupiedInRow[i + 1];
+  // Lấy ghế đã chọn + taken + holding trong hàng này sau khi bỏ chọn
+  const occupiedInRow = seatDataFromAPI
+    .filter(s => s.seatNumber[0] === row && (newSelectedSeats.has(s.seatNumber) || s.status === 'taken' || s.status === 'holding'))
+    .map(s => parseInt(s.seatNumber.slice(1)))
+    .sort((a, b) => a - b);
 
-      // Chỉ kiểm tra nếu khoảng cách là đúng 2 (tức là có đúng 1 ghế ở giữa)
-      if (nextNum - currentNum === 2) {
-        const gapSeatNum = currentNum + 1;
-        const seatToCheck = `${row}${gapSeatNum}`;
-        const seatData = seatMap[seatToCheck];
+  if (occupiedInRow.length <= 1) return false;
 
-        // Nếu ghế ở giữa tồn tại và available thì cấm bỏ chọn
-        if (seatData && seatData.status === 'available') {
-          return true;
+  // Kiểm tra khoảng trống sẽ được tạo ra
+  for (let i = 0; i < occupiedInRow.length - 1; i++) {
+    const currentNum = occupiedInRow[i];
+    const nextNum = occupiedInRow[i + 1];
+
+    if (nextNum - currentNum === 2) {
+      const gapSeatNum = currentNum + 1;
+      const seatToCheck = `${row}${gapSeatNum}`;
+      const seatData = seatMap[seatToCheck];
+
+      if (seatData && seatData.status === 'available') {
+        // **LOGIC THỰC TẾ**: Cho phép bỏ chọn trong hầu hết trường hợp
+        // Chỉ cấm khi việc bỏ chọn tạo ra gap MÀ người dùng có thể chọn cách khác tốt hơn
+        
+        const currentSeatNumber = parseInt(seatNumber.slice(1));
+        const otherAvailableSeats = availableSeats.filter(num => 
+          num !== currentSeatNumber && num !== gapSeatNum
+        );
+
+        // Nếu ít ghế available còn lại, cho phép bỏ chọn
+        if (otherAvailableSeats.length <= 2) {
+          return false;
         }
+
+        // Kiểm tra có cặp ghế kề nhau khác không
+        let hasConsecutivePair = false;
+        for (let j = 0; j < otherAvailableSeats.length - 1; j++) {
+          if (otherAvailableSeats[j + 1] - otherAvailableSeats[j] === 1) {
+            hasConsecutivePair = true;
+            break;
+          }
+        }
+
+        // Chỉ cấm nếu vẫn còn nhiều lựa chọn tốt hơn
+        return hasConsecutivePair && otherAvailableSeats.length > 3;
       }
     }
+  }
 
-    return false;
-  };
+  return false;
+};
 
   useEffect(() => {
     if (seatDataFromAPI.length > 0) {
