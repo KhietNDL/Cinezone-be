@@ -219,4 +219,168 @@ router.get('/revenue/today', analyticsController.getRevenueThisDay);
  */
 router.get('/user/age-groups', analyticsController.getUserAgeGroups);
 
+/**
+ * @swagger
+ * /api/analytics/user/age-groups-employees:
+ *   get:
+ *     summary: Get ticket buyer age groups
+ *     tags: [Analytics]
+ *     responses:
+ *       200:
+ *         description: Age group statistics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       ageGroup:
+ *                         type: string
+ *                         example: 18-24
+ *                       total:
+ *                         type: integer
+ *                         example: 123
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/user/age-groups-employees', analyticsController.getEmployeesAgeGroups);
+
+/**
+ * @swagger
+ * /api/analytics/users/ranks:
+ *   get:
+ *     summary: Get users by membership rank based on accumulated points
+ *     tags: [Analytics]
+ *     responses:
+ *       200:
+ *         description: Users grouped by membership rank
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalUsers:
+ *                   type: integer
+ *                   example: 250
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       rank:
+ *                         type: string
+ *                         example: "Bronze"
+ *                       name:
+ *                         type: string
+ *                         example: "Đồng"
+ *                       nameEN:
+ *                         type: string
+ *                         example: "Bronze"
+ *                       minPoints:
+ *                         type: integer
+ *                         example: 0
+ *                       maxPoints:
+ *                         type: integer
+ *                         example: 999
+ *                       count:
+ *                         type: integer
+ *                         example: 150
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/users/ranks', analyticsController.getUsersByMembershipRank);
+
+/**
+ * @swagger
+ * /api/analytics/movies/genres:
+ *   get:
+ *     summary: Get movie genre distribution statistics
+ *     tags: [Analytics]
+ *     responses:
+ *       200:
+ *         description: Movie genre statistics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalCount:
+ *                   type: integer
+ *                   example: 150
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       genre:
+ *                         type: string
+ *                         example: "Action"
+ *                       count:
+ *                         type: integer
+ *                         example: 45
+ *                       percentage:
+ *                         type: integer
+ *                         example: 30
+ *                 allGenres:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       genre:
+ *                         type: string
+ *                         example: "Science Fiction"
+ *                       count:
+ *                         type: integer
+ *                         example: 12
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/movies/genres', analyticsController.getMovieGenreStats);
+
+/**
+ * @swagger
+ * /api/analytics/employees/tenure:
+ *   get:
+ *     summary: Employee working time statistics
+ *     tags: [Analytics]
+ *     responses:
+ *       200:
+ *         description: Employee working time statistics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalEmployees:
+ *                   type: integer
+ *                   example: 25
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       group:
+ *                         type: string
+ *                         example: "1-2 năm"
+ *                       nameEN:
+ *                         type: string
+ *                         example: "1-2 years"
+ *                       total:
+ *                         type: integer
+ *                         example: 8
+ *                       percentage:
+ *                         type: integer
+ *                         example: 32
+ *                       order:
+ *                         type: integer
+ *                         example: 4
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/employees/tenure', analyticsController.getEmployeeTenureStats);
+
 module.exports = router;
