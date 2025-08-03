@@ -39,6 +39,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { resetBooking } from "../../../redux/features/sellingSlice";
 import { resetMember } from "../../../redux/features/memberSlice";
 import BackButton from "../component/BackButton";
+import VersionCard from "../component/VersionCard";
 
 // Tạo hiệu ứng pháo hoa chúc mừng
 const createFireworks = () => {
@@ -430,6 +431,10 @@ const TicketInformation = () => {
                         <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-500 text-white shadow-lg">
                           ● Completed
                         </span>
+                      </div>
+                       {/* Version */}
+                       <div className="absolute bottom-3 right-3 text-[10px]">
+                        <VersionCard version={apiBookingData?.versionType} readonly={true}/>
                       </div>
                     </div>
                   </div>

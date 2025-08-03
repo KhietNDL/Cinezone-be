@@ -235,11 +235,11 @@ export default function PrintTicket() {
                     </div>
 
                     {/* Perforated circles */}
-                    <div className="absolute w-[30px] sm:w-[40px] lg:w-[50px] h-[30px] sm:h-[40px] lg:h-[50px] rounded-full bg-gray-50 top-[-15px] sm:top-[-20px] lg:top-[-25px] right-[35%] sm:right-[37%] transform translate-x-1/2"></div>
-                    <div className="absolute w-[30px] sm:w-[40px] lg:w-[50px] h-[30px] sm:h-[40px] lg:h-[50px] rounded-full bg-gray-50 bottom-[-15px] sm:bottom-[-20px] lg:bottom-[-25px] right-[35%] sm:right-[37%] transform translate-x-1/2"></div>
+                    <div className="absolute w-[30px] sm:w-[40px] lg:w-[50px] h-[30px] sm:h-[40px] lg:h-[50px] rounded-full bg-gray-50 top-[-25px] sm:top-[-35px] lg:top-[-40px] right-[37%] sm:right-[37%] transform translate-x-1/2"></div>
+                    <div className="absolute w-[30px] sm:w-[40px] lg:w-[50px] h-[30px] sm:h-[40px] lg:h-[50px] rounded-full bg-gray-50 bottom-[-25px] sm:bottom-[-35px] lg:bottom-[-40px] right-[37%] sm:right-[37%] transform translate-x-1/2"></div>
 
                     {/* Dashed line */}
-                    <div className="absolute h-[80%] sm:h-[90%] top-[10%] sm:top-[5%] border-dashed border-white border-2 right-[37%] transform translate-x-1/2"></div>
+                    <div className="absolute h-[100%] sm:h-[90%] top-[10%] sm:top-[5%] border-dashed border-white border-2 right-[37%] transform translate-x-1/2"></div>
                   </div>
                 </div>
               </div>
@@ -251,6 +251,7 @@ export default function PrintTicket() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">
             <Button
+              type="primary"
               onClick={handleExportPdf}
               size="large"
               className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 border-purple-600 hover:border-purple-700 text-white font-medium px-6 sm:px-8"

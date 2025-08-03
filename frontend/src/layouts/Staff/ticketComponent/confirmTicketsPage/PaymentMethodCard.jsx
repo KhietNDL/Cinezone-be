@@ -133,7 +133,7 @@ const PaymentMethodCard = ({
                   type="number"
                   min={finalPrice}
                   placeholder={`At least ${finalPrice}`}
-                  className="border border-gray-300 rounded-lg px-4 py-2 w-full"
+                  className="border border-gray-300 rounded-lg px-4 py-2 w-full bg-white"
                   onChange={e => setFieldValue("cashGiven", Number(e.target.value))}
                 />
                 {errors?.cashGiven && touched?.cashGiven && (
