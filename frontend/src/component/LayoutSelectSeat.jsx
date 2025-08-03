@@ -3,7 +3,7 @@ import { PiArmchairLight, PiArmchairFill } from "react-icons/pi";
 import { MdOutlineChair } from "react-icons/md";
 
 export const LayoutSelectSeat = ({
-  onSeatSelect = () => {},
+  onSeatSelect = () => { },
   initialSelectedSeats = [],
   seatDataFromAPI = [],
   containerWidth = "750px",
@@ -21,9 +21,9 @@ export const LayoutSelectSeat = ({
     selected: "text-purple-100",
     taken: "text-purple-600",
     holding: "text-blue-600",
-    vip: "text-purple-200",
-    normal: "text-purple-300",
-    couple: "text-purple-400",
+    vip: "text-[#FFE3B3]/70",
+    normal: "text-[#752090]",
+    couple: "text-[#C957BC]",
   },
 }) => {
   const [selectedSeats, setSelectedSeats] = useState(
@@ -100,7 +100,7 @@ export const LayoutSelectSeat = ({
     if (!seat) return false;
 
     const row = seat.seatNumber[0];
-    
+
     // Lấy tất cả ghế trong hàng hiện tại
     const rowSeats = seatDataFromAPI
       .filter(s => s.seatNumber[0] === row)
@@ -121,13 +121,13 @@ export const LayoutSelectSeat = ({
     for (let i = 0; i < allOccupied.length - 1; i++) {
       const currentNum = allOccupied[i];
       const nextNum = allOccupied[i + 1];
-      
+
       // Chỉ kiểm tra nếu khoảng cách là đúng 2 (tức là có đúng 1 ghế ở giữa)
       if (nextNum - currentNum === 2) {
         const gapSeatNum = currentNum + 1;
         const seatToCheck = `${row}${gapSeatNum}`;
         const seatData = seatMap[seatToCheck];
-        
+
         // Nếu ghế ở giữa tồn tại và available thì cấm
         if (seatData && seatData.status === 'available') {
           return true;
@@ -144,7 +144,7 @@ export const LayoutSelectSeat = ({
     if (!seat) return false;
 
     const row = seat.seatNumber[0];
-    
+
     // Tạo set mới không bao gồm ghế đang bỏ chọn
     const newSelectedSeats = new Set(currentSelectedSeats);
     newSelectedSeats.delete(seatNumber);
@@ -161,13 +161,13 @@ export const LayoutSelectSeat = ({
     for (let i = 0; i < occupiedInRow.length - 1; i++) {
       const currentNum = occupiedInRow[i];
       const nextNum = occupiedInRow[i + 1];
-      
+
       // Chỉ kiểm tra nếu khoảng cách là đúng 2 (tức là có đúng 1 ghế ở giữa)
       if (nextNum - currentNum === 2) {
         const gapSeatNum = currentNum + 1;
         const seatToCheck = `${row}${gapSeatNum}`;
         const seatData = seatMap[seatToCheck];
-        
+
         // Nếu ghế ở giữa tồn tại và available thì cấm bỏ chọn
         if (seatData && seatData.status === 'available') {
           return true;
@@ -192,7 +192,7 @@ export const LayoutSelectSeat = ({
     if (!seat || seat.status === "taken" || seat.status === "holding") return;
 
     const isCurrentlySelected = selectedSeats.has(seatNumber);
-    
+
     if (isCurrentlySelected) {
       // Kiểm tra việc bỏ chọn có tạo khoảng trống không
       if (wouldCreateGapOnDeselect(seatNumber, selectedSeats)) {
@@ -251,9 +251,9 @@ export const LayoutSelectSeat = ({
       if (status === "holding") return seatColors.holding;
       if (isSelected) return seatColors.selected;
 
-      if (rowIndex < 3) return "text-[#752090]";       // 3 hàng đầu = Normal
-      if (rowIndex === seatLayout.length - 1) return "text-[#C957BC]"; // Hàng cuối = Couple
-      return "text-[#FFE3B3]/70";                         // Còn lại = VIP
+      if (rowIndex < 3) return seatColors.normal; // 3 hàng đầu = Normal
+      if (rowIndex === seatLayout.length - 1) return seatColors.couple; // Hàng cuối = Couple
+      return seatColors.vip; // Còn lại = VIP
     };
 
     const seatColor = getSeatColorByRow();
@@ -394,9 +394,8 @@ export const LayoutSelectSeat = ({
     return (
       <div
         key={rowData.row}
-        className={`flex items-center justify-center mb-3 transition-all duration-500 ${
-          isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-        }`}
+        className={`flex items-center justify-center mb-3 transition-all duration-500 ${isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+          }`}
         style={{
           transitionDelay: `${index * 100}ms`,
         }}
@@ -416,9 +415,8 @@ export const LayoutSelectSeat = ({
           {rowData.leftSeats.map((seat, seatIndex) => (
             <div
               key={seat.seatId}
-              className={`last:mr-0 transition-all duration-300 ${
-                isLoaded ? "opacity-100 scale-100" : "opacity-0 scale-75"
-              }`}
+              className={`last:mr-0 transition-all duration-300 ${isLoaded ? "opacity-100 scale-100" : "opacity-0 scale-75"
+                }`}
               style={{
                 transitionDelay: `${index * 100 + seatIndex * 50}ms`,
               }}
@@ -444,13 +442,11 @@ export const LayoutSelectSeat = ({
           {rowData.rightSeats.map((seat, seatIndex) => (
             <div
               key={seat.seatId}
-              className={`last:mr-0 transition-all duration-300 ${
-                isLoaded ? "opacity-100 scale-100" : "opacity-0 scale-75"
-              }`}
+              className={`last:mr-0 transition-all duration-300 ${isLoaded ? "opacity-100 scale-100" : "opacity-0 scale-75"
+                }`}
               style={{
-                transitionDelay: `${
-                  index * 100 + (rowData.leftSeats.length + seatIndex) * 50
-                }ms`,
+                transitionDelay: `${index * 100 + (rowData.leftSeats.length + seatIndex) * 50
+                  }ms`,
               }}
             >
               {renderSeat(seat, index)}
@@ -472,9 +468,8 @@ export const LayoutSelectSeat = ({
     <div className="text-white rounded-lg" style={{ width: containerWidth }}>
       {/* Screen */}
       <div
-        className={`w-full h-[60px] relative overflow-hidden mb-8 transition-all duration-700 ${
-          isLoaded ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
-        }`}
+        className={`w-full h-[60px] relative overflow-hidden mb-8 transition-all duration-700 ${isLoaded ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
+          }`}
       >
         <svg
           width="100%"
@@ -518,15 +513,15 @@ export const LayoutSelectSeat = ({
       <div className="mt-8 overflow-x-auto w-full flex items-center justify-center">
         <div className="flex justify-center items-center flex-wrap gap-4 sm:gap-6 text-sm sm:text-lg w-full sm:px-3 max-w-full px-5">
           <div className="flex items-center space-x-2 min-w-fit">
-            <PiArmchairLight className="text-[#752090]" size={20} />
+            <PiArmchairLight className={seatColors.normal} size={20} />
             <span className="text-gray-400">Normal</span>
           </div>
           <div className="flex items-center space-x-2 min-w-fit">
-            <PiArmchairLight className="text-[#FFE3B3]/70" size={20} />
+            <PiArmchairLight className={seatColors.vip} size={20} />
             <span className="text-gray-400">VIP</span>
           </div>
           <div className="flex items-center space-x-2 min-w-fit">
-            <MdOutlineChair className="text-[#C957BC]" size={20} />
+            <MdOutlineChair className={seatColors.couple} size={20} />
             <span className="text-gray-400">Couple</span>
           </div>
           <div className="flex items-center space-x-2 min-w-fit">
@@ -559,7 +554,7 @@ export const LayoutSelectSeat = ({
         <div className="fixed inset-0 bg-transparent bg-opacity-50 flex items-center justify-center z-[1000]">
           <div className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl transform transition-all duration-300">
             <div className="flex items-center mb-4">
-              
+
               <h3 className="text-lg font-semibold text-gray-900">Note!</h3>
             </div>
             <p className="text-gray-700 mb-6">{warningMessage}</p>
