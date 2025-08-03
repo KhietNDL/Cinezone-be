@@ -153,6 +153,7 @@ const ConfirmPayment = () => {
       const response = await getPromotionByTitle(promoCode);
       console.log("Promotion response:", response);
       let promotionData = Array.isArray(response.promotions) ? response.promotions[0] : response.promotions;
+      console.log("Promotion data:", promotionData);
       const dayObj = new Date(promotionData?.EndTime);
       const dateToCheck = new Date(dayObj.getFullYear(), dayObj.getMonth(), dayObj.getDate());
       const today = new Date();
