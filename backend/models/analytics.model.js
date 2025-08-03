@@ -189,6 +189,26 @@ class Analytics {
     return rows;
   }
 
+  static async getEmployeesAgeGroups() {
+    const sql = `
+      SELECT
+        CASE
+          WHEN TIMESTAMPDIFF(YEAR, DateOfBirth, CURDATE()) < 18 THEN '<18'
+          WHEN TIMESTAMPDIFF(YEAR, DateOfBirth, CURDATE()) BETWEEN 18 AND 24 THEN '18-24'
+          WHEN TIMESTAMPDIFF(YEAR, DateOfBirth, CURDATE()) BETWEEN 25 AND 34 THEN '25-34'
+          WHEN TIMESTAMPDIFF(YEAR, DateOfBirth, CURDATE()) BETWEEN 35 AND 44 THEN '35-44'
+          WHEN TIMESTAMPDIFF(YEAR, DateOfBirth, CURDATE()) BETWEEN 45 AND 54 THEN '45-54'
+          ELSE '55+' END AS ageGroup,
+        COUNT(*) as total
+      FROM Users
+      WHERE IsDeleted = 0 AND Role = '2'
+      GROUP BY ageGroup
+      ORDER BY ageGroup
+    `;
+    const [rows] = await db.promise().query(sql);
+    return rows;
+  }
+
   static async countTicketsByDate({ type = 'day', year, month }) {
     let groupBy, dateCondition = '', params = [];
 
@@ -277,6 +297,178 @@ class Analytics {
       timeRange: rows[0].firstBookingTime && rows[0].lastBookingTime ?
         `${rows[0].firstBookingTime} - ${rows[0].lastBookingTime}` : null
     };
+  }
+
+  static async getUsersByMembershipRank() {
+    const sql = `
+    SELECT 
+      CASE 
+        WHEN TotalAccumulatedPoints < 1000 THEN 'Bronze'
+        WHEN TotalAccumulatedPoints < 3000 THEN 'Silver'
+        WHEN TotalAccumulatedPoints < 7000 THEN 'Gold'
+        ELSE 'Diamond'
+      END AS rankName,
+      COUNT(*) as userCount
+    FROM Users
+    WHERE IsDeleted = 0
+    GROUP BY rankName
+    ORDER BY 
+      CASE rankName
+        WHEN 'Bronze' THEN 1
+        WHEN 'Silver' THEN 2
+        WHEN 'Gold' THEN 3
+        WHEN 'Diamond' THEN 4
+      END
+  `;
+
+    const [rows] = await db.promise().query(sql);
+
+    const membershipRanks = [
+      {
+        rank: 'Bronze',
+        name: 'Đồng',
+        nameEN: 'Bronze',
+        minPoints: 0,
+        maxPoints: 999,
+        count: 0
+      },
+      {
+        rank: 'Silver',
+        name: 'Bạc',
+        nameEN: 'Silver',
+        minPoints: 1000,
+        maxPoints: 2999,
+        count: 0
+      },
+      {
+        rank: 'Gold',
+        name: 'Vàng',
+        nameEN: 'Gold',
+        minPoints: 3000,
+        maxPoints: 6999,
+        count: 0
+      },
+      {
+        rank: 'Diamond',
+        name: 'Kim cương',
+        nameEN: 'Diamond',
+        minPoints: 7000,
+        maxPoints: null,
+        count: 0
+      }
+    ];
+
+    for (const row of rows) {
+      const rankIndex = membershipRanks.findIndex(r => r.rank === row.rankName);
+      if (rankIndex >= 0) {
+        membershipRanks[rankIndex].count = Number(row.userCount);
+      }
+    }
+
+    return membershipRanks;
+  }
+
+  static async getMovieGenreStats() {
+    const sql = `
+    SELECT 
+      m.Genres
+    FROM 
+      Movies m
+    WHERE 
+      m.IsDeleted = 0
+  `;
+
+    const [rows] = await db.promise().query(sql);
+
+    // Khởi tạo đối tượng đếm thể loại
+    const genreCounts = {};
+
+    // Đếm thể loại từ mỗi phim
+    for (const row of rows) {
+      try {
+        // Xử lý trường hợp Genres là chuỗi JSON hoặc mảng
+        let genres;
+        if (typeof row.Genres === 'string') {
+          // Nếu là chuỗi, chúng ta giả định là danh sách phân tách bằng dấu phẩy
+          genres = row.Genres.split(',').map(g => g.trim());
+        } else if (Array.isArray(row.Genres)) {
+          // Nếu đã là mảng
+          genres = row.Genres;
+        } else {
+          // Trường hợp là null hoặc không định nghĩa
+          continue;
+        }
+
+        // Đếm mỗi thể loại
+        genres.forEach(genre => {
+          if (!genreCounts[genre]) {
+            genreCounts[genre] = 0;
+          }
+          genreCounts[genre]++;
+        });
+      } catch (error) {
+        console.error("Lỗi khi xử lý thể loại phim:", error);
+        continue;
+      }
+    }
+
+    // Chuyển đổi thành mảng để sắp xếp
+    const genreStats = Object.keys(genreCounts).map(genre => ({
+      genre,
+      count: genreCounts[genre]
+    }));
+
+    // Sắp xếp theo số lượng giảm dần
+    genreStats.sort((a, b) => b.count - a.count);
+
+    return genreStats;
+  }
+
+  static async getEmployeeTenureStats() {
+    const sql = `
+    SELECT
+      CASE
+        WHEN TIMESTAMPDIFF(MONTH, CreatedAt, CURDATE()) < 3 THEN 'Less than 3 months'
+        WHEN TIMESTAMPDIFF(MONTH, CreatedAt, CURDATE()) BETWEEN 3 AND 5 THEN '3-6 months'
+        WHEN TIMESTAMPDIFF(MONTH, CreatedAt, CURDATE()) BETWEEN 6 AND 11 THEN '6-12 months'
+        WHEN TIMESTAMPDIFF(MONTH, CreatedAt, CURDATE()) BETWEEN 12 AND 23 THEN '1-2 years'
+        WHEN TIMESTAMPDIFF(MONTH, CreatedAt, CURDATE()) BETWEEN 24 AND 59 THEN '2-5 years'
+        ELSE 'Over 5 years'
+      END AS tenureGroup,
+      COUNT(*) as total
+    FROM Users
+    WHERE IsDeleted = 0 AND Role = '2'
+    GROUP BY tenureGroup
+    ORDER BY
+      CASE tenureGroup
+        WHEN 'Less than 3 months' THEN 1
+        WHEN '3-6 months' THEN 2
+        WHEN '6-12 months' THEN 3
+        WHEN '1-2 years' THEN 4
+        WHEN '2-5 years' THEN 5
+        WHEN 'Over 5 years' THEN 6
+      END
+  `;
+
+    const [rows] = await db.promise().query(sql);
+
+    const tenureGroups = [
+      { group: 'Less than 3 months', nameEN: 'Less than 3 months', total: 0, order: 1 },
+      { group: '3-6 months', nameEN: '3-6 months', total: 0, order: 2 },
+      { group: '6-12 months', nameEN: '6-12 months', total: 0, order: 3 },
+      { group: '1-2 years', nameEN: '1-2 years', total: 0, order: 4 },
+      { group: '2-5 years', nameEN: '2-5 years', total: 0, order: 5 },
+      { group: 'Over 5 years', nameEN: 'Over 5 years', total: 0, order: 6 }
+    ];
+
+    for (const row of rows) {
+      const group = tenureGroups.find(g => g.group === row.tenureGroup);
+      if (group) {
+        group.total = Number(row.total);
+      }
+    }
+
+    return tenureGroups;
   }
 }
 
