@@ -1,6 +1,5 @@
 const Movie = require("../models/movie.model");
 const bucket = require('../config/firebase');
-
 const axios = require('axios'); // Thêm nếu chưa có
 const { formatDateTimeString } = require("../utils/date");
 
@@ -23,12 +22,14 @@ const getAllMovies = async (req, res) => {
     const limit = req.query.limit !== undefined ? parseInt(req.query.limit) : 0;
     const sortBy = req.query.sortBy;
     const sortOrder = req.query.sortOrder;
+    const status = req.query.status; // Add status filter
 
     const result = await Movie.getAllMovies(
       parseInt(page),
       parseInt(limit),
       sortBy,
-      sortOrder);
+      sortOrder,
+      status); // Pass status parameter
 
     if (limit > 0 && page > 1 && result.movies.length === 0) {
       return res.status(400).json({
@@ -580,6 +581,8 @@ const getUpcomingMovies = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+
 
 // API: GET /api/movie/top?type=rating|imdb&limit=10
 const getTopMoviesByRatingOrImdb = async (req, res) => {

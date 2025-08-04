@@ -2,12 +2,33 @@ const db = require("../config/database");
 const { v4: uuidv4 } = require("uuid");
 
 class Product {
-  static async getAllProducts(page = 1, limit = 0, sortBy = "ProductName", sortOrder = "asc") {
+  static async getAllProducts(page = 1, limit = 0, sortBy = "ProductName", sortOrder = "asc", status = null) {
     const allowedSortFields = ["ProductName", "Price", "Quantity", "CreatedAt"];
     if (!allowedSortFields.includes(sortBy)) sortBy = "ProductName";
     sortOrder = sortOrder.toLowerCase() === "desc" ? "DESC" : "ASC";
 
-    let productsQuery = `SELECT * FROM Products WHERE IsDeleted = 0 ORDER BY ${sortBy} ${sortOrder}`;
+    let whereClause = 'WHERE IsDeleted = 0';
+    let countWhereClause = 'WHERE IsDeleted = 0';
+    
+    // Add status filter if provided
+    if (status) {
+      switch (status.toLowerCase()) {
+        case 'in_stock':
+          whereClause += ' AND Quantity > 10';
+          countWhereClause += ' AND Quantity > 10';
+          break;
+        case 'low_stock':
+          whereClause += ' AND Quantity > 0 AND Quantity <= 10';
+          countWhereClause += ' AND Quantity > 0 AND Quantity <= 10';
+          break;
+        case 'out_of_stock':
+          whereClause += ' AND Quantity = 0';
+          countWhereClause += ' AND Quantity = 0';
+          break;
+      }
+    }
+
+    let productsQuery = `SELECT * FROM Products ${whereClause} ORDER BY ${sortBy} ${sortOrder}`;
     let productsParams = [];
     if (limit > 0) {
       const offset = (page - 1) * limit;
@@ -19,7 +40,7 @@ class Product {
     let totalProducts = products.length;
     if (limit > 0) {
       const [countResult] = await db.promise().query(
-        "SELECT COUNT(*) as total FROM Products WHERE IsDeleted = 0"
+        `SELECT COUNT(*) as total FROM Products ${countWhereClause}`
       );
       totalProducts = countResult[0].total;
     }

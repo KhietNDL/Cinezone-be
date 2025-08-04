@@ -66,9 +66,30 @@ class Booking {
     };
   }
 
-  static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrder = 'desc' } = {}) {
-    let sql = `SELECT * FROM Bookings WHERE IsDeleted = 0`;
-    let countSql = `SELECT COUNT(*) as total FROM Bookings WHERE IsDeleted = 0`;
+  static async getAllBookings({ page = 1, limit = 0, sortBy = 'CreatedAt', sortOrder = 'desc', status = null } = {}) {
+    let whereClause = 'WHERE IsDeleted = 0';
+    let countWhereClause = 'WHERE IsDeleted = 0';
+    
+    // Add status filter if provided
+    if (status) {
+      switch (status.toLowerCase()) {
+        case 'successful':
+          whereClause += " AND Status = 2"; // PAID = 2
+          countWhereClause += " AND Status = 2";
+          break;
+        case 'pending':
+          whereClause += " AND Status = 1"; // PENDING = 1
+          countWhereClause += " AND Status = 1";
+          break;
+        case 'cancelled':
+          whereClause += " AND Status = 4"; // CANCELLED = 4
+          countWhereClause += " AND Status = 4";
+          break;
+      }
+    }
+
+    let sql = `SELECT * FROM Bookings ${whereClause}`;
+    let countSql = `SELECT COUNT(*) as total FROM Bookings ${countWhereClause}`;
     const params = [];
 
     // Sorting
