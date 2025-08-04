@@ -190,12 +190,14 @@ const HistoryActivity = () => {
       setLoading(true);
       const response = await getPaymentHistory(user.userId);
       const rawData = response?.data || [];
+      // setPaymentHistory(rawData);
       console.log("Payment History in HistoryPage:", rawData);
 
       // Lọc trùng theo bookingId thủ công
       const seen = new Set();
       const uniqueData = rawData.filter((item) => {
         const id = item.booking?.BookingId;
+        console.log("Checking ID:", id);
         if (!id) return true;
         if (seen.has(id)) return false; 
         seen.add(id);

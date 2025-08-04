@@ -22,7 +22,7 @@ const MembershipProgress = ({ points , onTierChange }) => {
 useEffect(() => {
   if (typeof points === "number" && onTierChange) {
     const tierInfo = getTierInfo(points);
-    console.log("points =", points, "→ tierInfo:", tierInfo);
+    // console.log("points =", points, "→ tierInfo:", tierInfo);
     onTierChange(tierInfo);
   }
 }, [points]);
@@ -55,7 +55,7 @@ useEffect(() => {
   return (
    <div className="mt-6 p-4 rounded-2xl bg-white/5 border border-white/10">
             <div className="flex items-center gap-2 mb-3">
-                <FaMedal className="text-amber-300" /> 
+                <FaMedal className="text-gray-200" /> 
                 <span className="font-semibold">{tier !== "Không có hạng" ? `${tier} Member` : "Chưa có hạng"}</span>
                 <span className="text-xs text-gray-400">
                     {nextTier

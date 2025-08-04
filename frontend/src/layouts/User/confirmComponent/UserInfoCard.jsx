@@ -35,32 +35,6 @@ const UserInfoCard = ({ user }) => {
           </div>
         </div>
 
-        {/* Terms and Policy Section */}
-        <div className="mt-6 pt-4 border-t border-white/20">
-          <div className="text-xs text-gray-400 space-y-2">
-            <p className="leading-relaxed">
-              By proceeding with this booking, you agree to our
-              <a href="/terms" className="text-purple-400 hover:text-purple-300 underline mx-1">
-                Terms of Service
-              </a>
-              and
-              <a href="/privacy" className="text-purple-400 hover:text-purple-300 underline ml-1">
-                Privacy Policy
-              </a>.
-            </p>
-            <div className="flex flex-wrap gap-4 text-xs">
-              <a href="/refund-policy" className="text-gray-500 hover:text-gray-300 transition-colors">
-                Refund Policy
-              </a>
-              <a href="/cinema-rules" className="text-gray-500 hover:text-gray-300 transition-colors">
-                Cinema Rules
-              </a>
-              <a href="/contact" className="text-gray-500 hover:text-gray-300 transition-colors">
-                Contact Support
-              </a>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

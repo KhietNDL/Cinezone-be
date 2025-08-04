@@ -196,7 +196,7 @@ const WaitingPayment = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 via-50% via-purple-950/50 to-slate-900 text-white flex items-center justify-center p-25">
-      <div className="bg-[#1E1B3A] rounded-xl shadow-xl w-full max-w-2xl   text-center">
+      <div className="bg-transparent rounded-xl shadow-xl w-full max-w-2xl   text-center">
         <img src={logo} alt="Logo" className="w-40 h-auto mx-auto" />
         
         {paymentStatus === "waiting" && (
