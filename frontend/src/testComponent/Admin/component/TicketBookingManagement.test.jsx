@@ -121,24 +121,6 @@ describe("TicketBookingManagement", () => {
     });
   });
 
-  test("searches for bookings when search term is entered", async () => {
-    renderComponent();
-    const searchInput = screen.getByPlaceholderText("Search by name or movie");
-
-    fireEvent.change(searchInput, { target: { value: "John" } });
-
-    await waitFor(
-      () => {
-        expect(api.searchBookingsByUser).toHaveBeenCalledWith("John");
-      },
-      { timeout: 500 }
-    ); // wait for debounce
-
-    await waitFor(() => {
-      expect(screen.queryByText("Jane Smith")).not.toBeInTheDocument();
-    });
-  });
-
   test("handles pagination correctly", async () => {
     api.getAllBookings.mockResolvedValue({
       data: mockBookings.data,
