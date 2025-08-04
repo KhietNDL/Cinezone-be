@@ -9,23 +9,25 @@ const SearchAndAdd = ({
   showEditForm,
 }) => {
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-2 w-full">
-      <div className="flex items-center p-1 px-2 w-full max-w-[400px] rounded-xl bg-white shadow-sm">
-        <IoSearchOutline size={20} />
+    <div className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-3 w-full">
+      <div className="relative flex items-center w-full max-w-md">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <IoSearchOutline className="h-5 w-5 text-gray-400" />
+        </div>
         <input
           type="text"
           value={searchMovie}
           onChange={(e) => setSearchMovie(e.target.value)}
-          className="p-1 sm:p-2 focus:outline-none w-full text-sm sm:text-base"
+          className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 text-sm bg-white shadow-sm hover:border-gray-400"
           placeholder="Search by movie name (ENG or VN)"
         />
       </div>
       {!showEditForm && (
         <button
           onClick={() => setShowAddForm(true)}
-          className="flex items-center text-[#6051F3] hover:bg-slate-50 p-2 rounded-md active:bg-slate-100 bg-white shadow-sm w-full sm:w-auto text-sm sm:text-base"
+          className="flex items-center px-4 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-xl font-medium transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 w-full sm:w-auto text-sm"
         >
-          <GoPlus size={18} className="mr-1 sm:mr-2" />
+          <GoPlus size={18} className="mr-2" />
           Add Movie
         </button>
       )}

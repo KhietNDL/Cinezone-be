@@ -20,7 +20,7 @@ export default function MoviePage() {
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
 
-  const debouncedSearch = useDebounce(search, 3000);
+  const debouncedSearch = useDebounce(search, 500); // Giảm từ 3000ms xuống 500ms
 
   const toSlug = (str) =>
     str
@@ -71,11 +71,12 @@ export default function MoviePage() {
   // Gọi API khi debouncedSearch thay đổi
   useEffect(() => {
     fetchMovies(debouncedSearch);
-  }, [debouncedSearch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]); // Chỉ phụ thuộc vào debouncedSearch
 
   useEffect(() => {
     getCurrentMovie(); // initial load
-  }, []);
+  }, []); // Chỉ chạy một lần khi component mount
 
   return (
     <div className="min-h-screen  ">

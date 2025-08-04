@@ -1,5 +1,4 @@
 import React from "react";
-import { RiDeleteBin5Line } from "react-icons/ri";
 
 const DeletePopup = ({
   showDeletePopup,
@@ -10,95 +9,57 @@ const DeletePopup = ({
   if (!showDeletePopup) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-fadeIn">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md transform transition-all duration-300 animate-slideUp border border-gray-100">
-        {/* Content */}
-        <div className="p-8 text-center">
-          {/* Icon */}
-          <div className="mx-auto w-20 h-20 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mb-6 relative">
-            <div className="absolute inset-0 bg-red-500/10 rounded-full animate-ping"></div>
-            <div className="relative w-16 h-16 bg-red-500 rounded-full flex items-center justify-center shadow-lg">
-              <RiDeleteBin5Line className="text-white text-2xl" />
-            </div>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white text-black rounded-xl p-6 sm:p-8 w-full max-w-sm sm:max-w-md shadow-2xl border border-gray-100">
+        <div className="text-center mb-6">
+          <div className="w-16 h-16 bg-gradient-to-r from-red-100 to-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg
+              className="w-8 h-8 text-red-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+              />
+            </svg>
           </div>
-
-          {/* Title */}
-          <h3 className="text-2xl font-bold text-gray-800 mb-3">
+          <h2 className="text-xl sm:text-2xl font-bold mb-2 text-red-600">
             Delete Product
-          </h3>
-
-          {/* Message */}
-          <p className="text-gray-600 text-base mb-2 leading-relaxed">
-            Are you sure you want to delete this product?
+          </h2>
+          <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
+            Are you sure you want to delete this product? This action cannot be
+            undone.
           </p>
-          <p className="text-sm text-gray-500 mb-8">
-            This action cannot be undone and will permanently remove the product
-            from your inventory.
-          </p>
-
-          {/* Action Buttons */}
-          <div className="flex gap-4 justify-center">
-            <button
-              onClick={() => setShowDeletePopup(false)}
-              className="flex-1 px-6 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-2xl font-semibold transition-all duration-300 shadow-sm hover:shadow-md transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleDelete}
-              className="flex-1 px-6 py-4 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-2xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <svg
-                    className="animate-spin h-5 w-5 text-white"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      fill="none"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8v8z"
-                    />
-                  </svg>
-                  <span>Deleting...</span>
-                </>
-              ) : (
-                <>
-                  <RiDeleteBin5Line className="text-lg" />
-                  <span>Delete</span>
-                </>
-              )}
-            </button>
-          </div>
         </div>
-
-        {/* Loading Overlay */}
-        {loading && (
-          <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center z-10 rounded-3xl">
-            <div className="bg-white rounded-2xl p-6 shadow-xl border border-gray-200 flex flex-col items-center">
-              <div className="w-12 h-12 border-4 border-red-200 border-t-red-600 rounded-full animate-spin mb-4"></div>
-              <div className="text-center">
-                <div className="font-semibold text-lg text-gray-800 mb-1">
-                  Deleting Product...
-                </div>
-                <div className="text-gray-600 text-sm">
-                  Please wait a moment
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+          <button
+            onClick={() => setShowDeletePopup(false)}
+            disabled={loading}
+            className="px-6 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50 text-sm font-medium transition-all duration-200 hover:border-gray-400 flex-1"
+            aria-label="Cancel"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={loading}
+            className="px-6 py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 disabled:opacity-50 flex items-center justify-center text-sm font-medium transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 flex-1"
+            aria-label="Delete product"
+          >
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Deleting...
+              </>
+            ) : (
+              "Delete"
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -31,76 +31,88 @@ const PromotionCards = ({
         return (
           <article
             key={promotion.PromotionId}
-            className="bg-white p-4 rounded-lg shadow-sm border border-slate-200"
+            className="bg-white p-4 sm:p-5 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-all duration-200"
           >
             <div className="flex items-center gap-4">
               {promotion.Image ? (
                 <img
                   src={promotion.Image}
                   alt={promotion.Title}
-                  className="w-20 h-20 object-cover rounded"
+                  className="w-20 h-20 object-cover rounded-lg"
                 />
               ) : (
-                <span className="text-gray-400 italic">No image</span>
+                <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <span className="text-gray-400 italic text-xs">No image</span>
+                </div>
               )}
               <div className="flex-1">
-                <h3 className="text-sm font-medium text-gray-900 truncate">
+                <h3 className="text-sm font-semibold text-gray-900 truncate">
                   {promotion.Title}
                 </h3>
-                <p className="text-xs text-gray-500 truncate">
+                <p className="text-xs text-gray-600 truncate mt-1">
                   {promotion.Detail}
                 </p>
               </div>
             </div>
-            <div className="mt-4 text-xs grid grid-cols-2 space-x-2 space-y-4 text-gray-700">
-              <p>
-                <strong>Code:</strong>{" "}
-                <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs">
+            <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <p className="text-gray-500 font-medium">Code:</p>
+                <span className="font-mono bg-purple-50 text-purple-700 px-2 py-1 rounded text-xs">
                   {promotion.Code || "N/A"}
                 </span>
-              </p>
-              <p>
-                <strong>Value:</strong>{" "}
-                {promotion.DiscountValue
-                  ? Number(promotion.DiscountValue) % 1 === 0
-                    ? Number(promotion.DiscountValue) + "%"
-                    : Number(promotion.DiscountValue)
-                        .toFixed(2)
-                        .replace(/\.00$/, "") + "%"
-                  : ""}
-              </p>
-              <p>
-                <strong>Start:</strong> {formatDate(promotion.StartTime)}
-              </p>
-              <p>
-                <strong>End:</strong> {formatDate(promotion.EndTime)}
-              </p>
-              <p>
-                <strong>Status:</strong>{" "}
+              </div>
+              <div>
+                <p className="text-gray-500 font-medium">Value:</p>
+                <span className="font-semibold text-gray-900">
+                  {promotion.DiscountValue
+                    ? Number(promotion.DiscountValue) % 1 === 0
+                      ? Number(promotion.DiscountValue) + "%"
+                      : Number(promotion.DiscountValue)
+                          .toFixed(2)
+                          .replace(/\.00$/, "") + "%"
+                    : ""}
+                </span>
+              </div>
+              <div>
+                <p className="text-gray-500 font-medium">Start:</p>
+                <span className="text-gray-900">
+                  {formatDate(promotion.StartTime)}
+                </span>
+              </div>
+              <div>
+                <p className="text-gray-500 font-medium">End:</p>
+                <span className="text-gray-900">
+                  {formatDate(promotion.EndTime)}
+                </span>
+              </div>
+              <div className="col-span-2">
+                <p className="text-gray-500 font-medium mb-1">Status:</p>
                 <span
-                  className={`px-2 py-1 rounded-full text-xs ${statusClass}`}
+                  className={`px-3 py-1 rounded-full text-xs font-medium ${statusClass}`}
                 >
                   {status}
                 </span>
-              </p>
+              </div>
             </div>
-            <div className="flex gap-2 mt-2">
+            <div className="flex gap-3 mt-4 pt-3 border-t border-gray-100">
               <button
                 onClick={() => handleEdit(promotion)}
-                className="text-blue-500 hover:text-blue-700"
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 rounded-lg hover:from-purple-100 hover:to-purple-200 transition-all duration-200 text-sm font-medium"
                 aria-label="Edit promotion"
               >
-                <FaRegEdit size={16} />
+                <FaRegEdit size={14} />
+                Edit
               </button>
               <button
                 onClick={() => {
                   setSelectedPromotion(promotion);
                   setShowDeletePopup(true);
                 }}
-                className="text-red-400 hover:text-red-600"
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-red-50 to-rose-100 text-red-700 rounded-lg hover:from-red-100 hover:to-rose-200 transition-all duration-200 text-sm font-medium"
                 aria-label="Delete promotion"
               >
-                <RiDeleteBin5Line size={16} />
+                <RiDeleteBin5Line size={14} />
+                Delete
               </button>
             </div>
           </article>

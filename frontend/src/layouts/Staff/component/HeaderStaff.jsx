@@ -84,7 +84,7 @@ const HeaderStaff = ({ onToggleSidebar }) => {
         {user ? (
           <div className="relative" ref={dropdownRef}>
             <div
-              className="flex items-center space-x-2 sm:space-x-3 bg-gray-50 hover:bg-gray-100 rounded-lg sm:rounded-xl px-2 sm:px-4 py-1.5 sm:py-2 cursor-pointer transition-all duration-200 group border border-gray-200 hover:border-gray-300"
+              className="flex items-center space-x-2 sm:space-x-3 md:bg-gray-50 hover:bg-gray-100 rounded-lg sm:rounded-xl px-2 sm:px-4 py-1.5 sm:py-2 cursor-pointer transition-all duration-200 group md:border md:border-gray-200 hover:border-gray-300"
               onClick={toggleDropdown}
             >
               <div className="relative">

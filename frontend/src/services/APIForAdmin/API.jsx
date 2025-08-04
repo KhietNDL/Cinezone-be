@@ -129,3 +129,39 @@ export const getUserAgeGroups = async () => {
     handleError(error);
   }
 };
+
+export const getUsersByMembershipRank = async () => {
+  try {
+    const response = await api.get("/analytics/users/ranks");
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const getEmployeeAgeGroups = async () => {
+  try {
+    const response = await api.get("/analytics/user/age-groups-employees");
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const getEmployeeTenureStats = async () => {
+  try {
+    const response = await api.get("/analytics/employees/tenure");
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const getMovieGenreStats = async () => {
+  try {
+    const response = await api.get("/analytics/movies/genres");
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
