@@ -7,6 +7,18 @@ import {
   updateEmployee,
   unbanEmployee,
 } from "../../../services/API";
+import {
+  getEmployeeAgeGroups,
+  getEmployeeTenureStats,
+} from "../../../services/APIForAdmin/API";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  Legend,
+} from "recharts";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import HeaderStats from "../employeeComponent/HeaderStats";
@@ -47,8 +59,13 @@ const EmployeeManagement = () => {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const avatarUploadRef = useRef(null);
   const initialLoadRef = useRef(false);
-  const [sortBy, setSortBy] = useState("FullName");
-  const [sortOrder, setSortOrder] = useState("asc");
+
+  // UI state similar to UserManagement
+  const [uiState, setUiState] = useState({
+    sortBy: "FullName",
+    sortOrder: "asc",
+    currentPage: 1,
+  });
 
   // Add filter state
   const [activeFilter, setActiveFilter] = useState(null);
@@ -58,7 +75,12 @@ const EmployeeManagement = () => {
     inactive: 0,
     newHires: 0,
   });
+  const [_allEmployeesForStats, setAllEmployeesForStats] = useState([]);
   const [showSortDropdown, setShowSortDropdown] = useState(false);
+
+  // Chart data states
+  const [employeeAgeData, setEmployeeAgeData] = useState([]);
+  const [employeeTenureData, setEmployeeTenureData] = useState([]);
 
   const handleSearchEmployees = useCallback(
     async (searchTerm) => {
@@ -66,8 +88,8 @@ const EmployeeManagement = () => {
         const params = {
           page: page,
           limit: itemsPerPage,
-          sortBy: sortBy,
-          sortOrder: sortOrder,
+          sortBy: uiState.sortBy,
+          sortOrder: uiState.sortOrder,
         };
 
         if (searchTerm.trim() === "") {
@@ -80,7 +102,7 @@ const EmployeeManagement = () => {
               setTotalEmployees(response.pagination.total);
             }
           } else {
-            console.log("No response.data found");
+            // No response data found
           }
         } else {
           // Use new API that supports multiple search fields
@@ -105,7 +127,7 @@ const EmployeeManagement = () => {
               setTotalPages(Math.ceil(total / itemsPerPage));
             }
           } else {
-            console.log("No response.employees found in search");
+            // No employees found in search
             setEmployees([]);
             setTotalPages(0);
             setTotalEmployees(0);
@@ -119,16 +141,114 @@ const EmployeeManagement = () => {
         setTotalEmployees(0);
       }
     },
-    [page, itemsPerPage, sortBy, sortOrder] // Keep these dependencies stable
+    [page, itemsPerPage, uiState.sortBy, uiState.sortOrder] // Keep these dependencies stable
   );
+
+  // Fetch all employees for statistics calculation
+  const getAllEmployeesForStats = useCallback(async () => {
+    try {
+      // Try using getEmployee first (which should return all employees)
+      const params = {
+        page: 1,
+        limit: 10000, // Large number to get all employees
+        sortBy: "UserId",
+        sortOrder: "asc",
+      };
+
+      const response = await getEmployee(params);
+
+      if (response && response.data) {
+        const allEmployeesArray = Array.isArray(response.data)
+          ? response.data
+          : [];
+        setAllEmployeesForStats(allEmployeesArray);
+        calculateEmployeeStats(
+          allEmployeesArray,
+          response.pagination?.total || allEmployeesArray.length
+        );
+      } else {
+        // If getEmployee doesn't work, try searchEmployeesByInfo with empty search
+        const searchInfo = {
+          name: "",
+          email: "",
+          cccd: "",
+          phone: "",
+        };
+
+        const searchResponse = await searchEmployeesByInfo(searchInfo, params);
+
+        if (searchResponse && searchResponse.employees) {
+          const allEmployeesArray = Array.isArray(searchResponse.employees)
+            ? searchResponse.employees
+            : [];
+          setAllEmployeesForStats(allEmployeesArray);
+          calculateEmployeeStats(
+            allEmployeesArray,
+            searchResponse.pagination?.total || allEmployeesArray.length
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching all employees for stats:", error);
+      // Fallback to current employees if fetch fails
+      calculateEmployeeStats(employees, totalEmployees);
+    }
+  }, [employees, totalEmployees]);
+
+  // Calculate employee statistics from all employees
+  const calculateEmployeeStats = (allEmployeesData, totalCount) => {
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const stats = allEmployeesData.reduce(
+      (acc, employee) => {
+        // Use JoinedDate for new hires calculation, fallback to CreatedAt
+        const joinedDate = employee.JoinedDate
+          ? new Date(employee.JoinedDate)
+          : employee.CreatedAt
+          ? new Date(employee.CreatedAt)
+          : null;
+
+        // New hires (joined in last 30 days and not deleted)
+        if (
+          joinedDate &&
+          joinedDate >= thirtyDaysAgo &&
+          employee.isDeleted === 0
+        ) {
+          acc.newHires++;
+        }
+
+        // Active employees (isDeleted === 0)
+        if (employee.isDeleted === 0) {
+          acc.active++;
+        }
+
+        // Inactive employees (isDeleted === 1)
+        if (employee.isDeleted === 1) {
+          acc.inactive++;
+        }
+
+        return acc;
+      },
+      { total: totalCount, active: 0, inactive: 0, newHires: 0 }
+    );
+
+    setEmployeeStats({
+      total: totalCount,
+      active: stats.active,
+      inactive: stats.inactive,
+      newHires: stats.newHires,
+    });
+  };
 
   // Load initial data when component mounts
   useEffect(() => {
     if (!initialLoadRef.current && !searchEmployee.trim()) {
       initialLoadRef.current = true;
       handleSearchEmployees("");
+      getAllEmployeesForStats();
     }
-  }, [handleSearchEmployees, searchEmployee]);
+  }, [handleSearchEmployees, searchEmployee, getAllEmployeesForStats]);
 
   // Effect riêng cho searchEmployee để reset về trang 1
   useEffect(() => {
@@ -150,18 +270,13 @@ const EmployeeManagement = () => {
     }, 300);
 
     return () => clearTimeout(searchTimeout);
-  }, [searchEmployee, page, sortBy, sortOrder, handleSearchEmployees]);
-
-  // Debug useEffect to track employees state changes
-  useEffect(() => {
-    console.log("Employees state updated:", {
-      employeesLength: employees.length,
-      employees: employees,
-      page: page,
-      totalPages: totalPages,
-      totalEmployees: totalEmployees,
-    });
-  }, [employees, page, totalPages, totalEmployees]);
+  }, [
+    searchEmployee,
+    page,
+    uiState.sortBy,
+    uiState.sortOrder,
+    handleSearchEmployees,
+  ]);
 
   // Close sort dropdown when clicking outside
   useEffect(() => {
@@ -179,6 +294,36 @@ const EmployeeManagement = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showSortDropdown]);
+
+  // Fetch chart data
+  useEffect(() => {
+    const fetchEmployeeAgeGroups = async () => {
+      try {
+        const response = await getEmployeeAgeGroups();
+        if (response && response.data) {
+          setEmployeeAgeData(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching employee age groups:", error);
+        setEmployeeAgeData([]);
+      }
+    };
+
+    const fetchEmployeeTenureStats = async () => {
+      try {
+        const response = await getEmployeeTenureStats();
+        if (response && response.data) {
+          setEmployeeTenureData(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching employee tenure stats:", error);
+        setEmployeeTenureData([]);
+      }
+    };
+
+    fetchEmployeeAgeGroups();
+    fetchEmployeeTenureStats();
+  }, []);
 
   const validateForm = () => {
     if (!fullName || fullName.length < 6 || fullName.length > 100) {
@@ -413,12 +558,15 @@ const EmployeeManagement = () => {
   };
 
   const handleSort = (column) => {
-    if (sortBy === column) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortBy(column);
-      setSortOrder("asc");
-    }
+    setUiState((prev) => {
+      const newSortOrder =
+        prev.sortBy === column && prev.sortOrder === "asc" ? "desc" : "asc";
+      return {
+        ...prev,
+        sortBy: column,
+        sortOrder: newSortOrder,
+      };
+    });
     setPage(1); // Reset to first page when sorting changes
   };
 
@@ -428,52 +576,10 @@ const EmployeeManagement = () => {
     setPage(1); // Reset to first page when filter changes
   };
 
-  // Calculate employee statistics from current employees data
+  // Load all employees for stats on component mount and when needed
   useEffect(() => {
-    if (employees && employees.length > 0) {
-      const today = new Date();
-      const thirtyDaysAgo = new Date(
-        today.getTime() - 30 * 24 * 60 * 60 * 1000
-      );
-
-      const stats = employees.reduce(
-        (acc, employee) => {
-          const createdDate = employee.CreatedAt
-            ? new Date(employee.CreatedAt)
-            : null;
-
-          // New hires (created in last 30 days)
-          if (
-            createdDate &&
-            createdDate >= thirtyDaysAgo &&
-            (employee.isDeleted === 0 || employee.isDeleted === false)
-          ) {
-            acc.newHires++;
-          }
-
-          // Active employees (not deleted)
-          if (employee.isDeleted === 0 || employee.isDeleted === false) {
-            acc.active++;
-          }
-
-          // Inactive employees (deleted/banned)
-          if (employee.isDeleted === 1 || employee.isDeleted === true) {
-            acc.inactive++;
-          }
-
-          return acc;
-        },
-        { total: totalEmployees, active: 0, inactive: 0, newHires: 0 }
-      );
-
-      setEmployeeStats({
-        total: totalEmployees,
-        active: stats.active,
-        inactive: stats.inactive,
-        newHires: stats.newHires,
-      });
-    }
-  }, [employees, totalEmployees]);
+    getAllEmployeesForStats();
+  }, [getAllEmployeesForStats]);
 
   // Filter employees based on active filter
   const getFilteredEmployees = () => {
@@ -605,6 +711,36 @@ const EmployeeManagement = () => {
           />{" "}
           {/* Employee Table */}
           <div className="bg-white p-2 sm:p-3 md:p-4 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
+            {/* Filter indicator */}
+            {activeFilter && activeFilter !== "total" && (
+              <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-600 rounded-full"></div>
+                    <span className="text-sm font-medium text-purple-700">
+                      Filtering by:{" "}
+                      {activeFilter === "active"
+                        ? "Active Employees"
+                        : activeFilter === "inactive"
+                        ? "Inactive Employees"
+                        : activeFilter === "newHires"
+                        ? "New Hires"
+                        : ""}
+                    </span>
+                    <span className="text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded-full">
+                      {filteredEmployees.length} employees
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setActiveFilter(null)}
+                    className="text-purple-600 hover:text-purple-800 text-sm font-medium hover:bg-purple-100 px-2 py-1 rounded transition-colors duration-200"
+                  >
+                    Clear Filter
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Table Layout for sm and above */}
             <div className="hidden sm:block">
               <EmployeeTable
@@ -614,8 +750,8 @@ const EmployeeManagement = () => {
                 handleUnban={handleUnban}
                 handleRowClick={handleRowClick}
                 formatDate={formatDate}
-                sortBy={sortBy}
-                sortOrder={sortOrder}
+                sortBy={uiState.sortBy}
+                sortOrder={uiState.sortOrder}
                 handleSort={handleSort}
               />
             </div>
@@ -661,12 +797,12 @@ const EmployeeManagement = () => {
                       <div className="flex items-center mt-1">
                         <span
                           className={`inline-block text-xs font-medium px-2 py-1 rounded-full ${
-                            emp.IsDeleted === 1 || emp.IsDeleted === true
+                            emp.isDeleted === 1 || emp.isDeleted === true
                               ? "bg-red-100 text-red-700"
                               : "bg-green-100 text-green-700"
                           }`}
                         >
-                          {emp.IsDeleted === 1 || emp.IsDeleted === true
+                          {emp.isDeleted === 1 || emp.isDeleted === true
                             ? "Inactive"
                             : "Active"}
                         </span>
@@ -716,7 +852,7 @@ const EmployeeManagement = () => {
                     </button>
 
                     {/* Show unban button if employee is deleted/banned */}
-                    {emp.IsDeleted === 1 || emp.IsDeleted === true ? (
+                    {emp.isDeleted === 1 || emp.isDeleted === true ? (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -762,6 +898,219 @@ const EmployeeManagement = () => {
             totalPages={totalPages}
             handlePageChange={handlePageChange}
           />
+          {/* Employee Analytics Charts */}
+          <div className="w-full space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Employee Age Distribution Chart */}
+              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-indigo-50/30">
+                <div className="mb-6">
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
+                    Employee Age Distribution
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Demographic breakdown of employees
+                  </p>
+                </div>
+                <div className="h-[250px] sm:h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={employeeAgeData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ ageGroup, percent }) =>
+                          `${ageGroup} (${(percent * 100).toFixed(1)}%)`
+                        }
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="total"
+                      >
+                        {employeeAgeData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={
+                              [
+                                "#6366F1",
+                                "#8B5CF6",
+                                "#EC4899",
+                                "#10B981",
+                                "#F59E0B",
+                                "#EF4444",
+                              ][index % 6]
+                            }
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value) => [value, "Employees"]}
+                        labelStyle={{ color: "#333" }}
+                        contentStyle={{
+                          backgroundColor: "#fff",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "8px",
+                          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Summary Stats */}
+                <div className="mt-6 pt-4 border-t border-gray-100">
+                  <div className="text-sm text-gray-600">
+                    <div className="flex justify-between items-center mb-3 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-100">
+                      <span className="font-medium text-gray-700">
+                        Total Employees:
+                      </span>
+                      <span className="font-bold text-lg text-purple-600">
+                        {employeeAgeData.reduce(
+                          (sum, item) => sum + item.total,
+                          0
+                        )}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {employeeAgeData.map((group, index) => (
+                        <div
+                          key={group.ageGroup}
+                          className="flex justify-between items-center p-3 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 rounded-lg transition-all duration-200 border border-transparent hover:border-purple-200"
+                        >
+                          <div className="flex items-center">
+                            <div
+                              className="w-3 h-3 rounded-full mr-2 shadow-sm"
+                              style={{
+                                backgroundColor: [
+                                  "#6366F1",
+                                  "#8B5CF6",
+                                  "#EC4899",
+                                  "#10B981",
+                                  "#F59E0B",
+                                  "#EF4444",
+                                ][index % 6],
+                              }}
+                            ></div>
+                            <span className="font-medium">
+                              {group.ageGroup}:
+                            </span>
+                          </div>
+                          <span className="font-semibold text-gray-800">
+                            {group.total} employees
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Employee Tenure Statistics Chart */}
+              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-indigo-50/30">
+                <div className="mb-6">
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
+                    Employee Tenure Distribution
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Working time statistics of employees
+                  </p>
+                </div>
+                <div className="h-[250px] sm:h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={employeeTenureData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ group, percent }) =>
+                          `${group} (${(percent * 100).toFixed(1)}%)`
+                        }
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="total"
+                      >
+                        {employeeTenureData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={
+                              [
+                                "#6366F1",
+                                "#8B5CF6",
+                                "#EC4899",
+                                "#10B981",
+                                "#F59E0B",
+                                "#EF4444",
+                              ][index % 6]
+                            }
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value) => [value, "Employees"]}
+                        labelStyle={{ color: "#333" }}
+                        contentStyle={{
+                          backgroundColor: "#fff",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "8px",
+                          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Summary Stats */}
+                <div className="mt-6 pt-4 border-t border-gray-100">
+                  <div className="text-sm text-gray-600">
+                    <div className="flex justify-between items-center mb-3 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-100">
+                      <span className="font-medium text-gray-700">
+                        Total Employees:
+                      </span>
+                      <span className="font-bold text-lg text-purple-600">
+                        {employeeTenureData.reduce(
+                          (sum, item) => sum + item.total,
+                          0
+                        )}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2">
+                      {employeeTenureData.map((group, index) => (
+                        <div
+                          key={group.group}
+                          className="flex justify-between items-center p-3 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 rounded-lg transition-all duration-200 border border-transparent hover:border-purple-200"
+                        >
+                          <div className="flex items-center">
+                            <div
+                              className="w-3 h-3 rounded-full mr-2 shadow-sm"
+                              style={{
+                                backgroundColor: [
+                                  "#6366F1",
+                                  "#8B5CF6",
+                                  "#EC4899",
+                                  "#10B981",
+                                  "#F59E0B",
+                                  "#EF4444",
+                                ][index % 6],
+                              }}
+                            ></div>
+                            <span className="font-medium">{group.group}:</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-gray-800">
+                              {group.total} employees
+                            </span>
+                            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                              {group.percentage}%
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

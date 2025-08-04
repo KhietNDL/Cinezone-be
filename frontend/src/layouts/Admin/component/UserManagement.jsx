@@ -18,10 +18,12 @@ import { useUserManagement } from "../../../hooks/useUserManagement";
 import {
   getUserAgeGroups,
   getAllUsers,
+  getUsersByMembershipRank,
 } from "../../../services/APIForAdmin/API";
 
 const UserManagement = () => {
   const [ageGroupData, setAgeGroupData] = useState([]);
+  const [membershipRankData, setMembershipRankData] = useState([]);
   const [activeFilter, setActiveFilter] = useState(null);
   const [userStats, setUserStats] = useState({
     total: 0,
@@ -202,7 +204,20 @@ const UserManagement = () => {
       }
     };
 
+    const fetchMembershipRankData = async () => {
+      try {
+        const response = await getUsersByMembershipRank();
+        if (response && response.data) {
+          setMembershipRankData(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching membership rank data:", error);
+        setMembershipRankData([]);
+      }
+    };
+
     fetchUserAgeGroups();
+    fetchMembershipRankData();
   }, []);
 
   const COLORS = [
@@ -354,8 +369,9 @@ const UserManagement = () => {
             totalPages={userState.totalPages}
             handlePageChange={handlePageChange}
           />
-          {/* Age Distribution Chart */}
-          <div className="w-full">
+          {/* Charts Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Age Distribution Chart */}
             <div className="bg-white p-5 sm:p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-indigo-50/30">
               <div className="mb-6">
                 <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
@@ -401,7 +417,7 @@ const UserManagement = () => {
                 </ResponsiveContainer>
               </div>
 
-              {/* Summary Stats */}
+              {/* Age Distribution Summary Stats */}
               <div className="mt-6 pt-4 border-t border-gray-100">
                 <div className="text-sm text-gray-600">
                   <div className="flex justify-between items-center mb-3 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-100">
@@ -412,7 +428,7 @@ const UserManagement = () => {
                       {ageGroupData.reduce((sum, item) => sum + item.total, 0)}
                     </span>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 gap-2">
                     {ageGroupData.map((group, index) => (
                       <div
                         key={group.ageGroup}
@@ -429,6 +445,91 @@ const UserManagement = () => {
                         </div>
                         <span className="font-semibold text-gray-800">
                           {group.total} users
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Membership Rank Chart */}
+            <div className="bg-white p-5 sm:p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-purple-50/30">
+              <div className="mb-6">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
+                  User Membership Ranks
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Distribution of users by membership level
+                </p>
+              </div>
+              <div className="h-[250px] sm:h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={membershipRankData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ rank, percent }) =>
+                        `${rank} (${(percent * 100).toFixed(1)}%)`
+                      }
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="count"
+                    >
+                      {membershipRankData.map((entry, index) => (
+                        <Cell
+                          key={`rank-cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value) => [value, "Users"]}
+                      labelStyle={{ color: "#333" }}
+                      contentStyle={{
+                        backgroundColor: "#fff",
+                        border: "1px solid #e5e7eb",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Membership Rank Summary Stats */}
+              <div className="mt-6 pt-4 border-t border-gray-100">
+                <div className="text-sm text-gray-600">
+                  <div className="flex justify-between items-center mb-3 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-100">
+                    <span className="font-medium text-gray-700">
+                      Total Users:
+                    </span>
+                    <span className="font-bold text-lg text-purple-600">
+                      {membershipRankData.reduce(
+                        (sum, item) => sum + item.count,
+                        0
+                      )}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 gap-2">
+                    {membershipRankData.map((rank, index) => (
+                      <div
+                        key={rank.rank}
+                        className="flex justify-between items-center p-3 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 rounded-lg transition-all duration-200 border border-transparent hover:border-purple-200"
+                      >
+                        <div className="flex items-center">
+                          <div
+                            className="w-3 h-3 rounded-full mr-2 shadow-sm"
+                            style={{
+                              backgroundColor: COLORS[index % COLORS.length],
+                            }}
+                          ></div>
+                          <span className="font-medium">{rank.rank}:</span>
+                        </div>
+                        <span className="font-semibold text-gray-800">
+                          {rank.count} users
                         </span>
                       </div>
                     ))}

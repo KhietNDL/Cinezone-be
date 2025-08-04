@@ -18,126 +18,140 @@ const HeaderStats = ({
       onFilterChange(newFilter);
     }
   };
-  const statsData = [
+
+  const cardData = [
     {
       id: "total",
       title: "Total Employees",
       value: totalEmployees,
       icon: MdPeopleAlt,
-      colors: {
-        bg: "from-white to-gray-50",
-        activeColors: "from-purple-100 to-purple-200",
-        iconBg: "from-blue-100 to-blue-200",
-        iconColor: "text-blue-600",
-        textColor: "text-blue-700",
-      },
       isClickable: false,
+      colors: {
+        bg: "from-white to-blue-50/50",
+        iconBg: "from-blue-100 to-indigo-100",
+        iconColor: "text-blue-600",
+        textHover: "group-hover:text-blue-700",
+        activeColors: "from-blue-200 to-blue-300",
+      },
+      description: "All employees in database",
     },
     {
       id: "active",
-      title: "Active Staff",
+      title: "Active Employees",
       value: activeEmployees,
       icon: MdPeopleAlt,
-      colors: {
-        bg: "from-white to-gray-50",
-        activeColors: "from-green-100 to-green-200",
-        iconBg: "from-green-100 to-green-200",
-        iconColor: "text-green-600",
-        textColor: "text-green-700",
-      },
       isClickable: true,
+      colors: {
+        bg: "from-white to-green-50/50",
+        iconBg: "from-green-100 to-emerald-100",
+        iconColor: "text-green-600",
+        textHover: "group-hover:text-green-700",
+        activeColors: "from-green-200 to-emerald-300",
+      },
+      description: "Employees with IsDeleted = 0",
     },
     {
       id: "inactive",
-      title: "Inactive Staff",
+      title: "Inactive Employees",
       value: inactiveEmployees,
-      icon: IoCloseSharp,
-      colors: {
-        bg: "from-white to-gray-50",
-        activeColors: "from-red-100 to-red-200",
-        iconBg: "from-red-100 to-red-200",
-        iconColor: "text-red-600",
-        textColor: "text-red-700",
-      },
+      icon: IoTime,
       isClickable: true,
+      colors: {
+        bg: "from-white to-red-50/50",
+        iconBg: "from-red-100 to-rose-100",
+        iconColor: "text-red-600",
+        textHover: "group-hover:text-red-700",
+        activeColors: "from-red-200 to-rose-300",
+      },
+      description: "Employees with IsDeleted = 1",
     },
     {
       id: "newHires",
-      title: "New Hires",
+      title: "New Hires (30 days)",
       value: newHires,
       icon: IoMdPersonAdd,
-      colors: {
-        bg: "from-white to-gray-50",
-        activeColors: "from-blue-100 to-blue-200",
-        iconBg: "from-blue-100 to-blue-200",
-        iconColor: "text-blue-600",
-        textColor: "text-blue-700",
-      },
       isClickable: true,
+      colors: {
+        bg: "from-white to-purple-50/50",
+        iconBg: "from-purple-100 to-violet-100",
+        iconColor: "text-purple-600",
+        textHover: "group-hover:text-purple-700",
+        activeColors: "from-purple-200 to-violet-300",
+      },
+      description: "Based on JoinedDate",
     },
   ];
 
   return (
     <div className="grid select-none grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6 w-full">
-      {statsData.map((card, index) => {
-        const IconComponent = card.icon;
+      {cardData.map((card) => {
+        const Icon = card.icon;
         const isActive = activeFilter === card.id;
 
         return (
           <div
-            key={index}
+            key={card.id}
             onClick={() => card.isClickable && handleCardClick(card.id)}
             className={`
-                rounded-xl p-4 sm:p-6 flex-1 shadow-lg border transition-all duration-300 transform
-                ${
-                  card.isClickable
-                    ? "cursor-pointer hover:scale-105"
-                    : "cursor-default hover:scale-102"
-                }
-                ${
-                  isActive
-                    ? `bg-gradient-to-br ${card.colors.activeColors} text-gray-800 border-transparent shadow-xl scale-105`
-                    : `bg-gradient-to-br ${card.colors.bg} hover:border-gray-200 border-gray-100 hover:shadow-xl`
-                }
-                group
-              `}
+              bg-white rounded-xl p-4 sm:p-6 flex-1 shadow-lg border border-gray-100 
+              hover:shadow-xl transition-all duration-300 transform hover:scale-105
+              ${card.isClickable ? "cursor-pointer" : "cursor-default"}
+              ${
+                isActive
+                  ? `bg-gradient-to-br ${card.colors.activeColors} text-gray-800 border-transparent shadow-xl scale-105`
+                  : `bg-gradient-to-br ${card.colors.bg} hover:border-gray-200`
+              }
+              group
+            `}
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <div>
                 <p
-                  className={`text-xs sm:text-sm font-semibold mb-2 ${
-                    isActive ? "text-purple-800" : "text-gray-600"
+                  className={`text-sm sm:text-base font-medium mb-2 ${
+                    isActive ? "text-gray-700" : "text-slate-600"
                   }`}
                 >
                   {card.title}
                 </p>
                 <p
-                  className={`text-2xl sm:text-3xl font-bold ${
-                    isActive ? "text-purple-900" : card.colors.textColor
+                  className={`font-bold text-xl sm:text-2xl transition-colors duration-300 ${
+                    isActive
+                      ? "text-gray-800"
+                      : `text-gray-800 ${card.colors.textHover}`
                   }`}
                 >
-                  {card.value}
+                  {card.value?.toLocaleString() || "0"}
                 </p>
+                {/* Description */}
+
+                {isActive && card.isClickable && (
+                  <p className="text-xs text-gray-600 mt-1 font-medium">
+                    Click to clear filter
+                  </p>
+                )}
               </div>
               <div
                 className={`
-                  w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br ${
-                    isActive
-                      ? "from-purple-200 to-purple-300"
-                      : card.colors.iconBg
-                  } 
-                  flex items-center justify-center shadow-md
-                  group-hover:shadow-lg transition-all duration-300 group-hover:scale-110
-                `}
+                p-3 sm:p-4 rounded-xl flex items-center justify-center 
+                shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-110
+                ${
+                  isActive
+                    ? "bg-white/80 backdrop-blur-sm"
+                    : `bg-gradient-to-r ${card.colors.iconBg}`
+                }
+              `}
               >
-                <IconComponent
-                  size={24}
-                  className={
-                    isActive ? "text-purple-700" : card.colors.iconColor
-                  }
+                <Icon
+                  size={20}
+                  className={isActive ? "text-gray-600" : card.colors.iconColor}
                 />
               </div>
             </div>
+
+            {/* Active indicator */}
+            {isActive && card.isClickable && (
+              <div className="absolute top-2 right-2 w-3 h-3 bg-gray-600 rounded-full animate-pulse"></div>
+            )}
           </div>
         );
       })}

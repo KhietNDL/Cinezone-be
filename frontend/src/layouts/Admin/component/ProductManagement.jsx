@@ -317,9 +317,9 @@ const ProductManagement = () => {
   };
 
   return (
-    <div className="h-full">
-      {/* Header Section with Staff-style Design */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 bg-white shadow-md rounded-lg mb-6">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header Section */}
+      <div className="max-w-7xl select-none mx-auto px-3 sm:px-6 py-3 sm:py-4 bg-white shadow-md rounded-lg mb-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-3 lg:gap-4">
           {/* Left: Logo/Brand */}
           <div className="flex items-center gap-2 sm:gap-3">
@@ -335,21 +335,25 @@ const ProductManagement = () => {
               </p>
             </div>
           </div>
+
+          {/* Right: Search & Actions */}
+          <div className="flex flex-col sm:flex-row items-center gap-3 lg:gap-4 w-full md:w-auto">
+            <SearchAndAdd
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              isEdit={isEdit}
+              setShowFormPopup={setShowFormPopup}
+              resetForm={resetForm}
+            />
+          </div>
         </div>
       </div>
 
       <ToastContainer />
-      <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
-        <div className="w-[90%] md:w-[95%] lg:w-[95%] max-w-7xl space-y-4">
+      <div className="flex flex-col items-center lg:items-start h-auto min-h-screen max-w-7xl w-full overflow-x-hidden mx-auto">
+        <div className="w-[90%] md:w-[95%] lg:w-full max-w-7xl space-y-4 sm:space-y-6">
           <StatsCards totalProducts={totalProducts} products={products} />
-          <SearchAndAdd
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            isEdit={isEdit}
-            setShowFormPopup={setShowFormPopup}
-            resetForm={resetForm}
-          />
-          <div className="bg-white rounded-md shadow-sm">
+          <div className="bg-white rounded-xl shadow-md border border-gray-100">
             <ProductTable
               products={products}
               handleEdit={handleEdit}
@@ -379,54 +383,56 @@ const ProductManagement = () => {
             handlePageChange={handlePageChange}
           />
         </div>
-        <DeletePopup
-          showDeletePopup={showDeletePopup}
-          setShowDeletePopup={setShowDeletePopup}
-          handleDelete={handleDelete}
-          loading={loading}
-        />
-        <ProductFormPopup
-          showFormPopup={showFormPopup}
-          setShowFormPopup={setShowFormPopup}
-          isEdit={isEdit}
-          productName={productName}
-          setProductName={setProductName}
-          description={description}
-          setDescription={setDescription}
-          unit={unit}
-          setUnit={setUnit}
-          price={price}
-          setPrice={setPrice}
-          quantity={quantity}
-          setQuantity={setQuantity}
-          image={image}
-          setImage={setImage}
-          imagePreview={imagePreview}
-          setImagePreview={setImagePreview}
-          originalImageUrl={originalImageUrl}
-          setOriginalImageUrl={setOriginalImageUrl}
-          handleSubmit={handleSubmit}
-          handleImageChange={handleImageChange}
-          resetForm={resetForm}
-          loading={loading}
-        />
-        <AddItemPopup
-          showAddItemPopup={showAddItemPopup}
-          setShowAddItemPopup={setShowAddItemPopup}
-          products={products}
-          addItemProductId={addItemProductId}
-          setAddItemProductId={setAddItemProductId}
-          addItemQuantity={addItemQuantity}
-          setAddItemQuantity={setAddItemQuantity}
-          handleAddItemToCombo={handleAddItemToCombo}
-          loading={loading}
-        />
-        <ComboDetailPopup
-          showComboDetail={showComboDetail}
-          setShowComboDetail={setShowComboDetail}
-          comboDetail={comboDetail}
-        />
       </div>
+
+      {/* Modal Components */}
+      <DeletePopup
+        showDeletePopup={showDeletePopup}
+        setShowDeletePopup={setShowDeletePopup}
+        handleDelete={handleDelete}
+        loading={loading}
+      />
+      <ProductFormPopup
+        showFormPopup={showFormPopup}
+        setShowFormPopup={setShowFormPopup}
+        isEdit={isEdit}
+        productName={productName}
+        setProductName={setProductName}
+        description={description}
+        setDescription={setDescription}
+        unit={unit}
+        setUnit={setUnit}
+        price={price}
+        setPrice={setPrice}
+        quantity={quantity}
+        setQuantity={setQuantity}
+        image={image}
+        setImage={setImage}
+        imagePreview={imagePreview}
+        setImagePreview={setImagePreview}
+        originalImageUrl={originalImageUrl}
+        setOriginalImageUrl={setOriginalImageUrl}
+        handleSubmit={handleSubmit}
+        handleImageChange={handleImageChange}
+        resetForm={resetForm}
+        loading={loading}
+      />
+      <AddItemPopup
+        showAddItemPopup={showAddItemPopup}
+        setShowAddItemPopup={setShowAddItemPopup}
+        products={products}
+        addItemProductId={addItemProductId}
+        setAddItemProductId={setAddItemProductId}
+        addItemQuantity={addItemQuantity}
+        setAddItemQuantity={setAddItemQuantity}
+        handleAddItemToCombo={handleAddItemToCombo}
+        loading={loading}
+      />
+      <ComboDetailPopup
+        showComboDetail={showComboDetail}
+        setShowComboDetail={setShowComboDetail}
+        comboDetail={comboDetail}
+      />
       <style jsx>{`
         @keyframes fadeIn {
           from {

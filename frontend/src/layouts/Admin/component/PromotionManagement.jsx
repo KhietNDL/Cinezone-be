@@ -260,9 +260,9 @@ const PromotionManagement = () => {
   };
 
   return (
-    <div className="h-full">
-      {/* Header Section with Staff-style Design */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 bg-white shadow-md rounded-lg mb-6">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header Section */}
+      <div className="max-w-7xl select-none mx-auto px-3 sm:px-6 py-3 sm:py-4 bg-white shadow-md rounded-lg mb-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-3 lg:gap-4">
           {/* Left: Logo/Brand */}
           <div className="flex items-center gap-2 sm:gap-3">
@@ -278,24 +278,28 @@ const PromotionManagement = () => {
               </p>
             </div>
           </div>
+
+          {/* Right: Search & Actions */}
+          <div className="flex flex-col sm:flex-row items-center gap-3 lg:gap-4 w-full md:w-auto">
+            <SearchAndAdd
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              isEdit={isEdit}
+              setShowFormPopup={setShowFormPopup}
+              resetForm={resetForm}
+            />
+          </div>
         </div>
       </div>
 
       <ToastContainer position="top-right" autoClose={2000} />
-      <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
-        <div className="w-[90%] md:w-[95%] lg:w-[95%] max-w-7xl space-y-4">
+      <div className="flex flex-col items-center lg:items-start h-auto min-h-screen max-w-7xl w-full overflow-x-hidden mx-auto">
+        <div className="w-[90%] md:w-[95%] lg:w-full max-w-7xl space-y-4 sm:space-y-6">
           <StatsCards
             totalPromotions={totalPromotions}
             promotions={promotions}
           />
-          <SearchAndAdd
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            isEdit={isEdit}
-            setShowFormPopup={setShowFormPopup}
-            resetForm={resetForm}
-          />
-          <div className="bg-white p-2 sm:p-4 rounded-md shadow-sm">
+          <div className="bg-white rounded-xl shadow-md border border-gray-100">
             <PromotionTable
               promotions={promotions}
               handleEdit={handleEdit}
@@ -317,67 +321,41 @@ const PromotionManagement = () => {
             handlePageChange={handlePageChange}
           />
         </div>
-        <DeletePopup
-          showDeletePopup={showDeletePopup}
-          setShowDeletePopup={setShowDeletePopup}
-          handleDelete={handleDelete}
-          loading={loading}
-        />
-        <PromotionFormPopup
-          showFormPopup={showFormPopup}
-          setShowFormPopup={setShowFormPopup}
-          isEdit={isEdit}
-          title={title}
-          setTitle={setTitle}
-          startTime={startTime}
-          setStartTime={setStartTime}
-          endTime={endTime}
-          setEndTime={setEndTime}
-          discountValue={discountValue}
-          setDiscountValue={setDiscountValue}
-          detail={detail}
-          setDetail={setDetail}
-          code={code}
-          setCode={setCode}
-          updatedAt={updatedAt}
-          image={image}
-          setImage={setImage}
-          imagePreview={imagePreview}
-          setImagePreview={setImagePreview}
-          handleSubmit={handleSubmit}
-          handleImageChange={handleImageChange}
-          resetForm={resetForm}
-          loading={loading}
-        />
-        {loading && !showFormPopup && (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999]">
-            <div className="bg-white rounded-lg p-4 sm:p-6 flex flex-col items-center shadow-xl">
-              <svg
-                className="animate-spin h-6 sm:h-8 w-6 sm:w-8 text-indigo-600 mb-3 sm:mb-4"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  fill="none"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8v8z"
-                />
-              </svg>
-              <div className="font-semibold text-base sm:text-lg text-indigo-700">
-                Đang xử lý, vui lòng chờ...
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Modal Components */}
+      <DeletePopup
+        showDeletePopup={showDeletePopup}
+        setShowDeletePopup={setShowDeletePopup}
+        handleDelete={handleDelete}
+        loading={loading}
+      />
+      <PromotionFormPopup
+        showFormPopup={showFormPopup}
+        setShowFormPopup={setShowFormPopup}
+        isEdit={isEdit}
+        title={title}
+        setTitle={setTitle}
+        startTime={startTime}
+        setStartTime={setStartTime}
+        endTime={endTime}
+        setEndTime={setEndTime}
+        discountValue={discountValue}
+        setDiscountValue={setDiscountValue}
+        detail={detail}
+        setDetail={setDetail}
+        code={code}
+        setCode={setCode}
+        updatedAt={updatedAt}
+        image={image}
+        setImage={setImage}
+        imagePreview={imagePreview}
+        setImagePreview={setImagePreview}
+        handleSubmit={handleSubmit}
+        handleImageChange={handleImageChange}
+        resetForm={resetForm}
+        loading={loading}
+      />
     </div>
   );
 };

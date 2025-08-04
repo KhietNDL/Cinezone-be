@@ -28,10 +28,12 @@ import {
   getRevenueToday,
   getCurrentMovies,
 } from "../../../services/API";
+import { getMovieGenreStats } from "../../../services/APIForAdmin/API";
 
 const DashboardAdmin = () => {
   const [topMovies, setTopMovies] = useState([]);
   const [dailyTicketData, setDailyTicketData] = useState([]);
+  const [genreData, setGenreData] = useState([]);
 
   const [salesOverviewData, setSalesOverviewData] = useState([
     { month: "Jan", revenue: 0 },
@@ -310,17 +312,46 @@ const DashboardAdmin = () => {
     // Có thể bổ sung API cho các filter khác ở đây
   }, [timeFilter]);
 
+  // Fetch movie genre statistics
+  useEffect(() => {
+    const fetchGenreData = async () => {
+      try {
+        const response = await getMovieGenreStats();
+        if (response && response.data) {
+          // Transform API data to chart format
+          const chartData = response.data.map((item) => ({
+            name: item.genre,
+            value: item.count,
+            percentage: item.percentage,
+          }));
+          setGenreData(chartData);
+        }
+      } catch (error) {
+        console.error("Error fetching genre data:", error);
+        // Set fallback data if API fails
+        setGenreData([
+          { name: "Action", value: 0, percentage: 0 },
+          { name: "Comedy", value: 0, percentage: 0 },
+          { name: "Drama", value: 0, percentage: 0 },
+        ]);
+      }
+    };
+
+    fetchGenreData();
+  }, []);
+
   const handleTimeFilterChange = (e) => {
     setTimeFilter(e.target.value);
   };
 
-  const pieChartData = [
-    { name: "Action", value: 400 },
-    { name: "Comedy", value: 300 },
-    { name: "Drama", value: 300 },
+  const COLORS = [
+    "#6366F1",
+    "#8B5CF6",
+    "#EC4899",
+    "#10B981",
+    "#F59E0B",
+    "#EF4444",
   ];
-
-  const COLORS = ["#6366F1", "#8B5CF6", "#EC4899", "#10B981"];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -526,23 +557,26 @@ const DashboardAdmin = () => {
                   <ResponsiveContainer width="100%" height="75%">
                     <PieChart>
                       <Pie
-                        data={pieChartData}
+                        data={genreData}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ name }) => name}
+                        label={({ name, percentage }) =>
+                          `${name} (${percentage}%)`
+                        }
                         outerRadius={70}
                         dataKey="value"
                       >
-                        {pieChartData.map((entry, index) => (
+                        {genreData.map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
                             fill={COLORS[index % COLORS.length]}
                           />
                         ))}
                       </Pie>
-                      <Legend wrapperStyle={{ fontSize: "12px" }} />
                       <Tooltip
+                        formatter={(value, name) => [`${value} movies`, name]}
+                        labelFormatter={(label) => `Genre: ${label}`}
                         contentStyle={{
                           backgroundColor: "white",
                           border: "1px solid #e5e7eb",
