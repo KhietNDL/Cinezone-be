@@ -4,7 +4,7 @@ import { SingleBlog } from "../../../../cosmic/blocks/blog/SingleBlog";
 function BlogDetail() {
   const { slug } = useParams();
 
-  // Query để lấy blog theo slug
+  
   const query = {
     slug: slug,
   };

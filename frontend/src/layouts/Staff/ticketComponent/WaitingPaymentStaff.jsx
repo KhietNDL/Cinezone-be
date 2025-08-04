@@ -99,10 +99,10 @@ export default function WaitingPaymentStaff() {
         {/* Payment Form Section */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-center gap-3">
-              <img src={logo} alt="CineZone Logo" className="h-8" />
-              <h3 className="text-lg font-bold text-gray-800">
+          <div className="bg-gradient-to-r from-purple-50 to-purple-100 px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-center">
+              <img src={logo} alt="CineZone Logo" className="w-[150px]" />
+              <h3 className="font-bold text-purple-600 text-2xl pt-4">
                 CineZone Payment
               </h3>
             </div>
@@ -117,13 +117,13 @@ export default function WaitingPaymentStaff() {
                   onSuccess={(paymentIntent) => {
                     if (isCombo) {
                       dispatch(setComboVisaResponse(paymentIntent));
-                      toast.success("Payment successful!");
+                      // toast.success("Payment successful!");
                       setTimeout(() => {
                         navigate("/staff/combo-selling/combo-information");
                       }, 1000);
                     } else {
                       dispatch(setVisaResponse(paymentIntent));
-                      toast.success("Payment successful!");
+                      // toast.success("Payment successful!");
                       setTimeout(() => {
                         navigate("/staff/ticket-selling/ticket-information");
                       }, 1000);
@@ -156,7 +156,7 @@ export default function WaitingPaymentStaff() {
         <div className="mt-6 text-center">
           <button
             onClick={handleCancel}
-            className="inline-flex items-center gap-2 px-6 py-3 text-gray-600 hover:text-red-600 font-medium transition-colors duration-200"
+            className="cursor-pointer inline-flex items-center gap-2 px-6 py-3 text-gray-600 hover:text-red-600 font-medium transition-colors duration-200"
           >
             <span>Cancel Payment</span>
           </button>

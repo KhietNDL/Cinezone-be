@@ -180,30 +180,40 @@ const HistoryActivity = () => {
   }, [user]);
 
     useEffect(() => {
-    const fetchPaymentHistory = async () => {
-      if (!user?.userId) {
-        setLoading(false);
-        return;
-      }
+  const fetchPaymentHistory = async () => {
+    if (!user?.userId) {
+      setLoading(false);
+      return;
+    }
 
-      try {
-        setLoading(true);
-        const response = await getPaymentHistory(user.userId);
-        console.log("PAYMENT history in history page:", response);
-        setPaymentHistory(response?.data || []);
-      } catch (error) {
-        console.error("Lỗi khi lấy history:", error);
-        setPaymentHistory([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+    try {
+      setLoading(true);
+      const response = await getPaymentHistory(user.userId);
+      const rawData = response?.data || [];
+      console.log("Payment History in HistoryPage:", rawData);
 
-    fetchPaymentHistory();
-  }, [user]);
+      // Lọc trùng theo bookingId thủ công
+      const seen = new Set();
+      const uniqueData = rawData.filter((item) => {
+        const id = item.booking?.BookingId;
+        if (!id) return true;
+        if (seen.has(id)) return false; 
+        seen.add(id);
+        return true;
+      });
 
-  useEffect(() => {
-    const fetchScoreHistory = async () => {
+      setPaymentHistory(uniqueData);
+    } catch (error) {
+      console.error("Lỗi khi lấy lịch sử thanh toán:", error);
+      setPaymentHistory([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchPaymentHistory();
+
+   const fetchScoreHistory = async () => {
       if (!user?.userId) {
         setLoading(false);
         return;
@@ -222,12 +232,14 @@ const HistoryActivity = () => {
     };
 
     fetchScoreHistory();
-  }, [user]);
+}, [user]);
 
+
+  
   // Apply filters whenever filter states change
   useEffect(() => {
     applyFilters();
-  }, [searchTerm, statusFilter, dateFilter, paymentHistory]); // Thay đổi từ historyData thành paymentHistory
+  }, [searchTerm, statusFilter, dateFilter, paymentHistory]);
 
   useEffect(() => {
     applyPointsFilters();
@@ -248,7 +260,7 @@ const HistoryActivity = () => {
         return "bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-medium";
       case 4:
         return "bg-red-100 text-red-700 px-4 py-2 rounded-full text-sm font-medium";
-      case "Waiting":
+      case 1:
         return "bg-yellow-100 text-yellow-700 px-4 py-2 rounded-full text-sm font-medium";
       default:
         return "bg-gray-100 text-gray-700 px-4 py-2 rounded-full text-sm font-medium";
@@ -268,7 +280,7 @@ const HistoryActivity = () => {
         return "Success";
       case 4:
         return "Canceled";
-      case "Waiting":
+      case 1:
         return "Waiting";
       default:
         return "Unknown";
@@ -691,22 +703,7 @@ const HistoryActivity = () => {
                 />
               </div>
 
-              {/* Filter by Change Type */}
-              <div className="flex-1 w-full">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Activity Type
-                </label>
-                <select
-                  value={pointsStatusFilter}
-                  onChange={(e) => setPointsStatusFilter(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                >
-                  <option value="all">All Activities</option>
-                  <option value="2">Points Used</option>
-                  <option value="4">Points Earned</option>
-                </select>
-              </div>
-
+             
               {/* Filter by Date */}
               <div className="flex-1 w-full">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -823,9 +820,7 @@ const HistoryActivity = () => {
                       <th className="text-center py-4 px-6 font-semibold text-gray-700">
                         Booking ID
                       </th>
-                      <th className="text-center py-4 px-6 font-semibold text-gray-700">
-                        Activity Type
-                      </th>
+                     
                     </tr>
                   </thead>
                   <tbody>
@@ -876,23 +871,7 @@ const HistoryActivity = () => {
                         <td className="text-center py-4 px-6 text-gray-700 font-mono text-sm">
                           {item.RelatedBookingId}
                         </td>
-                        <td className="text-center py-4 px-6">
-                          <span
-                            className={`px-3 py-1 rounded-full text-sm font-medium ${
-                              item.ChangeType === 2
-                                ? "bg-red-100 text-red-700"
-                                : item.ChangeType === 4
-                                ? "bg-green-100 text-green-700"
-                                : "bg-gray-100 text-gray-700"
-                            }`}
-                          >
-                            {item.ChangeType === 2
-                              ? "Points Used"
-                              : item.ChangeType === 4
-                              ? "Points Earned"
-                              : "Unknown"}
-                          </span>
-                        </td>
+                       
                       </tr>
                     ))}
                   </tbody>

@@ -1,5 +1,6 @@
 import { LayoutSelectSeat } from "../../../component/LayoutSelectSeat";
 import { toast } from "react-toastify";
+import { LayoutSelectSeat1 } from "../../../component/LayoutSelectSeat1";
 
 const DNALoader = () => (
   <div className="relative w-12 h-12 mx-auto">
@@ -65,6 +66,7 @@ const SeatMap = ({
             <LayoutSelectSeat
               key={`${selectedShowtimeId}-${lastRefreshTime}`}
               initialSelectedSeats={selectedSeats}
+
               seatDataFromAPI={seatsData}
               totalSeats={seatQuantity}
               onSeatSelect={({ seats, totalPrice, seatIds }) => {
@@ -96,6 +98,10 @@ const SeatMap = ({
                 available: "text-gray-500",
                 selected: "text-[#5341DB]",
                 taken: "text-[#6A7282]",
+                holding: "text-blue-600",
+                vip: "text-[#FFE3B3]/70",
+                normal: "text-[#752090]",
+                couple: "text-[#C957BC]",
               }}
             />
           </div>
