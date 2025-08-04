@@ -33,9 +33,10 @@ const MovieForgotPassword = () => {
         const data = await getCurrentMovies();
         const posters = data?.data
           ?.map((movie) => {
-            if (!movie.PosterImage) return null;
-            if (movie.PosterImage.startsWith("http")) return movie.PosterImage;
-            return `http://cinezone:4458${movie.PosterImage}`;
+            if (!movie.PosterImageHorizontal) return null;
+            if (movie.PosterImageHorizontal.startsWith("http"))
+              return movie.PosterImageHorizontal;
+            return `http://cinezone:4458${movie.PosterImageHorizontal}`;
           })
           .filter(Boolean);
         setMovieBackgrounds(
