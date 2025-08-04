@@ -99,10 +99,10 @@ export default function WaitingPaymentStaff() {
         {/* Payment Form Section */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-center gap-3">
-              <img src={logo} alt="CineZone Logo" className="h-8" />
-              <h3 className="text-lg font-bold text-gray-800">
+          <div className="bg-gradient-to-r from-purple-50 to-purple-100 px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-center">
+              <img src={logo} alt="CineZone Logo" className="w-[150px]" />
+              <h3 className="font-bold text-purple-600 text-2xl pt-4">
                 CineZone Payment
               </h3>
             </div>

@@ -3,6 +3,8 @@ import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-
 import { loadStripe } from "@stripe/stripe-js";
 import { useDispatch } from "react-redux";
 import { cancelBooking } from "../../../services/API";
+import { FaArrowLeft } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 const stripePromise = loadStripe("pk_test_51RihUMQ1nvt86rfmgAyf52c8e3iUK1gd3PuGxth8Cgng0hxm1dhdvj1B5fCK3zZnXXPVAdc2Qyaq6H9NgxD1Pwdt006VPZkX34");
 
@@ -12,6 +14,7 @@ function CheckoutForm({ clientSecret, onSuccess, totalAmount }) {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,19 +38,39 @@ function CheckoutForm({ clientSecret, onSuccess, totalAmount }) {
     setProcessing(false);
   };
 
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+    } else {
+      navigate(-1);
+    }
+  };
+
  
 
   return (
     <div className="relative mb-10">
-      {/* Background gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-pink-500/10 to-blue-600/20 rounded-3xl blur-xl"></div>
+         
       
+      {/* Background gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black via-gray-900 via-50% via-purple-950/50 to-slate-900 rounded-3xl blur-xl"></div>
+     
       <div className="relative  rounded-2xl  border border-white/5 shadow-2xl p-8">
+      {/* <button
+      onClick={handleClick}
+      className={`inline-flex items-center gap-2 text-white px-4 py-2 rounded-lg bg-transparent hover:bg-white/10 transition-all duration-200 text-sm font-medium backdrop-blur-sm mb-4  `}
+    >
+      <FaArrowLeft className="text-base" />
+      <span>Back</span>
+    </button> */}
+     
+      
         {/* Header */}
         
         {/* Payment Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="relative">
+             
             <PaymentElement 
               options={{
                 layout: {
@@ -79,6 +102,7 @@ function CheckoutForm({ clientSecret, onSuccess, totalAmount }) {
           )}
 
           {/* Submit Button */}
+         
           <button
             type="submit"
             disabled={!stripe || processing}

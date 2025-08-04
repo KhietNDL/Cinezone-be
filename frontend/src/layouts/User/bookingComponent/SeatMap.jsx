@@ -98,7 +98,7 @@ const SeatMap = ({
                 available: "text-gray-500",
                 selected: "text-[#5341DB]",
                 taken: "text-[#6A7282]",
-                holding: "text-blue-600",
+                holding: "text-gray-200",
                 vip: "text-[#FFE3B3]/70",
                 normal: "text-[#752090]",
                 couple: "text-[#C957BC]",
