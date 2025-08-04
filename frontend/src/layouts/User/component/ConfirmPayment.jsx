@@ -78,9 +78,9 @@ const ConfirmPayment = () => {
 
   // Initialize prices - SEPARATE SEAT AND PRODUCT
   useEffect(() => {
-    console.log("Final total price from Redux:", finalTotalPrice);
-    console.log("Product total calculated:", productTotal);
-    console.log("USER DISCOUNT", userDiscount);
+    // console.log("Final total price from Redux:", finalTotalPrice);
+    // console.log("Product total calculated:", productTotal);
+    // console.log("USER DISCOUNT", userDiscount);
 
     // Tách giá ghế và product
     const calculatedSeatPrice = (finalTotalPrice - productTotal) * (100 - userDiscount) / 100;
@@ -121,8 +121,8 @@ const ConfirmPayment = () => {
     setStripeCardType(cardType);
   };
 
-  console.log("METHOD SELECTED", paymentMethod);
-  console.log("CARD TYPE SELECTED", stripeCardType);
+  // console.log("METHOD SELECTED", paymentMethod);
+  // console.log("CARD TYPE SELECTED", stripeCardType);
 
   // Promotion handling - CHỈ ÁP DỤNG CHO GHẾ
   const handleInputPromoCode = (event) => {
@@ -151,9 +151,9 @@ const ConfirmPayment = () => {
 
     try {
       const response = await getPromotionByTitle(promoCode);
-      console.log("Promotion response:", response);
+      // console.log("Promotion response:", response);
       let promotionData = Array.isArray(response.promotions) ? response.promotions[0] : response.promotions;
-      console.log("Promotion data:", promotionData);
+      // console.log("Promotion data:", promotionData);
       const dayObj = new Date(promotionData?.EndTime);
       const dateToCheck = new Date(dayObj.getFullYear(), dayObj.getMonth(), dayObj.getDate());
       const today = new Date();
@@ -181,13 +181,13 @@ const ConfirmPayment = () => {
           }
         );
 
-        console.log("🎫 Promotion applied:", {
-          originalSeatPrice: seatPrice,
-          seatDiscount,
-          newSeatPrice,
-          productPrice,
-          newFinalPrice,
-        });
+        // console.log("🎫 Promotion applied:", {
+        //   originalSeatPrice: seatPrice,
+        //   seatDiscount,
+        //   newSeatPrice,
+        //   productPrice,
+        //   newFinalPrice,
+        // });
       } else {
         setPromotionError(' Invalid or expired promotion code');
         toast.error('  Invalid or expired promotion code   ', {
@@ -214,7 +214,7 @@ const ConfirmPayment = () => {
         const memberPoints = res.TotalAccumulatedPoints;
 
         setMemberPoints(res.TotalAccumulatedPoints);
-        console.log("MEMBER POINTS", memberPoints);
+        // console.log("MEMBER POINTS", memberPoints);
       } catch (error) {
         console.error("Error fetching membership", error);
       }
@@ -376,10 +376,10 @@ const ConfirmPayment = () => {
         appliedPromotion?.Code || "",
         isUsingPoints ? parseInt(pointsToUse) : 0
       );
-      console.log("BOOKING ID TRUOC KHI SET REDUX", holdingResult.bookingId)
+      // console.log("BOOKING ID TRUOC KHI SET REDUX", holdingResult.bookingId)
       dispatch(setBookingId(holdingResult.bookingId))
 
-      console.log("HOLDING SEAT SUCCESSSS:", holdingResult);
+      // console.log("HOLDING SEAT SUCCESSSS:", holdingResult);
       if (product && Array.isArray(product) && product.length > 0) {
         const productsForAPI = product.map((p) => ({
           ProductId: p.ProductId.toString(),
@@ -398,9 +398,9 @@ const ConfirmPayment = () => {
           productHoldPayload.Notes
         );
 
-        console.log("HOLDING PRODUCT SUCCESSSSS:", productHoldResult);
+        // console.log("HOLDING PRODUCT SUCCESSSSS:", productHoldResult);
       } else {
-        console.log("ℹ️ No products to hold");
+        console.log("ℹ No products to hold");
       }
 
       const waitingData = {
@@ -468,15 +468,15 @@ const ConfirmPayment = () => {
   };
 
   const handleTierChange = useCallback((tierInfo) => {
-    console.log(" Setting userDiscount to:", tierInfo.discount);
+    // console.log(" Setting userDiscount to:", tierInfo.discount);
     setUserDiscount(tierInfo.discount);
   }, []);
 
-  useEffect(() => {
-    console.log("==CURRENT FINAL PRICE:", finalPrice);
-    console.log("==SEAT PRICE (discounted):", discountedSeatPrice);
-    console.log("==PRODUCT PRICE (original):", productPrice);
-  }, [finalPrice, discountedSeatPrice, productPrice]);
+  // useEffect(() => {
+  //   console.log("==CURRENT FINAL PRICE:", finalPrice);
+  //   console.log("==SEAT PRICE (discounted):", discountedSeatPrice);
+  //   console.log("==PRODUCT PRICE (original):", productPrice);
+  // }, [finalPrice, discountedSeatPrice, productPrice]);
 
   // Check if user is logged in
   useEffect(() => {

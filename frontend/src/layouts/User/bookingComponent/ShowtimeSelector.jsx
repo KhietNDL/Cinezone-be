@@ -188,7 +188,7 @@ const ShowtimeSelector = ({
                   });
                 }
               }}
-              className="appearance-none w-full py-3 pl-4 pr-10 text-xs md:text-sm font-semibold text-white bg-gradient-to-r from-[#36355a] to-[#4e408e] border border-purple-500/30 hover:border-purple-400/50 focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition duration-200 rounded-2xl md:rounded-4xl shadow-md"
+              className="appearance-none w-full py-3 pl-4 pr-10 text-xs md:text-sm font-semibold text-white bg-gradient-to-r from-purple-600/30 via-purple-500/100 to-purple-600/30 border border-purple-500/30 hover:border-purple-400/50 focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition duration-200 rounded-2xl md:rounded-4xl shadow-md"
             >
               <option value="" disabled>
                 Choose Time

@@ -633,7 +633,7 @@ export const getPaymentHistory = async (memberId) => {
       params: {
         memberId,
         page: 1,
-        limit: 10,
+        limit: 100,
         sortBy: "CreatedAt",
         sortOrder: "desc",
       },
@@ -651,7 +651,6 @@ export const getPaymentHistory = async (memberId) => {
 export const getMembership = async (userId) => {
   try {
     const response = await api.get(`/user/${userId}/membership`);
-    console.log("MEMBERSHIP DATA:", response.data.membership);
     return response.data.membership;
   } catch (error) {
     console.error("Lỗi khi lấy membership :", error);

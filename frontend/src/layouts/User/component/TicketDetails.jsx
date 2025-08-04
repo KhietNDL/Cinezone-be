@@ -178,7 +178,7 @@ const TicketDetails = () => {
     <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 via-50% via-purple-950/50 to-slate-900 flex items-center justify-center py-10 px-4">
       <div className="flex w-full max-w-4xl rounded-2xl overflow-hidden border-2 border-white/60 shadow-2xl">
         {/* Left: Ticket */}
-        <div className="w-1/2 bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] p-8 flex flex-col justify-between">
+        <div className="w-1/2 bg-gradient-to-b from-black via-gray-900 via-50% via-purple-950/50 to-slate-900 p-8 flex flex-col justify-between">
           <AnimatedWrapper
             enableStars
             enableTilt={false}
