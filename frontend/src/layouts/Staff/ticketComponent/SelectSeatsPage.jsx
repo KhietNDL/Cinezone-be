@@ -246,7 +246,7 @@ const SelectSeatsPage = () => {
           <div className="flex-1 bg-white rounded-xl shadow-lg border-0 overflow-hidden">
             <div className="p-6">
 
-              <div className="flex justify-center overflow-x-auto">
+              <div className="flex justify-center items-center overflow-x-auto">
                 <div className="min-w-[50%]">
                   <LayoutSelectSeat
                     seatDataFromAPI={seatData}

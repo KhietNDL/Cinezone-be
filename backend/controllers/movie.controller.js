@@ -62,19 +62,21 @@ const getMoviesByName = async (req, res) => {
     if (!name) {
       return res.status(400).json({ error: "Movie name is required" });
     }
-    const movies = await Movie.getMoviesByName(name, parseInt(page), parseInt(limit), sortBy, sortOrder);
+    const result = await Movie.getMoviesByName(name, parseInt(page), parseInt(limit), sortBy, sortOrder);
 
-    if (movies.length === 0) {
+    if (result.movies.length === 0) {
       return res.status(200).json({
         status: "success",
         message: "No movies found matching the search criteria",
-        data: []
+        data: [],
+        pagination: result.pagination
       });
     }
 
     res.status(200).json({
       status: "success",
-      data: movies.map(normalizeMovieDates)
+      data: result.movies.map(normalizeMovieDates),
+      pagination: result.pagination
     });
   } catch (error) {
     console.error("Get movies by name error:", error);
