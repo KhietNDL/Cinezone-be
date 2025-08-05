@@ -264,12 +264,12 @@ const MovieManagement = () => {
         let totalPagesData = 1;
         let totalMoviesData = 0;
 
-        if (response.data && response.data.movies) {
-          moviesData = response.data.movies;
+        if (response.data) {
+          moviesData = response.data;
           // Check if backend returned pagination info
-          if (response.data.pagination) {
-            totalPagesData = response.data.pagination.totalPages;
-            totalMoviesData = response.data.pagination.total;
+          if (response.pagination) {
+            totalPagesData = response.pagination.totalPages;
+            totalMoviesData = response.pagination.total;
           } else {
             // Fallback to simple calculation
             totalMoviesData = moviesData.length;

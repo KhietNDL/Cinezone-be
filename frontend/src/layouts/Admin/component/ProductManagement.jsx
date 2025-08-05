@@ -10,6 +10,8 @@ import {
   updateProduct,
   getComboChildren,
   createComboProduct,
+  updateComboProduct,
+  deleteComboProduct,
 } from "../../../services/API";
 import StatsCards from "../productComponent/StatsCards";
 import SearchAndAdd from "../productComponent/SearchAndAdd";
@@ -58,26 +60,18 @@ const ProductManagement = () => {
         sortBy: "CreatedAt",
         sortOrder: "desc",
       };
-      console.log("Fetching products with params:", params);
       const response = await getAllProducts(params);
-      console.log("Fetch response:", response);
 
       const productsList = response.products || response.data || [];
       setProducts(productsList);
-      console.log("Products fetched:", productsList);
 
       if (response.pagination) {
         setTotalPages(response.pagination.totalPages);
         setTotalProducts(response.pagination.total);
-        console.log("Pagination from response:", response.pagination);
       } else {
         const fallbackProducts = response.Products || response.data || [];
         setTotalProducts(fallbackProducts.length);
         setTotalPages(Math.ceil(fallbackProducts.length / itemsPerPage));
-        console.log("Fallback pagination:", {
-          total: fallbackProducts.length,
-          pages: Math.ceil(fallbackProducts.length / itemsPerPage),
-        });
       }
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -102,20 +96,16 @@ const ProductManagement = () => {
           sortOrder: "asc",
         };
 
-        console.log("Searching products with:", { searchTerm, params });
         const response = await searchProductsByName(searchTerm, params);
-        console.log("Search response:", response);
 
         if (response) {
           const productsList = response.products || response.data || [];
           setProducts(productsList);
-          console.log("Products set:", productsList);
 
-          // Xử lý pagination từ response
+          // Handle pagination from response
           if (response.pagination) {
             setTotalProducts(response.pagination.total);
             setTotalPages(response.pagination.totalPages);
-            console.log("Pagination:", response.pagination);
           } else {
             setTotalProducts(productsList.length);
             setTotalPages(Math.ceil(productsList.length / itemsPerPage));
@@ -134,29 +124,26 @@ const ProductManagement = () => {
     [currentPage, itemsPerPage, fetchProducts]
   );
 
-  // Load initial data khi component mount
+  // Load initial data when component mounts
   useEffect(() => {
     if (!searchTerm) {
       fetchProducts();
     }
   }, [fetchProducts, searchTerm]);
 
-  // Effect riêng cho searchTerm để reset về trang 1
+  // Separate effect for searchTerm to reset to page 1
   useEffect(() => {
     if (searchTerm !== "") {
-      setCurrentPage(1); // Reset về trang 1 khi có search term mới
+      setCurrentPage(1); // Reset to page 1 when there's a new search term
     }
   }, [searchTerm]);
 
-  // useEffect với debounce cho search
+  // useEffect with debounce for search
   useEffect(() => {
-    console.log("Debounce effect triggered with:", { searchTerm, currentPage });
     const delayDebounceFn = setTimeout(() => {
       if (searchTerm) {
-        console.log("Calling searchProducts with:", searchTerm);
         searchProducts(searchTerm);
       } else {
-        console.log("Calling fetchProducts");
         fetchProducts();
       }
     }, 300);
@@ -309,8 +296,46 @@ const ProductManagement = () => {
       setAddItemProductId("");
       setAddItemQuantity(1);
     } catch (error) {
-      console.log(error);
+      console.error("Error adding item to combo:", error);
       toast.error("Failed to add item to combo.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateComboItem = async (comboProductId, newQuantity) => {
+    setLoading(true);
+    try {
+      await updateComboProduct(comboProductId, newQuantity);
+      toast.success("Updated combo item quantity successfully!");
+
+      // Refresh combo detail if it's currently open
+      if (showComboDetail && comboDetail) {
+        const updatedData = await getComboChildren(comboDetail.combo.ProductId);
+        setComboDetail(updatedData);
+      }
+    } catch (error) {
+      console.error("Error updating combo item:", error);
+      toast.error("Failed to update combo item.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteComboItem = async (comboProductId) => {
+    setLoading(true);
+    try {
+      await deleteComboProduct(comboProductId);
+      toast.success("Removed item from combo successfully!");
+
+      // Refresh combo detail if it's currently open
+      if (showComboDetail && comboDetail) {
+        const updatedData = await getComboChildren(comboDetail.combo.ProductId);
+        setComboDetail(updatedData);
+      }
+    } catch (error) {
+      console.error("Error deleting combo item:", error);
+      toast.error("Failed to remove item from combo.");
     } finally {
       setLoading(false);
     }
@@ -432,8 +457,11 @@ const ProductManagement = () => {
         showComboDetail={showComboDetail}
         setShowComboDetail={setShowComboDetail}
         comboDetail={comboDetail}
+        handleUpdateComboItem={handleUpdateComboItem}
+        handleDeleteComboItem={handleDeleteComboItem}
+        loading={loading}
       />
-      <style jsx>{`
+      <style>{`
         @keyframes fadeIn {
           from {
             opacity: 0;

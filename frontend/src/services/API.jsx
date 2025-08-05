@@ -425,6 +425,18 @@ export const deleteCinemaRoom = async (id) => {
     handleError(error);
   }
 };
+
+// Get seats by cinema room ID
+export const getSeatsByCinemaRoomId = async (cinemaRoomId) => {
+  try {
+    const response = await api.get(`/seats/cinema-room/${cinemaRoomId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching seats by cinema room ID:", error);
+    throw error;
+  }
+};
+
 //API cho Booking FLow
 
 export const getShowtimeByMovieId = async (movieId) => {
@@ -954,6 +966,36 @@ export const createComboProduct = async (comboProductData) => {
     return response.data;
   } catch (error) {
     console.error("Lỗi khi tạo combo product:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const updateComboProduct = async (comboProductId, quantity) => {
+  try {
+    const response = await api.put(
+      `/combo-products/${comboProductId}`,
+      { Quantity: quantity },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi cập nhật combo product:", error);
+    handleError(error);
+    throw error;
+  }
+};
+
+export const deleteComboProduct = async (comboProductId) => {
+  try {
+    const response = await api.delete(`/combo-products/${comboProductId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi xóa combo product:", error);
     handleError(error);
     throw error;
   }
