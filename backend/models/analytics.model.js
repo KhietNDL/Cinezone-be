@@ -470,6 +470,102 @@ class Analytics {
 
     return tenureGroups;
   }
+
+  static async getTopMoviesByTickets(limit = 10, { day, month, year } = {}) {
+    let where = `t.IsDeleted = 0 AND b.Status IN (2,3) AND mv.IsDeleted = 0`;
+    const params = [];
+    if (year) {
+      where += ` AND YEAR(b.BookingDate) = ?`;
+      params.push(year);
+    }
+    if (month) {
+      where += ` AND MONTH(b.BookingDate) = ?`;
+      params.push(month);
+    }
+    if (day) {
+      where += ` AND DAY(b.BookingDate) = ?`;
+      params.push(day);
+    }
+    const sql = `
+      SELECT 
+        mv.MovieId,
+        mv.NameOfVietnamese,
+        mv.NameOfEnglish,
+        mv.PosterImage,
+        mv.Genres,
+        COUNT(t.TicketId) as ticketCount
+      FROM Tickets t
+      JOIN Bookings b ON t.BookingId = b.BookingId
+      JOIN Showtimes s ON b.ShowtimeId = s.ShowtimeId
+      JOIN Version v ON s.VersionId = v.VersionId
+      JOIN Movies mv ON v.MovieId = mv.MovieId
+      WHERE ${where}
+      GROUP BY mv.MovieId
+      ORDER BY ticketCount DESC
+      LIMIT ?
+    `;
+    params.push(limit);
+    const [rows] = await db.promise().query(sql, params);
+    return rows.map(row => ({
+      movieId: row.MovieId,
+      title: row.NameOfVietnamese || row.NameOfEnglish,
+      ticketsSold: Number(row.ticketCount)
+    }));
+  }
+
+  static async getTopGenresByTickets(limit = 5, { day, month, year } = {}) {
+    let where = `t.IsDeleted = 0 AND b.Status IN (2,3) AND mv.IsDeleted = 0`;
+    const params = [];
+    if (year) {
+      where += ` AND YEAR(b.BookingDate) = ?`;
+      params.push(year);
+    }
+    if (month) {
+      where += ` AND MONTH(b.BookingDate) = ?`;
+      params.push(month);
+    }
+    if (day) {
+      where += ` AND DAY(b.BookingDate) = ?`;
+      params.push(day);
+    }
+    const sql = `
+      SELECT 
+        mv.Genres,
+        COUNT(t.TicketId) as ticketCount
+      FROM Tickets t
+      JOIN Bookings b ON t.BookingId = b.BookingId
+      JOIN Showtimes s ON b.ShowtimeId = s.ShowtimeId
+      JOIN Version v ON s.VersionId = v.VersionId
+      JOIN Movies mv ON v.MovieId = mv.MovieId
+      WHERE ${where}
+      GROUP BY mv.MovieId
+    `;
+    const [rows] = await db.promise().query(sql, params);
+
+    // Gom nhóm lại theo từng thể loại
+    const genreMap = {};
+    for (const row of rows) {
+      if (!row.Genres) continue;
+      let genres = row.Genres;
+      if (typeof genres === 'string') {
+        genres = genres.split(',').map(g => g.trim());
+      }
+      for (const genre of genres) {
+        if (!genreMap[genre]) genreMap[genre] = 0;
+        genreMap[genre] += Number(row.ticketCount);
+      }
+    }
+    // Chuyển thành mảng và sort
+    const genreStats = Object.entries(genreMap)
+      .map(([genre, ticketCount]) => ({ genre, ticketCount }))
+      .sort((a, b) => b.ticketCount - a.ticketCount)
+      .slice(0, limit);
+
+    return genreStats.map(g => ({
+      genre: g.genre,
+      ticketsSold: g.ticketCount
+    }));
+  }
 }
 
 module.exports = Analytics;

@@ -124,7 +124,7 @@ class Product {
       `SELECT cp.ComboProductId, cp.Quantity, p.ProductId, p.ProductName, p.Description, p.Unit, p.Price, p.ImageUrl
        FROM ComboProduct cp
        JOIN Products p ON cp.ProductId = p.ProductId
-       WHERE cp.ComboId = ?`,
+       WHERE cp.ComboId = ? AND cp.IsDeleted = 0`,
       [productId]
     );
     return {

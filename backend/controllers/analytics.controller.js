@@ -192,3 +192,51 @@ exports.getEmployeeTenureStats = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+exports.getTopMoviesByTickets = async (req, res) => {
+    try {
+        let limit = parseInt(req.query.limit, 10);
+        if (isNaN(limit) || limit < 1) limit = 10;
+        if (limit > 20) limit = 20;
+        const { day, month, year } = req.query;
+        const filter = {};
+        if (year) filter.year = Number(year);
+        if (month) filter.month = Number(month);
+        if (day) filter.day = Number(day);
+        const data = await Analytics.getTopMoviesByTickets(limit, filter);
+        res.json({
+            filter: {
+                day: filter.day || null,
+                month: filter.month || null,
+                year: filter.year || null
+            },
+            data
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.getTopGenresByTickets = async (req, res) => {
+    try {
+        let limit = parseInt(req.query.limit, 10);
+        if (isNaN(limit) || limit < 1) limit = 5;
+        if (limit > 20) limit = 20;
+        const { day, month, year } = req.query;
+        const filter = {};
+        if (year) filter.year = Number(year);
+        if (month) filter.month = Number(month);
+        if (day) filter.day = Number(day);
+        const data = await Analytics.getTopGenresByTickets(limit, filter);
+        res.json({
+            filter: {
+                day: filter.day || null,
+                month: filter.month || null,
+                year: filter.year || null
+            },
+            data
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
