@@ -5,6 +5,7 @@ import StripeCheckoutForm from "../../User/component/StripeCheckoutForm";
 import { setVisaResponse } from "../../../redux/features/sellingSlice";
 import { setComboVisaResponse } from "../../../redux/features/comboSlice";
 import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import logo from "../../../assets/logoWeb.svg";
 import BackButton from "../component/BackButton";
 import {

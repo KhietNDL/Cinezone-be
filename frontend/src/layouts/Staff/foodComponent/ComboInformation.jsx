@@ -16,6 +16,7 @@ import {
   confirmPayment,
 } from "../../../services/APIForStaff/API";
 import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import BackButton from "../component/BackButton";
 
 export default function ComboInformation() {
@@ -40,6 +41,14 @@ export default function ComboInformation() {
     status = comboVisaResponse.status === "succeeded" ? "success" : "error";
   }
 
+  useEffect(() => {
+    if (status === "success") {
+      toast.success("Payment successful!");
+    } else if (status === "error") {
+      toast.error("Payment failed. Please try again.");
+    }
+  }, [status]);
+
   const paymentId = params.get("paymentId") || comboData?.paymentId;
 
   const cart = useSelector((state) => state.combo.cart) || [];
@@ -56,13 +65,9 @@ export default function ComboInformation() {
         if (status === "success" && paymentId) {
           await confirmPayment(paymentId);
           window.history.replaceState({}, document.title, window.location.pathname);
-          console.log("Payment confirmed successfully!");
-          console.log("PaymentId:", paymentId);
-          toast.success("Payment confirmed successfully!");
         }
       } catch (error) {
         window.history.replaceState({}, document.title, window.location.pathname);
-        toast.error("Failed to confirm payment");
         console.error(error);
       }
     };
@@ -105,11 +110,27 @@ export default function ComboInformation() {
     navigate("/staff/combo-selling");
   };
 
-  const handleCancel = () => {
+  const handleClose = () => {
     dispatch(clearComboCart());
     dispatch(clearOrderInfo());
     dispatch(resetCart());
     navigate("/staff/combo-selling");
+  };
+
+  const handleCancel = async () => {
+    dispatch(clearComboCart());
+    dispatch(clearOrderInfo());
+    dispatch(resetCart());
+    try {
+      await cancelProductsById(orderProductId);
+      toast.success("Booking cancelled.");
+    } catch (err) {
+      toast.error("Failed to cancel booking");
+      console.error(err);
+    } finally {
+      navigate("/staff/combo-selling");
+    }
+
   };
 
   const handleTryAgain = useCallback(async () => {
@@ -252,17 +273,31 @@ export default function ComboInformation() {
           <div className="p-6">
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               {status === "error" ? (
-                <Button
-                  icon={<FaRedo />}
-                  onClick={handleTryAgain}
-                  className="h-12 px-8 bg-gradient-to-r from-orange-600 to-orange-700 border-0 hover:from-orange-700 hover:to-orange-800 font-semibold text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
-                  size="large"
-                >
-                  Try Again
-                </Button>
+                <>
+                  <Button
+                    color="orange" variant="solid"
+                    icon={<FaRedo />}
+                    onClick={handleTryAgain}
+                    className="h-12 px-8 bg-gradient-to-r from-orange-600 to-orange-700 border-0 hover:from-orange-700 hover:to-orange-800 font-semibold text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
+                    size="large"
+                  >
+                    Try Again
+                  </Button>
+
+                  <Button
+                    color="danger" variant="outlined"
+                    icon={<FaTimes />}
+                    onClick={handleCancel}
+                    className="h-12 px-8 font-semibold rounded-lg border-2 border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
+                    size="large"
+                  >
+                    Cancel
+                  </Button>
+                </>
               ) : (
                 <>
                   <Button
+                    type="primary"
                     icon={<FaPlus />}
                     onClick={handleNewCombo}
                     className="h-12 px-8 bg-gradient-to-r from-purple-600 to-purple-700 border-0 hover:from-purple-700 hover:to-purple-800 font-semibold text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
@@ -271,8 +306,9 @@ export default function ComboInformation() {
                     New Combo Order
                   </Button>
                   <Button
+                    color="danger" variant="outlined"
                     icon={<FaTimes />}
-                    onClick={handleCancel}
+                    onClick={handleClose}
                     className="h-12 px-8 font-semibold rounded-lg border-2 border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
                     size="large"
                   >

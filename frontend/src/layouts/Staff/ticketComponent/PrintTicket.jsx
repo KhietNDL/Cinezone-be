@@ -12,6 +12,7 @@ import {
 } from "react-icons/fa6";
 import { IoTime } from "react-icons/io5";
 import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import logo from "../../../assets/logoWhite.png";
 import { resetBooking } from "../../../redux/features/sellingSlice";
 import { useDispatch, useSelector } from "react-redux";

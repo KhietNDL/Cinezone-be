@@ -17,6 +17,7 @@ import { getCurrentMovies } from "../../../services/APIForStaff/API";
 import MovieSwiper from "../component/MovieSwiper";
 import "../component/SwiperButton.css";
 import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import BackButton from "../component/BackButton";
 import VersionCard from "../component/VersionCard";
 
