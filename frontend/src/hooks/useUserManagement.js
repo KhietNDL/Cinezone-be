@@ -61,6 +61,7 @@ export const useUserManagement = () => {
 
   // Form state
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
+  const [activeFilter, setActiveFilter] = useState(null);
 
   // Utility functions
   const resetForm = useCallback(() => {
@@ -134,41 +135,67 @@ export const useUserManagement = () => {
     });
   }, []);
 
-  const getUserData = useCallback(async () => {
-    try {
-      const params = {
-        page: uiState.currentPage,
-        limit: ITEMS_PER_PAGE,
-        sortBy: uiState.sortBy,
-        sortOrder: uiState.sortOrder,
-      };
+  // Update getUserData to accept status parameter
+  const getUserData = useCallback(
+    async (status = null) => {
+      try {
+        setUiState((prev) => ({ ...prev, loading: true }));
+        const res = await getAllUsers({
+          page: uiState.currentPage,
+          limit: ITEMS_PER_PAGE,
+          sortBy: uiState.sortBy,
+          sortOrder: uiState.sortOrder,
+          status: status, // Pass status filter to API
+        });
 
-      const res = await getAllUsers(params);
-
-      if (res.users) {
+        if (res.users) {
+          setUserState((prev) => ({
+            ...prev,
+            users: res.users,
+            totalPages: res.pagination?.totalPages || 0,
+            totalItems: res.pagination?.total || 0,
+          }));
+        }
+      } catch (error) {
+        console.error("Load users error:", error);
+        toast.error("Failed to load users");
         setUserState((prev) => ({
           ...prev,
-          users: res.users,
-          totalPages: res.pagination?.totalPages || 0,
-          totalItems: res.pagination?.total || 0,
+          users: [],
+          totalPages: 0,
+          totalItems: 0,
         }));
+      } finally {
+        setUiState((prev) => ({ ...prev, loading: false }));
       }
-    } catch (error) {
-      console.error("Load users error:", error);
-      toast.error("Failed to load users");
-      setUserState((prev) => ({
-        ...prev,
-        users: [],
-        totalPages: 0,
-        totalItems: 0,
-      }));
-    }
-  }, [uiState.currentPage, uiState.sortBy, uiState.sortOrder]);
+    },
+    [uiState.currentPage, uiState.sortBy, uiState.sortOrder]
+  );
+
+  // Add handler for filter changes
+  const handleFilterChange = useCallback(
+    (filterType) => {
+      setActiveFilter(filterType);
+      setUiState((prev) => ({ ...prev, currentPage: 1 })); // Reset to page 1
+
+      // Fetch data with the new filter
+      const statusMap = {
+        active: "active",
+        inactive: "inactive",
+        new: "new",
+        total: null,
+        null: null,
+      };
+
+      getUserData(statusMap[filterType]);
+    },
+    [getUserData]
+  );
 
   const searchUserData = useCallback(
     async (keyword) => {
       if (!keyword.trim()) {
-        getUserData();
+        getUserData(activeFilter === "total" ? null : activeFilter);
         return;
       }
 
@@ -178,6 +205,7 @@ export const useUserManagement = () => {
           limit: ITEMS_PER_PAGE,
           sortBy: uiState.sortBy,
           sortOrder: uiState.sortOrder,
+          status: activeFilter === "total" ? null : activeFilter, // Respect current filter
         };
 
         // Use new API that supports multiple search fields
@@ -210,15 +238,21 @@ export const useUserManagement = () => {
         }));
       }
     },
-    [uiState.currentPage, uiState.sortBy, uiState.sortOrder, getUserData]
+    [
+      uiState.currentPage,
+      uiState.sortBy,
+      uiState.sortOrder,
+      activeFilter,
+      getUserData,
+    ]
   );
 
-  // Load initial data when component mounts
+  // Update useEffect to respect filter when loading data
   useEffect(() => {
     if (!uiState.searchTerm.trim()) {
-      getUserData();
+      getUserData(activeFilter === "total" ? null : activeFilter);
     }
-  }, [getUserData, uiState.searchTerm]);
+  }, [getUserData, uiState.searchTerm, activeFilter]);
 
   // Effect riêng cho searchTerm để reset về trang 1
   useEffect(() => {
@@ -233,7 +267,8 @@ export const useUserManagement = () => {
       if (uiState.searchTerm.trim()) {
         searchUserData(uiState.searchTerm);
       } else {
-        getUserData();
+        // When clearing search, respect current filter
+        getUserData(activeFilter === "total" ? null : activeFilter);
       }
     }, 300);
 
@@ -245,6 +280,7 @@ export const useUserManagement = () => {
     uiState.sortOrder,
     searchUserData,
     getUserData,
+    activeFilter, // Add activeFilter to dependencies
   ]);
 
   const handleAddUser = async () => {
@@ -276,7 +312,7 @@ export const useUserManagement = () => {
         if (uiState.searchTerm?.trim()) {
           await searchUserData(uiState.searchTerm);
         } else {
-          await getUserData();
+          await getUserData(activeFilter === "total" ? null : activeFilter);
         }
         handleModal("showAdd", false);
         resetForm();
@@ -320,7 +356,7 @@ export const useUserManagement = () => {
       if (uiState.searchTerm?.trim()) {
         await searchUserData(uiState.searchTerm);
       } else {
-        await getUserData();
+        await getUserData(activeFilter === "total" ? null : activeFilter);
       }
 
       handleModal("showEdit", false);
@@ -348,7 +384,7 @@ export const useUserManagement = () => {
       if (uiState.searchTerm?.trim()) {
         await searchUserData(uiState.searchTerm);
       } else {
-        await getUserData();
+        await getUserData(activeFilter === "total" ? null : activeFilter);
       }
     } catch (error) {
       console.error("Delete error:", error);
@@ -369,7 +405,7 @@ export const useUserManagement = () => {
         if (uiState.searchTerm.trim()) {
           searchUserData(uiState.searchTerm);
         } else {
-          getUserData();
+          getUserData(activeFilter === "total" ? null : activeFilter);
         }
       } catch (error) {
         console.error("Unban error:", error);
@@ -378,7 +414,7 @@ export const useUserManagement = () => {
         setUiState((prev) => ({ ...prev, unbanLoading: false }));
       }
     },
-    [uiState.searchTerm, searchUserData, getUserData]
+    [uiState.searchTerm, searchUserData, getUserData, activeFilter]
   );
 
   const handleEditUser = useCallback(
@@ -453,6 +489,7 @@ export const useUserManagement = () => {
     userState,
     uiState,
     formData,
+    activeFilter,
 
     // Handlers
     handleModal,
@@ -462,6 +499,7 @@ export const useUserManagement = () => {
     handlePageChange,
     handleSearchTermChange,
     handleFormDataChange,
+    handleFilterChange,
 
     // Actions
     handleAddUser,

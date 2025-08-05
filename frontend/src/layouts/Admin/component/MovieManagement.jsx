@@ -84,29 +84,51 @@ const MovieManagement = () => {
   // eslint-disable-next-line no-unused-vars
   const [allMoviesForStats, setAllMoviesForStats] = useState([]);
 
-  const getMovieData = useCallback(async () => {
-    try {
-      const response = await getMovies({
-        page: currentPage,
-        limit: itemsPerPage,
-        sortBy,
-        sortOrder,
-      });
-      if (response.data) {
-        const moviesArray = Array.isArray(response.data) ? response.data : [];
-        setMovies(moviesArray);
+  // Helper function to get status from activeFilter
+  const getStatusFromFilter = (filterType) => {
+    const statusMap = {
+      active: "active",
+      upcoming: "upcoming",
+      expired: "expired",
+      total: null,
+      null: null,
+    };
+    return statusMap[filterType];
+  };
 
-        if (response.pagination) {
-          setTotalPages(response.pagination.totalPages);
+  const getMovieData = useCallback(
+    async (status = null) => {
+      try {
+        const params = {
+          page: currentPage,
+          limit: itemsPerPage,
+          sortBy,
+          sortOrder,
+        };
+
+        // Add status filter if provided
+        if (status) {
+          params.status = status;
         }
-      } else {
+
+        const response = await getMovies(params);
+        if (response.data) {
+          const moviesArray = Array.isArray(response.data) ? response.data : [];
+          setMovies(moviesArray);
+
+          if (response.pagination) {
+            setTotalPages(response.pagination.totalPages);
+          }
+        } else {
+          setMovies([]);
+        }
+      } catch (error) {
+        console.error("Error fetching movies:", error);
         setMovies([]);
       }
-    } catch (error) {
-      console.error("Error fetching movies:", error);
-      setMovies([]);
-    }
-  }, [currentPage, itemsPerPage, sortBy, sortOrder]);
+    },
+    [currentPage, itemsPerPage, sortBy, sortOrder]
+  );
 
   // Fetch all movies for statistics calculation
   const getAllMoviesForStats = useCallback(async () => {
@@ -167,43 +189,14 @@ const MovieManagement = () => {
     setMovieStats(stats);
   };
 
-  // Handle filter changes
+  // Handle filter changes - now uses backend filtering
   const handleFilterChange = (filterType) => {
     setActiveFilter(filterType);
     setCurrentPage(1); // Reset to first page when filter changes
+
+    const status = getStatusFromFilter(filterType);
+    getMovieData(status);
   };
-
-  // Filter movies based on active filter using current page movies
-  const getFilteredMovies = () => {
-    if (!activeFilter || activeFilter === "total") {
-      return movies;
-    }
-
-    const now = new Date();
-
-    switch (activeFilter) {
-      case "active":
-        return movies.filter((movie) => {
-          const fromDate = new Date(movie.FromDate);
-          const toDate = new Date(movie.ToDate);
-          return fromDate <= now && toDate >= now;
-        });
-      case "upcoming":
-        return movies.filter((movie) => {
-          const fromDate = new Date(movie.FromDate);
-          return fromDate > now;
-        });
-      case "expired":
-        return movies.filter((movie) => {
-          const toDate = new Date(movie.ToDate);
-          return toDate < now;
-        });
-      default:
-        return movies;
-    }
-  };
-
-  const filteredMovies = getFilteredMovies();
 
   const handleSort = (column) => {
     if (sortBy === column) {
@@ -244,20 +237,27 @@ const MovieManagement = () => {
   }, []);
 
   const searchMovieData = useCallback(
-    async (searchTerm) => {
+    async (searchTerm, status = null) => {
       if (!searchTerm.trim()) {
-        getMovieData();
+        getMovieData(status);
         return;
       }
 
       try {
-        const response = await searchMovies({
+        const params = {
           name: searchTerm,
           page: currentPage,
           limit: itemsPerPage,
           sortBy: sortBy,
           sortOrder: sortOrder,
-        });
+        };
+
+        // Add status filter if provided
+        if (status) {
+          params.status = status;
+        }
+
+        const response = await searchMovies(params);
 
         // Backend search now returns paginated structure
         let moviesData = [];
@@ -301,10 +301,11 @@ const MovieManagement = () => {
   // Effect riêng cho việc reload data khi searchMovie thay đổi
   useEffect(() => {
     if (!searchMovie.trim()) {
-      getMovieData();
+      const status = getStatusFromFilter(activeFilter);
+      getMovieData(status);
       getAllMoviesForStats();
     }
-  }, [searchMovie, getMovieData, getAllMoviesForStats]);
+  }, [searchMovie, getMovieData, getAllMoviesForStats, activeFilter]);
 
   // Effect riêng cho searchMovie để reset về trang 1
   useEffect(() => {
@@ -316,30 +317,34 @@ const MovieManagement = () => {
   // useEffect với debounce cho search - chỉ phụ thuộc vào searchMovie
   useEffect(() => {
     const searchTimeout = setTimeout(() => {
+      const status = getStatusFromFilter(activeFilter);
+
       if (searchMovie.trim()) {
-        searchMovieData(searchMovie);
+        searchMovieData(searchMovie, status);
       } else {
-        getMovieData();
+        getMovieData(status);
         getAllMoviesForStats(); // Reload stats when clearing search
       }
     }, 300);
 
     return () => clearTimeout(searchTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchMovie]); // Chỉ phụ thuộc vào searchMovie
+  }, [searchMovie, activeFilter]); // Add activeFilter dependency
 
   // Effect riêng cho currentPage, sortBy, sortOrder khi có search
   useEffect(() => {
+    const status = getStatusFromFilter(activeFilter);
+
     if (searchMovie.trim()) {
       const timeoutId = setTimeout(() => {
-        searchMovieData(searchMovie);
+        searchMovieData(searchMovie, status);
       }, 100); // Debounce ngắn hơn cho pagination
       return () => clearTimeout(timeoutId);
     } else {
-      getMovieData();
+      getMovieData(status);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, sortBy, sortOrder]); // Loại bỏ searchMovie khỏi đây để tránh duplicate calls
+  }, [currentPage, sortBy, sortOrder, activeFilter]); // Add activeFilter
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
@@ -557,7 +562,11 @@ const MovieManagement = () => {
 
       const newMovie = await createMovie(movieData);
       setMovies((prev) => [...prev, newMovie]);
-      getMovieData();
+
+      // Refresh current data with filter
+      const status = getStatusFromFilter(activeFilter);
+      getMovieData(status);
+
       resetForm();
       setShowAddForm(false);
       toast.success("Movie added successfully!");
@@ -669,7 +678,11 @@ const MovieManagement = () => {
           mov.MovieId === updatedMovie.MovieId ? updatedMovie : mov
         )
       );
-      getMovieData();
+
+      // Refresh current data with filter
+      const status = getStatusFromFilter(activeFilter);
+      getMovieData(status);
+
       resetForm();
       setShowEditForm(false);
       setSelectedMovie(null);
@@ -743,7 +756,8 @@ const MovieManagement = () => {
       setMovies((prev) =>
         prev.filter((mov) => mov.MovieId !== selectedMovie.MovieId)
       );
-      getMovieData();
+      const status = getStatusFromFilter(activeFilter);
+      getMovieData(status);
       setShowDeletePopup(false);
       setSelectedMovie(null);
       toast.success("Movie deleted successfully!");
@@ -902,11 +916,11 @@ const MovieManagement = () => {
                         : ""}
                     </span>
                     <span className="text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded-full">
-                      {filteredMovies.length} movies
+                      {movies.length} movies
                     </span>
                   </div>
                   <button
-                    onClick={() => setActiveFilter(null)}
+                    onClick={() => handleFilterChange(null)}
                     className="text-purple-600 hover:text-purple-800 text-sm font-medium hover:bg-purple-100 px-2 py-1 rounded transition-colors duration-200"
                   >
                     Clear Filter
@@ -918,7 +932,7 @@ const MovieManagement = () => {
             {/* Desktop Table View */}
             <div className="hidden sm:block">
               <MovieTable
-                movies={Array.isArray(filteredMovies) ? filteredMovies : []}
+                movies={Array.isArray(movies) ? movies : []}
                 handleSort={handleSort}
                 sortBy={sortBy}
                 sortOrder={sortOrder}
@@ -930,8 +944,8 @@ const MovieManagement = () => {
               />
             </div>
             <div className="block sm:hidden space-y-4 p-4">
-              {Array.isArray(filteredMovies) && filteredMovies.length > 0 ? (
-                filteredMovies.map((movie) => {
+              {Array.isArray(movies) && movies.length > 0 ? (
+                movies.map((movie) => {
                   const now = new Date();
                   const start = new Date(movie.FromDate);
                   const end = new Date(movie.ToDate);

@@ -41,7 +41,6 @@ const ProductManagement = () => {
   const [isEdit, setIsEdit] = useState(false);
   const [showFormPopup, setShowFormPopup] = useState(false);
   const [totalPages, setTotalPages] = useState(0);
-  const [totalProducts, setTotalProducts] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [showAddItemPopup, setShowAddItemPopup] = useState(false);
   const [comboIdForAddItem, setComboIdForAddItem] = useState("");
@@ -49,42 +48,86 @@ const ProductManagement = () => {
   const [addItemQuantity, setAddItemQuantity] = useState(1);
   const [showComboDetail, setShowComboDetail] = useState(false);
   const [comboDetail, setComboDetail] = useState(null);
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [allProductsForStats, setAllProductsForStats] = useState([]);
   const itemsPerPage = 5;
 
-  const fetchProducts = useCallback(async () => {
-    setLoading(true);
+  // Helper function to map filter to backend status
+  const getStatusFromFilter = (filter) => {
+    switch (filter) {
+      case "in_stock":
+        return "in_stock";
+      case "low_stock":
+        return "low_stock";
+      case "out_of_stock":
+        return "out_of_stock";
+      case "all":
+      default:
+        return null;
+    }
+  };
+
+  // Fetch all products for statistics calculation
+  const getAllProductsForStats = useCallback(async () => {
     try {
-      const params = {
-        page: currentPage,
-        limit: itemsPerPage,
+      const response = await getAllProducts({
+        page: 1,
+        limit: 10000, // Large number to get all products
         sortBy: "CreatedAt",
         sortOrder: "desc",
-      };
-      const response = await getAllProducts(params);
+      });
 
-      const productsList = response.products || response.data || [];
-      setProducts(productsList);
-
-      if (response.pagination) {
-        setTotalPages(response.pagination.totalPages);
-        setTotalProducts(response.pagination.total);
-      } else {
-        const fallbackProducts = response.Products || response.data || [];
-        setTotalProducts(fallbackProducts.length);
-        setTotalPages(Math.ceil(fallbackProducts.length / itemsPerPage));
+      if (response.products || response.data) {
+        const allProductsArray = response.products || response.data || [];
+        setAllProductsForStats(allProductsArray);
       }
     } catch (error) {
-      console.error("Error fetching products:", error);
-      toast.error("Failed to fetch products.");
-    } finally {
-      setLoading(false);
+      console.error("Error fetching all products for stats:", error);
+      setAllProductsForStats([]);
     }
-  }, [currentPage, itemsPerPage]);
+  }, []);
+
+  const fetchProducts = useCallback(
+    async (status = null) => {
+      setLoading(true);
+      try {
+        const params = {
+          page: currentPage,
+          limit: itemsPerPage,
+          sortBy: "CreatedAt",
+          sortOrder: "desc",
+        };
+
+        // Add status filter if provided
+        if (status) {
+          params.status = status;
+        }
+
+        const response = await getAllProducts(params);
+
+        const productsList = response.products || response.data || [];
+        setProducts(productsList);
+
+        if (response.pagination) {
+          setTotalPages(response.pagination.totalPages);
+        } else {
+          const fallbackProducts = response.Products || response.data || [];
+          setTotalPages(Math.ceil(fallbackProducts.length / itemsPerPage));
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        toast.error("Failed to fetch products.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [currentPage, itemsPerPage]
+  );
 
   const searchProducts = useCallback(
-    async (searchTerm) => {
+    async (searchTerm, status = null) => {
       if (!searchTerm.trim()) {
-        fetchProducts();
+        fetchProducts(status);
         return;
       }
       setLoading(true);
@@ -96,6 +139,11 @@ const ProductManagement = () => {
           sortOrder: "asc",
         };
 
+        // Add status filter if provided
+        if (status) {
+          params.status = status;
+        }
+
         const response = await searchProductsByName(searchTerm, params);
 
         if (response) {
@@ -104,10 +152,8 @@ const ProductManagement = () => {
 
           // Handle pagination from response
           if (response.pagination) {
-            setTotalProducts(response.pagination.total);
             setTotalPages(response.pagination.totalPages);
           } else {
-            setTotalProducts(productsList.length);
             setTotalPages(Math.ceil(productsList.length / itemsPerPage));
           }
         }
@@ -115,7 +161,6 @@ const ProductManagement = () => {
         console.error("Error searching products:", error);
         toast.error("Failed to search products.");
         setProducts([]);
-        setTotalProducts(0);
         setTotalPages(0);
       } finally {
         setLoading(false);
@@ -124,12 +169,26 @@ const ProductManagement = () => {
     [currentPage, itemsPerPage, fetchProducts]
   );
 
+  // Handle filter change for backend filtering
+  const handleFilterChange = (filter) => {
+    setActiveFilter(filter);
+    setCurrentPage(1); // Reset to page 1 when filter changes
+    const status = getStatusFromFilter(filter);
+
+    if (searchTerm.trim()) {
+      searchProducts(searchTerm, status);
+    } else {
+      fetchProducts(status);
+    }
+  };
+
   // Load initial data when component mounts
   useEffect(() => {
     if (!searchTerm) {
       fetchProducts();
     }
-  }, [fetchProducts, searchTerm]);
+    getAllProductsForStats();
+  }, [fetchProducts, searchTerm, getAllProductsForStats]);
 
   // Separate effect for searchTerm to reset to page 1
   useEffect(() => {
@@ -141,15 +200,25 @@ const ProductManagement = () => {
   // useEffect with debounce for search
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
+      const status = getStatusFromFilter(activeFilter);
+
       if (searchTerm) {
-        searchProducts(searchTerm);
+        searchProducts(searchTerm, status);
       } else {
-        fetchProducts();
+        fetchProducts(status);
+        getAllProductsForStats(); // Reload stats when clearing search
       }
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm, currentPage, searchProducts, fetchProducts]);
+  }, [
+    searchTerm,
+    currentPage,
+    activeFilter,
+    searchProducts,
+    fetchProducts,
+    getAllProductsForStats,
+  ]);
 
   const handleViewComboDetail = async (productId) => {
     setLoading(true);
@@ -218,7 +287,9 @@ const ProductManagement = () => {
       }
       resetForm();
       setShowFormPopup(false);
-      fetchProducts();
+      const status = getStatusFromFilter(activeFilter);
+      fetchProducts(status);
+      getAllProductsForStats(); // Refresh stats
     } catch (error) {
       console.error("Error saving product:", error);
       toast.error("Failed to save product.");
@@ -249,7 +320,9 @@ const ProductManagement = () => {
       toast.success("Product deleted successfully!");
       setShowDeletePopup(false);
       setSelectedProduct(null);
-      fetchProducts();
+      const status = getStatusFromFilter(activeFilter);
+      fetchProducts(status);
+      getAllProductsForStats(); // Refresh stats
     } catch (error) {
       console.error("Error deleting product:", error);
       toast.error("Failed to delete product.");
@@ -377,7 +450,12 @@ const ProductManagement = () => {
       <ToastContainer />
       <div className="flex flex-col items-center lg:items-start h-auto min-h-screen max-w-7xl w-full overflow-x-hidden mx-auto">
         <div className="w-[90%] md:w-[95%] lg:w-full max-w-7xl space-y-4 sm:space-y-6">
-          <StatsCards totalProducts={totalProducts} products={products} />
+          <StatsCards
+            totalProducts={allProductsForStats.length}
+            products={allProductsForStats}
+            activeFilter={activeFilter}
+            handleFilterChange={handleFilterChange}
+          />
           <div className="bg-white rounded-xl shadow-md border border-gray-100">
             <ProductTable
               products={products}

@@ -187,10 +187,10 @@ const DashboardAdmin = () => {
         if (res && res.data) {
           // Map về 4 quý
           const chartData = [
-            { month: "Q1", revenue: 0 },
-            { month: "Q2", revenue: 0 },
-            { month: "Q3", revenue: 0 },
-            { month: "Q4", revenue: 0 },
+            { month: "Quarter 1", revenue: 0 },
+            { month: "Quarter 2", revenue: 0 },
+            { month: "Quarter 3", revenue: 0 },
+            { month: "Quarter 4", revenue: 0 },
           ];
           res.data.forEach((item, idx) => {
             if (chartData[idx]) chartData[idx].revenue = item.total;
@@ -231,7 +231,7 @@ const DashboardAdmin = () => {
         if (res && res.data) {
           // Map the daily data to chart format
           const chartData = res.data.map((day) => ({
-            month: day.dayNameVN || day.dayName, // Use Vietnamese day name, fallback to English
+            month: day.dayName, // Use Vietnamese day name, fallback to English
             revenue: Number(day.total) || 0,
             date: day.date,
             bookingCount: day.bookingCount || 0,

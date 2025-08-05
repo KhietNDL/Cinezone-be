@@ -165,3 +165,32 @@ export const getMovieGenreStats = async () => {
     handleError(error);
   }
 };
+
+export const getBookingStatusStats = async () => {
+  try {
+    const response = await api.get("/analytics/bookings/status");
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const getBookingPaymentMethodStats = async () => {
+  try {
+    const response = await api.get("/analytics/bookings/payment-methods");
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const getTopMoviesByTickets = async (limit = 10) => {
+  try {
+    const response = await api.get(
+      `/analytics/movies/top-by-tickets?limit=${limit}`
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 const UserAvatar = ({
   avatarUrl,
@@ -7,6 +7,7 @@ const UserAvatar = ({
   className = "",
   showHover = true,
 }) => {
+  const [imageError, setImageError] = useState(false);
   // Lấy chữ cái đầu từ tên
   const getInitials = (name) => {
     if (!name) return "U";
@@ -59,17 +60,15 @@ const UserAvatar = ({
     ${className}
   `;
 
-  if (avatarUrl) {
+  if (avatarUrl && !imageError) {
     return (
       <img
         src={avatarUrl}
         alt={fullName || "Avatar"}
         loading="lazy"
         className={baseClasses}
-        onError={(e) => {
-          // Nếu ảnh lỗi, ẩn img và hiển thị fallback
-          e.target.style.display = "none";
-          e.target.nextSibling.style.display = "flex";
+        onError={() => {
+          setImageError(true);
         }}
       />
     );

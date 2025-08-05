@@ -7,13 +7,25 @@ import {
   getBookingById,
   searchBookingsByUser,
 } from "../../../services/API";
+import {
+  getBookingStatusStats,
+  getBookingPaymentMethodStats,
+  getTopMoviesByTickets,
+} from "../../../services/APIForAdmin/API";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  Legend,
+} from "recharts";
 import Pagination from "../movieComponent/Pagination";
 import StatsCards from "../ticketComponent/StatsCards";
 
 const TicketBookingManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
-  const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedBooking, setSelectedBooking] = useState(null);
@@ -22,13 +34,33 @@ const TicketBookingManagement = () => {
   // eslint-disable-next-line no-unused-vars
   const [loading, setLoading] = useState(false);
   const [bookingDetails, setBookingDetails] = useState({});
-  const [statusFilter, setStatusFilter] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("all");
 
   // Stats data for all bookings
   const [allBookingDetails, setAllBookingDetails] = useState({});
 
+  // Chart data states
+  const [bookingStatusData, setBookingStatusData] = useState([]);
+  const [bookingPaymentMethodData, setBookingPaymentMethodData] = useState([]);
+  const [topMoviesData, setTopMoviesData] = useState([]);
+
+  // Helper function to map filter to backend status
+  const getStatusFromFilter = (filter) => {
+    switch (filter) {
+      case "successful":
+        return "successful"; // Status 2 (Paid) or 3 (Completed)
+      case "pending":
+        return "pending"; // Status 1 (Pending)
+      case "cancelled":
+        return "cancelled"; // Status 4 (Cancelled)
+      case "all":
+      default:
+        return null;
+    }
+  };
+
   // Stats calculation based on all bookings
-  const totalBookings = totalItems;
+  const totalBookings = Object.keys(allBookingDetails).length;
   const successfulBookings = Object.values(allBookingDetails).filter(
     (booking) => booking.status === 2 || booking.status === 3
   ).length;
@@ -67,48 +99,29 @@ const TicketBookingManagement = () => {
 
   const handleFilterChange = (filterType) => {
     setStatusFilter(filterType);
-    setCurrentPage(1); // Reset to first page when filter changes
+    setCurrentPage(1); // Reset to page 1 when filter changes
+
+    // Use backend filtering instead of client-side
+    const status = getStatusFromFilter(filterType);
+    if (searchTerm.trim()) {
+      searchBookingData(searchTerm, status);
+    } else {
+      fetchBookings(status);
+    }
   };
 
-  const getFilteredBookings = () => {
-    if (!statusFilter) return bookings;
-
-    return bookings.filter((booking) => {
-      // Use allBookingDetails for filtering if available, otherwise fallback to current page data
-      const detailsToUse =
-        allBookingDetails[booking.BookingId] ||
-        bookingDetails[booking.BookingId];
-      const status = detailsToUse?.status ?? booking.status;
-
-      if (statusFilter === "successful") {
-        return status === 2 || status === 3; // Paid or Completed
-      } else if (statusFilter === "pending") {
-        return status === 1; // Pending
-      } else if (statusFilter === "cancelled") {
-        return status === 4; // Cancelled
-      }
-      return true;
-    });
-  };
-
-  const fetchBookings = useCallback(async () => {
-    setLoading(true);
+  // Fetch all bookings for statistics calculation
+  const getAllBookingsForStats = useCallback(async () => {
     try {
       const params = {
-        page: currentPage,
-        limit: itemsPerPage,
+        page: 1,
+        limit: 10000, // Large number to get all bookings
         sortBy: "CreatedAt",
         sortOrder: "desc",
       };
-      const data = await getAllBookings(params);
-      setBookings(data.data);
-      if (data.pagination) {
-        setTotalItems(data.pagination.total);
-        setTotalPages(data.pagination.totalPages);
-      }
 
-      // Chỉ fetch all bookings cho stats ở trang đầu tiên
-      if (currentPage === 1 && Object.keys(allBookingDetails).length === 0) {
+      const data = await getAllBookings(params);
+      if (data.data) {
         // Fetch details for all bookings for accurate stats
         const fetchAllDetails = async () => {
           const detailsPromises = data.data.map(async (booking) => {
@@ -116,14 +129,7 @@ const TicketBookingManagement = () => {
             try {
               const detail = await getBookingById(bookingId);
               return { [bookingId]: detail };
-            } catch (error) {
-              // Only log if it's not a "not found" error
-              if (!error.message?.includes("not found")) {
-                console.error(
-                  `Error fetching detail for booking ${bookingId}:`,
-                  error
-                );
-              }
+            } catch {
               // Fallback to booking data with basic structure
               return {
                 [bookingId]: {
@@ -143,13 +149,39 @@ const TicketBookingManagement = () => {
             (acc, curr) => ({ ...acc, ...curr }),
             {}
           );
-          // Set both current page details and all details for stats
-          setBookingDetails(updatedDetails);
           setAllBookingDetails(updatedDetails);
         };
         await fetchAllDetails();
-      } else {
-        // Chỉ fetch details cho trang hiện tại
+      }
+    } catch (error) {
+      console.error("Error fetching all bookings for stats:", error);
+      setAllBookingDetails({});
+    }
+  }, []);
+
+  const fetchBookings = useCallback(
+    async (status = null) => {
+      setLoading(true);
+      try {
+        const params = {
+          page: currentPage,
+          limit: itemsPerPage,
+          sortBy: "CreatedAt",
+          sortOrder: "desc",
+        };
+
+        // Add status filter if provided
+        if (status) {
+          params.status = status;
+        }
+
+        const data = await getAllBookings(params);
+        setBookings(data.data);
+        if (data.pagination) {
+          setTotalPages(data.pagination.totalPages);
+        }
+
+        // Fetch details for current page bookings only
         const fetchDetails = async () => {
           const detailsPromises = data.data.map(async (booking) => {
             const bookingId = booking.BookingId;
@@ -186,25 +218,30 @@ const TicketBookingManagement = () => {
           setBookingDetails(updatedDetails);
         };
         await fetchDetails();
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentPage, itemsPerPage, allBookingDetails]);
+    },
+    [currentPage, itemsPerPage]
+  );
 
   // Load initial data khi component mount
   useEffect(() => {
     if (!searchTerm) {
       fetchBookings();
     }
-  }, [fetchBookings, searchTerm]);
+    // Load stats data separately to avoid duplicate calls
+    if (Object.keys(allBookingDetails).length === 0) {
+      getAllBookingsForStats();
+    }
+  }, [fetchBookings, searchTerm, getAllBookingsForStats, allBookingDetails]);
 
   const searchBookingData = useCallback(
-    async (searchTerm) => {
+    async (searchTerm, status = null) => {
       if (!searchTerm.trim()) {
-        fetchBookings();
+        fetchBookings(status);
         return;
       }
       setLoading(true);
@@ -215,6 +252,11 @@ const TicketBookingManagement = () => {
           sortBy: "CreatedAt",
           sortOrder: "desc",
         };
+
+        // Add status filter if provided
+        if (status) {
+          params.status = status;
+        }
 
         const response = await searchBookingsByUser(searchTerm, params);
         if (response) {
@@ -227,11 +269,9 @@ const TicketBookingManagement = () => {
 
           // Xử lý pagination từ response
           if (response.pagination) {
-            setTotalItems(response.pagination.total);
             setTotalPages(response.pagination.totalPages);
           } else {
             const total = bookingsData.length;
-            setTotalItems(total);
             setTotalPages(Math.ceil(total / itemsPerPage));
           }
 
@@ -274,7 +314,6 @@ const TicketBookingManagement = () => {
       } catch (error) {
         console.error("Error searching bookings:", error);
         setBookings([]);
-        setTotalItems(0);
         setTotalPages(0);
       } finally {
         setLoading(false);
@@ -315,15 +354,60 @@ const TicketBookingManagement = () => {
   // Thêm useEffect mới với debounce
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
+      const status = getStatusFromFilter(statusFilter);
+
       if (searchTerm) {
-        searchBookingData(searchTerm);
+        searchBookingData(searchTerm, status);
       } else {
-        fetchBookings();
+        fetchBookings(status);
       }
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm, currentPage, searchBookingData, fetchBookings]); // Thêm currentPage để search lại khi đổi trang
+  }, [searchTerm, currentPage, statusFilter, searchBookingData, fetchBookings]);
+
+  // Fetch chart data
+  useEffect(() => {
+    const fetchBookingStatusStats = async () => {
+      try {
+        const response = await getBookingStatusStats();
+        if (response && response.data) {
+          setBookingStatusData(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching booking status stats:", error);
+        setBookingStatusData([]);
+      }
+    };
+
+    const fetchBookingPaymentMethodStats = async () => {
+      try {
+        const response = await getBookingPaymentMethodStats();
+        if (response && response.data) {
+          setBookingPaymentMethodData(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching booking payment method stats:", error);
+        setBookingPaymentMethodData([]);
+      }
+    };
+
+    const fetchTopMoviesStats = async () => {
+      try {
+        const response = await getTopMoviesByTickets(10);
+        if (response && response.data) {
+          setTopMoviesData(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching top movies stats:", error);
+        setTopMoviesData([]);
+      }
+    };
+
+    fetchBookingStatusStats();
+    fetchBookingPaymentMethodStats();
+    fetchTopMoviesStats();
+  }, []);
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
@@ -783,7 +867,7 @@ const TicketBookingManagement = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {getFilteredBookings().map((booking) => (
+                    {bookings.map((booking) => (
                       <tr
                         key={booking.BookingId}
                         onClick={() => openModal(booking)}
@@ -888,7 +972,7 @@ const TicketBookingManagement = () => {
               </div>
 
               {/* No data state */}
-              {getFilteredBookings().length === 0 && (
+              {bookings.length === 0 && (
                 <div className="text-center py-12">
                   <div className="w-24 h-24 mx-auto mb-4 bg-gradient-to-r from-purple-100 to-purple-200 rounded-full flex items-center justify-center">
                     <Ticket className="w-12 h-12 text-purple-400" />
@@ -907,7 +991,7 @@ const TicketBookingManagement = () => {
 
             {/* Card Layout for Mobile */}
             <div className="block sm:hidden">
-              {getFilteredBookings().length === 0 ? (
+              {bookings.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="w-24 h-24 mx-auto mb-4 bg-gradient-to-r from-purple-100 to-purple-200 rounded-full flex items-center justify-center">
                     <Ticket className="w-12 h-12 text-purple-400" />
@@ -923,7 +1007,7 @@ const TicketBookingManagement = () => {
                 </div>
               ) : (
                 <div className="space-y-4 p-4">
-                  {getFilteredBookings().map((booking) => (
+                  {bookings.map((booking) => (
                     <article
                       key={booking.BookingId}
                       className="bg-white p-4 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 cursor-pointer hover:bg-gradient-to-r hover:from-purple-50/30 hover:to-indigo-50/30 group"
@@ -1057,6 +1141,299 @@ const TicketBookingManagement = () => {
             totalPages={totalPages}
             handlePageChange={handlePageChange}
           />
+
+          {/* Booking Analytics Charts */}
+          <div className="w-full space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Booking Status Distribution Chart */}
+              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-indigo-50/30">
+                <div className="mb-6">
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
+                    Booking Status Distribution
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Distribution of booking statuses
+                  </p>
+                </div>
+                <div className="h-[250px] sm:h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={bookingStatusData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ status, percent }) =>
+                          `${status} (${(percent * 100).toFixed(1)}%)`
+                        }
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="total"
+                      >
+                        {bookingStatusData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={
+                              [
+                                "#6366F1", // pending - purple
+                                "#10B981", // successful - green
+                                "#EF4444", // cancelled - red
+                              ][index % 3]
+                            }
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value) => [value, "Bookings"]}
+                        labelStyle={{ color: "#333" }}
+                        contentStyle={{
+                          backgroundColor: "#fff",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "8px",
+                          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Summary Stats */}
+                <div className="mt-6 pt-4 border-t border-gray-100">
+                  <div className="text-sm text-gray-600">
+                    <div className="flex justify-between items-center mb-3 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-100">
+                      <span className="font-medium text-gray-700">
+                        Total Bookings:
+                      </span>
+                      <span className="font-bold text-lg text-purple-600">
+                        {bookingStatusData.reduce(
+                          (sum, item) => sum + item.total,
+                          0
+                        )}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {bookingStatusData.map((group, index) => (
+                        <div
+                          key={group.status}
+                          className="flex justify-between items-center p-3 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 rounded-lg transition-all duration-200 border border-transparent hover:border-purple-200"
+                        >
+                          <div className="flex items-center">
+                            <div
+                              className="w-3 h-3 rounded-full mr-2 shadow-sm"
+                              style={{
+                                backgroundColor: [
+                                  "#6366F1", // pending
+                                  "#10B981", // successful
+                                  "#EF4444", // cancelled
+                                ][index % 3],
+                              }}
+                            ></div>
+                            <span className="font-medium capitalize">
+                              {group.status}:
+                            </span>
+                          </div>
+                          <span className="font-semibold text-gray-800">
+                            {group.total} bookings
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Booking Payment Method Distribution Chart */}
+              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-indigo-50/30">
+                <div className="mb-6">
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
+                    Payment Method Distribution
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Distribution of payment methods used
+                  </p>
+                </div>
+                <div className="h-[250px] sm:h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={bookingPaymentMethodData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ method, percent }) =>
+                          `${method} (${(percent * 100).toFixed(1)}%)`
+                        }
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="total"
+                      >
+                        {bookingPaymentMethodData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={
+                              [
+                                "#6366F1",
+                                "#8B5CF6",
+                                "#EC4899",
+                                "#10B981",
+                                "#F59E0B",
+                                "#EF4444",
+                              ][index % 6]
+                            }
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value) => [value, "Bookings"]}
+                        labelStyle={{ color: "#333" }}
+                        contentStyle={{
+                          backgroundColor: "#fff",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "8px",
+                          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Summary Stats */}
+                <div className="mt-6 pt-4 border-t border-gray-100">
+                  <div className="text-sm text-gray-600">
+                    <div className="flex justify-between items-center mb-3 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-100">
+                      <span className="font-medium text-gray-700">
+                        Total Payments:
+                      </span>
+                      <span className="font-bold text-lg text-purple-600">
+                        {bookingPaymentMethodData.reduce(
+                          (sum, item) => sum + item.total,
+                          0
+                        )}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {bookingPaymentMethodData.map((method, index) => (
+                        <div
+                          key={method.method}
+                          className="flex justify-between items-center p-3 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 rounded-lg transition-all duration-200 border border-transparent hover:border-purple-200"
+                        >
+                          <div className="flex items-center">
+                            <div
+                              className="w-3 h-3 rounded-full mr-2 shadow-sm"
+                              style={{
+                                backgroundColor: [
+                                  "#6366F1",
+                                  "#8B5CF6",
+                                  "#EC4899",
+                                  "#10B981",
+                                  "#F59E0B",
+                                  "#EF4444",
+                                ][index % 6],
+                              }}
+                            ></div>
+                            <span className="font-medium">
+                              {method.method}:
+                            </span>
+                          </div>
+                          <span className="font-semibold text-gray-800">
+                            {method.total} bookings
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Top Movies by Tickets Chart */}
+          <div className="bg-white p-5 sm:p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-purple-50/30">
+            <div className="mb-6">
+              <h3 className="text-xl font-bold text-gray-800 mb-2 flex items-center">
+                <div className="w-2 h-8 bg-gradient-to-b from-purple-500 to-purple-600 rounded-full mr-3 shadow-lg"></div>
+                Top Movies by Ticket Sales
+              </h3>
+              <p className="text-gray-600 text-sm">
+                Most popular movies based on ticket sales volume
+              </p>
+            </div>
+
+            {topMoviesData.length > 0 ? (
+              <div className="space-y-4">
+                {topMoviesData.slice(0, 10).map((movie, index) => (
+                  <div
+                    key={movie.movieId}
+                    className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-100 hover:shadow-md transition-all duration-200"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-bold rounded-full text-sm shadow-lg">
+                        {index + 1}
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        {movie.posterImage ? (
+                          <img
+                            src={movie.posterImage}
+                            alt={movie.nameEnglish}
+                            className="w-12 h-16 object-cover rounded-lg shadow-md border border-gray-200"
+                          />
+                        ) : (
+                          <div className="w-12 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-lg flex items-center justify-center border border-gray-200">
+                            <span className="text-gray-500 text-xs">
+                              No Image
+                            </span>
+                          </div>
+                        )}
+                        <div>
+                          <h4 className="font-semibold text-gray-800 text-sm line-clamp-1">
+                            {movie.nameEnglish}
+                          </h4>
+                          <p className="text-gray-600 text-xs line-clamp-1">
+                            {movie.nameVietnamese}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="flex items-center space-x-4">
+                        <div className="text-center">
+                          <div className="text-lg font-bold text-purple-600">
+                            {movie.ticketCount.toLocaleString()}
+                          </div>
+                          <div className="text-xs text-gray-500">Tickets</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-lg font-bold text-green-600">
+                            {formatPrice(movie.totalRevenue)}
+                          </div>
+                          <div className="text-xs text-gray-500">Revenue</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg
+                    className="w-8 h-8 text-purple-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2h4a1 1 0 011 1v1a1 1 0 01-1 1H3a1 1 0 01-1-1V5a1 1 0 011-1h4zM9 12l2 2 4-4"
+                    />
+                  </svg>
+                </div>
+                <p className="text-gray-500 text-sm">No movie data available</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
