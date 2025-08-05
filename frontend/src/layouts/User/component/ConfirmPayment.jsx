@@ -1,11 +1,16 @@
-import { Await, useLocation, useNavigate } from "react-router-dom";
+import { Await, useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
-import { getPromotionByTitle, HoldingSeats, cancelBooking, holdProducts, getMembership, createStripePayment } from "../../../services/API";
+import {
+  getPromotionByTitle,
+  HoldingSeats,
+  holdProducts,
+  getMembership,
+} from "../../../services/API";
 import { useDispatch, useSelector } from "react-redux";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { setBookingId, setOrderProductsId } from "../../../redux/features/bookingSlice";
+import { setBookingId } from "../../../redux/features/bookingSlice";
 import ActionButtons from "../confirmComponent/ActionButtons";
 import PaymentMethodsSection from "../confirmComponent/PaymentMethodsSection";
 import PointsSection from "../confirmComponent/PointsSection";
@@ -19,17 +24,14 @@ import AnimatedWrapper from "../../../component/MagicBentoAnimation";
 import BackButton from "../../../component/BackButton";
 
 const ConfirmPayment = () => {
-  const { state } = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
 
   const [paymentMethod, setPaymentMethod] = useState("");
   const [stripeCardType, setStripeCardType] = useState("VISA");
   const [stripeClientSecret, setStripeClientSecret] = useState(null);
-  const [stripePaymentId, setStripePaymentId] = useState(null);
   const [stripeLoading, setStripeLoading] = useState(false);
   const [stripeError, setStripeError] = useState("");
-
 
   const [userDiscount, setUserDiscount] = useState(0);
 
@@ -63,27 +65,23 @@ const ConfirmPayment = () => {
     finalTotalPrice,
     selectedShowtimeId,
     product,
-    bookingId,
   } = useSelector((state) => state.booking);
 
   // Calculate product total for display
   const productTotal =
     product && Array.isArray(product)
       ? product.reduce(
-        (sum, p) =>
-          sum + parseFloat(p.Price || 0) * parseInt(p.Quantity || 0),
-        0
-      )
+          (sum, p) =>
+            sum + parseFloat(p.Price || 0) * parseInt(p.Quantity || 0),
+          0
+        )
       : 0;
 
   // Initialize prices - SEPARATE SEAT AND PRODUCT
   useEffect(() => {
-    // console.log("Final total price from Redux:", finalTotalPrice);
-    // console.log("Product total calculated:", productTotal);
-    // console.log("USER DISCOUNT", userDiscount);
-
     // Tách giá ghế và product
-    const calculatedSeatPrice = (finalTotalPrice - productTotal) * (100 - userDiscount) / 100;
+    const calculatedSeatPrice =
+      ((finalTotalPrice - productTotal) * (100 - userDiscount)) / 100;
     const calculatedProductPrice = productTotal;
     const priceAfterMembership = calculatedSeatPrice + calculatedProductPrice;
 
@@ -91,14 +89,12 @@ const ConfirmPayment = () => {
     setProductPrice(calculatedProductPrice);
     setDiscountedSeatPrice(calculatedSeatPrice); // Ban đầu chưa giảm
     setFinalPrice(priceAfterMembership); // Tổng ban đầu
-
   }, [finalTotalPrice, productTotal, userDiscount]);
 
   useEffect(() => {
     // Chỉ reset state khi thay đổi payment method, không tạo intent ngay
     if (paymentMethod !== "3") {
       setStripeClientSecret(null);
-      setStripePaymentId(null);
       setStripeError("");
       setStripeLoading(false);
     }
@@ -110,7 +106,6 @@ const ConfirmPayment = () => {
     // Reset Stripe states khi chuyển sang phương thức khác
     if (method !== "3") {
       setStripeClientSecret(null);
-      setStripePaymentId(null);
       setStripeError("");
       setStripeLoading(false);
     }
@@ -120,9 +115,6 @@ const ConfirmPayment = () => {
   const handleCardTypeChange = (cardType) => {
     setStripeCardType(cardType);
   };
-
-  // console.log("METHOD SELECTED", paymentMethod);
-  // console.log("CARD TYPE SELECTED", stripeCardType);
 
   // Promotion handling - CHỈ ÁP DỤNG CHO GHẾ
   const handleInputPromoCode = (event) => {
@@ -151,16 +143,25 @@ const ConfirmPayment = () => {
 
     try {
       const response = await getPromotionByTitle(promoCode);
-      // console.log("Promotion response:", response);
-      let promotionData = Array.isArray(response.promotions) ? response.promotions[0] : response.promotions;
-      // console.log("Promotion data:", promotionData);
+
+      let promotionData = Array.isArray(response.promotions)
+        ? response.promotions[0]
+        : response.promotions;
+
       const dayObj = new Date(promotionData?.EndTime);
-      const dateToCheck = new Date(dayObj.getFullYear(), dayObj.getMonth(), dayObj.getDate());
+      const dateToCheck = new Date(
+        dayObj.getFullYear(),
+        dayObj.getMonth(),
+        dayObj.getDate()
+      );
       const today = new Date();
-      const todayForComparison = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const todayForComparison = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate()
+      );
 
       if (promotionData?.Code && todayForComparison <= dateToCheck) {
-
         const seatDiscount = seatPrice * (promotionData.DiscountValue / 100);
         const newSeatPrice = seatPrice - seatDiscount;
         const newFinalPrice = newSeatPrice + productPrice;
@@ -173,30 +174,22 @@ const ConfirmPayment = () => {
         setPromoCode("");
 
         toast.success(
-          `Promotion "${promotionData.Code
+          `Promotion "${
+            promotionData.Code
           }" applied successfully! Save ${formatPrice(seatDiscount)}`,
           {
             duration: 4000,
             position: "top-center",
           }
         );
-
-        // console.log("🎫 Promotion applied:", {
-        //   originalSeatPrice: seatPrice,
-        //   seatDiscount,
-        //   newSeatPrice,
-        //   productPrice,
-        //   newFinalPrice,
-        // });
       } else {
-        setPromotionError(' Invalid or expired promotion code');
-        toast.error('  Invalid or expired promotion code   ', {
+        setPromotionError(" Invalid or expired promotion code");
+        toast.error("  Invalid or expired promotion code   ", {
           duration: 4000,
           position: "top-center",
         });
       }
-    } catch (error) {
-      console.error("Error checking promotion:", error);
+    } catch {
       setPromotionError("Error occurred while checking promotion code");
       toast.error("Invalid promotion code", {
         duration: 4000,
@@ -211,12 +204,10 @@ const ConfirmPayment = () => {
     const fetchMembership = async () => {
       try {
         const res = await getMembership(user.userId);
-        const memberPoints = res.TotalAccumulatedPoints;
 
         setMemberPoints(res.TotalAccumulatedPoints);
-        // console.log("MEMBER POINTS", memberPoints);
-      } catch (error) {
-        console.error("Error fetching membership", error);
+      } catch {
+        // Error fetching membership
       }
     };
 
@@ -307,15 +298,6 @@ const ConfirmPayment = () => {
         position: "top-center",
       }
     );
-
-    console.log("Points applied:", {
-      originalSeatPrice: seatPrice,
-      pointsUsed: points,
-      seatDiscount,
-      newSeatPrice,
-      productPrice,
-      newFinalPrice,
-    });
   };
 
   const handleRemovePoints = () => {
@@ -376,10 +358,9 @@ const ConfirmPayment = () => {
         appliedPromotion?.Code || "",
         isUsingPoints ? parseInt(pointsToUse) : 0
       );
-      // console.log("BOOKING ID TRUOC KHI SET REDUX", holdingResult.bookingId)
-      dispatch(setBookingId(holdingResult.bookingId))
 
-      // console.log("HOLDING SEAT SUCCESSSS:", holdingResult);
+      dispatch(setBookingId(holdingResult.bookingId));
+
       if (product && Array.isArray(product) && product.length > 0) {
         const productsForAPI = product.map((p) => ({
           ProductId: p.ProductId.toString(),
@@ -389,18 +370,17 @@ const ConfirmPayment = () => {
         const productHoldPayload = {
           MemberId: user.userId.toString(),
           products: productsForAPI,
-          Notes: `Product hold for booking: ${holdingResult.bookingId || "Unknown"
-            } - Movie: ${movie?.NameOfEnglish || "Unknown Movie"}`,
+          Notes: `Product hold for booking: ${
+            holdingResult.bookingId || "Unknown"
+          } - Movie: ${movie?.NameOfEnglish || "Unknown Movie"}`,
         };
         productHoldResult = await holdProducts(
           productHoldPayload.MemberId,
           productHoldPayload.products,
           productHoldPayload.Notes
         );
-
-        // console.log("HOLDING PRODUCT SUCCESSSSS:", productHoldResult);
       } else {
-        console.log("ℹ No products to hold");
+        // No products to hold
       }
 
       const waitingData = {
@@ -437,20 +417,19 @@ const ConfirmPayment = () => {
         stripeCardType,
       };
 
-      console.log("Navigating to waiting page with data:", waitingData);
       setTimeout(() => {
         navigate("/waiting", {
           state: waitingData,
         });
       }, 1000);
-    }
-
-    catch (error) {
-      console.error("❌ Error during confirmation process:", error);
-      toast.error(error.message || "An error occurred during booking confirmation!", {
-        duration: 4000,
-        position: "top-center",
-      });
+    } catch (error) {
+      toast.error(
+        error.message || "An error occurred during booking confirmation!",
+        {
+          duration: 4000,
+          position: "top-center",
+        }
+      );
     } finally {
       setIsConfirming(false);
     }
@@ -468,15 +447,8 @@ const ConfirmPayment = () => {
   };
 
   const handleTierChange = useCallback((tierInfo) => {
-    // console.log(" Setting userDiscount to:", tierInfo.discount);
     setUserDiscount(tierInfo.discount);
   }, []);
-
-  // useEffect(() => {
-  //   console.log("==CURRENT FINAL PRICE:", finalPrice);
-  //   console.log("==SEAT PRICE (discounted):", discountedSeatPrice);
-  //   console.log("==PRODUCT PRICE (original):", productPrice);
-  // }, [finalPrice, discountedSeatPrice, productPrice]);
 
   // Check if user is logged in
   useEffect(() => {
@@ -512,16 +484,15 @@ const ConfirmPayment = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 via-50% via-purple-950/70  to-slate-900 text-white relative">
+    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-slate-900 text-white relative">
       <FadeInWrapper delay={600}>
         <BackButton
           className="absolute top-28 left-14 z-10"
           onClick={() => {
-            window.scrollTo({ top: 0, behavior: 'instant' });
+            window.scrollTo({ top: 0, behavior: "instant" });
             navigate(-1);
           }}
         />
-
       </FadeInWrapper>
       <ToastContainer
         position="top-center mt-20 "

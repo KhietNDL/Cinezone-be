@@ -24,21 +24,19 @@ import {
 const UserManagement = () => {
   const [ageGroupData, setAgeGroupData] = useState([]);
   const [membershipRankData, setMembershipRankData] = useState([]);
-  const [activeFilter, setActiveFilter] = useState(null);
   const [userStats, setUserStats] = useState({
     total: 0,
     active: 0,
     inactive: 0,
     new: 0,
   });
-  // eslint-disable-next-line no-unused-vars
-  const [allUsers, setAllUsers] = useState([]); // Store all users for statistics
 
   const {
     modals,
     userState,
     uiState,
     formData,
+    activeFilter,
     handleModal,
     handleSort,
     handleEditUser,
@@ -47,6 +45,7 @@ const UserManagement = () => {
     handlePageChange,
     handleSearchTermChange,
     handleFormDataChange,
+    handleFilterChange,
     handleAddUser,
     handleUpdateUser,
     confirmDeleteUser,
@@ -54,142 +53,64 @@ const UserManagement = () => {
     formatDate,
   } = useUserManagement();
 
-  // Calculate user statistics
+  // Calculate user statistics - fetch each status separately
   useEffect(() => {
-    const fetchAllUsersForStats = async () => {
+    const fetchUserStats = async () => {
       try {
-        // Fetch all users without pagination for statistics
-        const response = await getAllUsers({
+        // Fetch total users
+        const totalResponse = await getAllUsers({
           page: 1,
-          limit: 10000, // Large number to get all users
+          limit: 1,
           sortBy: "UserId",
           sortOrder: "asc",
         });
 
-        if (response && response.users) {
-          setAllUsers(response.users);
-          calculateStatsFromAllUsers(
-            response.users,
-            response.totalItems || response.users.length
-          );
-        }
+        // Fetch active users
+        const activeResponse = await getAllUsers({
+          page: 1,
+          limit: 1,
+          sortBy: "UserId",
+          sortOrder: "asc",
+          status: "active",
+        });
+
+        // Fetch inactive users
+        const inactiveResponse = await getAllUsers({
+          page: 1,
+          limit: 1,
+          sortBy: "UserId",
+          sortOrder: "asc",
+          status: "inactive",
+        });
+
+        // Fetch new users
+        const newResponse = await getAllUsers({
+          page: 1,
+          limit: 1,
+          sortBy: "UserId",
+          sortOrder: "asc",
+          status: "new",
+        });
+
+        setUserStats({
+          total: totalResponse?.pagination?.total || 0,
+          active: activeResponse?.pagination?.total || 0,
+          inactive: inactiveResponse?.pagination?.total || 0,
+          new: newResponse?.pagination?.total || 0,
+        });
       } catch (error) {
-        console.error("Error fetching all users for stats:", error);
-        // Fallback to current users if fetch fails
-        calculateStatsFromCurrentUsers();
-      }
-    };
-
-    const calculateStatsFromAllUsers = (users, totalCount) => {
-      const today = new Date();
-      const thirtyDaysAgo = new Date(
-        today.getTime() - 30 * 24 * 60 * 60 * 1000
-      );
-
-      const stats = users.reduce(
-        (acc, user) => {
-          // Active/Inactive based on IsDeleted status
-          if (user.IsDeleted === 0 || user.IsDeleted === false) {
-            acc.active++;
-          } else {
-            acc.inactive++;
-          }
-
-          // New users (created in last 30 days)
-          if (user.CreatedAt) {
-            const createdDate = new Date(user.CreatedAt);
-            if (createdDate >= thirtyDaysAgo) {
-              acc.new++;
-            }
-          }
-
-          return acc;
-        },
-        { total: totalCount, active: 0, inactive: 0, new: 0 }
-      );
-
-      console.log("Calculated stats from all users:", stats);
-      console.log("Total users processed:", users.length);
-      setUserStats(stats);
-    };
-
-    const calculateStatsFromCurrentUsers = () => {
-      if (!userState.users || userState.users.length === 0) {
-        console.log("No users data available, keeping current stats");
-        return;
-      }
-
-      // This is a fallback - use current page users and totalItems
-      const today = new Date();
-      const thirtyDaysAgo = new Date(
-        today.getTime() - 30 * 24 * 60 * 60 * 1000
-      );
-
-      const stats = userState.users.reduce(
-        (acc, user) => {
-          if (user.IsDeleted === 0 || user.IsDeleted === false) {
-            acc.active++;
-          } else {
-            acc.inactive++;
-          }
-
-          if (user.CreatedAt) {
-            const createdDate = new Date(user.CreatedAt);
-            if (createdDate >= thirtyDaysAgo) {
-              acc.new++;
-            }
-          }
-
-          return acc;
-        },
-        { total: userState.totalItems || 0, active: 0, inactive: 0, new: 0 }
-      );
-
-      console.log("Fallback stats from current users:", stats);
-      setUserStats(stats);
-    };
-
-    // Fetch all users for accurate statistics
-    fetchAllUsersForStats();
-  }, [userState.totalItems, userState.users]); // Re-run when user data changes
-
-  // Handle filter changes
-  const handleFilterChange = (filterType) => {
-    setActiveFilter(filterType);
-    handlePageChange(1); // Reset to first page when filter changes
-  };
-
-  // Filter users based on active filter
-  const getFilteredUsers = () => {
-    if (!activeFilter || activeFilter === "total") {
-      return userState.users;
-    }
-
-    switch (activeFilter) {
-      case "active":
-        return userState.users.filter(
-          (user) => user.IsDeleted === 0 || user.IsDeleted === false
-        );
-      case "inactive":
-        return userState.users.filter(
-          (user) => user.IsDeleted === 1 || user.IsDeleted === true
-        );
-      case "new": {
-        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-        return userState.users.filter((user) => {
-          if (user.CreatedAt) {
-            const createdDate = new Date(user.CreatedAt);
-            return createdDate >= thirtyDaysAgo;
-          }
-          return false;
+        console.error("Error fetching user stats:", error);
+        setUserStats({
+          total: 0,
+          active: 0,
+          inactive: 0,
+          new: 0,
         });
       }
-      default:
-        return userState.users;
-    }
-  };
+    };
 
-  const filteredUsers = getFilteredUsers();
+    fetchUserStats();
+  }, []); // Remove dependency on userState.users
 
   useEffect(() => {
     const fetchUserAgeGroups = async () => {
@@ -312,7 +233,7 @@ const UserManagement = () => {
       <div className="flex flex-col items-center lg:items-start h-auto min-h-screen max-w-7xl w-full overflow-x-hidden">
         <div className="w-[90%] md:w-[95%] lg:w-full max-w-7xl space-y-4 sm:space-y-6">
           <StatsCards
-            totalItems={userState.totalItems}
+            totalItems={userStats.total}
             activeUsers={userStats.active}
             inactiveUsers={userStats.inactive}
             newUsers={userStats.new}
@@ -338,11 +259,11 @@ const UserManagement = () => {
                         : ""}
                     </span>
                     <span className="text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded-full">
-                      {filteredUsers.length} users
+                      {userState.users.length} users
                     </span>
                   </div>
                   <button
-                    onClick={() => setActiveFilter(null)}
+                    onClick={() => handleFilterChange(null)}
                     className="text-purple-600 hover:text-purple-800 text-sm font-medium hover:bg-purple-100 px-2 py-1 rounded transition-colors duration-200"
                   >
                     Clear Filter
@@ -352,7 +273,7 @@ const UserManagement = () => {
             )}
 
             <UserTable
-              users={filteredUsers}
+              users={userState.users}
               handleEditUser={handleEditUser}
               handleDeleteUser={handleDeleteUser}
               handleUnbanUser={handleUnbanUser}

@@ -64,13 +64,17 @@ const HistoryActivity = () => {
 
   // Filter và Search functions cho booking (sử dụng paymentHistory)
   const applyFilters = () => {
-    const safePaymentHistory = Array.isArray(paymentHistory) ? paymentHistory : [];
+    const safePaymentHistory = Array.isArray(paymentHistory)
+      ? paymentHistory
+      : [];
     let filtered = [...safePaymentHistory];
 
     // Search by movie name
     if (searchTerm) {
       filtered = filtered.filter((item) =>
-        item.booking?.movieNameEnglish?.toLowerCase().includes(searchTerm.toLowerCase())
+        item.booking?.movieNameEnglish
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase())
       );
     }
 
@@ -86,7 +90,9 @@ const HistoryActivity = () => {
       const selectedDateDDMMYYYY = convertYYYYMMDDtoDDMMYYYY(dateFilter);
       filtered = filtered.filter((item) => {
         if (!item.booking?.BookingDate) return false;
-        const bookingDateDDMMYYYY = formatDateToDDMMYYYY(item.booking.BookingDate);
+        const bookingDateDDMMYYYY = formatDateToDDMMYYYY(
+          item.booking.BookingDate
+        );
         return bookingDateDDMMYYYY === selectedDateDDMMYYYY;
       });
     }
@@ -166,7 +172,7 @@ const HistoryActivity = () => {
       try {
         setLoading(true);
         const response = await getBookingHistory(user.userId);
-        console.log("Booking History in HistoryPage:", response);
+
         setHistoryData(response?.data || []);
       } catch (error) {
         console.error("Lỗi khi lấy history:", error);
@@ -179,43 +185,41 @@ const HistoryActivity = () => {
     fetchBookingHistory();
   }, [user]);
 
-    useEffect(() => {
-  const fetchPaymentHistory = async () => {
-    if (!user?.userId) {
-      setLoading(false);
-      return;
-    }
+  useEffect(() => {
+    const fetchPaymentHistory = async () => {
+      if (!user?.userId) {
+        setLoading(false);
+        return;
+      }
 
-    try {
-      setLoading(true);
-      const response = await getPaymentHistory(user.userId);
-      const rawData = response?.data || [];
-      // setPaymentHistory(rawData);
-      console.log("Payment History in HistoryPage:", rawData);
+      try {
+        setLoading(true);
+        const response = await getPaymentHistory(user.userId);
+        const rawData = response?.data || [];
+        // setPaymentHistory(rawData);
 
-      // Lọc trùng theo bookingId thủ công
-      const seen = new Set();
-      const uniqueData = rawData.filter((item) => {
-        const id = item.booking?.BookingId;
-        console.log("Checking ID:", id);
-        if (!id) return true;
-        if (seen.has(id)) return false; 
-        seen.add(id);
-        return true;
-      });
+        // Lọc trùng theo bookingId thủ công
+        const seen = new Set();
+        const uniqueData = rawData.filter((item) => {
+          const id = item.booking?.BookingId;
+          if (!id) return true;
+          if (seen.has(id)) return false;
+          seen.add(id);
+          return true;
+        });
 
-      setPaymentHistory(uniqueData);
-    } catch (error) {
-      console.error("Lỗi khi lấy lịch sử thanh toán:", error);
-      setPaymentHistory([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+        setPaymentHistory(uniqueData);
+      } catch (error) {
+        console.error("Lỗi khi lấy lịch sử thanh toán:", error);
+        setPaymentHistory([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchPaymentHistory();
+    fetchPaymentHistory();
 
-   const fetchScoreHistory = async () => {
+    const fetchScoreHistory = async () => {
       if (!user?.userId) {
         setLoading(false);
         return;
@@ -224,7 +228,7 @@ const HistoryActivity = () => {
       try {
         setLoading(true);
         const response = await getScoreHistoryByMemberId(user.userId);
-        console.log("SCORE History in HistoryPage:", response);
+
         setScoreHistory(response || []);
       } catch (error) {
         console.error("Lỗi khi lấy history:", error);
@@ -234,10 +238,8 @@ const HistoryActivity = () => {
     };
 
     fetchScoreHistory();
-}, [user]);
+  }, [user]);
 
-
-  
   // Apply filters whenever filter states change
   useEffect(() => {
     applyFilters();
@@ -614,7 +616,8 @@ const HistoryActivity = () => {
                         <td className="py-4 px-6">
                           <div className="text-center space-x-3">
                             <span className="font-medium text-gray-800">
-                              {item.booking?.movieNameEnglish || "Unknown Movie"}
+                              {item.booking?.movieNameEnglish ||
+                                "Unknown Movie"}
                             </span>
                           </div>
                         </td>
@@ -631,14 +634,13 @@ const HistoryActivity = () => {
                         <td className="py-4 px-6">
                           <div className="text-center text-gray-700">
                             {item.booking?.BookingDate
-                              ? new Date(item.booking.BookingDate).toLocaleTimeString(
-                                  "vi-VN",
-                                  {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    hour12: false,
-                                  }
-                                )
+                              ? new Date(
+                                  item.booking.BookingDate
+                                ).toLocaleTimeString("vi-VN", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: false,
+                                })
                               : "N/A"}
                           </div>
                         </td>
@@ -705,7 +707,6 @@ const HistoryActivity = () => {
                 />
               </div>
 
-             
               {/* Filter by Date */}
               <div className="flex-1 w-full">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -822,7 +823,6 @@ const HistoryActivity = () => {
                       <th className="text-center py-4 px-6 font-semibold text-gray-700">
                         Booking ID
                       </th>
-                     
                     </tr>
                   </thead>
                   <tbody>
@@ -873,7 +873,6 @@ const HistoryActivity = () => {
                         <td className="text-center py-4 px-6 text-gray-700 font-mono text-sm">
                           {item.RelatedBookingId}
                         </td>
-                       
                       </tr>
                     ))}
                   </tbody>

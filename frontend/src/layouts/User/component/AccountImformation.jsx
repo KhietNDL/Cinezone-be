@@ -70,7 +70,6 @@ const AccountInformation = () => {
   }, [navigate, location.pathname]);
 
   const handleNavigate = (path) => {
-    console.log(`Navigating to: /account/${path}`);
     setSelectedSection(path);
     navigate(`/account/${path}`);
     setIsSidebarOpen(false);
@@ -82,8 +81,7 @@ const AccountInformation = () => {
       await signOut();
       setIsOpen(false);
       navigate("/");
-    } catch (error) {
-      console.error("Lỗi khi đăng xuất:", error);
+    } catch {
       setIsOpen(false);
       navigate("/");
     } finally {
