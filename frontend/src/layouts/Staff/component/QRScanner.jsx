@@ -34,8 +34,9 @@ const QRScanner = ({ onScanSuccess }) => {
         await html5QrCode.start(
             { deviceId: { exact: selectedCameraId } },
             { fps: 10, qrbox: { width: 250, height: 250 } },
-            (decodedText) => {
+            async (decodedText) => {
                 console.log("QR Code:", decodedText);
+                await stopScanner();
                 if (onScanSuccess) onScanSuccess(decodedText);
             },
             (error) => {
@@ -65,7 +66,7 @@ const QRScanner = ({ onScanSuccess }) => {
             message.error("QR code not found in the image.");
             console.error("Image scan error:", err);
         }
-        return false; // Prevent Ant Design from uploading the image to server
+        return false;
     };
 
     useEffect(() => {

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { createProductHold } from "../../../services/APIForStaff/API";
 import { useAuth } from "../../../context/AuthContext";
 import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { FaCheck, FaTimes } from "react-icons/fa";
 import { FaArrowLeft, FaMoneyBillWave } from "react-icons/fa6";
 import { PiPopcornDuotone } from "react-icons/pi";
@@ -37,12 +38,12 @@ export default function CheckOutComboPage() {
     return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   }, [cart]);
 
-  const [customerPay, setCustomerPay] = useState("");
+  const [customerPay, setCustomerPay] = useState(0);
   const [changeAmount, setChangeAmount] = useState(0);
 
   const handleCustomerPayChange = (value) => {
-    const pay = parseInt(value || 0);
-    setCustomerPay(value);
+    const pay = value;
+    setCustomerPay(pay);
 
     const change = pay - totalPrice;
     setChangeAmount(change > 0 ? change : 0);
@@ -50,18 +51,31 @@ export default function CheckOutComboPage() {
 
 
   const handlePayment = async () => {
-    if (!Array.isArray(cart) || cart.length === 0) {
-      toast.warning("Cart is empty or missing order number.");
-      return;
-    }
-
-    if (paymentMethod === "Stripe" && !cardType) {
-      toast.error("Please select a card type for Stripe payment.");
-      return;
-    }
-
     try {
       setLoading(true);
+      if (!Array.isArray(cart) || cart.length === 0) {
+        toast.warning("Cart is empty or missing order number.");
+        return;
+      }
+
+      // if (paymentMethod === "Cash" && parseInt(customerPay) || 0 < totalPrice) {
+      //   toast.error("The amount of money the customer gave is not enough to pay.");
+      //   return;
+      // }
+
+      if (paymentMethod === "Cash") {
+        if (customerPay < totalPrice) {
+          toast.error("The amount of money the customer gave is not enough to pay.");
+          return;
+        }
+      }
+
+      if (paymentMethod === "Stripe" && !cardType) {
+        toast.error("Please select a card type for Stripe payment.");
+        return;
+      }
+
+
 
       const userId = user?.userId || user?.id;
       if (!userId) {
@@ -106,8 +120,8 @@ export default function CheckOutComboPage() {
         successUrl,
         cardType: paymentMethod === "Stripe" ? cardType : undefined,
       });
-      console.log("paymentResult:", paymentResult);
-      console.log("paymentResult.data:", paymentResult?.data);
+      // console.log("paymentResult:", paymentResult);
+      // console.log("paymentResult.data:", paymentResult?.data);
 
       if (
         paymentMethod === "Stripe" &&
@@ -137,6 +151,7 @@ export default function CheckOutComboPage() {
   const handleCancel = () => {
     dispatch(clearComboCart());
     dispatch(clearOrderInfo());
+    toast.success("Order cancelled.");
     navigate("/staff/combo-selling");
   };
 
@@ -253,11 +268,24 @@ export default function CheckOutComboPage() {
                 <Input
                   placeholder="Enter cash given by customer"
                   type="number"
-                  min={0}
                   value={customerPay}
                   onChange={(e) => handleCustomerPayChange(e.target.value)}
                   disabled={paymentMethod !== "Cash"}
+                  status={
+                    paymentMethod === "Cash" &&
+                      customerPay &&
+                      parseInt(customerPay) < totalPrice
+                      ? "error"
+                      : ""
+                  }
                 />
+                {paymentMethod === "Cash" &&
+                  customerPay &&
+                  parseInt(customerPay) < totalPrice && (
+                    <div className="text-red-500 mt-1 text-sm">
+                      The amount is not enough to make the payment.
+                    </div>
+                  )}
               </div>
               <div>
                 <label className="block mb-1 font-medium text-gray-700">Change back</label>
@@ -313,6 +341,7 @@ export default function CheckOutComboPage() {
                 {loading ? "Processing..." : "Confirm Payment"}
               </Button>
               <Button
+                color="danger" variant="outlined"
                 icon={<FaTimes />}
                 onClick={handleCancel}
                 className="h-12 px-8 font-semibold rounded-lg border-2 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 focus:bg-red-50 focus:border-red-400 transition-all duration-200"
