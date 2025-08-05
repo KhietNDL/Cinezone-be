@@ -197,7 +197,7 @@ const TicketInformation = () => {
       if (resultCode !== null) {
         if (resultCode === "0") {
           if (paymentId) await confirmPayment(paymentId);
-          console.log("Payment Id:", paymentId);
+
           status = "succeeded";
           toast.success("MoMo payment successful!");
         } else {
@@ -246,7 +246,7 @@ const TicketInformation = () => {
       // Fetch thêm thông tin khách hàng
       if (memberData?.member?.email && memberData.memberChecked === true) {
         const customerData = await getUserByEmail(memberData?.member?.email);
-        console.log("Customer Data:", customerData);
+
         setApiCustomerData(customerData);
       }
     } catch (error) {
@@ -381,10 +381,11 @@ const TicketInformation = () => {
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
             {/* Status Header with Gradient */}
             <div
-              className={`${paymentStatus === "succeeded"
-                ? "bg-gradient-to-r from-green-500 to-emerald-600"
-                : "bg-gradient-to-r from-red-500 to-rose-600"
-                } px-6 py-4`}
+              className={`${
+                paymentStatus === "succeeded"
+                  ? "bg-gradient-to-r from-green-500 to-emerald-600"
+                  : "bg-gradient-to-r from-red-500 to-rose-600"
+              } px-6 py-4`}
             >
               <div className="flex items-center justify-center gap-4 text-white">
                 <div className="text-4xl">{status.icon}</div>
@@ -448,7 +449,10 @@ const TicketInformation = () => {
                       </div>
                       {/* Version */}
                       <div className="absolute bottom-3 right-3 text-[10px]">
-                        <VersionCard version={apiBookingData?.versionType} readonly={true} />
+                        <VersionCard
+                          version={apiBookingData?.versionType}
+                          readonly={true}
+                        />
                       </div>
                     </div>
                   </div>
@@ -645,82 +649,83 @@ const TicketInformation = () => {
 
                 {(memberData?.member ||
                   apiCustomerData?.users?.[0] ||
-                  apiBookingData?.buyerName) && memberData.memberChecked === true && (
+                  apiBookingData?.buyerName) &&
+                  memberData.memberChecked === true && (
                     <div className="space-y-3">
                       {(memberData?.member?.fullName ||
                         apiCustomerData?.users?.[0]?.FullName ||
                         apiBookingData?.buyerName) && (
-                          <div className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
-                            <span className="text-gray-600 font-medium flex items-center gap-2">
-                              <FaUser className="text-blue-600" />
-                              Name:
-                            </span>
-                            <span className="font-bold text-gray-900 text-sm text-right">
-                              {apiCustomerData?.users?.[0]?.FullName ||
-                                memberData?.member?.fullName ||
-                                apiBookingData?.buyerName}
-                            </span>
-                          </div>
-                        )}
+                        <div className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+                          <span className="text-gray-600 font-medium flex items-center gap-2">
+                            <FaUser className="text-blue-600" />
+                            Name:
+                          </span>
+                          <span className="font-bold text-gray-900 text-sm text-right">
+                            {apiCustomerData?.users?.[0]?.FullName ||
+                              memberData?.member?.fullName ||
+                              apiBookingData?.buyerName}
+                          </span>
+                        </div>
+                      )}
 
                       {(memberData?.member?.identityCard ||
                         apiCustomerData?.users?.[0]?.CCCD) && (
-                          <div className="flex justify-between items-center p-3 bg-gradient-to-r from-emerald-50 to-green-50 rounded-lg border border-emerald-100">
-                            <span className="text-gray-600 font-medium flex items-center gap-2">
-                              <FaIdCard className="text-emerald-600" />
-                              ID:
-                            </span>
-                            <span className="font-bold text-gray-900 text-sm">
-                              {apiCustomerData?.users?.[0]?.CCCD ||
-                                memberData?.member?.identityCard}
-                            </span>
-                          </div>
-                        )}
+                        <div className="flex justify-between items-center p-3 bg-gradient-to-r from-emerald-50 to-green-50 rounded-lg border border-emerald-100">
+                          <span className="text-gray-600 font-medium flex items-center gap-2">
+                            <FaIdCard className="text-emerald-600" />
+                            ID:
+                          </span>
+                          <span className="font-bold text-gray-900 text-sm">
+                            {apiCustomerData?.users?.[0]?.CCCD ||
+                              memberData?.member?.identityCard}
+                          </span>
+                        </div>
+                      )}
 
                       {(memberData?.member?.phone ||
                         apiBookingData?.buyerPhone) && (
-                          <div className="flex justify-between items-center p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-100">
-                            <span className="text-gray-600 font-medium flex items-center gap-2">
-                              <FaPhone className="text-purple-600" />
-                              Phone:
-                            </span>
-                            <span className="font-bold text-gray-900 text-sm">
-                              {apiBookingData?.buyerPhone ||
-                                memberData?.member?.phone}
-                            </span>
-                          </div>
-                        )}
+                        <div className="flex justify-between items-center p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-100">
+                          <span className="text-gray-600 font-medium flex items-center gap-2">
+                            <FaPhone className="text-purple-600" />
+                            Phone:
+                          </span>
+                          <span className="font-bold text-gray-900 text-sm">
+                            {apiBookingData?.buyerPhone ||
+                              memberData?.member?.phone}
+                          </span>
+                        </div>
+                      )}
 
                       {(memberData?.member?.email ||
                         apiCustomerData?.users?.[0]?.Email) && (
-                          <div className="flex justify-between items-center p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-100">
-                            <span className="text-gray-600 font-medium flex items-center gap-2">
-                              <FaEnvelope className="text-yellow-600" />
-                              Email:
-                            </span>
-                            <span className="font-bold text-gray-900 text-xs text-right break-all">
-                              {apiCustomerData?.users?.[0]?.Email ||
-                                memberData?.member?.email}
-                            </span>
-                          </div>
-                        )}
+                        <div className="flex justify-between items-center p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-100">
+                          <span className="text-gray-600 font-medium flex items-center gap-2">
+                            <FaEnvelope className="text-yellow-600" />
+                            Email:
+                          </span>
+                          <span className="font-bold text-gray-900 text-xs text-right break-all">
+                            {apiCustomerData?.users?.[0]?.Email ||
+                              memberData?.member?.email}
+                          </span>
+                        </div>
+                      )}
 
                       {(memberData?.member?.score !== undefined ||
                         apiCustomerData?.users?.[0]?.ScoreBalance !==
-                        undefined) && (
-                          <div className="flex justify-between items-center p-3 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg border border-orange-100">
-                            <span className="text-gray-600 font-medium flex items-center gap-2">
-                              <FaStar className="text-orange-600" />
-                              Points:
-                            </span>
-                            <span className="font-bold text-green-600 flex items-center gap-1">
-                              <FaFire className="text-orange-500" />
-                              {apiCustomerData?.users?.[0]?.ScoreBalance ||
-                                memberData?.member?.score ||
-                                0}
-                            </span>
-                          </div>
-                        )}
+                          undefined) && (
+                        <div className="flex justify-between items-center p-3 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg border border-orange-100">
+                          <span className="text-gray-600 font-medium flex items-center gap-2">
+                            <FaStar className="text-orange-600" />
+                            Points:
+                          </span>
+                          <span className="font-bold text-green-600 flex items-center gap-1">
+                            <FaFire className="text-orange-500" />
+                            {apiCustomerData?.users?.[0]?.ScoreBalance ||
+                              memberData?.member?.score ||
+                              0}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
               </div>
@@ -735,7 +740,8 @@ const TicketInformation = () => {
                         className="w-full font-medium"
                         size="large"
                         icon={status.btnIcon}
-                        color="orange" variant="solid"
+                        color="orange"
+                        variant="solid"
                       >
                         {status.btn}
                       </Button>
@@ -768,7 +774,8 @@ const TicketInformation = () => {
                     >
                       <Button
                         className="w-full font-medium"
-                        color="primary" variant="outlined"
+                        color="primary"
+                        variant="outlined"
                         size="large"
                         icon={<FaRegEye />}
                       >

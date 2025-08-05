@@ -64,10 +64,6 @@ const MovieTheaterLogin = () => {
     return () => clearInterval(interval);
   }, [movieBackgrounds.length]);
 
-  useEffect(() => {
-    console.log("movieBackgrounds:", movieBackgrounds);
-  }, [movieBackgrounds]);
-
   const validateEmail = (email) => {
     return email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
   };
@@ -97,7 +93,6 @@ const MovieTheaterLogin = () => {
           email: formData.email,
           password: formData.password,
         });
-        console.log("Login API response:", response);
 
         if (response.token && response.user?.userId) {
           await signIn(response.token, response.user.userId);

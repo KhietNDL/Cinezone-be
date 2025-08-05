@@ -2,15 +2,15 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Users, CheckCircle, Clock, Film, Eye, Ticket } from "lucide-react";
 import { IoSearchOutline } from "react-icons/io5";
+import UserAvatar from "../userComponent/UserAvatar";
 import {
   getAllBookings,
   getBookingById,
   searchBookingsByUser,
 } from "../../../services/API";
 import {
-  getBookingStatusStats,
-  getBookingPaymentMethodStats,
   getTopMoviesByTickets,
+  getTopGenresByTickets,
 } from "../../../services/APIForAdmin/API";
 import {
   PieChart,
@@ -40,9 +40,8 @@ const TicketBookingManagement = () => {
   const [allBookingDetails, setAllBookingDetails] = useState({});
 
   // Chart data states
-  const [bookingStatusData, setBookingStatusData] = useState([]);
-  const [bookingPaymentMethodData, setBookingPaymentMethodData] = useState([]);
   const [topMoviesData, setTopMoviesData] = useState([]);
+  const [topGenresData, setTopGenresData] = useState([]);
 
   // Helper function to map filter to backend status
   const getStatusFromFilter = (filter) => {
@@ -219,7 +218,7 @@ const TicketBookingManagement = () => {
         };
         await fetchDetails();
       } catch (error) {
-        console.log(error);
+        console.error("Error fetching bookings:", error);
       } finally {
         setLoading(false);
       }
@@ -368,35 +367,13 @@ const TicketBookingManagement = () => {
 
   // Fetch chart data
   useEffect(() => {
-    const fetchBookingStatusStats = async () => {
-      try {
-        const response = await getBookingStatusStats();
-        if (response && response.data) {
-          setBookingStatusData(response.data);
-        }
-      } catch (error) {
-        console.error("Error fetching booking status stats:", error);
-        setBookingStatusData([]);
-      }
-    };
-
-    const fetchBookingPaymentMethodStats = async () => {
-      try {
-        const response = await getBookingPaymentMethodStats();
-        if (response && response.data) {
-          setBookingPaymentMethodData(response.data);
-        }
-      } catch (error) {
-        console.error("Error fetching booking payment method stats:", error);
-        setBookingPaymentMethodData([]);
-      }
-    };
-
     const fetchTopMoviesStats = async () => {
       try {
         const response = await getTopMoviesByTickets(10);
-        if (response && response.data) {
+        if (response?.data && Array.isArray(response.data)) {
           setTopMoviesData(response.data);
+        } else {
+          setTopMoviesData([]);
         }
       } catch (error) {
         console.error("Error fetching top movies stats:", error);
@@ -404,9 +381,22 @@ const TicketBookingManagement = () => {
       }
     };
 
-    fetchBookingStatusStats();
-    fetchBookingPaymentMethodStats();
+    const fetchTopGenresStats = async () => {
+      try {
+        const response = await getTopGenresByTickets(5);
+        if (response?.data && Array.isArray(response.data)) {
+          setTopGenresData(response.data);
+        } else {
+          setTopGenresData([]);
+        }
+      } catch (error) {
+        console.error("Error fetching top genres stats:", error);
+        setTopGenresData([]);
+      }
+    };
+
     fetchTopMoviesStats();
+    fetchTopGenresStats();
   }, []);
 
   const handlePageChange = (page) => {
@@ -816,7 +806,7 @@ const TicketBookingManagement = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 hover:border-gray-300 shadow-sm"
-                placeholder="Search by name or movie..."
+                placeholder="Search by phone.."
               />
             </div>
           </div>
@@ -875,8 +865,17 @@ const TicketBookingManagement = () => {
                       >
                         <td className="py-3 px-4 shrink-0">
                           <div className="flex items-center">
-                            <div className="w-10 h-10 bg-gradient-to-r from-purple-100 to-purple-200 rounded-full flex items-center justify-center mr-3">
-                              <Users className="w-5 h-5 text-purple-600" />
+                            <div className="mr-3">
+                              <UserAvatar
+                                fullName={
+                                  (
+                                    allBookingDetails[booking.BookingId] ||
+                                    bookingDetails[booking.BookingId]
+                                  )?.buyerName || "User"
+                                }
+                                size="md"
+                                showHover={true}
+                              />
                             </div>
                             <div>
                               <span className="block font-medium text-gray-800 group-hover:text-purple-700 transition-colors duration-200">
@@ -1015,11 +1014,19 @@ const TicketBookingManagement = () => {
                     >
                       <div className="flex items-center gap-4">
                         <div className="relative">
-                          <div className="w-16 h-16 bg-gradient-to-r from-purple-100 to-purple-200 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow duration-300 ring-2 ring-gray-100 group-hover:ring-purple-200">
-                            <Ticket className="w-8 h-8 text-purple-600" />
-                          </div>
+                          <UserAvatar
+                            fullName={
+                              (
+                                allBookingDetails[booking.BookingId] ||
+                                bookingDetails[booking.BookingId]
+                              )?.buyerName || "User"
+                            }
+                            size="xl"
+                            showHover={true}
+                            className="shadow-md group-hover:shadow-lg transition-shadow duration-300 ring-2 ring-gray-100 group-hover:ring-purple-200"
+                          />
                           <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-purple-600 to-purple-700 rounded-full flex items-center justify-center">
-                            <Users className="w-3 h-3 text-white" />
+                            <Ticket className="w-3 h-3 text-white" />
                           </div>
                         </div>
                         <div className="flex-1 min-w-0">
@@ -1141,298 +1148,246 @@ const TicketBookingManagement = () => {
             totalPages={totalPages}
             handlePageChange={handlePageChange}
           />
-
-          {/* Booking Analytics Charts */}
-          <div className="w-full space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Booking Status Distribution Chart */}
-              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-indigo-50/30">
-                <div className="mb-6">
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
-                    Booking Status Distribution
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    Distribution of booking statuses
-                  </p>
-                </div>
-                <div className="h-[250px] sm:h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={bookingStatusData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ status, percent }) =>
-                          `${status} (${(percent * 100).toFixed(1)}%)`
-                        }
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="total"
-                      >
-                        {bookingStatusData.map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={
-                              [
-                                "#6366F1", // pending - purple
-                                "#10B981", // successful - green
-                                "#EF4444", // cancelled - red
-                              ][index % 3]
-                            }
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value) => [value, "Bookings"]}
-                        labelStyle={{ color: "#333" }}
-                        contentStyle={{
-                          backgroundColor: "#fff",
-                          border: "1px solid #e5e7eb",
-                          borderRadius: "8px",
-                          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {/* Summary Stats */}
-                <div className="mt-6 pt-4 border-t border-gray-100">
-                  <div className="text-sm text-gray-600">
-                    <div className="flex justify-between items-center mb-3 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-100">
-                      <span className="font-medium text-gray-700">
-                        Total Bookings:
-                      </span>
-                      <span className="font-bold text-lg text-purple-600">
-                        {bookingStatusData.reduce(
-                          (sum, item) => sum + item.total,
-                          0
-                        )}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {bookingStatusData.map((group, index) => (
-                        <div
-                          key={group.status}
-                          className="flex justify-between items-center p-3 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 rounded-lg transition-all duration-200 border border-transparent hover:border-purple-200"
-                        >
-                          <div className="flex items-center">
-                            <div
-                              className="w-3 h-3 rounded-full mr-2 shadow-sm"
-                              style={{
-                                backgroundColor: [
-                                  "#6366F1", // pending
-                                  "#10B981", // successful
-                                  "#EF4444", // cancelled
-                                ][index % 3],
-                              }}
-                            ></div>
-                            <span className="font-medium capitalize">
-                              {group.status}:
-                            </span>
-                          </div>
-                          <span className="font-semibold text-gray-800">
-                            {group.total} bookings
-                          </span>
-                        </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {" "}
+            {/* Top Movies by Tickets Pie Chart */}
+            <div className="bg-white p-5 sm:p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-purple-50/30">
+              <div className="mb-6">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
+                  Top Movies by Ticket Sales (Pie Chart)
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Distribution of ticket sales among top movies
+                </p>
+              </div>
+              <div className="h-[350px] sm:h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={topMoviesData.slice(0, 8)} // Show top 8 movies to avoid overcrowding
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ title, percent }) =>
+                        `${
+                          title && title.length > 15
+                            ? title.substring(0, 15) + "..."
+                            : title || "Unknown"
+                        } (${(percent * 100).toFixed(1)}%)`
+                      }
+                      outerRadius={120}
+                      fill="#8884d8"
+                      dataKey="ticketsSold"
+                    >
+                      {topMoviesData.slice(0, 8).map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={
+                            [
+                              "#8B5CF6", // Purple
+                              "#06B6D4", // Cyan
+                              "#10B981", // Green
+                              "#F59E0B", // Yellow
+                              "#EF4444", // Red
+                              "#EC4899", // Pink
+                              "#6366F1", // Indigo
+                              "#84CC16", // Lime
+                            ][index % 8]
+                          }
+                        />
                       ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Booking Payment Method Distribution Chart */}
-              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-indigo-50/30">
-                <div className="mb-6">
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
-                    Payment Method Distribution
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    Distribution of payment methods used
-                  </p>
-                </div>
-                <div className="h-[250px] sm:h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={bookingPaymentMethodData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ method, percent }) =>
-                          `${method} (${(percent * 100).toFixed(1)}%)`
-                        }
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="total"
-                      >
-                        {bookingPaymentMethodData.map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={
-                              [
-                                "#6366F1",
-                                "#8B5CF6",
-                                "#EC4899",
-                                "#10B981",
-                                "#F59E0B",
-                                "#EF4444",
-                              ][index % 6]
-                            }
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value) => [value, "Bookings"]}
-                        labelStyle={{ color: "#333" }}
-                        contentStyle={{
-                          backgroundColor: "#fff",
-                          border: "1px solid #e5e7eb",
-                          borderRadius: "8px",
-                          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {/* Summary Stats */}
-                <div className="mt-6 pt-4 border-t border-gray-100">
-                  <div className="text-sm text-gray-600">
-                    <div className="flex justify-between items-center mb-3 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-100">
-                      <span className="font-medium text-gray-700">
-                        Total Payments:
-                      </span>
-                      <span className="font-bold text-lg text-purple-600">
-                        {bookingPaymentMethodData.reduce(
-                          (sum, item) => sum + item.total,
-                          0
-                        )}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {bookingPaymentMethodData.map((method, index) => (
-                        <div
-                          key={method.method}
-                          className="flex justify-between items-center p-3 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 rounded-lg transition-all duration-200 border border-transparent hover:border-purple-200"
-                        >
-                          <div className="flex items-center">
-                            <div
-                              className="w-3 h-3 rounded-full mr-2 shadow-sm"
-                              style={{
-                                backgroundColor: [
-                                  "#6366F1",
-                                  "#8B5CF6",
-                                  "#EC4899",
-                                  "#10B981",
-                                  "#F59E0B",
-                                  "#EF4444",
-                                ][index % 6],
-                              }}
-                            ></div>
-                            <span className="font-medium">
-                              {method.method}:
-                            </span>
-                          </div>
-                          <span className="font-semibold text-gray-800">
-                            {method.total} bookings
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Top Movies by Tickets Chart */}
-          <div className="bg-white p-5 sm:p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-purple-50/30">
-            <div className="mb-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-2 flex items-center">
-                <div className="w-2 h-8 bg-gradient-to-b from-purple-500 to-purple-600 rounded-full mr-3 shadow-lg"></div>
-                Top Movies by Ticket Sales
-              </h3>
-              <p className="text-gray-600 text-sm">
-                Most popular movies based on ticket sales volume
-              </p>
-            </div>
-
-            {topMoviesData.length > 0 ? (
-              <div className="space-y-4">
-                {topMoviesData.slice(0, 10).map((movie, index) => (
-                  <div
-                    key={movie.movieId}
-                    className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-100 hover:shadow-md transition-all duration-200"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-bold rounded-full text-sm shadow-lg">
-                        {index + 1}
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        {movie.posterImage ? (
-                          <img
-                            src={movie.posterImage}
-                            alt={movie.nameEnglish}
-                            className="w-12 h-16 object-cover rounded-lg shadow-md border border-gray-200"
-                          />
-                        ) : (
-                          <div className="w-12 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-lg flex items-center justify-center border border-gray-200">
-                            <span className="text-gray-500 text-xs">
-                              No Image
-                            </span>
-                          </div>
-                        )}
-                        <div>
-                          <h4 className="font-semibold text-gray-800 text-sm line-clamp-1">
-                            {movie.nameEnglish}
-                          </h4>
-                          <p className="text-gray-600 text-xs line-clamp-1">
-                            {movie.nameVietnamese}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="flex items-center space-x-4">
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-purple-600">
-                            {movie.ticketCount.toLocaleString()}
-                          </div>
-                          <div className="text-xs text-gray-500">Tickets</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-green-600">
-                            {formatPrice(movie.totalRevenue)}
-                          </div>
-                          <div className="text-xs text-gray-500">Revenue</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg
-                    className="w-8 h-8 text-purple-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2h4a1 1 0 011 1v1a1 1 0 01-1 1H3a1 1 0 01-1-1V5a1 1 0 011-1h4zM9 12l2 2 4-4"
+                    </Pie>
+                    <Tooltip
+                      formatter={(value, name, props) => [
+                        `${value.toLocaleString()} tickets`,
+                        `${props.payload.title || "Unknown Movie"}`,
+                      ]}
+                      labelStyle={{ color: "#333" }}
+                      contentStyle={{
+                        backgroundColor: "#fff",
+                        border: "1px solid #e5e7eb",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                      }}
                     />
-                  </svg>
-                </div>
-                <p className="text-gray-500 text-sm">No movie data available</p>
+                    <Legend
+                      verticalAlign="bottom"
+                      height={36}
+                      formatter={(value, entry) =>
+                        entry.payload.title && entry.payload.title.length > 20
+                          ? entry.payload.title.substring(0, 20) + "..."
+                          : entry.payload.title || "Unknown Movie"
+                      }
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
-            )}
+
+              {/* Summary Stats */}
+              <div className="mt-6 pt-4 border-t border-gray-100">
+                <div className="text-sm text-gray-600">
+                  <div className="flex justify-between items-center mb-3 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-100">
+                    <span className="font-medium text-gray-700">
+                      Total Tickets Sold (Top Movies):
+                    </span>
+                    <span className="font-bold text-lg text-purple-600">
+                      {topMoviesData
+                        .slice(0, 8)
+                        .reduce((sum, item) => sum + (item.ticketsSold || 0), 0)
+                        .toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {topMoviesData.slice(0, 8).map((movie, index) => (
+                      <div
+                        key={movie.movieId}
+                        className="flex justify-between items-center p-3 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 rounded-lg transition-all duration-200 border border-transparent hover:border-purple-200"
+                      >
+                        <div className="flex items-center">
+                          <div
+                            className="w-3 h-3 rounded-full mr-2 shadow-sm"
+                            style={{
+                              backgroundColor: [
+                                "#8B5CF6", // Purple
+                                "#06B6D4", // Cyan
+                                "#10B981", // Green
+                                "#F59E0B", // Yellow
+                                "#EF4444", // Red
+                                "#EC4899", // Pink
+                                "#6366F1", // Indigo
+                                "#84CC16", // Lime
+                              ][index % 8],
+                            }}
+                          ></div>
+                          <span className="font-medium text-xs">
+                            {movie.title && movie.title.length > 15
+                              ? movie.title.substring(0, 15) + "..."
+                              : movie.title || "Unknown Movie"}
+                            :
+                          </span>
+                        </div>
+                        <span className="font-semibold text-gray-800 text-xs">
+                          {(movie.ticketsSold || 0).toLocaleString()} tickets
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* Top Genres by Tickets Pie Chart */}
+            <div className="bg-white p-5 sm:p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-emerald-50/30">
+              <div className="mb-6">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
+                  Top Genres by Ticket Sales
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Distribution of ticket sales among different genres
+                </p>
+              </div>
+              <div className="h-[350px] sm:h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={topGenresData} // Show all genres
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ genre, percent }) =>
+                        `${genre} (${(percent * 100).toFixed(1)}%)`
+                      }
+                      outerRadius={120}
+                      fill="#8884d8"
+                      dataKey="ticketsSold"
+                    >
+                      {topGenresData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={
+                            [
+                              "#10B981", // Green
+                              "#06B6D4", // Cyan
+                              "#8B5CF6", // Purple
+                              "#F59E0B", // Yellow
+                              "#EF4444", // Red
+                              "#EC4899", // Pink
+                              "#6366F1", // Indigo
+                              "#84CC16", // Lime
+                            ][index % 8]
+                          }
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value, name, props) => [
+                        `${value.toLocaleString()} tickets`,
+                        `${props.payload.genre} Genre`,
+                      ]}
+                      labelStyle={{ color: "#333" }}
+                      contentStyle={{
+                        backgroundColor: "#fff",
+                        border: "1px solid #e5e7eb",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                      }}
+                    />
+                    <Legend
+                      verticalAlign="bottom"
+                      height={36}
+                      formatter={(value, entry) => entry.payload.genre}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Summary Stats */}
+              <div className="mt-6 pt-4 border-t border-gray-100">
+                <div className="text-sm text-gray-600">
+                  <div className="flex justify-between items-center mb-3 p-3 bg-gradient-to-r from-emerald-50 to-green-50 rounded-lg border border-emerald-100">
+                    <span className="font-medium text-gray-700">
+                      Total Tickets Sold (All Genres):
+                    </span>
+                    <span className="font-bold text-lg text-emerald-600">
+                      {topGenresData
+                        .reduce((sum, item) => sum + (item.ticketsSold || 0), 0)
+                        .toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {topGenresData.map((genre, index) => (
+                      <div
+                        key={genre.genre}
+                        className="flex justify-between items-center p-3 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-green-50 rounded-lg transition-all duration-200 border border-transparent hover:border-emerald-200"
+                      >
+                        <div className="flex items-center">
+                          <div
+                            className="w-3 h-3 rounded-full mr-2 shadow-sm"
+                            style={{
+                              backgroundColor: [
+                                "#10B981", // Green
+                                "#06B6D4", // Cyan
+                                "#8B5CF6", // Purple
+                                "#F59E0B", // Yellow
+                                "#EF4444", // Red
+                                "#EC4899", // Pink
+                                "#6366F1", // Indigo
+                                "#84CC16", // Lime
+                              ][index % 8],
+                            }}
+                          ></div>
+                          <span className="font-medium text-xs">
+                            {genre.genre}:
+                          </span>
+                        </div>
+                        <span className="font-semibold text-gray-800 text-xs">
+                          {(genre.ticketsSold || 0).toLocaleString()} tickets
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

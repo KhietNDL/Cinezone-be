@@ -89,9 +89,6 @@ export default function PrintTicket() {
       toast.error("Failed to generate PDF" + error.message);
     }
   };
-
-  console.log("Data:", bookingData);
-
   if (!movieInfo?.NameOfEnglish) {
     return <div>Loading ticket information...</div>;
   }

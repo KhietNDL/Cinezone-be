@@ -27,13 +27,23 @@ import {
   getRevenueThisQuarter,
   getRevenueToday,
   getCurrentMovies,
+  getAllBookings,
 } from "../../../services/API";
-import { getMovieGenreStats } from "../../../services/APIForAdmin/API";
+import {
+  getMovieGenreStats,
+  getAllUsers,
+} from "../../../services/APIForAdmin/API";
 
 const DashboardAdmin = () => {
   const [topMovies, setTopMovies] = useState([]);
   const [dailyTicketData, setDailyTicketData] = useState([]);
   const [genreData, setGenreData] = useState([]);
+
+  // Stats data states
+  const [totalTicketsSold, setTotalTicketsSold] = useState(0);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [activeMoviesCount, setActiveMoviesCount] = useState(0);
+  const [upcomingShowsCount, setUpcomingShowsCount] = useState(0);
 
   const [salesOverviewData, setSalesOverviewData] = useState([
     { month: "Jan", revenue: 0 },
@@ -95,6 +105,64 @@ const DashboardAdmin = () => {
     };
 
     fetchTopMovies();
+  }, []);
+
+  // Fetch dashboard stats data
+  useEffect(() => {
+    const fetchStatsData = async () => {
+      try {
+        // Fetch total tickets sold from successful bookings (status = 2 means PAID)
+        const bookingsResponse = await getAllBookings({
+          page: 1,
+          limit: 10000, // Get all bookings to count total tickets
+          status: "successful", // This filters for paid/confirmed bookings
+        });
+
+        if (bookingsResponse?.data) {
+          // Count total tickets sold from successful bookings
+          setTotalTicketsSold(bookingsResponse.data.length);
+        }
+
+        // Fetch current revenue (this month) and calculate total from successful bookings
+        let totalRevenue = 0;
+        if (bookingsResponse?.data) {
+          // Sum up TotalAmount from all successful bookings
+          totalRevenue = bookingsResponse.data.reduce((sum, booking) => {
+            return sum + (Number(booking.TotalAmount) || 0);
+          }, 0);
+        }
+        setTotalRevenue(totalRevenue);
+
+        // Fetch active movies count from getCurrentMovies API
+        const moviesResponse = await getCurrentMovies({
+          page: 1,
+          limit: 10000, // Get all current movies
+        });
+        if (moviesResponse?.data) {
+          setActiveMoviesCount(moviesResponse.data.length);
+        }
+
+        // Fetch "Total Active Users" from User Management API
+        const activeUsersResponse = await getAllUsers({
+          page: 1,
+          limit: 1, // We only need count, so just get pagination info
+          status: "active", // Filter for active users only
+        });
+
+        if (activeUsersResponse?.pagination?.total) {
+          setUpcomingShowsCount(activeUsersResponse.pagination.total);
+        }
+      } catch (error) {
+        console.error("Error fetching stats data:", error);
+        // Set default values on error
+        setTotalTicketsSold(0);
+        setTotalRevenue(0);
+        setActiveMoviesCount(0);
+        setUpcomingShowsCount(0);
+      }
+    };
+
+    fetchStatsData();
   }, []);
 
   useEffect(() => {
@@ -386,7 +454,7 @@ const DashboardAdmin = () => {
                     Total Tickets Sold
                   </p>
                   <p className="font-bold text-xl sm:text-2xl text-gray-800 group-hover:text-amber-700 transition-colors duration-300">
-                    25,340
+                    {totalTicketsSold.toLocaleString()}
                   </p>
                 </div>
                 <div className="p-3 sm:p-4 bg-gradient-to-r from-amber-100 to-yellow-100 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-110">
@@ -398,10 +466,10 @@ const DashboardAdmin = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-slate-600 text-sm sm:text-base font-medium mb-2">
-                    Revenue
+                    Revenue (Total)
                   </p>
                   <p className="font-bold text-xl sm:text-2xl text-gray-800 group-hover:text-emerald-700 transition-colors duration-300">
-                    $25,340
+                    {totalRevenue.toLocaleString()} VND
                   </p>
                 </div>
                 <div className="p-3 sm:p-4 bg-gradient-to-r from-emerald-100 to-green-100 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-110">
@@ -419,7 +487,7 @@ const DashboardAdmin = () => {
                     Active Movies
                   </p>
                   <p className="font-bold text-xl sm:text-2xl text-gray-800 group-hover:text-blue-700 transition-colors duration-300">
-                    25,340
+                    {activeMoviesCount.toLocaleString()}
                   </p>
                 </div>
                 <div className="p-3 sm:p-4 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-110">
@@ -431,14 +499,20 @@ const DashboardAdmin = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-slate-600 text-sm sm:text-base font-medium mb-2">
-                    Upcoming Shows
+                    Active Users
                   </p>
                   <p className="font-bold text-xl sm:text-2xl text-gray-800 group-hover:text-purple-700 transition-colors duration-300">
-                    25,340
+                    {upcomingShowsCount.toLocaleString()}
                   </p>
                 </div>
                 <div className="p-3 sm:p-4 bg-gradient-to-r from-purple-100 to-violet-100 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-110">
-                  <IoCalendar size={20} className="text-purple-600" />
+                  <svg
+                    className="w-5 h-5 text-purple-600"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                 </div>
               </div>
             </div>

@@ -93,7 +93,6 @@ const EmailVerification = () => {
     if (isSuccess) {
       const redirectTimer = setTimeout(() => {
         navigate("/resetPassword", { state: { from: "/verification" } });
-        console.log("Redirecting to reset password...");
       }, 2000);
 
       return () => clearTimeout(redirectTimer);
@@ -122,7 +121,6 @@ const EmailVerification = () => {
     e.preventDefault();
 
     const code = verificationCode.join("");
-    console.log("Email của tôi", email);
 
     if (code.length !== 6) {
       setError("Please enter complete 6-digit code");
@@ -174,8 +172,6 @@ const EmailVerification = () => {
       setVerificationCode(["", "", "", "", "", ""]);
       setAttempts(attempts + 1);
       inputRefs.current[0]?.focus();
-
-      console.log("New verification code requested for:", email);
     } catch (error) {
       console.error("Resend error:", error);
       setError(

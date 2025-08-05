@@ -90,7 +90,6 @@ const ResetPassword = () => {
     if (isSuccess) {
       const redirectTimer = setTimeout(() => {
         navigate("/login");
-        console.log("Redirecting to login...");
       }, 3000);
 
       return () => clearTimeout(redirectTimer);
@@ -161,12 +160,9 @@ const ResetPassword = () => {
         newPassword: formData.newPassword.trim(),
       };
 
-      console.log("Sending data:", credentials);
-
       const response = await resetPassword(credentials);
 
       // Handle successful response
-      console.log("Password reset successful:", response);
       setIsSuccess(true);
     } catch (error) {
       console.error("Password reset failed:", error);

@@ -26,13 +26,6 @@ api.interceptors.request.use(
 );
 
 const handleError = (error) => {
-  console.error("API Error:", {
-    status: error.response?.status,
-    data: error.response?.data,
-    message: error.message,
-    request: error.request,
-  });
-
   // Nếu có response từ server
   if (error.response) {
     const { status, data } = error.response;
@@ -180,7 +173,7 @@ export const updateAccount = async (id, formData) => {
     });
     return response.data;
   } catch (error) {
-    console.error("updateAccount API Error:", error);
+    handleError(error);
   }
 };
 // API Promotion
@@ -237,7 +230,6 @@ export const searchPromotion = async (code, params = {}) => {
     });
     return response.data;
   } catch (error) {
-    console.error("Lỗi khi tìm kiếm promotion:", error);
     handleError(error);
     throw error;
   }
@@ -275,7 +267,6 @@ export const createMovie = async (movieData) => {
     const response = await api.post("/movie/create", movieData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    console.log("createMovie response:", response.data);
     return response.data;
   } catch (error) {
     handleError(error);
@@ -472,7 +463,7 @@ export const getTimeByDay = async (movieId, day) => {
 export const getSeatsByShowtimeId = async (showtimeId) => {
   try {
     const response = await api.get(`/showtimes/${showtimeId}/seats`);
-    console.log("getSeatsByShowtimeId Response:", response.data);
+
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy seats theo showtimeID:", error);
@@ -497,7 +488,7 @@ export const HoldingSeats = async (
       promotionCode: promotionCode || "",
       PointsToUse: PointsToUse,
     });
-    console.log("HoldingSeats Response:", response.data);
+
     return response.data;
   } catch (error) {
     console.error("Lỗi khi HodingSeats :", error);
@@ -548,7 +539,7 @@ export const getPromotionByTitle = async (code) => {
 export const ConfirmBooking = async (bookingId) => {
   try {
     const response = await api.post(`/bookings/confirm/${bookingId}`);
-    console.log("Confirm Booking Response:", response.data);
+
     return response.data;
   } catch (error) {
     console.error("Lỗi khi Confirm Booking :", error);
@@ -560,7 +551,7 @@ export const ConfirmBooking = async (bookingId) => {
 export const ConfirmPayment = async (paymentId) => {
   try {
     const response = await api.post(`/payment/confirm/${paymentId}`);
-    console.log("CONFIRM BY PAYMENTID SUCCESS :", response.data);
+
     return response.data;
   } catch (error) {
     console.error("Lỗi khi Confirm Booking BY PAYMENTID :", error);
@@ -634,7 +625,7 @@ export const cancelBooking = async (bookingId) => {
 export const getBookingHistory = async (memberId) => {
   try {
     const response = await api.get(`/bookings/member/${memberId}`);
-    console.log("Booking History:", response.data);
+
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy lịch sử đặt vé:", error);
@@ -660,7 +651,6 @@ export const getPaymentHistory = async (memberId) => {
       },
     });
 
-    console.log("Payment History :", response.data);
     return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy lịch sử payment:", error);
@@ -698,11 +688,9 @@ export const searchProductsByName = async (name, params = {}) => {
       ...params, // Thêm các tham số pagination
     };
 
-    console.log("API call searchProductsByName with params:", searchParams);
     const response = await api.get("/products/search", {
       params: searchParams,
     });
-    console.log("API response searchProductsByName:", response.data);
     return response.data;
   } catch (error) {
     console.error("Lỗi khi tìm kiếm sản phẩm:", error);
@@ -781,7 +769,6 @@ export const holdProducts = async (memberId, products, notes = "") => {
 export const confirmProduct = async (id) => {
   try {
     const response = await api.post(`/order-products/confirm/${id}`);
-    console.log("confirm product:", response.data);
     return response.data;
   } catch (error) {
     console.error("Lỗi khi confirm product:", error);
@@ -804,7 +791,6 @@ export const getProductByOderProductId = async (orderProductId) => {
 export const cancelProduct = async (id) => {
   try {
     const response = await api.post(`/order-products/cancel/${id}`);
-    console.log("cancal product:", response.data);
     return response.data;
   } catch (error) {
     console.error("Lỗi khi cancel product:", error);

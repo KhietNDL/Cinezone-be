@@ -46,8 +46,6 @@ describe("HistoryActivity", () => {
     jest.clearAllMocks();
     api.getBookingHistory.mockResolvedValue({ data: bookingData });
     api.getScoreHistoryByMemberId.mockResolvedValue(scoreData);
-    // Thêm log
-    console.log("Mock bookingData:", bookingData);
   });
 
   it("renders loading state", () => {

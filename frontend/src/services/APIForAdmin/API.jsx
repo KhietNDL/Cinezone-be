@@ -168,8 +168,10 @@ export const getMovieGenreStats = async () => {
 
 export const getBookingStatusStats = async () => {
   try {
-    const response = await api.get("/analytics/bookings/status");
-    return response.data;
+    // This endpoint doesn't exist on backend, let's use a different approach
+    // For now, return empty array until backend implements this
+    console.warn("Booking status stats endpoint not available on backend");
+    return { data: [] };
   } catch (error) {
     handleError(error);
   }
@@ -177,8 +179,12 @@ export const getBookingStatusStats = async () => {
 
 export const getBookingPaymentMethodStats = async () => {
   try {
-    const response = await api.get("/analytics/bookings/payment-methods");
-    return response.data;
+    // This endpoint doesn't exist on backend, let's use a different approach
+    // For now, return empty array until backend implements this
+    console.warn(
+      "Booking payment method stats endpoint not available on backend"
+    );
+    return { data: [] };
   } catch (error) {
     handleError(error);
   }
@@ -187,7 +193,18 @@ export const getBookingPaymentMethodStats = async () => {
 export const getTopMoviesByTickets = async (limit = 10) => {
   try {
     const response = await api.get(
-      `/analytics/movies/top-by-tickets?limit=${limit}`
+      `/analytics/top-movies-by-tickets?limit=${limit}`
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const getTopGenresByTickets = async (limit = 5) => {
+  try {
+    const response = await api.get(
+      `/analytics/top-genres-by-tickets?limit=${limit}`
     );
     return response.data;
   } catch (error) {

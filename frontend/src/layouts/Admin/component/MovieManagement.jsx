@@ -550,16 +550,6 @@ const MovieManagement = () => {
       else if (trailerFileName && !trailerUrl)
         movieData.append("trailer", trailerFileName);
 
-      // Debug log
-      console.log("FormData contents:", {
-        posterImage: !!posterImage,
-        posterFileName,
-        posterImageHorizontal: !!posterImageHorizontal,
-        posterHorizontalFileName,
-        trailerUrl: !!trailerUrl,
-        trailerFileName,
-      });
-
       const newMovie = await createMovie(movieData);
       setMovies((prev) => [...prev, newMovie]);
 

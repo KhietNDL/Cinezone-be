@@ -24,8 +24,7 @@ export const incrementBlogView = async (blogId) => {
     });
 
     return newViews;
-  } catch (error) {
-    console.error("Error incrementing blog view:", error);
+  } catch {
     return null;
   }
 };
@@ -43,8 +42,7 @@ export const getBlogsByCategory = async (category, limit = 5) => {
       .status("published");
 
     return objects;
-  } catch (error) {
-    console.error("Error fetching blogs by category:", error);
+  } catch {
     return [];
   }
 };
@@ -69,8 +67,7 @@ export const getAllCategories = async () => {
     ];
 
     return categories;
-  } catch (error) {
-    console.error("Error fetching categories:", error);
+  } catch {
     return [];
   }
 };

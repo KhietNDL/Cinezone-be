@@ -75,8 +75,8 @@ const Header = () => {
     }
     try {
       const response = await searchMovies({ name: query });
-      if (response.data.data) {
-        setSearchResults(response.data.data);
+      if (response.data) {
+        setSearchResults(response.data);
       }
     } catch (error) {
       console.error("Error fetching movies:", error);

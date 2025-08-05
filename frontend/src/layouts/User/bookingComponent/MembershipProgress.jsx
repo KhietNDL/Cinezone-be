@@ -3,15 +3,39 @@ import { FaMedal } from "react-icons/fa";
 
 const getTierInfo = (points) => {
   if (points >= 7000)
-    return { tier: "Diamond", discount: 10, currentMin: 7000, nextMin: null, nextTier: null };
+    return {
+      tier: "Diamond",
+      discount: 10,
+      currentMin: 7000,
+      nextMin: null,
+      nextTier: null,
+    };
   if (points >= 3000)
-    return { tier: "Gold", discount: 5, currentMin: 3000, nextMin: 7000, nextTier: "Diamond" };
+    return {
+      tier: "Gold",
+      discount: 5,
+      currentMin: 3000,
+      nextMin: 7000,
+      nextTier: "Diamond",
+    };
   if (points >= 1000)
-    return { tier: "Silver", discount: 3, currentMin: 1000, nextMin: 3000, nextTier: "Gold" };
-  return { tier: "None", discount: 0, currentMin: 0, nextMin: 1000, nextTier: "Silver" };
+    return {
+      tier: "Silver",
+      discount: 3,
+      currentMin: 1000,
+      nextMin: 3000,
+      nextTier: "Gold",
+    };
+  return {
+    tier: "None",
+    discount: 0,
+    currentMin: 0,
+    nextMin: 1000,
+    nextTier: "Silver",
+  };
 };
 
-const MembershipProgress = ({ points , onTierChange }) => {
+const MembershipProgress = ({ points, onTierChange }) => {
   const tierInfo = getTierInfo(points);
   const { tier, discount, currentMin, nextMin, nextTier } = tierInfo;
 
@@ -19,13 +43,13 @@ const MembershipProgress = ({ points , onTierChange }) => {
     ? ((points - currentMin) / (nextMin - currentMin)) * 100
     : 100;
 
-useEffect(() => {
-  if (typeof points === "number" && onTierChange) {
-    const tierInfo = getTierInfo(points);
-    // console.log("points =", points, "→ tierInfo:", tierInfo);
-    onTierChange(tierInfo);
-  }
-}, [points]);
+  useEffect(() => {
+    if (typeof points === "number" && onTierChange) {
+      const tierInfo = getTierInfo(points);
+
+      onTierChange(tierInfo);
+    }
+  }, [points]);
   const getTierGradient = () => {
     switch (tier) {
       case "Silver":
@@ -53,69 +77,73 @@ useEffect(() => {
   };
 
   return (
-   <div className="mt-6 p-4 rounded-2xl bg-white/5 border border-white/10">
-            <div className="flex items-center gap-2 mb-3">
-                <FaMedal className="text-gray-200" /> 
-                <span className="font-semibold">{tier !== "Không có hạng" ? `${tier} Member` : "Chưa có hạng"}</span>
-                <span className="text-xs text-gray-400">
-                    {nextTier
-                        ? `${nextMin - points} points to up ${nextTier} Member`
-                        : `Highest member class `}
-                </span>
-            </div>
+    <div className="mt-6 p-4 rounded-2xl bg-white/5 border border-white/10">
+      <div className="flex items-center gap-2 mb-3">
+        <FaMedal className="text-gray-200" />
+        <span className="font-semibold">
+          {tier !== "Không có hạng" ? `${tier} Member` : "Chưa có hạng"}
+        </span>
+        <span className="text-xs text-gray-400">
+          {nextTier
+            ? `${nextMin - points} points to up ${nextTier} Member`
+            : `Highest member class `}
+        </span>
+      </div>
 
-            {/* Slim Progress Bar */}
-            <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden backdrop-blur-sm shadow-inner relative mb-3">
-                <div
-                    className={`h-full rounded-full bg-gradient-to-r ${getTierGradient()} transition-all duration-700 ease-out relative`}
-                    style={{ 
-                        width: `${Math.min(progress, 100)}%`,
-                        boxShadow: getTierShadow()
-                    }}
-                >
-                    {/* Shimmer effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-pulse"></div>
-                    
-                    {/* Moving light streak */}
-                    <div 
-                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent w-4 h-full"
-                        style={{ 
-                            animation: 'shimmer 2s infinite',
-                            transform: `translateX(${Math.sin(Date.now() / 1000) * 10}px)`
-                        }}
-                    ></div>
-                </div>
+      {/* Slim Progress Bar */}
+      <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden backdrop-blur-sm shadow-inner relative mb-3">
+        <div
+          className={`h-full rounded-full bg-gradient-to-r ${getTierGradient()} transition-all duration-700 ease-out relative`}
+          style={{
+            width: `${Math.min(progress, 100)}%`,
+            boxShadow: getTierShadow(),
+          }}
+        >
+          {/* Shimmer effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-pulse"></div>
 
-                {/* Progress dot */}
-                {progress > 0 && progress < 100 && (
-                    <div
-                        className="absolute top-1/2 w-1.5 h-1.5 bg-white rounded-full transform -translate-y-1/2 -translate-x-0.5 transition-all duration-700 animate-pulse"
-                        style={{ 
-                            left: `${Math.min(progress, 100)}%`,
-                            boxShadow: getTierShadow()
-                        }}
-                    ></div>
-                )}
-            </div>
-
-            <div className="text-xs text-gray-400 space-y-1">
-                <p>
-                    Member Points:{" "}
-                    <span className="font-bold text-white">{points}</span>
-                </p>
-                <p>
-                    Discount:{" "}
-                    <span className="font-bold text-white">{discount}%</span>
-                </p>
-            </div>
-
-            <style jsx>{`
-                @keyframes shimmer {
-                    0% { transform: translateX(-20px); }
-                    100% { transform: translateX(100px); }
-                }
-            `}</style>
+          {/* Moving light streak */}
+          <div
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent w-4 h-full"
+            style={{
+              animation: "shimmer 2s infinite",
+              transform: `translateX(${Math.sin(Date.now() / 1000) * 10}px)`,
+            }}
+          ></div>
         </div>
+
+        {/* Progress dot */}
+        {progress > 0 && progress < 100 && (
+          <div
+            className="absolute top-1/2 w-1.5 h-1.5 bg-white rounded-full transform -translate-y-1/2 -translate-x-0.5 transition-all duration-700 animate-pulse"
+            style={{
+              left: `${Math.min(progress, 100)}%`,
+              boxShadow: getTierShadow(),
+            }}
+          ></div>
+        )}
+      </div>
+
+      <div className="text-xs text-gray-400 space-y-1">
+        <p>
+          Member Points: <span className="font-bold text-white">{points}</span>
+        </p>
+        <p>
+          Discount: <span className="font-bold text-white">{discount}%</span>
+        </p>
+      </div>
+
+      <style jsx>{`
+        @keyframes shimmer {
+          0% {
+            transform: translateX(-20px);
+          }
+          100% {
+            transform: translateX(100px);
+          }
+        }
+      `}</style>
+    </div>
   );
 };
 

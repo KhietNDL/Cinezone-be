@@ -11,7 +11,6 @@ const CheckIn = () => {
   const [isScanned, setIsScanned] = useState(false);
 
   const handleQRResult = async (data) => {
-    console.log(`Scanned QR code: ${data}`);
     try {
       const booking = await getBookingById(data);
 
@@ -110,7 +109,9 @@ const CheckIn = () => {
                   <ul className="text-xs text-blue-700 space-y-1">
                     <li>• Hold the QR code steady within the camera frame</li>
                     <li>• Ensure good lighting for accurate scanning</li>
-                    <li>• The system will automatically process valid tickets</li>
+                    <li>
+                      • The system will automatically process valid tickets
+                    </li>
                   </ul>
                 </div>
               </div>

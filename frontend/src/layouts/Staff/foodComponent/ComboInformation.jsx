@@ -64,10 +64,18 @@ export default function ComboInformation() {
       try {
         if (status === "success" && paymentId) {
           await confirmPayment(paymentId);
-          window.history.replaceState({}, document.title, window.location.pathname);
+          window.history.replaceState(
+            {},
+            document.title,
+            window.location.pathname
+          );
         }
       } catch (error) {
-        window.history.replaceState({}, document.title, window.location.pathname);
+        window.history.replaceState(
+          {},
+          document.title,
+          window.location.pathname
+        );
         console.error(error);
       }
     };
@@ -99,10 +107,6 @@ export default function ComboInformation() {
 
   const statusInfo = statusMap[status];
 
-  console.log("Query string:", search);
-  console.log("Result code:", momoResult);
-  console.log("Combo Information:", cart, "Status:", status);
-
   const handleNewCombo = () => {
     dispatch(clearComboCart());
     dispatch(clearOrderInfo());
@@ -130,7 +134,6 @@ export default function ComboInformation() {
     } finally {
       navigate("/staff/combo-selling");
     }
-
   };
 
   const handleTryAgain = useCallback(async () => {
@@ -275,7 +278,8 @@ export default function ComboInformation() {
               {status === "error" ? (
                 <>
                   <Button
-                    color="orange" variant="solid"
+                    color="orange"
+                    variant="solid"
                     icon={<FaRedo />}
                     onClick={handleTryAgain}
                     className="h-12 px-8 bg-gradient-to-r from-orange-600 to-orange-700 border-0 hover:from-orange-700 hover:to-orange-800 font-semibold text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
@@ -285,7 +289,8 @@ export default function ComboInformation() {
                   </Button>
 
                   <Button
-                    color="danger" variant="outlined"
+                    color="danger"
+                    variant="outlined"
                     icon={<FaTimes />}
                     onClick={handleCancel}
                     className="h-12 px-8 font-semibold rounded-lg border-2 border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
@@ -306,7 +311,8 @@ export default function ComboInformation() {
                     New Combo Order
                   </Button>
                   <Button
-                    color="danger" variant="outlined"
+                    color="danger"
+                    variant="outlined"
                     icon={<FaTimes />}
                     onClick={handleClose}
                     className="h-12 px-8 font-semibold rounded-lg border-2 border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"

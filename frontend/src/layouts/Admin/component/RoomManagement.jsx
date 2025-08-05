@@ -741,15 +741,16 @@ const RoomManagement = () => {
                   </button>
 
                   {showRoomTypeDropdown && (
-                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
+                    <div className="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                       <div className="py-1">
                         <button
                           type="button"
-                          onClick={() => {
+                          onMouseDown={(e) => {
+                            e.preventDefault();
                             setRoomType("Normal");
                             setShowRoomTypeDropdown(false);
                           }}
-                          className="w-full px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none text-gray-900"
+                          className="w-full px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none text-gray-900 transition-colors duration-150"
                         >
                           <div className="flex items-center">
                             <div className="w-3 h-3 rounded-full bg-gray-400 mr-3"></div>
@@ -758,11 +759,12 @@ const RoomManagement = () => {
                         </button>
                         <button
                           type="button"
-                          onClick={() => {
+                          onMouseDown={(e) => {
+                            e.preventDefault();
                             setRoomType("IMAX");
                             setShowRoomTypeDropdown(false);
                           }}
-                          className="w-full px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none text-gray-900"
+                          className="w-full px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none text-gray-900 transition-colors duration-150"
                         >
                           <div className="flex items-center">
                             <div className="w-3 h-3 rounded-full bg-purple-500 mr-3"></div>
@@ -895,15 +897,16 @@ const RoomManagement = () => {
                   </button>
 
                   {showRoomTypeDropdown && (
-                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
+                    <div className="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                       <div className="py-1">
                         <button
                           type="button"
-                          onClick={() => {
+                          onMouseDown={(e) => {
+                            e.preventDefault();
                             setRoomType("Normal");
                             setShowRoomTypeDropdown(false);
                           }}
-                          className="w-full px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none text-gray-900"
+                          className="w-full px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none text-gray-900 transition-colors duration-150"
                         >
                           <div className="flex items-center">
                             <div className="w-3 h-3 rounded-full bg-gray-400 mr-3"></div>
@@ -912,11 +915,12 @@ const RoomManagement = () => {
                         </button>
                         <button
                           type="button"
-                          onClick={() => {
+                          onMouseDown={(e) => {
+                            e.preventDefault();
                             setRoomType("IMAX");
                             setShowRoomTypeDropdown(false);
                           }}
-                          className="w-full px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none text-gray-900"
+                          className="w-full px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none text-gray-900 transition-colors duration-150"
                         >
                           <div className="flex items-center">
                             <div className="w-3 h-3 rounded-full bg-purple-500 mr-3"></div>

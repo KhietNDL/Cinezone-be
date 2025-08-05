@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getPromotion, searchPromotion } from "../../../services/API";
-import { useNavigate } from "react-router-dom";
 import BackButton from "../../../component/BackButton";
 
 const Copy = ({ className }) => (
@@ -124,7 +123,6 @@ const Gift = ({ className }) => (
 );
 
 const MoviePromotions = () => {
-  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   // eslint-disable-next-line no-unused-vars
   const [sortBy] = useState("startDate");
@@ -155,7 +153,7 @@ const MoviePromotions = () => {
   };
 
   // Hàm sắp xếp promotions theo trạng thái: upcoming -> active -> expired
-  const sortPromotions = (promos) => {
+  const sortPromotions = useCallback((promos) => {
     const statusOrder = { upcoming: 0, active: 1, expired: 2 };
     return [...promos].sort((a, b) => {
       const statusA = getPromotionStatus(a);
@@ -166,14 +164,14 @@ const MoviePromotions = () => {
       // Nếu cùng trạng thái, có thể sắp xếp thêm theo ngày bắt đầu
       return new Date(a.StartTime) - new Date(b.StartTime);
     });
-  };
+  }, []);
 
   // Initial load of all promotions
   useEffect(() => {
     const fetchPromotions = async () => {
       try {
         const data = await getPromotion();
-        console.log("Dữ liệu promotion: ", data);
+
         const sortedPromos = sortPromotions(data.data);
         setPromotions(sortedPromos);
         setAllPromotions(sortedPromos); // Store for reset
@@ -185,8 +183,26 @@ const MoviePromotions = () => {
     };
 
     fetchPromotions();
-  }, []);
+  }, [sortPromotions]);
+  const handleSearch = useCallback(
+    async (code) => {
+      try {
+        setSearching(true);
+        const data = await searchPromotion(code);
 
+        const sorted = sortPromotions(data.promotions);
+        setPromotions(sorted);
+      } catch (error) {
+        console.error("Failed to search promotions:", error);
+        // On error, show all promotions
+        const sorted = sortPromotions(allPromotions);
+        setPromotions(sorted);
+      } finally {
+        setSearching(false);
+      }
+    },
+    [allPromotions, sortPromotions]
+  );
   // Search functionality with debouncing
   useEffect(() => {
     const delayedSearch = setTimeout(() => {
@@ -202,24 +218,7 @@ const MoviePromotions = () => {
     }, 500); // 500ms delay for debouncing
 
     return () => clearTimeout(delayedSearch);
-  }, [searchTerm, allPromotions]);
-
-  const handleSearch = async (code) => {
-    try {
-      setSearching(true);
-      const data = await searchPromotion(code);
-
-      const sorted = sortPromotions(data.promotions);
-      setPromotions(sorted);
-    } catch (error) {
-      console.error("Failed to search promotions:", error);
-      // On error, show all promotions
-      const sorted = sortPromotions(allPromotions);
-      setPromotions(sorted);
-    } finally {
-      setSearching(false);
-    }
-  };
+  }, [searchTerm, allPromotions, handleSearch, sortPromotions]);
 
   const handleCopy = (code) => {
     navigator.clipboard.writeText(code);
@@ -232,14 +231,10 @@ const MoviePromotions = () => {
     const sorted = sortPromotions(allPromotions);
     setPromotions(sorted); // Reset to all promotions
     // Debug trạng thái
-    console.log(
-      "[CLOSE] Promotion status order:",
-      sorted.map((p) => ({ id: p.PromotionId, status: getPromotionStatus(p) }))
-    );
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 via-50% via-purple-950/50 to-slate-900 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-slate-900 relative overflow-hidden">
       {/* Enhanced Background Animation */}
       <div className="absolute inset-0">
         <div className="absolute top-0 left-0 w-[800px] h-[800px] bg-gradient-radial from-purple-600/30 to-transparent rounded-full blur-3xl animate-pulse"></div>
@@ -276,7 +271,7 @@ const MoviePromotions = () => {
       {/* Search Toggle - Fixed at Top Right */}
       <div className="absolute top-[100px] left-6 z-20">
         {/* Back to Home Button */}
-       <BackButton/>
+        <BackButton />
       </div>
 
       <div className="relative z-10 p-6 md:p-12 pt-48 lg:pt-50 md:pt-45 ">
@@ -375,14 +370,6 @@ const MoviePromotions = () => {
                     setSearchTerm("");
                     const sorted = sortPromotions(allPromotions);
                     setPromotions(sorted);
-                    // Debug trạng thái
-                    console.log(
-                      "[SHOW ALL] Promotion status order:",
-                      sorted.map((p) => ({
-                        id: p.PromotionId,
-                        status: getPromotionStatus(p),
-                      }))
-                    );
                   }}
                   className="mt-4 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-300"
                 >
