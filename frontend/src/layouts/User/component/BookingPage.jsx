@@ -98,11 +98,8 @@ const BookingPage = () => {
 
   useEffect(() => {
     if (previousDate !== null && previousDate !== selectedDate) {
-      // Reset time selection khi ngày thay đổi
       dispatch(setSelectedTime(null));
       dispatch(setSelectedShowtimeId(null));
-
-      // Clear seats data và set loading cho seat map
       dispatch(setSeatsData([]));
       dispatch(setSeatQuantity(0));
       dispatch(setSelectedSeats([]));

@@ -76,12 +76,14 @@ const getAllBookings = async (req, res) => {
       limit = 0,
       sortBy = "CreatedAt",
       sortOrder = "desc",
+      status = null, // Add status filter
     } = req.query;
     const result = await Booking.getAllBookings({
       page: Number(page),
       limit: Number(limit),
       sortBy,
       sortOrder,
+      status, // Pass status parameter
     });
     res.json(result);
   } catch (error) {

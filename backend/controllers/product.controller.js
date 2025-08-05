@@ -7,8 +7,9 @@ const getAllProducts = async (req, res) => {
     const limit = parseInt(req.query.limit) || 0;
     const sortBy = req.query.sortBy || 'ProductName';
     const sortOrder = req.query.sortOrder || 'asc';
+    const status = req.query.status; // Add status filter
 
-    const result = await Product.getAllProducts(page, limit, sortBy, sortOrder);
+    const result = await Product.getAllProducts(page, limit, sortBy, sortOrder, status);
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });

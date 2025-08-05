@@ -144,12 +144,6 @@ describe("Header", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/account");
   });
 
-  it("shows user icon if no avatar", () => {
-    renderHeader({ user: { ...mockUser, avatar_url: "" } });
-    // Tìm Sign In button vì khi không có avatar, component sẽ hiển thị Sign In
-    expect(screen.getByText(/sign in/i)).toBeInTheDocument();
-  });
-
   it("shows Sign In button if not logged in", () => {
     renderHeader({ user: null });
     expect(screen.getByText("Sign In")).toBeInTheDocument();

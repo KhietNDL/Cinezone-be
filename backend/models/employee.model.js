@@ -3,12 +3,33 @@ const bcrypt = require("bcrypt");
 const { v4: uuidv4 } = require("uuid");
 
 class Employee {
-  static async getAllEmployees(page = 1, limit = 0, sortBy = 'FullName', sortOrder = 'asc') {
+  static async getAllEmployees(page = 1, limit = 0, sortBy = 'FullName', sortOrder = 'asc', status = null) {
     const allowedSortFields = ['FullName', 'DateOfBirth', 'Email', 'PhoneNumber', 'CreatedAt', 'isDeleted'];
     if (!allowedSortFields.includes(sortBy)) sortBy = 'FullName';
     sortOrder = sortOrder.toLowerCase() === 'desc' ? 'DESC' : 'ASC';
 
-    let employeesQuery = `SELECT * FROM Users WHERE Role = 2 ORDER BY ${sortBy} ${sortOrder}`;
+    let whereClause = 'WHERE Role = 2';
+    let countWhereClause = 'WHERE Role = 2';
+    
+    // Add status filter if provided
+    if (status) {
+      switch (status.toLowerCase()) {
+        case 'active':
+          whereClause += ' AND IsDeleted = 0';
+          countWhereClause += ' AND IsDeleted = 0';
+          break;
+        case 'inactive':
+          whereClause += ' AND IsDeleted = 1';
+          countWhereClause += ' AND IsDeleted = 1';
+          break;
+        case 'new':
+          whereClause += ' AND IsDeleted = 0 AND CreatedAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)';
+          countWhereClause += ' AND IsDeleted = 0 AND CreatedAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)';
+          break;
+      }
+    }
+
+    let employeesQuery = `SELECT * FROM Users ${whereClause} ORDER BY ${sortBy} ${sortOrder}`;
     let employeesParams = [];
     if (limit > 0) {
       const offset = (page - 1) * limit;
@@ -19,7 +40,7 @@ class Employee {
 
     let totalEmployees = employees.length;
     if (limit > 0) {
-      const [countResult] = await db.promise().query("SELECT COUNT(*) as total FROM Users WHERE Role = 2");
+      const [countResult] = await db.promise().query(`SELECT COUNT(*) as total FROM Users ${countWhereClause}`);
       totalEmployees = countResult[0].total;
     }
 
