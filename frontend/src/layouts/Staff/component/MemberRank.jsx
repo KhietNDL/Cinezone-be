@@ -33,7 +33,7 @@ const MemberRank = ({ rank, pointsMemberShip }) => {
     return (
         <div>
             <div className="flex items-center gap-2 font-semibold justify-between">
-                <span className="text-gray-600 flex items-center gap-2"><FaRankingStar /> Rank:</span>
+                <span className="text-gray-600 flex items-center gap-2"><FaRankingStar className="text-purple-600"/> Rank:</span>
                 <span className="flex items-center gap-1" style={{ color: rankColor }}>
                     {rankInfo.icon} {rank}
                 </span>

@@ -148,8 +148,8 @@ const SellTicketPage = () => {
           ``;
         } else {
           const response = await searchMovies(value);
-          if (response.data.movies) {
-            setMovies(response.data.movies);
+          if (response.data) {
+            setMovies(response.data);
           }
         }
       } catch (error) {
