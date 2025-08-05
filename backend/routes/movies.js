@@ -45,7 +45,7 @@ const upload = multer({
  * @swagger
  * /api/movie:
  *   get:
- *     summary: Get movies with flexible pagination and sorting
+ *     summary: Get movies with flexible pagination, sorting and status filtering
  *     tags: [Movies]
  *     parameters:
  *       - in: query
@@ -74,6 +74,12 @@ const upload = multer({
  *           enum: [asc, desc]
  *           default: desc
  *         description: Sort order (asc or desc)
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [active, upcoming, expired]
+ *         description: Filter movies by status (active = currently showing, upcoming = future releases, expired = past movies)
  *     responses:
  *       200:
  *         description: List of movies with pagination info

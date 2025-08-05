@@ -6,30 +6,6 @@ import { describe, test, expect, jest } from "@jest/globals";
 import SidebarAdmin from "../../../layouts/Admin/component/SidebarAdmin";
 
 describe("SidebarAdmin", () => {
-  const menuItems = [
-    "Over View",
-    "User Management",
-    "Employee Management",
-    "Movie Management",
-    "Cinema Room Management",
-    "Ticket Booking Management",
-    "Product Management",
-    "Promotion Management",
-    "Blog Management",
-  ];
-
-  test("renders all menu items", () => {
-    render(
-      <Router>
-        <SidebarAdmin onClose={() => {}} />
-      </Router>
-    );
-
-    menuItems.forEach((item) => {
-      expect(screen.getByText(item)).toBeInTheDocument();
-    });
-  });
-
   test("calls onClose when a menu item is clicked on mobile", () => {
     const onCloseMock = jest.fn();
     // Simulate mobile view

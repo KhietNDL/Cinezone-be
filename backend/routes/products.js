@@ -46,6 +46,12 @@ const upload = multer();
  *           default: asc
  *         required: false
  *         description: Sort order (ascending or descending)
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [in_stock, low_stock, out_of_stock]
+ *         description: Filter products by stock status (in_stock = Quantity > 10, low_stock = 0 < Quantity ≤ 10, out_of_stock = Quantity = 0)
  *     responses:
  *       200:
  *         description: A list of products

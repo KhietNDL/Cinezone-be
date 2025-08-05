@@ -8,8 +8,11 @@ const getAllEmployees = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = req.query.limit !== undefined ? parseInt(req.query.limit) : 0;
+    const sortBy = req.query.sortBy;
+    const sortOrder = req.query.sortOrder;
+    const status = req.query.status; // Add status filter
 
-    const result = await Employee.getAllEmployees(page, limit);
+    const result = await Employee.getAllEmployees(page, limit, sortBy, sortOrder, status);
 
     if (limit > 0 && page > 1 && result.employees.length === 0) {
       return res.status(400).json({

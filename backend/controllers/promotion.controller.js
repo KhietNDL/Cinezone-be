@@ -127,7 +127,8 @@ const getAllPromotions = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = req.query.limit !== undefined ? parseInt(req.query.limit) : 0;
-        const result = await Promotion.getAllPromotions(page, limit);
+        const status = req.query.status; // Add status filter
+        const result = await Promotion.getAllPromotions(page, limit, status);
         res.status(200).json({
             status: 'success',
             data: result.promotions,

@@ -56,6 +56,12 @@ const userController = require('../controllers/user.controller');
  *           enum: [asc, desc]
  *           default: asc
  *         description: Sort order (asc or desc)
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [active, inactive, new]
+ *         description: Filter users by status (active = IsDeleted 0, inactive = IsDeleted 1, new = IsDeleted 0 và CreatedAt trong 7 ngày gần nhất)
  *     responses:
  *       200:
  *         description: Users retrieved successfully
