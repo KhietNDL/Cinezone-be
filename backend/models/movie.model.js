@@ -15,12 +15,35 @@ function normalizeMovieDates(movie) {
 }
 
 class Movie {
-  static async getAllMovies(page = 1, limit = 0, sortBy = 'FromDate', sortOrder = 'desc') {
+  static async getAllMovies(page = 1, limit = 0, sortBy = 'FromDate', sortOrder = 'desc', status = null) {
     const allowedSortFields = ['NameOfVietnamese', 'NameOfEnglish', 'FromDate', 'ToDate'];
     if (!allowedSortFields.includes(sortBy)) sortBy = 'FromDate';
     sortOrder = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
 
-    let moviesQuery = `SELECT * FROM Movies WHERE IsDeleted = 0 ORDER BY ${sortBy} ${sortOrder}`;
+    let whereClause = 'WHERE IsDeleted = 0';
+    let countWhereClause = 'WHERE IsDeleted = 0';
+    
+    // Add status filter if provided
+    if (status) {
+      const now = new Date().toISOString().split('T')[0]; // Current date in YYYY-MM-DD format
+      
+      switch (status.toLowerCase()) {
+        case 'active':
+          whereClause += ` AND FromDate <= '${now}' AND ToDate >= '${now}'`;
+          countWhereClause += ` AND FromDate <= '${now}' AND ToDate >= '${now}'`;
+          break;
+        case 'upcoming':
+          whereClause += ` AND FromDate > '${now}'`;
+          countWhereClause += ` AND FromDate > '${now}'`;
+          break;
+        case 'expired':
+          whereClause += ` AND ToDate < '${now}'`;
+          countWhereClause += ` AND ToDate < '${now}'`;
+          break;
+      }
+    }
+
+    let moviesQuery = `SELECT * FROM Movies ${whereClause} ORDER BY ${sortBy} ${sortOrder}`;
     let moviesParams = [];
     if (limit > 0) {
       const offset = (page - 1) * limit;
@@ -46,7 +69,7 @@ class Movie {
 
     let totalMovies = movies.length;
     if (limit > 0) {
-      const [countResult] = await db.promise().query("SELECT COUNT(*) as total FROM Movies WHERE IsDeleted = 0");
+      const [countResult] = await db.promise().query(`SELECT COUNT(*) as total FROM Movies ${countWhereClause}`);
       totalMovies = countResult[0].total;
     }
 
@@ -559,6 +582,8 @@ class Movie {
       },
     };
   }
+
+
 
   static async getMovieShowtimesByVietnameseName(nameOfVietnamese) {
     const sql = `

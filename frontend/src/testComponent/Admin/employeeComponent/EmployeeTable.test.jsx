@@ -130,6 +130,8 @@ describe("EmployeeTable", () => {
     });
   });
 
+<<<<<<< HEAD
+=======
   describe("Pagination", () => {
     it("should display correct items based on page and itemsPerPage", () => {
       const propsWithPagination = {
@@ -160,6 +162,7 @@ describe("EmployeeTable", () => {
     });
   });
 
+>>>>>>> 0c3447e1c5e836117713ba79b7a4ee6fcef57307
   describe("Sorting", () => {
     it("should display correct sort arrows for FullName", () => {
       render(<EmployeeTable {...mockProps} />);

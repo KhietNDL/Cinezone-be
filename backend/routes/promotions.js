@@ -77,6 +77,12 @@ const upload = multer();
  *           type: integer
  *           default: 0
  *         description: Number of promotions per page (0 = all promotions)
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [active, expired, upcoming]
+ *         description: Filter promotions by status (active = currently running, expired = past end time, upcoming = future start time)
  *     responses:
  *       200:
  *         description: List of all promotions
