@@ -67,7 +67,7 @@ jest.mock("../component/MovieSwiper", () => {
   return function MockMovieSwiper({ movies, selectedMovie, onSelectMovie }) {
     return (
       <div data-testid="movie-swiper">
-        {movies?.map((movie) => (
+        {Array.isArray(movies) && movies.map((movie) => (
           <button
             key={movie.MovieId}
             data-testid={`movie-${movie.MovieId}`}
@@ -264,15 +264,6 @@ describe("SellTicketPage", () => {
     expect(screen.getByText("Choose a movie for your customer")).toBeInTheDocument();
   });
 
-//   // 5. Test loading state
-//   it("shows loading state when fetching movies", async () => {
-//     api.getCurrentMovies.mockImplementation(() => new Promise(() => {})); // Never resolves
-//     renderWithProviders(<SellTicketPage />);
-    
-//     expect(screen.getByTestId("spin")).toBeInTheDocument();
-//     expect(screen.getByText("Loading movies...")).toBeInTheDocument();
-//   });
-
   // 6. Test movie display
   it("displays movies when API call succeeds", async () => {
     renderWithProviders(<SellTicketPage />);
@@ -299,9 +290,11 @@ describe("SellTicketPage", () => {
     });
   });
 
-  // 8. Test search functionality
+  // 8. Test search functionality - FIXED
   it("handles search input", async () => {
-    api.searchMovies.mockResolvedValue({ data: { movies: sampleMovies } });
+    // Mock the search API to return data in the same format as getCurrentMovies
+    api.searchMovies.mockResolvedValue({ data: sampleMovies });
+    
     renderWithProviders(<SellTicketPage />);
 
     const searchInput = screen.getByPlaceholderText("Search movies");
@@ -310,16 +303,36 @@ describe("SellTicketPage", () => {
     await waitFor(() => {
       expect(api.searchMovies).toHaveBeenCalledWith("avengers");
     });
+
+    // Wait for the movies to be rendered after search
+    await waitFor(() => {
+      expect(screen.getByTestId("movie-1")).toBeInTheDocument();
+      expect(screen.getByText("Avengers Endgame")).toBeInTheDocument();
+    });
   });
 
   // 9. Test day selection
   it("handles day selection", async () => {
+    // Mock API để trả về showtimes khi component load
+    api.getShowtimesByMovieId.mockResolvedValue({
+      showtimes: [
+        { Day: "2023-12-25", showtimeId: 1 },
+        { Day: "2023-12-26", showtimeId: 2 },
+      ],
+    });
+
     renderWithProviders(<SellTicketPage />, {
       selling: { selectedMovie: sampleMovies[0] },
     });
 
+    // Wait for the date selection to appear and API call to complete
     await waitFor(() => {
       expect(screen.getByText("Step 2: Select Date")).toBeInTheDocument();
+    });
+
+    // Wait for days to be rendered
+    await waitFor(() => {
+      expect(screen.getByTestId("day-25/12/2023")).toBeInTheDocument();
     });
 
     const dayButton = screen.getByTestId("day-25/12/2023");
@@ -461,17 +474,6 @@ describe("SellTicketPage", () => {
     expect(true).toBe(true);
   });
 
-// //  18. Test icons are rendered
-//   it("renders all required icons", () => {
-//     renderWithProviders(<SellTicketPage />);
-//     expect(screen.getByTestId("ticket-icon")).toBeInTheDocument();
-//     expect(screen.getByTestId("search-icon")).toBeInTheDocument();
-//     expect(screen.getByTestId("film-icon")).toBeInTheDocument();
-//     expect(screen.getByTestId("calendar-icon")).toBeInTheDocument();
-//     expect(screen.getByTestId("time-icon")).toBeInTheDocument();
-//     expect(screen.getByTestId("couch-icon")).toBeInTheDocument();
-//   });
-
   // 19. Test step progression
   it("shows correct step progression", async () => {
     renderWithProviders(<SellTicketPage />);
@@ -500,4 +502,4 @@ describe("SellTicketPage", () => {
       expect(proceedButton).toBeDisabled();
     });
   });
-}); 
+});

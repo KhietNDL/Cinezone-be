@@ -74,7 +74,7 @@ const ItemCard = ({ item, type, onSelect, selected, small, disabled }) => {
               "https://via.placeholder.com/250x350/f0f0f0/666?text=No+Image";
           }}
           className={`w-full object-cover object-center ${
-            small ? "h-[200px]" : type === "movie" ? "h-[300px]" : "h-[240px]"
+            small ? "h-[200px]" : type === "movie" ? "h-[250px] sm:h-[300px]" : "h-[240px]"
           }`}
           style={{
             objectPosition: "center top", // Đảm bảo focus vào phần trên của poster

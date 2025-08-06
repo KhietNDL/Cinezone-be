@@ -117,7 +117,7 @@ const MovieSwiper = ({
 
               return (
                 <SwiperSlide key={`movie-${movie.MovieId}-${index}`}>
-                  <div className="flex justify-center w-full px-2">
+                  <div className="flex justify-center w-full">
                     {useLink ? <Link to={linkTo(movie)}>{card}</Link> : card}
                   </div>
                 </SwiperSlide>
