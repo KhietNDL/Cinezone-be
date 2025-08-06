@@ -525,7 +525,7 @@ const RegistrationForm = () => {
                         Select Gender
                       </option>
                       <option
-                        value="1"
+                        value="2"
                         style={{
                           backgroundColor: "#1f2937",
                           color: "#ffffff",
@@ -534,7 +534,7 @@ const RegistrationForm = () => {
                         Male
                       </option>
                       <option
-                        value="2"
+                        value="1"
                         style={{
                           backgroundColor: "#1f2937",
                           color: "#ffffff",
