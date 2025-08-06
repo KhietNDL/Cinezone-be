@@ -671,7 +671,7 @@ export const LayoutSelectSeat = ({
             <span className="text-gray-400">VIP</span>
           </div>
           <div className="flex items-center space-x-2 min-w-fit">
-            <MdOutlineChair className={seatColors.couple} size={20} />
+            <TbSofa className={seatColors.couple} size={20} />
             <span className="text-gray-400">Couple</span>
           </div>
           <div className="flex items-center space-x-2 min-w-fit">
