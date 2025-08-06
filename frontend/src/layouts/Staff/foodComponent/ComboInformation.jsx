@@ -290,7 +290,7 @@ export default function ComboInformation() {
 
                   <Button
                     color="danger"
-                    variant="outlined"
+                    variant="solid"
                     icon={<FaTimes />}
                     onClick={handleCancel}
                     className="h-12 px-8 font-semibold rounded-lg border-2 border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
@@ -312,7 +312,7 @@ export default function ComboInformation() {
                   </Button>
                   <Button
                     color="danger"
-                    variant="outlined"
+                    variant="solid"
                     icon={<FaTimes />}
                     onClick={handleClose}
                     className="h-12 px-8 font-semibold rounded-lg border-2 border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"

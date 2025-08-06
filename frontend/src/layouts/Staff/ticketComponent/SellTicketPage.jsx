@@ -617,7 +617,7 @@ const SellTicketPage = () => {
               </Link>
 
               <Button
-                danger
+                color="danger" variant="solid"
                 size="large"
                 onClick={handleCancel}
                 icon={<MdCancel className="text-base" />}
