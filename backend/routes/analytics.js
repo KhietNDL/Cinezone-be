@@ -123,18 +123,66 @@ router.get('/revenue/this-week', analyticsController.getRevenueThisWeek);
  * @swagger
  * /api/analytics/revenue/this-quarter:
  *   get:
- *     summary: Get revenue of this quarter
+ *     summary: Get revenue of this quarter with month details
  *     tags: [Analytics]
+ *     parameters:
+ *       - in: query
+ *         name: year
+ *         schema:
+ *           type: integer
+ *         description: Year to filter (default is current year)
  *     responses:
  *       200:
- *         description: Revenue of this quarter
+ *         description: Revenue of this quarter with month details
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 total:
+ *                 currentYear:
+ *                   type: integer
+ *                   example: 2025
+ *                 currentQuarter:
+ *                   type: integer
+ *                   example: 3
+ *                 label:
+ *                   type: string
+ *                   example: "Q3"
+ *                 startDate:
+ *                   type: string
+ *                   example: "2025-07-01"
+ *                 endDate:
+ *                   type: string
+ *                   example: "2025-09-30"
+ *                 monthRange:
+ *                   type: string
+ *                   example: "7-9"
+ *                 months:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       month:
+ *                         type: integer
+ *                         example: 7
+ *                       monthName:
+ *                         type: string
+ *                         example: "July"
+ *                       monthNameVN:
+ *                         type: string
+ *                         example: "Tháng 7"
+ *                       total:
+ *                         type: number
+ *                         example: 25000000
+ *                       bookingCount:
+ *                         type: integer
+ *                         example: 120
+ *                 totalRevenue:
  *                   type: number
+ *                   example: 75000000
+ *                 totalBookings:
+ *                   type: integer
+ *                   example: 350
  *       500:
  *         description: Internal server error
  */

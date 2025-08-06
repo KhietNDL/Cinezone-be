@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Package } from "lucide-react";
 import {
@@ -189,6 +189,13 @@ const ProductManagement = () => {
     }
     getAllProductsForStats();
   }, [fetchProducts, searchTerm, getAllProductsForStats]);
+
+  // Cleanup toast when component unmounts
+  useEffect(() => {
+    return () => {
+      toast.dismiss(); // Clear all pending toasts when component unmounts
+    };
+  }, []);
 
   // Separate effect for searchTerm to reset to page 1
   useEffect(() => {
@@ -415,7 +422,7 @@ const ProductManagement = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className=" bg-gray-50">
       {/* Header Section */}
       <div className="max-w-7xl select-none mx-auto px-3 sm:px-6 py-3 sm:py-4 bg-white shadow-md rounded-lg mb-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-3 lg:gap-4">
@@ -447,8 +454,7 @@ const ProductManagement = () => {
         </div>
       </div>
 
-      <ToastContainer />
-      <div className="flex flex-col items-center lg:items-start h-auto min-h-screen max-w-7xl w-full overflow-x-hidden mx-auto">
+      <div className="flex flex-col items-center lg:items-start h-full max-w-7xl mx-auto w-full overflow-x-hidden">
         <div className="w-[90%] md:w-[95%] lg:w-full max-w-7xl space-y-4 sm:space-y-6">
           <StatsCards
             totalProducts={allProductsForStats.length}

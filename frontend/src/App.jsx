@@ -156,7 +156,19 @@ function App() {
         </Route>
       </Routes>
 
-      <ToastContainer />
+      <ToastContainer
+        position="top-right"
+        autoClose={2000}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        enableMultiContainer={false}
+        limit={3}
+      />
     </AuthProvider>
   );
 }

@@ -44,28 +44,24 @@ const RegistrationForm = () => {
     const fetchPosters = async () => {
       try {
         const data = await getCurrentMovies();
-        // Lấy poster từ API, fallback nếu không có
         const posters = data?.data
           ?.map((movie) => {
             if (!movie.PosterImageHorizontal) return null;
-            if (movie.PosterImageHorizontal.startsWith("http"))
+            // Nếu là đường dẫn tương đối thì thêm host
+            if (movie.PosterImageHorizontal.startsWith("https"))
               return movie.PosterImageHorizontal;
-            return `http://cinezone:4458${movie.PosterImageHorizontal}`;
+            return `https://cinezone.info:4458${movie.PosterImageHorizontal}`;
           })
           .filter(Boolean);
+
         setMovieBackgrounds(
           posters && posters.length > 0
-            ? posters
-            : [imageLogin1, imageLogin2, imageLogin3, imageLogin4]
+            ? posters // Lấy tất cả ảnh, bỏ .slice(0, 3)
+            : [imageLogin1, imageLogin2, imageLogin3]
         );
       } catch (error) {
-        // eslint-disable-next-line no-unused-vars
-        setMovieBackgrounds([
-          imageLogin1,
-          imageLogin2,
-          imageLogin3,
-          imageLogin4,
-        ]);
+        // Nếu lỗi thì fallback về ảnh cũ
+        setMovieBackgrounds([imageLogin1, imageLogin2, imageLogin3]);
       }
     };
     fetchPosters();
@@ -179,7 +175,7 @@ const RegistrationForm = () => {
   };
   const handleGoogleLogin = () => {
     // window.location.href = "http://localhost:4458/api/auth/login-google";
-    window.location.href = "http://cinezone.info:4458/api/auth/login-google";
+    window.location.href = "https://cinezone.info:4458/api/auth/login-google";
   };
 
   const handleSubmit = async (e) => {
@@ -233,44 +229,8 @@ const RegistrationForm = () => {
             }}
           />
         ))}
-        <div className="absolute inset-0 bg-black/60" />
+        <div className="absolute inset-0 bg-black/20" />
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900/40 via-blue-900/40 to-indigo-900/40" />
-      </div>
-
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden z-10">
-        <div className="absolute -top-4 -left-4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-pulse"></div>
-        <div
-          className="absolute -top-4 -right-4 w-96 h-96 bg-yellow-500 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-pulse"
-          style={{ animationDelay: "2s" }}
-        ></div>
-        <div
-          className="absolute -bottom-8 left-20 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-pulse"
-          style={{ animationDelay: "4s" }}
-        ></div>
-
-        {/* Floating movie icons */}
-        <div className="absolute top-20 left-10 animate-bounce">
-          <Film className="text-yellow-400 w-6 h-6 opacity-60" />
-        </div>
-        <div
-          className="absolute top-40 right-20 animate-bounce"
-          style={{ animationDelay: "1s" }}
-        >
-          <Star className="text-yellow-300 w-5 h-5 opacity-50" />
-        </div>
-        <div
-          className="absolute bottom-32 left-32 animate-bounce"
-          style={{ animationDelay: "2s" }}
-        >
-          <Film className="text-purple-400 w-4 h-4 opacity-40" />
-        </div>
-        <div
-          className="absolute bottom-20 right-10 animate-bounce"
-          style={{ animationDelay: "0.5s" }}
-        >
-          <Star className="text-pink-400 w-6 h-6 opacity-60" />
-        </div>
       </div>
 
       <div className="flex items-center justify-center min-h-screen px-4 sm:px-10 py-4 lg:px-20 relative z-20">
@@ -565,7 +525,7 @@ const RegistrationForm = () => {
                         Select Gender
                       </option>
                       <option
-                        value="1"
+                        value="2"
                         style={{
                           backgroundColor: "#1f2937",
                           color: "#ffffff",
@@ -574,7 +534,7 @@ const RegistrationForm = () => {
                         Male
                       </option>
                       <option
-                        value="2"
+                        value="1"
                         style={{
                           backgroundColor: "#1f2937",
                           color: "#ffffff",

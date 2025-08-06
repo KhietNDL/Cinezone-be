@@ -1,6 +1,6 @@
 import React from "react";
 import { MdOutlineClose } from "react-icons/md";
-import DatePicker from "./DatePicker";
+import DatePicker from "../../../components/DatePicker/DatePicker";
 
 const PromotionFormPopup = ({
   showFormPopup,
@@ -101,16 +101,14 @@ const PromotionFormPopup = ({
                   label="Start Date"
                   value={startTime}
                   onChange={setStartTime}
-                  placeholder="Select start date"
                   required={true}
                 />
                 <DatePicker
                   label="End Date"
                   value={endTime}
                   onChange={setEndTime}
-                  placeholder="Select end date"
-                  required={true}
                   minDate={startTime}
+                  required={true}
                 />
               </div>
 

@@ -1,5 +1,5 @@
 import React from "react";
-import DatePicker from "../userComponent/DatePicker";
+import DatePicker from "../../../components/DatePicker/DatePicker";
 
 const EmployeeForm = ({
   showEditForm,
@@ -33,7 +33,7 @@ const EmployeeForm = ({
 }) => {
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg sm:max-w-xl max-h-[90vh] overflow-y-auto border border-gray-100">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg sm:max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-100">
         <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-4 sm:px-6 py-3 sm:py-4 text-white rounded-t-xl">
           <div className="flex items-center justify-between">
             <div>
@@ -114,6 +114,9 @@ const EmployeeForm = ({
                     onChange={(value) => setDateOfBirth(value)}
                     placeholder="Select date of birth"
                     required
+                    maxDate={new Date().toISOString().split("T")[0]}
+                    showQuickActions={false}
+                    showYearDropdown={true}
                   />
                 </div>
                 <div>

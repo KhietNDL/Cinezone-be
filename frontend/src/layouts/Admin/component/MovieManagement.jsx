@@ -9,7 +9,7 @@ import {
   getCinemaRooms,
 } from "../../../services/API";
 import { BiSolidCameraMovie } from "react-icons/bi";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import StatsCards from "../movieComponent/StatsCards";
 import MovieTable from "../movieComponent/MovieTable";
@@ -298,6 +298,13 @@ const MovieManagement = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array - chỉ chạy một lần khi component mount
 
+  // Cleanup toast when component unmounts
+  useEffect(() => {
+    return () => {
+      toast.dismiss(); // Clear all pending toasts when component unmounts
+    };
+  }, []);
+
   // Effect riêng cho việc reload data khi searchMovie thay đổi
   useEffect(() => {
     if (!searchMovie.trim()) {
@@ -361,9 +368,21 @@ const MovieManagement = () => {
         setNameOfEnglish(value);
         break;
       case "FromDate":
+        console.log(
+          "MovieManagement - handleInputChange FromDate:",
+          value,
+          "type:",
+          typeof value
+        );
         setFromDate(value);
         break;
       case "ToDate":
+        console.log(
+          "MovieManagement - handleInputChange ToDate:",
+          value,
+          "type:",
+          typeof value
+        );
         setToDate(value);
         break;
       case "Actors":
@@ -559,7 +578,9 @@ const MovieManagement = () => {
 
       resetForm();
       setShowAddForm(false);
-      toast.success("Movie added successfully!");
+      toast.success("Movie added successfully!", {
+        toastId: "movie-add-success",
+      });
     } catch (error) {
       if (
         error.response?.data?.errors &&
@@ -585,8 +606,25 @@ const MovieManagement = () => {
     setSelectedMovie(movie);
     setNameOfVietnamese(movie.NameOfVietnamese || "");
     setNameOfEnglish(movie.NameOfEnglish || "");
-    setFromDate(movie.FromDate ? movie.FromDate.split("T")[0] : "");
-    setToDate(movie.ToDate ? movie.ToDate.split("T")[0] : "");
+
+    // Log để debug format ngày khi edit
+    console.log("MovieManagement - handleEdit - Original dates:", {
+      FromDate: movie.FromDate,
+      ToDate: movie.ToDate,
+    });
+
+    const formattedFromDate = movie.FromDate
+      ? movie.FromDate.split("T")[0]
+      : "";
+    const formattedToDate = movie.ToDate ? movie.ToDate.split("T")[0] : "";
+
+    console.log("MovieManagement - handleEdit - Formatted dates:", {
+      formattedFromDate,
+      formattedToDate,
+    });
+
+    setFromDate(formattedFromDate);
+    setToDate(formattedToDate);
     setActors(movie.Actors || "");
     setProductionCompany(movie.ProductionCompany || "");
     setDirector(movie.Director || "");
@@ -638,12 +676,29 @@ const MovieManagement = () => {
     if (!validateForm()) return;
     setLoading(true);
     try {
+      // Log để debug trước khi gửi lên backend
+      console.log("MovieManagement - handleEditMovie - Dates being sent:", {
+        fromDate,
+        toDate,
+        fromDateType: typeof fromDate,
+        toDateType: typeof toDate,
+      });
+
       const movieData = new FormData();
       movieData.append("MovieId", selectedMovie.MovieId);
       movieData.append("NameOfVietnamese", nameOfVietnamese.trim());
       movieData.append("NameOfEnglish", nameOfEnglish.trim());
       movieData.append("FromDate", fromDate);
       movieData.append("ToDate", toDate);
+
+      // Log FormData content
+      console.log("MovieManagement - FormData entries:");
+      for (let [key, value] of movieData.entries()) {
+        if (key === "FromDate" || key === "ToDate") {
+          console.log(`${key}: ${value} (type: ${typeof value})`);
+        }
+      }
+
       movieData.append("Actors", actors.trim());
       movieData.append("ProductionCompany", productionCompany.trim());
       movieData.append("Director", director.trim());
@@ -676,7 +731,9 @@ const MovieManagement = () => {
       resetForm();
       setShowEditForm(false);
       setSelectedMovie(null);
-      toast.success("Movie updated successfully!");
+      toast.success("Movie updated successfully!", {
+        toastId: "movie-update-success",
+      });
     } catch (error) {
       console.error("Error editing movie:", {
         response: error.response?.data,
@@ -750,7 +807,9 @@ const MovieManagement = () => {
       getMovieData(status);
       setShowDeletePopup(false);
       setSelectedMovie(null);
-      toast.success("Movie deleted successfully!");
+      toast.success("Movie deleted successfully!", {
+        toastId: "movie-delete-success",
+      });
     } catch (error) {
       console.error("Delete error:", error);
     }
@@ -1173,7 +1232,6 @@ const MovieManagement = () => {
         setLoading={setLoading}
       />
 
-      <ToastContainer position="top-right" autoClose={2000} />
       {loading && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999]">
           <div className="bg-white rounded-xl p-6 sm:p-8 flex flex-col items-center shadow-2xl border border-gray-100">

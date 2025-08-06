@@ -19,7 +19,7 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import HeaderStats from "../employeeComponent/HeaderStats";
 import SearchAndAdd from "../employeeComponent/SearchAndAdd";
@@ -254,6 +254,13 @@ const EmployeeManagement = () => {
       getAllEmployeesForStats();
     }
   }, [handleSearchEmployees, searchEmployee, getAllEmployeesForStats]);
+
+  // Cleanup toast when component unmounts
+  useEffect(() => {
+    return () => {
+      toast.dismiss(); // Clear all pending toasts when component unmounts
+    };
+  }, []);
 
   // Effect riêng cho searchEmployee để reset về trang 1
   useEffect(() => {
@@ -1191,17 +1198,6 @@ const EmployeeManagement = () => {
           onClose={() => setSelectedEmployeeForTooltip(null)}
         />
       )}
-
-      <ToastContainer
-        position="top-right"
-        autoClose={2000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-      />
     </div>
   );
 };

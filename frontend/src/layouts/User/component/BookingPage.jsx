@@ -226,9 +226,9 @@ const BookingPage = () => {
     fetchTimeByDay();
   }, [selectedDate, movie]);
 
-  // Tạo hàm dùng chung để load seats
-  const loadSeats = async (showtimeId, showLoading = true) => {
-    if (!showtimeId) return;
+
+const loadSeats = async (showtimeId, showLoading = true) => {
+  if (!showtimeId) return;
 
     setIsRefreshing(true);
     if (showLoading) setSeatMapLoading(true);

@@ -17,6 +17,7 @@ const HistoryActivity = () => {
   const [itemsPerPage] = useState(7);
   const { user } = useAuth();
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [selectedOrderProduct, setSelectedOrderProduct] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [scoreHistory, setScoreHistory] = useState([]);
   const [filteredScoreHistory, setFilteredScoreHistory] = useState([]);
@@ -31,8 +32,12 @@ const HistoryActivity = () => {
   const [pointsStatusFilter, setPointsStatusFilter] = useState("all");
   const [pointsDateFilter, setPointsDateFilter] = useState("");
 
-  const handleViewDetail = (booking) => {
+  const handleViewDetail = (booking, product) => {
     setSelectedBooking(booking);
+    // Handle null/undefined product safely
+    setSelectedOrderProduct(product || []);
+    console.log("Selected Booking:", booking);
+    console.log("Selected Order Product:", product);
     setShowDetailModal(true);
   };
 
@@ -202,6 +207,7 @@ const HistoryActivity = () => {
         const seen = new Set();
         const uniqueData = rawData.filter((item) => {
           const id = item.booking?.BookingId;
+
           if (!id) return true;
           if (seen.has(id)) return false;
           seen.add(id);
@@ -240,7 +246,7 @@ const HistoryActivity = () => {
     fetchScoreHistory();
   }, [user]);
 
-  // Apply filters whenever filter states change
+
   useEffect(() => {
     applyFilters();
   }, [searchTerm, statusFilter, dateFilter, paymentHistory]);
@@ -347,11 +353,10 @@ const HistoryActivity = () => {
         <button
           key={i}
           onClick={() => handlePageChange(i)}
-          className={`px-3 py-2 mx-1 text-sm font-medium rounded-lg transition-all duration-200 ${
-            i === currentPage
+          className={`px-3 py-2 mx-1 text-sm font-medium rounded-lg transition-all duration-200 ${i === currentPage
               ? "bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-lg"
               : "text-gray-700 bg-white border border-gray-300 hover:bg-purple-50 hover:border-purple-300"
-          }`}
+            }`}
         >
           {i}
         </button>
@@ -426,21 +431,19 @@ const HistoryActivity = () => {
       <div className="flex mb-8 space-x-2 bg-gray-100 p-2 rounded-2xl">
         <button
           onClick={() => handleTabChange("booking")}
-          className={`flex-1 px-8 py-3 rounded-xl font-medium transition-all duration-300 ${
-            activeTab === "booking"
+          className={`flex-1 px-8 py-3 rounded-xl font-medium transition-all duration-300 ${activeTab === "booking"
               ? "bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-lg"
               : "text-gray-600 hover:text-gray-800 hover:bg-white/50"
-          }`}
+            }`}
         >
           Booking History
         </button>
         <button
           onClick={() => handleTabChange("points")}
-          className={`flex-1 px-8 py-3 rounded-xl font-medium transition-all duration-300 ${
-            activeTab === "points"
+          className={`flex-1 px-8 py-3 rounded-xl font-medium transition-all duration-300 ${activeTab === "points"
               ? "bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-lg"
               : "text-gray-600 hover:text-gray-800 hover:bg-white/50"
-          }`}
+            }`}
         >
           Points Activity
         </button>
@@ -626,21 +629,22 @@ const HistoryActivity = () => {
                           <div className="text-center text-gray-700">
                             {item.booking?.BookingDate
                               ? new Date(item.booking.BookingDate)
-                                  .toLocaleDateString("vi-VN")
-                                  .replace(/\//g, "-")
+                                .toLocaleDateString("vi-VN")
+                                .replace(/\//g, "-")
                               : "N/A"}
                           </div>
                         </td>
                         <td className="py-4 px-6">
                           <div className="text-center text-gray-700">
                             {item.booking?.BookingDate
-                              ? new Date(
-                                  item.booking.BookingDate
-                                ).toLocaleTimeString("vi-VN", {
+                              ? new Date(item.booking.BookingDate).toLocaleTimeString(
+                                "vi-VN",
+                                {
                                   hour: "2-digit",
                                   minute: "2-digit",
                                   hour12: false,
-                                })
+                                }
+                              )
                               : "N/A"}
                           </div>
                         </td>
@@ -670,7 +674,7 @@ const HistoryActivity = () => {
                         <td className="  text-start py-0 px-0">
                           {item.booking?.status === 2 && (
                             <button
-                              onClick={() => handleViewDetail(item.booking)}
+                              onClick={() => handleViewDetail(item.booking, item.orderProduct?.products || [])}
                               className="bg-blue-100 text-blue-600 px-2  py-2 w-[60px] rounded-full text-sm font-medium hover:bg-blue-500/50"
                             >
                               Detail
@@ -735,30 +739,30 @@ const HistoryActivity = () => {
             {(pointsSearchTerm ||
               pointsStatusFilter !== "all" ||
               pointsDateFilter) && (
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <span className="font-medium">Active filters:</span>
-                  {pointsSearchTerm && (
-                    <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full">
-                      Booking ID: "{pointsSearchTerm}"
-                    </span>
-                  )}
-                  {pointsStatusFilter !== "all" && (
-                    <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full">
-                      Type:{" "}
-                      {pointsStatusFilter === "2"
-                        ? "Points Used"
-                        : "Points Earned"}
-                    </span>
-                  )}
-                  {pointsDateFilter && (
-                    <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full">
-                      Date: {convertYYYYMMDDtoDDMMYYYY(pointsDateFilter)}
-                    </span>
-                  )}
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <span className="font-medium">Active filters:</span>
+                    {pointsSearchTerm && (
+                      <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full">
+                        Booking ID: "{pointsSearchTerm}"
+                      </span>
+                    )}
+                    {pointsStatusFilter !== "all" && (
+                      <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full">
+                        Type:{" "}
+                        {pointsStatusFilter === "2"
+                          ? "Points Used"
+                          : "Points Earned"}
+                      </span>
+                    )}
+                    {pointsDateFilter && (
+                      <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full">
+                        Date: {convertYYYYMMDDtoDDMMYYYY(pointsDateFilter)}
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
           </div>
 
           <div className="flex items-center justify-between mb-6">
@@ -835,8 +839,8 @@ const HistoryActivity = () => {
                           <div className="flex items-center justify-center text-gray-700">
                             {item.ChangeDate
                               ? new Date(item.ChangeDate)
-                                  .toLocaleDateString("vi-VN")
-                                  .replace(/\//g, "-")
+                                .toLocaleDateString("vi-VN")
+                                .replace(/\//g, "-")
                               : "N/A"}
                           </div>
                         </td>
@@ -845,24 +849,23 @@ const HistoryActivity = () => {
                           <div className="flex items-center justify-center text-gray-700">
                             {item.ChangeDate
                               ? new Date(item.ChangeDate).toLocaleTimeString(
-                                  "vi-VN",
-                                  {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    hour12: false,
-                                  }
-                                )
+                                "vi-VN",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: false,
+                                }
+                              )
                               : "N/A"}
                           </div>
                         </td>
 
                         <td className="text-center py-4 px-6">
                           <div
-                            className={`font-semibold ${
-                              item.ScoreValue > 0
+                            className={`font-semibold ${item.ScoreValue > 0
                                 ? "text-green-600"
                                 : "text-red-600"
-                            }`}
+                              }`}
                           >
                             {item.ScoreValue > 0
                               ? `+${item.ScoreValue}`
@@ -987,6 +990,20 @@ const HistoryActivity = () => {
                       {Array.isArray(selectedBooking.seats)
                         ? selectedBooking.seats.join(", ")
                         : selectedBooking.seats}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Products Section - Only show if products exist */}
+                <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                  <div className="text-center flex-1">
+                    <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">
+                      Products
+                    </p>
+                    <p className="text-sm font-semibold text-gray-900 mt-1">
+                      {selectedOrderProduct && Array.isArray(selectedOrderProduct) && selectedOrderProduct.length > 0
+                        ? selectedOrderProduct.map(item => item.productName).join(", ")
+                        : "No products purchased"}
                     </p>
                   </div>
                 </div>

@@ -129,6 +129,7 @@ const EditAccount = () => {
         const updatedData = {
           ...profileData,
           ...editData,
+          sex: editData.sex ? Number(editData.sex) : profileData.sex,
           avatar_url: response.user?.avatar_url,
         };
         setProfileData(updatedData);
@@ -430,7 +431,7 @@ const EditAccount = () => {
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center p-3 bg-white rounded-lg shadow-sm">
                       <span className="font-semibold text-indigo-700 flex-shrink-0 mr-0 sm:mr-2 mb-1 sm:mb-0 text-sm sm:text-base">
-                        CCCD:
+                        Citizen Identification:
                       </span>
                       <span className="text-gray-700 text-sm sm:text-base">
                         {profileData.cccd || "Not updated"}
@@ -518,7 +519,7 @@ const EditAccount = () => {
                         name="dateOfBirth"
                         value={
                           editData.dateOfBirth
-                            ? editData.dateOfBirth.split("T")[0]
+                            ? editData.dateOfBirth.split(/[T ]/)[0]
                             : ""
                         }
                         onChange={handleInputChange}

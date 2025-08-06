@@ -111,16 +111,7 @@ export const ProductCard = ({
             </button>
           </div>
 
-          {quantity > 0 && (
-            <div className="text-right">
-              <div className="text-white font-bold text-sm">
-                {formatPrice(parseFloat(product.Price) * quantity)}
-              </div>
-              <div className="text-gray-400 text-xs">
-                Total: {quantity} item{quantity > 1 ? "s" : ""}
-              </div>
-            </div>
-          )}
+         
         </div>
 
         {/* Selected indicator */}

@@ -22,7 +22,7 @@ import {
   updateCinemaRoom,
   getSeatsByCinemaRoomId,
 } from "../../../services/API";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Pagination from "../movieComponent/Pagination";
 
@@ -76,6 +76,13 @@ const RoomManagement = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showRoomTypeDropdown]);
+
+  // Cleanup toast when component unmounts
+  useEffect(() => {
+    return () => {
+      toast.dismiss(); // Clear all pending toasts when component unmounts
+    };
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -361,7 +368,7 @@ const RoomManagement = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className=" bg-gray-50">
       {/* Header Section */}
       <div className="max-w-7xl select-none mx-auto px-3 sm:px-6 py-3 sm:py-4 bg-white shadow-md rounded-lg mb-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-3 lg:gap-4">
@@ -410,7 +417,7 @@ const RoomManagement = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-col items-center lg:items-start h-auto min-h-screen max-w-7xl w-full overflow-x-hidden mx-auto">
+      <div className="flex flex-col items-center lg:items-start  max-w-7xl w-full overflow-x-hidden mx-auto">
         <div className="w-[90%] md:w-[95%] lg:w-full max-w-7xl space-y-4 sm:space-y-6">
           {/* Stats Cards */}
           <StatsCards
@@ -1073,8 +1080,6 @@ const RoomManagement = () => {
           </div>
         </div>
       )}
-
-      <ToastContainer position="top-right" autoClose={2000} />
     </div>
   );
 };
