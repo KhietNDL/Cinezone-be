@@ -51,6 +51,7 @@ const ConfirmPayment = () => {
   const [discountAmount, setDiscountAmount] = useState(0);
   const [discountType, setDiscountType] = useState("");
   const [memberPoints, setMemberPoints] = useState(0); // 'promotion' or 'points'
+  const [useMembershipDiscount, setUseMembershipDiscount] = useState(true);
 
   const [isConfirming, setIsConfirming] = useState(false);
   const dispatch = useDispatch();
@@ -77,11 +78,14 @@ const ConfirmPayment = () => {
         )
       : 0;
 
-  // Initialize prices - SEPARATE SEAT AND PRODUCT
+
   useEffect(() => {
+    // console.log("Final total price from Redux:", finalTotalPrice);
+    // console.log("Product total calculated:", productTotal);
+    // console.log("USER DISCOUNT", userDiscount);
+
     // Tách giá ghế và product
-    const calculatedSeatPrice =
-      ((finalTotalPrice - productTotal) * (100 - userDiscount)) / 100;
+    const calculatedSeatPrice = (finalTotalPrice - productTotal) * (100 - userDiscount) / 100;
     const calculatedProductPrice = productTotal;
     const priceAfterMembership = calculatedSeatPrice + calculatedProductPrice;
 
@@ -484,15 +488,16 @@ const ConfirmPayment = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-slate-900 text-white relative">
+    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 via-50% via-purple-950/50 to-slate-900 text-white relative">
       <FadeInWrapper delay={600}>
         <BackButton
           className="absolute top-28 left-14 z-10"
           onClick={() => {
-            window.scrollTo({ top: 0, behavior: "instant" });
+            window.scrollTo({ top: 0, behavior: 'instant' });
             navigate(-1);
           }}
         />
+
       </FadeInWrapper>
       <ToastContainer
         position="top-center mt-20 "

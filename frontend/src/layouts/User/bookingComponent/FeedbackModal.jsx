@@ -34,7 +34,7 @@ const FeedbackModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4 animate-in fade-in duration-300">
-      <div className="bg-gradient-to-br from-[#1a005f] via-[#3f2b96] to-[#000c2d] rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-6 lg:p-8 w-full max-w-sm sm:max-w-md relative transform transition-all duration-300 animate-in slide-in-from-bottom-4 scale-in-95 border border-white/10 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+      <div className="bg-gradient-to-b from-black via-gray-900 via-50% via-purple-950/50 to-slate-900 rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-6 lg:p-8 w-full max-w-sm sm:max-w-md relative transform transition-all duration-300 animate-in slide-in-from-bottom-4 scale-in-95 border border-white/10 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
         <button
           className="absolute top-3 right-3 sm:top-4 sm:right-4 text-white/60 hover:text-red-400 hover:bg-white/10 rounded-full p-2 transition-all duration-200 hover:scale-110 z-10"
           onClick={handleClose}
