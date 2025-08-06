@@ -183,6 +183,18 @@ class CinemaRoom {
         "UPDATE CinemaRooms SET Name = ?, `Row` = ?, `Col` = ?, SeatQuantity = ?, Type = ?, UpdatedAt = ?, UpdatedBy = ? WHERE CinemaRoomId = ? AND IsDeleted = 0",
         [Name, Row, Col, SeatQuantity, Type, now, UpdatedBy, id]
       );
+
+    // Nếu có thay đổi cấu trúc phòng thì xóa cứng ghế cũ và tạo lại ghế mới
+    if (Row && Col && SeatQuantity) {
+      // Xóa cứng toàn bộ ghế cũ
+      await db.promise().query(
+        "DELETE FROM Seats WHERE CinemaRoomId = ?",
+        [id]
+      );
+      // Tạo lại ghế mới
+      await this.generateSeatsForRoom(db, id, Row, Col, SeatQuantity, UpdatedBy);
+    }
+
     return result.affectedRows > 0;
   }
 
