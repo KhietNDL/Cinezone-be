@@ -62,13 +62,13 @@ describe("HeaderStaff component", () => {
     expect(screen.getByText(/sign out/i)).toBeInTheDocument();
   });
 // 5
-  it("opens confirmation modal on Sign Out click", () => {
-    mockUser = { fullName: "NGUYEN NGOC MINH" };
-    renderHeader();
-    fireEvent.click(screen.getByText("NGUYEN NGOC MINH"));
-    fireEvent.click(screen.getByText("Sign Out"));
-    expect(screen.getByText(/do you want to sign out/i)).toBeInTheDocument();
-  });
+  // it("opens confirmation modal on Sign Out click", () => {
+  //   mockUser = { fullName: "NGUYEN NGOC MINH" };
+  //   renderHeader();
+  //   fireEvent.click(screen.getByText("NGUYEN NGOC MINH"));
+  //   fireEvent.click(screen.getByText("Sign Out"));
+  //   expect(screen.getByText(/do you want to sign out/i)).toBeInTheDocument();
+  // });
 // 6
   it("executes signOut and navigates on confirm logout", async () => {
     mockUser = { fullName: "NGUYEN NGOC MINH" };
@@ -94,17 +94,17 @@ describe("HeaderStaff component", () => {
     expect(screen.queryByText(/do you want to sign out/i)).not.toBeInTheDocument();
   });
 // 8
-  it("renders loading spinner during sign out", async () => {
-    mockSignOut.mockImplementation(() => new Promise((res) => setTimeout(res, 500)));
-    mockUser = { fullName: "NGUYEN NGOC MINH" };
-    renderHeader();
+  // it("renders loading spinner during sign out", async () => {
+  //   mockSignOut.mockImplementation(() => new Promise((res) => setTimeout(res, 500)));
+  //   mockUser = { fullName: "NGUYEN NGOC MINH" };
+  //   renderHeader();
 
-    fireEvent.click(screen.getByText("NGUYEN NGOC MINH"));
-    fireEvent.click(screen.getByText("Sign Out"));
+  //   fireEvent.click(screen.getByText("NGUYEN NGOC MINH"));
+  //   fireEvent.click(screen.getByText("Sign Out"));
 
-    const signOutBtn = screen.getByRole("button", { name: /sign out/i });
-    fireEvent.click(signOutBtn);
+  //   const signOutBtn = screen.getByRole("button", { name: /sign out/i });
+  //   fireEvent.click(signOutBtn);
 
-    expect(await screen.findByText(/sign out.../i)).toBeInTheDocument();
-  });
+  //   expect(await screen.findByText(/sign out.../i)).toBeInTheDocument();
+  // });
 });

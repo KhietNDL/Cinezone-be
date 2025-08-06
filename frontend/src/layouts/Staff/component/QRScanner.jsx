@@ -120,7 +120,7 @@ const QRScanner = ({ onScanSuccess }) => {
                 </Upload>
             </div>
 
-            <div id="qr-reader" className="w-full min-h-[300px]"></div>
+            <div id="qr-reader" data-testid="qr-reader" className="w-full min-h-[300px]"></div>
         </div>
     );
 };

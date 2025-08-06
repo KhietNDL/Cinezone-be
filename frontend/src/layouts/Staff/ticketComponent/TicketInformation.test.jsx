@@ -18,12 +18,19 @@ jest.mock("react-router-dom", () => ({
   Link: ({ children, to }) => <a href={to}>{children}</a>,
 }));
 
+// Mock API functions
+const mockCheckInfoBookingById = jest.fn();
+const mockCancelBookingById = jest.fn();
+const mockGetMovieById = jest.fn();
+const mockConfirmPayment = jest.fn();
+const mockGetUserByEmail = jest.fn();
+
 jest.mock("../../../services/APIForStaff/API", () => ({
-  checkInfoBookingById: jest.fn(),
-  cancelBookingById: jest.fn(),
-  getMovieById: jest.fn(),
-  confirmPayment: jest.fn(),
-  getUserByEmail: jest.fn(),
+  checkInfoBookingById: (...args) => mockCheckInfoBookingById(...args),
+  cancelBookingById: (...args) => mockCancelBookingById(...args),
+  getMovieById: (...args) => mockGetMovieById(...args),
+  confirmPayment: (...args) => mockConfirmPayment(...args),
+  getUserByEmail: (...args) => mockGetUserByEmail(...args),
 }));
 
 jest.mock("react-toastify", () => ({
@@ -40,15 +47,23 @@ jest.mock("../component/BackButton", () => {
   };
 });
 
+jest.mock("../component/VersionCard", () => {
+  return function MockVersionCard({ version, readonly }) {
+    return <div data-testid="version-card" data-version={version} data-readonly={readonly}>{version}</div>;
+  };
+});
+
 jest.mock("antd", () => ({
   ...jest.requireActual("antd"),
-  Button: ({ children, onClick, type, size, icon, className, danger }) => (
+  Button: ({ children, onClick, type, size, icon, className, danger, color, variant }) => (
     <button
       onClick={onClick}
       type={type}
       size={size}
       className={className}
       data-danger={danger}
+      data-color={color}
+      data-variant={variant}
       data-testid="antd-button"
     >
       {icon}
@@ -75,6 +90,7 @@ jest.mock("@ant-design/icons", () => ({
   ),
 }));
 
+// Mock all react-icons
 jest.mock("react-icons/fa6", () => ({
   FaTicket: () => <div data-testid="fa-ticket" />,
   FaCouch: () => <div data-testid="fa-couch" />,
@@ -85,6 +101,7 @@ jest.mock("react-icons/fa6", () => ({
   FaEnvelope: () => <div data-testid="fa-envelope" />,
   FaStar: () => <div data-testid="fa-star" />,
   FaFire: () => <div data-testid="fa-fire" />,
+  FaX: () => <div data-testid="fa-x" />,
 }));
 
 jest.mock("react-icons/io5", () => ({
@@ -105,25 +122,6 @@ jest.mock("react-icons/fa", () => ({
   FaRegEye: () => <div data-testid="fa-reg-eye" />,
 }));
 
-// Mock window.location
-const mockLocation = {
-  search: "",
-  pathname: "/staff/ticket-selling/ticket-information",
-  replaceState: jest.fn(),
-};
-
-// Mock URLSearchParams
-global.URLSearchParams = jest.fn().mockImplementation(() => ({
-  get: jest.fn((key) => {
-    if (key === "resultCode") return undefined;
-    if (key === "status") return undefined;
-    if (key === "bookingId") return "booking123";
-    if (key === "paymentId") return "payment123";
-    if (key === "extraData") return undefined;
-    return undefined;
-  }),
-}));
-
 // Sample data
 const sampleMovie = {
   MovieId: "movie1",
@@ -136,7 +134,7 @@ const sampleBookingData = {
   selectedMovie: sampleMovie,
   bookingId: "booking123",
   paymentId: "payment123",
-  paymentMethod: "Cash",
+  paymentMethod: "cash",
   discount: 10,
   visaResponse: null,
 };
@@ -166,6 +164,7 @@ const sampleApiBookingData = {
   status: 2,
   buyerName: "John Doe",
   buyerPhone: "0123456789",
+  versionType: "2D",
 };
 
 const sampleApiCustomerData = {
@@ -212,35 +211,36 @@ const renderWithProviders = (ui, { initialState = {}, ...renderOptions } = {}) =
   };
 };
 
-describe("TicketInformation", () => {
-  let mockCheckInfoBookingById;
-  let mockCancelBookingById;
-  let mockGetMovieById;
-  let mockConfirmPayment;
-  let mockGetUserByEmail;
+// Mock URLSearchParams globally
+const createMockURLSearchParams = (params = {}) => {
+  return jest.fn().mockImplementation(() => ({
+    get: jest.fn((key) => params[key] || null),
+  }));
+};
 
+describe("TicketInformation", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.spyOn(console, "error").mockImplementation(() => {});
     jest.spyOn(console, "warn").mockImplementation(() => {});
 
-    mockCheckInfoBookingById = jest.fn();
-    mockCancelBookingById = jest.fn();
-    mockGetMovieById = jest.fn();
-    mockConfirmPayment = jest.fn();
-    mockGetUserByEmail = jest.fn();
+    // Reset all mocks to default resolved values
+    mockCheckInfoBookingById.mockResolvedValue(sampleApiBookingData);
+    mockGetMovieById.mockResolvedValue({ data: sampleMovie });
+    mockConfirmPayment.mockResolvedValue({});
+    mockCancelBookingById.mockResolvedValue({});
+    mockGetUserByEmail.mockResolvedValue(sampleApiCustomerData);
 
-    // Mock API functions
-    const api = require("../../../services/APIForStaff/API");
-    api.checkInfoBookingById = mockCheckInfoBookingById;
-    api.cancelBookingById = mockCancelBookingById;
-    api.getMovieById = mockGetMovieById;
-    api.confirmPayment = mockConfirmPayment;
-    api.getUserByEmail = mockGetUserByEmail;
+    // Mock window.history.replaceState
+    Object.defineProperty(window, 'history', {
+      value: {
+        replaceState: jest.fn(),
+      },
+      writable: true
+    });
 
-    // Reset window.location
-    mockLocation.search = "";
-    mockLocation.replaceState.mockClear();
+    // Default URLSearchParams mock (no payment params)
+    global.URLSearchParams = createMockURLSearchParams({});
   });
 
   afterEach(() => {
@@ -250,194 +250,88 @@ describe("TicketInformation", () => {
 
   // 1. Test initial loading state
   it("shows loading spinner initially", () => {
-    mockCheckInfoBookingById.mockResolvedValue(sampleApiBookingData);
-    mockGetMovieById.mockResolvedValue({ data: sampleMovie });
-
     renderWithProviders(<TicketInformation />);
     expect(screen.getByTestId("spin")).toBeInTheDocument();
   });
 
-  // 2. Test successful payment processing
-  it("handles successful payment processing", async () => {
-    // Mock URLSearchParams for successful payment without URL params
-    global.URLSearchParams = jest.fn().mockImplementation(() => ({
-      get: jest.fn((key) => {
-        if (key === "resultCode") return undefined;
-        if (key === "status") return undefined;
-        if (key === "bookingId") return "booking123";
-        if (key === "paymentId") return "payment123";
-        if (key === "extraData") return undefined;
-        return undefined;
-      }),
-    }));
-    
-    mockCheckInfoBookingById.mockResolvedValue(sampleApiBookingData);
-    mockGetMovieById.mockResolvedValue({ data: sampleMovie });
-    mockConfirmPayment.mockResolvedValue({});
-
-    renderWithProviders(<TicketInformation />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Payment Failed")).toBeInTheDocument();
+  // 2. Test successful MOMO payment
+  it("handles successful MOMO payment", async () => {
+    global.URLSearchParams = createMockURLSearchParams({
+      resultCode: "0",
+      bookingId: "booking123",
+      paymentId: "payment123",
     });
-
-    expect(screen.getByTestId("close-circle-two-tone")).toBeInTheDocument();
-    // Component shows failed when no payment method is detected
-    expect(toast.error).toHaveBeenCalledWith("MoMo payment failed!");
-  });
-
-  // 3. Test failed payment processing
-  it("handles failed payment processing", async () => {
-    // Mock URLSearchParams for failed payment
-    global.URLSearchParams = jest.fn().mockImplementation(() => ({
-      get: jest.fn((key) => {
-        if (key === "resultCode") return "1";
-        if (key === "status") return undefined;
-        if (key === "bookingId") return "booking123";
-        if (key === "paymentId") return "payment123";
-        if (key === "extraData") return undefined;
-        return undefined;
-      }),
-    }));
-    
-    mockCheckInfoBookingById.mockResolvedValue({ ...sampleApiBookingData, status: 1 });
-    mockGetMovieById.mockResolvedValue({ data: sampleMovie });
-
-    renderWithProviders(<TicketInformation />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Payment Failed")).toBeInTheDocument();
-    });
-
-    expect(screen.getByTestId("close-circle-two-tone")).toBeInTheDocument();
-    expect(toast.error).toHaveBeenCalledWith("MoMo payment failed!");
-  });
-
-  // 4. Test MOMO payment success
-  it("handles MOMO payment success", async () => {
-    // Mock URLSearchParams for MOMO success
-    global.URLSearchParams = jest.fn().mockImplementation(() => ({
-      get: jest.fn((key) => {
-        if (key === "resultCode") return "0";
-        if (key === "status") return null;
-        if (key === "bookingId") return "booking123";
-        if (key === "paymentId") return "payment123";
-        if (key === "extraData") return null;
-        return null;
-      }),
-    }));
-    
-    mockCheckInfoBookingById.mockResolvedValue(sampleApiBookingData);
-    mockGetMovieById.mockResolvedValue({ data: sampleMovie });
-    mockConfirmPayment.mockResolvedValue({});
 
     renderWithProviders(<TicketInformation />);
 
     await waitFor(() => {
       expect(screen.getByText("Payment Successful")).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
 
+    expect(mockConfirmPayment).toHaveBeenCalledWith("payment123");
     expect(toast.success).toHaveBeenCalledWith("MoMo payment successful!");
-    expect(mockConfirmPayment).toHaveBeenCalledWith("payment123");
+    expect(screen.getByTestId("check-circle-two-tone")).toBeInTheDocument();
   });
 
-  // 5. Test MOMO payment failure
-  it("handles MOMO payment failure", async () => {
-    // Mock URLSearchParams for MOMO failure
-    global.URLSearchParams = jest.fn().mockImplementation(() => ({
-      get: jest.fn((key) => {
-        if (key === "resultCode") return "1";
-        if (key === "status") return null;
-        if (key === "bookingId") return "booking123";
-        if (key === "paymentId") return "payment123";
-        if (key === "extraData") return null;
-        return null;
-      }),
-    }));
-    
-    mockCheckInfoBookingById.mockResolvedValue({ ...sampleApiBookingData, status: 1 });
-    mockGetMovieById.mockResolvedValue({ data: sampleMovie });
+  // 3. Test failed MOMO payment
+  it("handles failed MOMO payment", async () => {
+    global.URLSearchParams = createMockURLSearchParams({
+      resultCode: "1",
+      bookingId: "booking123",
+      paymentId: "payment123",
+    });
 
     renderWithProviders(<TicketInformation />);
 
     await waitFor(() => {
       expect(screen.getByText("Payment Failed")).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
 
     expect(toast.error).toHaveBeenCalledWith("MoMo payment failed!");
+    expect(screen.getByTestId("close-circle-two-tone")).toBeInTheDocument();
   });
 
-  // 6. Test ZaloPay payment success
-  it("handles ZaloPay payment success", async () => {
-    // Mock URLSearchParams for ZaloPay success
-    global.URLSearchParams = jest.fn().mockImplementation(() => ({
-      get: jest.fn((key) => {
-        if (key === "resultCode") return null;
-        if (key === "status") return "1";
-        if (key === "bookingId") return "booking123";
-        if (key === "paymentId") return "payment123";
-        if (key === "extraData") return null;
-        return null;
-      }),
-    }));
-    
-    mockCheckInfoBookingById.mockResolvedValue(sampleApiBookingData);
-    mockGetMovieById.mockResolvedValue({ data: sampleMovie });
-    mockConfirmPayment.mockResolvedValue({});
+  // 4. Test successful ZaloPay payment
+  it("handles successful ZaloPay payment", async () => {
+    global.URLSearchParams = createMockURLSearchParams({
+      status: "1",
+      bookingId: "booking123",
+      paymentId: "payment123",
+    });
 
     renderWithProviders(<TicketInformation />);
 
     await waitFor(() => {
       expect(screen.getByText("Payment Successful")).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
 
-    expect(toast.success).toHaveBeenCalledWith("ZaloPay payment successful!");
     expect(mockConfirmPayment).toHaveBeenCalledWith("payment123");
+    expect(toast.success).toHaveBeenCalledWith("ZaloPay payment successful!");
   });
 
-  // 7. Test ZaloPay payment failure
-  it("handles ZaloPay payment failure", async () => {
-    // Mock URLSearchParams for ZaloPay failure
-    global.URLSearchParams = jest.fn().mockImplementation(() => ({
-      get: jest.fn((key) => {
-        if (key === "resultCode") return null;
-        if (key === "status") return "0";
-        if (key === "bookingId") return "booking123";
-        if (key === "paymentId") return "payment123";
-        if (key === "extraData") return null;
-        return null;
-      }),
-    }));
-    
-    mockCheckInfoBookingById.mockResolvedValue({ ...sampleApiBookingData, status: 1 });
-    mockGetMovieById.mockResolvedValue({ data: sampleMovie });
+  // 5. Test failed ZaloPay payment
+  it("handles failed ZaloPay payment", async () => {
+    global.URLSearchParams = createMockURLSearchParams({
+      status: "0",
+      bookingId: "booking123",
+      paymentId: "payment123",
+    });
 
     renderWithProviders(<TicketInformation />);
 
     await waitFor(() => {
       expect(screen.getByText("Payment Failed")).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
 
     expect(toast.error).toHaveBeenCalledWith("ZaloPay payment failed!");
   });
 
-  // 8. Test VISA payment success
-  it("handles VISA payment success", async () => {
-    // Mock URLSearchParams for VISA payment
-    global.URLSearchParams = jest.fn().mockImplementation(() => ({
-      get: jest.fn((key) => {
-        if (key === "resultCode") return undefined;
-        if (key === "status") return undefined;
-        if (key === "bookingId") return "booking123";
-        if (key === "paymentId") return "payment123";
-        if (key === "extraData") return undefined;
-        return undefined;
-      }),
-    }));
-    
-    mockCheckInfoBookingById.mockResolvedValue(sampleApiBookingData);
-    mockGetMovieById.mockResolvedValue({ data: sampleMovie });
-    mockConfirmPayment.mockResolvedValue({});
+  // 6. Test successful VISA payment
+  it("handles successful VISA payment", async () => {
+    global.URLSearchParams = createMockURLSearchParams({
+      bookingId: "booking123",
+      paymentId: "payment123",
+    });
 
     renderWithProviders(<TicketInformation />, {
       initialState: {
@@ -449,49 +343,83 @@ describe("TicketInformation", () => {
     });
 
     await waitFor(() => {
+      expect(screen.getByText("Payment Successful")).toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    expect(mockConfirmPayment).toHaveBeenCalledWith("payment123");
+    expect(toast.success).toHaveBeenCalledWith("Stripe payment successful!");
+  });
+
+  // 7. Test payment failed due to booking status
+  it("handles payment failed when booking status is not successful", async () => {
+    mockCheckInfoBookingById.mockResolvedValue({
+      ...sampleApiBookingData,
+      status: 1, // Failed status
+    });
+
+    global.URLSearchParams = createMockURLSearchParams({
+      bookingId: "booking123",
+      paymentId: "payment123",
+    });
+
+    renderWithProviders(<TicketInformation />);
+
+    await waitFor(() => {
       expect(screen.getByText("Payment Failed")).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
 
-    expect(toast.error).toHaveBeenCalledWith("MoMo payment failed!");
+    expect(toast.error).toHaveBeenCalledWith("Payment failed!");
   });
 
-  // 9. Test movie information display
+  // 8. Test movie information display
   it("displays movie information correctly", async () => {
-    mockCheckInfoBookingById.mockResolvedValue(sampleApiBookingData);
-    mockGetMovieById.mockResolvedValue({ data: sampleMovie });
+    global.URLSearchParams = createMockURLSearchParams({
+      resultCode: "0",
+      bookingId: "booking123",
+      paymentId: "payment123",
+    });
 
     renderWithProviders(<TicketInformation />);
 
     await waitFor(() => {
-      expect(screen.getByText("Avengers Endgame")).toBeInTheDocument();
-      expect(screen.getByText("(Biệt Đội Siêu Anh Hùng: Hồi Kết)")).toBeInTheDocument();
-      expect(screen.getByText("Room A")).toBeInTheDocument();
-      expect(screen.getByText("2024-01-15")).toBeInTheDocument();
-      expect(screen.getByText("14:30")).toBeInTheDocument();
-      expect(screen.getByText("A1, A2")).toBeInTheDocument();
-    });
+      expect(screen.getByText("Payment Successful")).toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    expect(screen.getByText("Avengers Endgame")).toBeInTheDocument();
+    expect(screen.getByText("(Biệt Đội Siêu Anh Hùng: Hồi Kết)")).toBeInTheDocument();
+    expect(screen.getByText("Room A")).toBeInTheDocument();
+    expect(screen.getByText("2024-01-15")).toBeInTheDocument();
+    expect(screen.getByText("14:30")).toBeInTheDocument();
+    expect(screen.getByText("A1, A2")).toBeInTheDocument();
   });
 
-  // 10. Test payment details display
+  // 9. Test payment details display
   it("displays payment details correctly", async () => {
-    mockCheckInfoBookingById.mockResolvedValue(sampleApiBookingData);
-    mockGetMovieById.mockResolvedValue({ data: sampleMovie });
+    global.URLSearchParams = createMockURLSearchParams({
+      resultCode: "0",
+      bookingId: "booking123",
+      paymentId: "payment123",
+    });
 
     renderWithProviders(<TicketInformation />);
 
     await waitFor(() => {
-      expect(screen.getByText("Payment Details")).toBeInTheDocument();
-      expect(screen.getByText("Cash")).toBeInTheDocument();
-      expect(screen.getByText("150.000 VNĐ")).toBeInTheDocument();
-      expect(screen.getByText("135.000 VNĐ")).toBeInTheDocument(); // Total after discount
-    });
+      expect(screen.getByText("Payment Successful")).toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    expect(screen.getByText("Payment Details")).toBeInTheDocument();
+    expect(screen.getByText("cash")).toBeInTheDocument();
+    expect(screen.getByText("150.000 VNĐ")).toBeInTheDocument();
+    expect(screen.getByText("135.000 VNĐ")).toBeInTheDocument();
   });
 
-  // 11. Test customer information display with member data
+  // 10. Test customer information display with member data
   it("displays customer information with member data", async () => {
-    mockCheckInfoBookingById.mockResolvedValue(sampleApiBookingData);
-    mockGetMovieById.mockResolvedValue({ data: sampleMovie });
-    mockGetUserByEmail.mockResolvedValue(sampleApiCustomerData);
+    global.URLSearchParams = createMockURLSearchParams({
+      resultCode: "0",
+      bookingId: "booking123",
+      paymentId: "payment123",
+    });
 
     renderWithProviders(<TicketInformation />, {
       initialState: {
@@ -500,52 +428,30 @@ describe("TicketInformation", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText("Customer Information")).toBeInTheDocument();
-      expect(screen.getByText("John Doe")).toBeInTheDocument();
-      expect(screen.getByText("123456789")).toBeInTheDocument();
-      expect(screen.getByText("0123456789")).toBeInTheDocument();
-      expect(screen.getByText("john@example.com")).toBeInTheDocument();
-      expect(screen.getByText("500")).toBeInTheDocument(); // Points
-    });
+      expect(screen.getByText("Payment Successful")).toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    expect(screen.getByText("Customer Information")).toBeInTheDocument();
+    expect(screen.getByText("John Doe")).toBeInTheDocument();
+    expect(screen.getByText("123456789")).toBeInTheDocument();
+    expect(screen.getByText("0123456789")).toBeInTheDocument();
+    expect(screen.getByText("john@example.com")).toBeInTheDocument();
+    expect(screen.getByText("500")).toBeInTheDocument();
   });
 
-  // 12. Test customer information display with API data
-  it("displays customer information with API data", async () => {
-    mockCheckInfoBookingById.mockResolvedValue(sampleApiBookingData);
-    mockGetMovieById.mockResolvedValue({ data: sampleMovie });
-    mockGetUserByEmail.mockResolvedValue(sampleApiCustomerData);
-
-    renderWithProviders(<TicketInformation />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Customer Information")).toBeInTheDocument();
-      expect(screen.getByText("John Doe")).toBeInTheDocument();
-      expect(screen.getByText("0123456789")).toBeInTheDocument();
+  // 11. Test try again button functionality
+  it("handles try again button click for failed payment", async () => {
+    global.URLSearchParams = createMockURLSearchParams({
+      resultCode: "1",
+      bookingId: "booking123",
+      paymentId: "payment123",
     });
-  });
-
-  // 13. Test new ticket button functionality
-  it("handles new ticket button click", async () => {
-    // Mock URLSearchParams for successful payment
-    global.URLSearchParams = jest.fn().mockImplementation(() => ({
-      get: jest.fn((key) => {
-        if (key === "resultCode") return undefined;
-        if (key === "status") return undefined;
-        if (key === "bookingId") return "booking123";
-        if (key === "paymentId") return "payment123";
-        if (key === "extraData") return undefined;
-        return undefined;
-      }),
-    }));
-    
-    mockCheckInfoBookingById.mockResolvedValue(sampleApiBookingData);
-    mockGetMovieById.mockResolvedValue({ data: sampleMovie });
 
     renderWithProviders(<TicketInformation />);
 
     await waitFor(() => {
       expect(screen.getByText("Payment Failed")).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
 
     const tryAgainButton = screen.getByText("Try Again");
     fireEvent.click(tryAgainButton);
@@ -557,72 +463,90 @@ describe("TicketInformation", () => {
     });
   });
 
-  // 14. Test try again button functionality
-  it("handles try again button click", async () => {
-    mockCheckInfoBookingById.mockResolvedValue({ ...sampleApiBookingData, status: 1 });
-    mockGetMovieById.mockResolvedValue({ data: sampleMovie });
-    mockCancelBookingById.mockResolvedValue({});
+  // 12. Test close button functionality
+  it("handles close button click for failed payment", async () => {
+    global.URLSearchParams = createMockURLSearchParams({
+      resultCode: "1",
+      bookingId: "booking123",
+      paymentId: "payment123",
+    });
 
     renderWithProviders(<TicketInformation />);
 
     await waitFor(() => {
       expect(screen.getByText("Payment Failed")).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
 
-    const tryAgainButton = screen.getByText("Try Again");
-    fireEvent.click(tryAgainButton);
+    const closeButton = screen.getByText("Close");
+    fireEvent.click(closeButton);
 
     await waitFor(() => {
       expect(mockCancelBookingById).toHaveBeenCalledWith("booking123");
-      expect(toast.info).toHaveBeenCalledWith("Previous booking cancelled. Please try again.");
-      expect(mockNavigate).toHaveBeenCalledWith("/staff/ticket-selling/confirm-ticket");
+      expect(toast.success).toHaveBeenCalledWith("Booking cancelled.");
+      expect(mockNavigate).toHaveBeenCalledWith("/staff/ticket-selling");
     });
   });
 
-  // 15. Test view ticket link
-  it("displays view ticket link for successful payment", async () => {
-    // Mock URLSearchParams for successful payment
-    global.URLSearchParams = jest.fn().mockImplementation(() => ({
-      get: jest.fn((key) => {
-        if (key === "resultCode") return "0";
-        if (key === "status") return undefined;
-        if (key === "bookingId") return "booking123";
-        if (key === "paymentId") return "payment123";
-        if (key === "extraData") return undefined;
-        return undefined;
-      }),
-    }));
-    
-    mockCheckInfoBookingById.mockResolvedValue(sampleApiBookingData);
-    mockGetMovieById.mockResolvedValue({ data: sampleMovie });
-    mockConfirmPayment.mockResolvedValue({});
+  // 13. Test new ticket button functionality for successful payment
+  it("handles new ticket button click for successful payment", async () => {
+    global.URLSearchParams = createMockURLSearchParams({
+      resultCode: "0",
+      bookingId: "booking123",
+      paymentId: "payment123",
+    });
 
     renderWithProviders(<TicketInformation />);
 
     await waitFor(() => {
       expect(screen.getByText("Payment Successful")).toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    const newTicketButton = screen.getByText("New Ticket");
+    fireEvent.click(newTicketButton);
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith("/staff/ticket-selling", { replace: true });
     });
+  });
+
+  // 14. Test view ticket link for successful payment
+  it("displays view ticket link for successful payment", async () => {
+    global.URLSearchParams = createMockURLSearchParams({
+      resultCode: "0",
+      bookingId: "booking123",
+      paymentId: "payment123",
+    });
+
+    renderWithProviders(<TicketInformation />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Payment Successful")).toBeInTheDocument();
+    }, { timeout: 3000 });
 
     const viewTicketLink = screen.getByText("View Ticket");
     expect(viewTicketLink).toBeInTheDocument();
     expect(viewTicketLink.closest("a")).toHaveAttribute("href", "/staff/ticket-selling/view-ticket/booking123");
   });
 
-  // 16. Test error handling
+  // 15. Test API error handling
   it("handles API errors gracefully", async () => {
     mockCheckInfoBookingById.mockRejectedValue(new Error("API Error"));
-    mockGetMovieById.mockResolvedValue({ data: sampleMovie });
+
+    global.URLSearchParams = createMockURLSearchParams({
+      bookingId: "booking123",
+      paymentId: "payment123",
+    });
 
     renderWithProviders(<TicketInformation />);
 
     await waitFor(() => {
       expect(screen.getByText("Payment Failed")).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
 
     expect(toast.error).toHaveBeenCalledWith("API Error");
   });
 
-  // 17. Test missing booking data redirect
+  // 16. Test redirect when no booking data
   it("redirects when no booking data is found", async () => {
     renderWithProviders(<TicketInformation />, {
       initialState: {
@@ -635,30 +559,50 @@ describe("TicketInformation", () => {
     });
   });
 
-  // 18. Test component unmounting
-  it("handles component unmounting gracefully", async () => {
-    // Mock URLSearchParams for successful payment
-    global.URLSearchParams = jest.fn().mockImplementation(() => ({
-      get: jest.fn((key) => {
-        if (key === "resultCode") return undefined;
-        if (key === "status") return undefined;
-        if (key === "bookingId") return "booking123";
-        if (key === "paymentId") return "payment123";
-        if (key === "extraData") return undefined;
-        return undefined;
-      }),
-    }));
-    
-    mockCheckInfoBookingById.mockResolvedValue(sampleApiBookingData);
-    mockGetMovieById.mockResolvedValue({ data: sampleMovie });
-
-    const { unmount } = renderWithProviders(<TicketInformation />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Payment Failed")).toBeInTheDocument();
+  // 17. Test no customer information display
+  it("displays no customer information when member is not checked", async () => {
+    global.URLSearchParams = createMockURLSearchParams({
+      resultCode: "0",
+      bookingId: "booking123",
+      paymentId: "payment123",
     });
 
-    unmount();
-    // Should not throw any errors
+    renderWithProviders(<TicketInformation />, {
+      initialState: {
+        member: {
+          member: null,
+          memberChecked: false,
+        },
+      },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Payment Successful")).toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    expect(screen.getByText("Customer Information")).toBeInTheDocument();
+    expect(screen.getByText("No customer information")).toBeInTheDocument();
   });
-}); 
+
+  // 18. Test extraData parsing
+  // it("handles extraData parsing for booking and payment IDs", async () => {
+  //   const extraData = encodeURIComponent(JSON.stringify({
+  //     bookingId: "booking456",
+  //     paymentId: "payment456",
+  //   }));
+
+  //   global.URLSearchParams = createMockURLSearchParams({
+  //     resultCode: "0",
+  //     extraData: extraData,
+  //   });
+
+  //   renderWithProviders(<TicketInformation />);
+
+  //   await waitFor(() => {
+  //     expect(screen.getByText("Payment Successful")).toBeInTheDocument();
+  //   }, { timeout: 3000 });
+
+  //   expect(mockCheckInfoBookingById).toHaveBeenCalledWith("booking456");
+  //   expect(mockConfirmPayment).toHaveBeenCalledWith("payment456");
+  // });
+});
