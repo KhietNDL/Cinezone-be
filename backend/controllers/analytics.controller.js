@@ -70,12 +70,13 @@ exports.getRevenueThisWeek = async (req, res) => {
 };
 
 exports.getRevenueThisQuarter = async (req, res) => {
-    try {
-        const total = await Analytics.getRevenueThisQuarter();
-        res.json({ total });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
+  try {
+    const year = req.query.year ? Number(req.query.year) : null;
+    const quarterData = await Analytics.getRevenueThisQuarter(year);
+    res.json(quarterData);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
 
 exports.getUserAgeGroups = async (req, res) => {
