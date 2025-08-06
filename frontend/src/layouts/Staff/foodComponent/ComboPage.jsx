@@ -9,7 +9,8 @@ import { PiPopcornDuotone } from "react-icons/pi";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination } from "swiper/modules";
 import { getAllProduct } from "../../../services/APIForStaff/API";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import {
@@ -33,6 +34,7 @@ export default function ComboPage() {
   };
 
   const fetchProducts = async () => {
+    setLoading(true);
     try {
       const response = await getAllProduct();
       if (response && response.products) {
@@ -60,6 +62,10 @@ export default function ComboPage() {
 
   // Thêm combo vào cart
   const handleAddCombo = (combo) => {
+    if (combo.quantity <= 0) {
+      toast.warning("This product is currently unavailable");
+      return;
+    }
     const found = cart.find((item) => item.id === combo.id);
     let newCart;
     if (found) {
@@ -101,6 +107,7 @@ export default function ComboPage() {
       toast.warning("Your cart is empty");
       return;
     }
+    // toast.success("Proceeding to checkout");
     navigate("/staff/combo-selling/checkout");
   };
 
@@ -200,7 +207,6 @@ export default function ComboPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <ToastContainer position="top-right" autoClose={3000} />
 
       {/* Header Section */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 bg-white shadow-md rounded-lg mb-6">

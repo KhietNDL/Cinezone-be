@@ -18,6 +18,7 @@ import {
   FaEnvelope,
   FaStar,
   FaFire,
+  FaX,
 } from "react-icons/fa6";
 import { IoReloadOutline, IoTicketSharp, IoTime } from "react-icons/io5";
 import {
@@ -196,7 +197,7 @@ const TicketInformation = () => {
       if (resultCode !== null) {
         if (resultCode === "0") {
           if (paymentId) await confirmPayment(paymentId);
-          console.log("Payment Id:", paymentId);
+
           status = "succeeded";
           toast.success("MoMo payment successful!");
         } else {
@@ -225,7 +226,7 @@ const TicketInformation = () => {
           }
         }
         status = "succeeded";
-        toast.success("Payment successful!");
+        toast.success("Stripe payment successful!");
       } else if (res?.status === 2) {
         status = "succeeded";
       } else {
@@ -243,9 +244,9 @@ const TicketInformation = () => {
 
       window.history.replaceState({}, document.title, window.location.pathname);
       // Fetch thêm thông tin khách hàng
-      if (memberData?.member?.email) {
+      if (memberData?.member?.email && memberData.memberChecked === true) {
         const customerData = await getUserByEmail(memberData?.member?.email);
-        console.log("Customer Data:", customerData);
+
         setApiCustomerData(customerData);
       }
     } catch (error) {
@@ -292,6 +293,20 @@ const TicketInformation = () => {
       navigate("/staff/ticket-selling/confirm-ticket");
     }
   }, [bookingData, navigate]);
+
+  const handleClose = useCallback(async () => {
+    try {
+      await cancelBookingById(bookingData.bookingId);
+      toast.success("Booking cancelled.");
+    } catch (error) {
+      toast.error("Failed to cancel booking: " + error.message);
+      console.error(error.message);
+    } finally {
+      dispatch(resetBooking());
+      dispatch(resetMember());
+      navigate("/staff/ticket-selling");
+    }
+  }, [bookingData, navigate, dispatch]);
 
   const handleNewTicket = useCallback(() => {
     dispatch(resetBooking());
@@ -432,9 +447,12 @@ const TicketInformation = () => {
                           ● Completed
                         </span>
                       </div>
-                       {/* Version */}
-                       <div className="absolute bottom-3 right-3 text-[10px]">
-                        <VersionCard version={apiBookingData?.versionType} readonly={true}/>
+                      {/* Version */}
+                      <div className="absolute bottom-3 right-3 text-[10px]">
+                        <VersionCard
+                          version={apiBookingData?.versionType}
+                          readonly={true}
+                        />
                       </div>
                     </div>
                   </div>
@@ -618,118 +636,129 @@ const TicketInformation = () => {
               </div>
 
               <div className="p-6">
-                {!memberData?.member &&
-                  !apiCustomerData?.users?.[0] &&
-                  !apiBookingData?.buyerName && (
-                    <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg p-6 border border-gray-200 text-center">
-                      <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                        <FaUser className="text-gray-400 text-xl" />
-                      </div>
-                      <p className="text-gray-500 italic">
-                        No customer information
-                      </p>
+                {!memberData?.member && memberData.memberChecked === false && (
+                  <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg p-6 border border-gray-200 text-center">
+                    <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                      <FaUser className="text-gray-400 text-xl" />
                     </div>
-                  )}
+                    <p className="text-gray-500 italic">
+                      No customer information
+                    </p>
+                  </div>
+                )}
 
                 {(memberData?.member ||
                   apiCustomerData?.users?.[0] ||
-                  apiBookingData?.buyerName) && (
-                  <div className="space-y-3">
-                    {(memberData?.member?.fullName ||
-                      apiCustomerData?.users?.[0]?.FullName ||
-                      apiBookingData?.buyerName) && (
-                      <div className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
-                        <span className="text-gray-600 font-medium flex items-center gap-2">
-                          <FaUser className="text-blue-600" />
-                          Name:
-                        </span>
-                        <span className="font-bold text-gray-900 text-sm text-right">
-                          {apiCustomerData?.users?.[0]?.FullName ||
-                            memberData?.member?.fullName ||
-                            apiBookingData?.buyerName}
-                        </span>
-                      </div>
-                    )}
+                  apiBookingData?.buyerName) &&
+                  memberData.memberChecked === true && (
+                    <div className="space-y-3">
+                      {(memberData?.member?.fullName ||
+                        apiCustomerData?.users?.[0]?.FullName ||
+                        apiBookingData?.buyerName) && (
+                        <div className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+                          <span className="text-gray-600 font-medium flex items-center gap-2">
+                            <FaUser className="text-blue-600" />
+                            Name:
+                          </span>
+                          <span className="font-bold text-gray-900 text-sm text-right">
+                            {apiCustomerData?.users?.[0]?.FullName ||
+                              memberData?.member?.fullName ||
+                              apiBookingData?.buyerName}
+                          </span>
+                        </div>
+                      )}
 
-                    {(memberData?.member?.identityCard ||
-                      apiCustomerData?.users?.[0]?.CCCD) && (
-                      <div className="flex justify-between items-center p-3 bg-gradient-to-r from-emerald-50 to-green-50 rounded-lg border border-emerald-100">
-                        <span className="text-gray-600 font-medium flex items-center gap-2">
-                          <FaIdCard className="text-emerald-600" />
-                          ID:
-                        </span>
-                        <span className="font-bold text-gray-900 text-sm">
-                          {apiCustomerData?.users?.[0]?.CCCD ||
-                            memberData?.member?.identityCard}
-                        </span>
-                      </div>
-                    )}
+                      {(memberData?.member?.identityCard ||
+                        apiCustomerData?.users?.[0]?.CCCD) && (
+                        <div className="flex justify-between items-center p-3 bg-gradient-to-r from-emerald-50 to-green-50 rounded-lg border border-emerald-100">
+                          <span className="text-gray-600 font-medium flex items-center gap-2">
+                            <FaIdCard className="text-emerald-600" />
+                            ID:
+                          </span>
+                          <span className="font-bold text-gray-900 text-sm">
+                            {apiCustomerData?.users?.[0]?.CCCD ||
+                              memberData?.member?.identityCard}
+                          </span>
+                        </div>
+                      )}
 
-                    {(memberData?.member?.phone ||
-                      apiBookingData?.buyerPhone) && (
-                      <div className="flex justify-between items-center p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-100">
-                        <span className="text-gray-600 font-medium flex items-center gap-2">
-                          <FaPhone className="text-purple-600" />
-                          Phone:
-                        </span>
-                        <span className="font-bold text-gray-900 text-sm">
-                          {apiBookingData?.buyerPhone ||
-                            memberData?.member?.phone}
-                        </span>
-                      </div>
-                    )}
+                      {(memberData?.member?.phone ||
+                        apiBookingData?.buyerPhone) && (
+                        <div className="flex justify-between items-center p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-100">
+                          <span className="text-gray-600 font-medium flex items-center gap-2">
+                            <FaPhone className="text-purple-600" />
+                            Phone:
+                          </span>
+                          <span className="font-bold text-gray-900 text-sm">
+                            {apiBookingData?.buyerPhone ||
+                              memberData?.member?.phone}
+                          </span>
+                        </div>
+                      )}
 
-                    {(memberData?.member?.email ||
-                      apiCustomerData?.users?.[0]?.Email) && (
-                      <div className="flex justify-between items-center p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-100">
-                        <span className="text-gray-600 font-medium flex items-center gap-2">
-                          <FaEnvelope className="text-yellow-600" />
-                          Email:
-                        </span>
-                        <span className="font-bold text-gray-900 text-xs text-right break-all">
-                          {apiCustomerData?.users?.[0]?.Email ||
-                            memberData?.member?.email}
-                        </span>
-                      </div>
-                    )}
+                      {(memberData?.member?.email ||
+                        apiCustomerData?.users?.[0]?.Email) && (
+                        <div className="flex justify-between items-center p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-100">
+                          <span className="text-gray-600 font-medium flex items-center gap-2">
+                            <FaEnvelope className="text-yellow-600" />
+                            Email:
+                          </span>
+                          <span className="font-bold text-gray-900 text-xs text-right break-all">
+                            {apiCustomerData?.users?.[0]?.Email ||
+                              memberData?.member?.email}
+                          </span>
+                        </div>
+                      )}
 
-                    {(memberData?.member?.score !== undefined ||
-                      apiCustomerData?.users?.[0]?.ScoreBalance !==
-                        undefined) && (
-                      <div className="flex justify-between items-center p-3 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg border border-orange-100">
-                        <span className="text-gray-600 font-medium flex items-center gap-2">
-                          <FaStar className="text-orange-600" />
-                          Points:
-                        </span>
-                        <span className="font-bold text-green-600 flex items-center gap-1">
-                          <FaFire className="text-orange-500" />
-                          {apiCustomerData?.users?.[0]?.ScoreBalance ||
-                            memberData?.member?.score ||
-                            0}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
+                      {(memberData?.member?.score !== undefined ||
+                        apiCustomerData?.users?.[0]?.ScoreBalance !==
+                          undefined) && (
+                        <div className="flex justify-between items-center p-3 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg border border-orange-100">
+                          <span className="text-gray-600 font-medium flex items-center gap-2">
+                            <FaStar className="text-orange-600" />
+                            Points:
+                          </span>
+                          <span className="font-bold text-green-600 flex items-center gap-1">
+                            <FaFire className="text-orange-500" />
+                            {apiCustomerData?.users?.[0]?.ScoreBalance ||
+                              memberData?.member?.score ||
+                              0}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
               </div>
 
               {/* Action Buttons */}
               <div className="p-6 bg-gradient-to-r from-gray-50 to-slate-50 border-t border-gray-200">
                 <div className="space-y-3">
                   {paymentStatus === "error" ? (
-                    <Button
-                      onClick={handleTryAgain}
-                      className="w-full bg-red-600 hover:bg-red-700 border-red-600 hover:border-red-700 text-white font-medium"
-                      size="large"
-                      icon={status.btnIcon}
-                      danger
-                    >
-                      {status.btn}
-                    </Button>
+                    <>
+                      <Button
+                        onClick={handleTryAgain}
+                        className="w-full font-medium"
+                        size="large"
+                        icon={status.btnIcon}
+                        color="orange"
+                        variant="solid"
+                      >
+                        {status.btn}
+                      </Button>
+                      <Button
+                        onClick={handleClose}
+                        className="w-full font-medium"
+                        size="large"
+                        icon={<FaX />}
+                        danger
+                      >
+                        Close
+                      </Button>
+                    </>
                   ) : (
                     <Button
                       onClick={handleNewTicket}
-                      className="w-full bg-green-600 hover:bg-green-700 border-green-600 hover:border-green-700 text-white font-medium"
+                      className="w-full font-medium"
                       size="large"
                       icon={status.btnIcon}
                       type="primary"
@@ -744,8 +773,9 @@ const TicketInformation = () => {
                       className="block"
                     >
                       <Button
-                        className="w-full bg-purple-600 hover:bg-purple-700 border-purple-600 hover:border-purple-700 text-white font-medium"
-                        type="primary"
+                        className="w-full font-medium"
+                        color="primary"
+                        variant="outlined"
                         size="large"
                         icon={<FaRegEye />}
                       >

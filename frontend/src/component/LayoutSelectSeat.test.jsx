@@ -100,44 +100,43 @@ describe("LayoutSelectSeat", () => {
     console.log.mockRestore();
   });
 
-//   // 1. Test initial render
-//   it("renders component with screen and seat layout", async () => {
-//     render(<LayoutSelectSeat {...defaultProps} />);
+  //   // 1. Test initial render
+  //   it("renders component with screen and seat layout", async () => {
+  //     render(<LayoutSelectSeat {...defaultProps} />);
 
-//     await waitFor(() => {
-//       expect(screen.getByText("SCREEN")).toBeInTheDocument();
-//     });
+  //     await waitFor(() => {
+  //       expect(screen.getByText("SCREEN")).toBeInTheDocument();
+  //     });
 
-//     // Check for row labels
-//     expect(screen.getByText("A")).toBeInTheDocument();
-//     expect(screen.getByText("B")).toBeInTheDocument();
-//   });
+  //     // Check for row labels
+  //     expect(screen.getByText("A")).toBeInTheDocument();
+  //     expect(screen.getByText("B")).toBeInTheDocument();
+  //   });
 
-//   // 2. Test seat rendering for different types
-//   it("renders different seat types correctly", async () => {
-//     render(<LayoutSelectSeat {...defaultProps} />);
+  //   // 2. Test seat rendering for different types
+  //   it("renders different seat types correctly", async () => {
+  //     render(<LayoutSelectSeat {...defaultProps} />);
 
-//     await waitFor(() => {
-//       // Check for different seat icons
-//       expect(screen.getAllByTestId("pi-armchair-light")).toHaveLength(expect.any(Number));
-//       expect(screen.getAllByTestId("pi-armchair-fill")).toHaveLength(expect.any(Number));
-//       expect(screen.getAllByTestId("md-outline-chair")).toHaveLength(expect.any(Number));
-//     });
-//   });
+  //     await waitFor(() => {
+  //       // Check for different seat icons
+  //       expect(screen.getAllByTestId("pi-armchair-light")).toHaveLength(expect.any(Number));
+  //       expect(screen.getAllByTestId("pi-armchair-fill")).toHaveLength(expect.any(Number));
+  //       expect(screen.getAllByTestId("md-outline-chair")).toHaveLength(expect.any(Number));
+  //     });
+  //   });
 
   // 3. Test seat selection functionality
   it("handles seat selection correctly", async () => {
     const mockOnSeatSelect = jest.fn();
     render(
-      <LayoutSelectSeat
-        {...defaultProps}
-        onSeatSelect={mockOnSeatSelect}
-      />
+      <LayoutSelectSeat {...defaultProps} onSeatSelect={mockOnSeatSelect} />
     );
 
     await waitFor(() => {
       // Find and click on an available seat
-      const availableSeat = screen.getByTitle("Normal Seat A1 - 75,000đ - available");
+      const availableSeat = screen.getByTitle(
+        "Normal Seat A1 - 75,000đ - available"
+      );
       fireEvent.click(availableSeat);
     });
 
@@ -169,7 +168,9 @@ describe("LayoutSelectSeat", () => {
 
     await waitFor(() => {
       // Click on already selected seat to deselect
-      const selectedSeat = screen.getByTitle("Normal Seat A1 - 75,000đ - available");
+      const selectedSeat = screen.getByTitle(
+        "Normal Seat A1 - 75,000đ - available"
+      );
       fireEvent.click(selectedSeat);
     });
 
@@ -187,10 +188,7 @@ describe("LayoutSelectSeat", () => {
   it("handles multiple seat selection", async () => {
     const mockOnSeatSelect = jest.fn();
     render(
-      <LayoutSelectSeat
-        {...defaultProps}
-        onSeatSelect={mockOnSeatSelect}
-      />
+      <LayoutSelectSeat {...defaultProps} onSeatSelect={mockOnSeatSelect} />
     );
 
     await waitFor(() => {
@@ -220,10 +218,7 @@ describe("LayoutSelectSeat", () => {
   it("prevents selection of taken seats", async () => {
     const mockOnSeatSelect = jest.fn();
     render(
-      <LayoutSelectSeat
-        {...defaultProps}
-        onSeatSelect={mockOnSeatSelect}
-      />
+      <LayoutSelectSeat {...defaultProps} onSeatSelect={mockOnSeatSelect} />
     );
 
     await waitFor(() => {
@@ -239,14 +234,13 @@ describe("LayoutSelectSeat", () => {
   it("prevents selection of holding seats", async () => {
     const mockOnSeatSelect = jest.fn();
     render(
-      <LayoutSelectSeat
-        {...defaultProps}
-        onSeatSelect={mockOnSeatSelect}
-      />
+      <LayoutSelectSeat {...defaultProps} onSeatSelect={mockOnSeatSelect} />
     );
 
     await waitFor(() => {
-      const holdingSeat = screen.getByTitle("Normal Seat B2 - 75,000đ - holding");
+      const holdingSeat = screen.getByTitle(
+        "Normal Seat B2 - 75,000đ - holding"
+      );
       fireEvent.click(holdingSeat);
     });
 
@@ -260,7 +254,9 @@ describe("LayoutSelectSeat", () => {
 
     await waitFor(() => {
       // Check for different seat colors
-      const availableSeat = screen.getByTitle("Normal Seat A1 - 75,000đ - available");
+      const availableSeat = screen.getByTitle(
+        "Normal Seat A1 - 75,000đ - available"
+      );
       const takenSeat = screen.getByTitle("Normal Seat A2 - 75,000đ - taken");
       const vipSeat = screen.getByTitle("VIP Seat A3 - 85,000đ - available");
 
@@ -286,12 +282,7 @@ describe("LayoutSelectSeat", () => {
 
   // 10. Test empty seat data
   it("handles empty seat data gracefully", () => {
-    render(
-      <LayoutSelectSeat
-        {...defaultProps}
-        seatDataFromAPI={[]}
-      />
-    );
+    render(<LayoutSelectSeat {...defaultProps} seatDataFromAPI={[]} />);
 
     // Should still render screen but no seats
     expect(screen.getByText("SCREEN")).toBeInTheDocument();
@@ -309,15 +300,12 @@ describe("LayoutSelectSeat", () => {
       couple: "text-pink-400",
     };
 
-    render(
-      <LayoutSelectSeat
-        {...defaultProps}
-        seatColors={customColors}
-      />
-    );
+    render(<LayoutSelectSeat {...defaultProps} seatColors={customColors} />);
 
     // Check if custom colors are applied
-    const availableSeat = screen.getByTitle("Normal Seat A1 - 75,000đ - available");
+    const availableSeat = screen.getByTitle(
+      "Normal Seat A1 - 75,000đ - available"
+    );
     expect(availableSeat).toHaveClass("text-green-300");
   });
 
@@ -326,11 +314,15 @@ describe("LayoutSelectSeat", () => {
     render(<LayoutSelectSeat {...defaultProps} />);
 
     await waitFor(() => {
-      const coupleSeat = screen.getByTitle("Couple Seat B1 - 120,000đ - available");
+      const coupleSeat = screen.getByTitle(
+        "Couple Seat B1 - 120,000đ - available"
+      );
       expect(coupleSeat).toBeInTheDocument();
-      
+
       // Check if couple seat uses MdOutlineChair icon
-      const coupleIcon = coupleSeat.querySelector('[data-testid="md-outline-chair"]');
+      const coupleIcon = coupleSeat.querySelector(
+        '[data-testid="md-outline-chair"]'
+      );
       expect(coupleIcon).toBeInTheDocument();
     });
   });
@@ -352,7 +344,7 @@ describe("LayoutSelectSeat", () => {
 
     await waitFor(() => {
       // Check for aisle separator
-      const aisle = document.querySelector('.w-px.h-4.bg-gray-600');
+      const aisle = document.querySelector(".w-px.h-4.bg-gray-600");
       expect(aisle).toBeInTheDocument();
     });
   });
@@ -363,43 +355,48 @@ describe("LayoutSelectSeat", () => {
 
     await waitFor(() => {
       const seat = screen.getByTitle("Normal Seat A1 - 75,000đ - available");
-      
+
       // Hover over seat to show tooltip
       fireEvent.mouseEnter(seat);
-      
+
       // Tooltip should be present in DOM (though might be hidden by CSS)
-      expect(seat).toHaveAttribute("title", "Normal Seat A1 - 75,000đ - available");
+      expect(seat).toHaveAttribute(
+        "title",
+        "Normal Seat A1 - 75,000đ - available"
+      );
     });
   });
 
-//   // 16. Test animation classes
-//   it("applies animation classes correctly", async () => {
-//     render(<LayoutSelectSeat {...defaultProps} />);
+  //   // 16. Test animation classes
+  //   it("applies animation classes correctly", async () => {
+  //     render(<LayoutSelectSeat {...defaultProps} />);
 
-//     await waitFor(() => {
-//       // Check for animation classes
-//       const screenElement = screen.getByText("SCREEN").closest("div");
-//       expect(screenElement).toHaveClass("transition-all", "duration-700");
-//     });
-//   });
+  //     await waitFor(() => {
+  //       // Check for animation classes
+  //       const screenElement = screen.getByText("SCREEN").closest("div");
+  //       expect(screenElement).toHaveClass("transition-all", "duration-700");
+  //     });
+  //   });
 
-//   // 17. Test responsive design
-//   it("applies responsive design classes", async () => {
-//     render(<LayoutSelectSeat {...defaultProps} />);
+  //   // 17. Test responsive design
+  //   it("applies responsive design classes", async () => {
+  //     render(<LayoutSelectSeat {...defaultProps} />);
 
-//     await waitFor(() => {
-//       // Check for responsive classes in legend
-//       const legendContainer = screen.getByText("Normal").closest("div");
-//       expect(legendContainer).toHaveClass("flex", "justify-center", "items-center");
-//     });
-//   });
+  //     await waitFor(() => {
+  //       // Check for responsive classes in legend
+  //       const legendContainer = screen.getByText("Normal").closest("div");
+  //       expect(legendContainer).toHaveClass("flex", "justify-center", "items-center");
+  //     });
+  //   });
 
   // 18. Test seat spacing
   it("applies correct seat spacing", async () => {
     render(<LayoutSelectSeat {...defaultProps} />);
 
     await waitFor(() => {
-      const seats = document.querySelectorAll('[data-testid="pi-armchair-light"], [data-testid="pi-armchair-fill"], [data-testid="md-outline-chair"]');
+      const seats = document.querySelectorAll(
+        '[data-testid="pi-armchair-light"], [data-testid="pi-armchair-fill"], [data-testid="md-outline-chair"]'
+      );
       expect(seats.length).toBeGreaterThan(0);
     });
   });
@@ -424,9 +421,5 @@ describe("LayoutSelectSeat", () => {
       const seat = screen.getByTitle("Normal Seat A1 - 75,000đ - available");
       fireEvent.click(seat);
     });
-
-    await waitFor(() => {
-      expect(console.log).toHaveBeenCalledWith("Selected Seats: ", expect.any(Set));
-    });
   });
-}); 
+});

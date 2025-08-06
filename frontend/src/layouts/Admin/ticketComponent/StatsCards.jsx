@@ -10,20 +10,18 @@ const StatsCards = ({
   activeFilter = null,
 }) => {
   const handleCardClick = (filterType) => {
-    // Nếu đã chọn filter hiện tại thì bỏ chọn, ngược lại chọn filter mới
-    const newFilter = activeFilter === filterType ? null : filterType;
     if (onFilterChange) {
-      onFilterChange(newFilter);
+      onFilterChange(filterType);
     }
   };
 
   const cardData = [
     {
-      id: "total",
+      id: "all",
       title: "Total Bookings",
       value: totalBookings,
       icon: Users,
-      isClickable: false,
+      isClickable: true,
       colors: {
         bg: "from-white to-blue-50/50",
         iconBg: "from-blue-100 to-indigo-100",

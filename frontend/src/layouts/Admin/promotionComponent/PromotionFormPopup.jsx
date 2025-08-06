@@ -1,6 +1,6 @@
 import React from "react";
 import { MdOutlineClose } from "react-icons/md";
-import DatePicker from "./DatePicker";
+import DatePicker from "../../../components/DatePicker/DatePicker";
 
 const PromotionFormPopup = ({
   showFormPopup,
@@ -18,40 +18,13 @@ const PromotionFormPopup = ({
   setDetail,
   code,
   setCode,
-  updatedAt,
+
   imagePreview,
   handleSubmit,
   handleImageChange,
   resetForm,
   loading,
 }) => {
-  // Debug log to check received props when editing
-  React.useEffect(() => {
-    if (isEdit && showFormPopup) {
-      console.log("Form props for editing:", {
-        title,
-        discountValue,
-        startTime,
-        endTime,
-        detail,
-        code,
-        updatedAt,
-        imagePreview,
-      });
-    }
-  }, [
-    isEdit,
-    showFormPopup,
-    title,
-    discountValue,
-    startTime,
-    endTime,
-    detail,
-    code,
-    updatedAt,
-    imagePreview,
-  ]);
-
   if (!showFormPopup) return null;
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
@@ -128,16 +101,14 @@ const PromotionFormPopup = ({
                   label="Start Date"
                   value={startTime}
                   onChange={setStartTime}
-                  placeholder="Select start date"
                   required={true}
                 />
                 <DatePicker
                   label="End Date"
                   value={endTime}
                   onChange={setEndTime}
-                  placeholder="Select end date"
-                  required={true}
                   minDate={startTime}
+                  required={true}
                 />
               </div>
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Tag } from "lucide-react";
 import {
@@ -36,41 +36,63 @@ const PromotionManagement = () => {
   const [isEdit, setIsEdit] = useState(false);
   const [showFormPopup, setShowFormPopup] = useState(false);
   const [totalPages, setTotalPages] = useState(0);
-  const [totalPromotions, setTotalPromotions] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [allPromotionsForStats, setAllPromotionsForStats] = useState([]);
   const itemsPerPage = 5;
 
-  const getPromotionData = useCallback(async () => {
-    try {
-      const params = {
-        page: currentPage,
-        limit: itemsPerPage,
-        sortBy: "CreatedAt",
-        sortOrder: "desc",
-      };
-      const response = await getPromotion(params);
-      setPromotions(response.data || []);
-      if (response.pagination) {
-        setTotalPages(response.pagination.totalPages);
-        setTotalPromotions(response.pagination.total);
-      } else {
-        const promotionsList = response.data || [];
-        setTotalPromotions(promotionsList.length);
-        setTotalPages(Math.ceil(promotionsList.length / itemsPerPage));
-      }
-    } catch (error) {
-      console.error("Error fetching promotions:", error);
-      toast.error("Failed to fetch promotions.");
-      setPromotions([]);
-      setTotalPages(0);
-      setTotalPromotions(0);
+  // Helper function to map filter to backend status
+  const getStatusFromFilter = (filter) => {
+    switch (filter) {
+      case "active":
+        return "active";
+      case "expired":
+        return "expired";
+      case "upcoming":
+        return "upcoming";
+      case "all":
+      default:
+        return null;
     }
-  }, [currentPage, itemsPerPage]);
+  };
+
+  const getPromotionData = useCallback(
+    async (status = null) => {
+      try {
+        const params = {
+          page: currentPage,
+          limit: itemsPerPage,
+          sortBy: "CreatedAt",
+          sortOrder: "desc",
+        };
+
+        // Add status filter if provided
+        if (status) {
+          params.status = status;
+        }
+
+        const response = await getPromotion(params);
+        setPromotions(response.data || []);
+        if (response.pagination) {
+          setTotalPages(response.pagination.totalPages);
+        } else {
+          const promotionsList = response.data || [];
+          setTotalPages(Math.ceil(promotionsList.length / itemsPerPage));
+        }
+      } catch (error) {
+        console.error("Error fetching promotions:", error);
+        toast.error("Failed to fetch promotions.");
+        setPromotions([]);
+        setTotalPages(0);
+      }
+    },
+    [currentPage, itemsPerPage]
+  );
 
   const searchPromotionData = useCallback(
-    async (searchTerm) => {
+    async (searchTerm, status = null) => {
       if (!searchTerm.trim()) {
-        getPromotionData();
+        getPromotionData(status);
         return;
       }
 
@@ -82,36 +104,81 @@ const PromotionManagement = () => {
           sortOrder: "desc",
         };
 
+        // Add status filter if provided
+        if (status) {
+          params.status = status;
+        }
+
         const response = await searchPromotion(searchTerm, params);
         if (response) {
           setPromotions(response.data || response.promotions || []);
 
           // Xử lý pagination từ response
           if (response.pagination) {
-            setTotalPromotions(response.pagination.total);
             setTotalPages(response.pagination.totalPages);
           } else {
             const promotionsList = response.data || response.promotions || [];
-            setTotalPromotions(promotionsList.length);
             setTotalPages(Math.ceil(promotionsList.length / itemsPerPage));
           }
         }
       } catch (error) {
         console.error("Error searching promotions:", error);
         setPromotions([]);
-        setTotalPromotions(0);
         setTotalPages(0);
       }
     },
     [currentPage, itemsPerPage, getPromotionData]
   );
 
+  // Handle filter change for backend filtering
+  const handleFilterChange = (filter) => {
+    setActiveFilter(filter);
+    setCurrentPage(1); // Reset to page 1 when filter changes
+    const status = getStatusFromFilter(filter);
+
+    if (searchTerm.trim()) {
+      searchPromotionData(searchTerm, status);
+    } else {
+      getPromotionData(status);
+    }
+  };
+
+  // Fetch all promotions for statistics calculation
+  const getAllPromotionsForStats = useCallback(async () => {
+    try {
+      const response = await getPromotion({
+        page: 1,
+        limit: 10000, // Large number to get all promotions
+        sortBy: "CreatedAt",
+        sortOrder: "desc",
+      });
+
+      if (response.data) {
+        const allPromotionsArray = Array.isArray(response.data)
+          ? response.data
+          : [];
+        setAllPromotionsForStats(allPromotionsArray);
+      }
+    } catch (error) {
+      console.error("Error fetching all promotions for stats:", error);
+      setAllPromotionsForStats([]);
+    }
+  }, []);
+
+  // Cleanup toast when component unmounts
+  useEffect(() => {
+    return () => {
+      toast.dismiss(); // Clear all pending toasts when component unmounts
+    };
+  }, []);
+
   // Load initial data when component mounts
   useEffect(() => {
     if (!searchTerm.trim()) {
       getPromotionData();
     }
-  }, [getPromotionData, searchTerm]);
+    getAllPromotionsForStats();
+  }, [getPromotionData, searchTerm, getAllPromotionsForStats]);
 
   // Effect riêng cho searchTerm để reset về trang 1
   useEffect(() => {
@@ -123,15 +190,25 @@ const PromotionManagement = () => {
   // useEffect với debounce cho search
   useEffect(() => {
     const searchTimeout = setTimeout(() => {
+      const status = getStatusFromFilter(activeFilter);
+
       if (searchTerm.trim()) {
-        searchPromotionData(searchTerm);
+        searchPromotionData(searchTerm, status);
       } else {
-        getPromotionData();
+        getPromotionData(status);
+        getAllPromotionsForStats(); // Reload stats when clearing search
       }
     }, 500);
 
     return () => clearTimeout(searchTimeout);
-  }, [searchTerm, currentPage, searchPromotionData, getPromotionData]);
+  }, [
+    searchTerm,
+    currentPage,
+    activeFilter,
+    searchPromotionData,
+    getPromotionData,
+    getAllPromotionsForStats,
+  ]);
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
@@ -180,12 +257,14 @@ const PromotionManagement = () => {
       }
       resetForm();
       setShowFormPopup(false);
-      // Refresh current data
+      // Refresh current data with filter
+      const status = getStatusFromFilter(activeFilter);
       if (searchTerm.trim()) {
-        searchPromotionData(searchTerm);
+        searchPromotionData(searchTerm, status);
       } else {
-        getPromotionData();
+        getPromotionData(status);
       }
+      getAllPromotionsForStats(); // Refresh stats
     } catch (error) {
       console.error("Error saving promotion:", error);
       toast.error("Failed to save promotion.");
@@ -195,7 +274,6 @@ const PromotionManagement = () => {
   };
 
   const handleEdit = (promotion) => {
-    console.log("Editing promotion:", promotion); // Debug log
     setPromotionId(promotion.PromotionId);
     setTitle(promotion.Title || "");
 
@@ -214,7 +292,6 @@ const PromotionManagement = () => {
     setUpdatedAt(promotion.UpdatedAt || "");
     setImage(null);
     setImagePreview(promotion.Image || null);
-    setIsEdit(true);
     setShowFormPopup(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -226,12 +303,14 @@ const PromotionManagement = () => {
       toast.success("Promotion deleted successfully!");
       setShowDeletePopup(false);
       setSelectedPromotion(null);
-      // Refresh current data
+      // Refresh current data with filter
+      const status = getStatusFromFilter(activeFilter);
       if (searchTerm.trim()) {
-        searchPromotionData(searchTerm);
+        searchPromotionData(searchTerm, status);
       } else {
-        getPromotionData();
+        getPromotionData(status);
       }
+      getAllPromotionsForStats(); // Refresh stats
     } catch (error) {
       console.error("Error deleting promotion:", error);
       toast.error("Failed to delete promotion.");
@@ -292,12 +371,13 @@ const PromotionManagement = () => {
         </div>
       </div>
 
-      <ToastContainer position="top-right" autoClose={2000} />
       <div className="flex flex-col items-center lg:items-start h-auto min-h-screen max-w-7xl w-full overflow-x-hidden mx-auto">
         <div className="w-[90%] md:w-[95%] lg:w-full max-w-7xl space-y-4 sm:space-y-6">
           <StatsCards
-            totalPromotions={totalPromotions}
-            promotions={promotions}
+            totalPromotions={allPromotionsForStats.length}
+            promotions={allPromotionsForStats}
+            activeFilter={activeFilter}
+            handleFilterChange={handleFilterChange}
           />
           <div className="bg-white rounded-xl shadow-md border border-gray-100">
             <PromotionTable

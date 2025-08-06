@@ -34,8 +34,9 @@ const QRScanner = ({ onScanSuccess }) => {
         await html5QrCode.start(
             { deviceId: { exact: selectedCameraId } },
             { fps: 10, qrbox: { width: 250, height: 250 } },
-            (decodedText) => {
+            async (decodedText) => {
                 console.log("QR Code:", decodedText);
+                await stopScanner();
                 if (onScanSuccess) onScanSuccess(decodedText);
             },
             (error) => {
@@ -65,7 +66,7 @@ const QRScanner = ({ onScanSuccess }) => {
             message.error("QR code not found in the image.");
             console.error("Image scan error:", err);
         }
-        return false; // Prevent Ant Design from uploading the image to server
+        return false;
     };
 
     useEffect(() => {
@@ -81,8 +82,8 @@ const QRScanner = ({ onScanSuccess }) => {
 
             <div className="mb-4">
                 <Select
+                    className="w-full lg:w-[300px]"
                     placeholder="Select a camera"
-                    style={{ width: 300 }}
                     onChange={setSelectedCameraId}
                     value={selectedCameraId}
                     disabled={isScanning}
@@ -97,7 +98,7 @@ const QRScanner = ({ onScanSuccess }) => {
 
             <div>
                 {!isScanning ? (
-                    <Button type="primary" onClick={startScanner}>
+                    <Button type="primary" onClick={startScanner} className="w-full lg:w-[300px] text-center break-all">
                         Start scanning with camera
                     </Button>
                 ) : (
@@ -107,13 +108,15 @@ const QRScanner = ({ onScanSuccess }) => {
                 )}
             </div>
 
-            <div className="my-4">
+            <div className="my-4 w-full">
                 <Upload
                     beforeUpload={handleImageUpload}
                     accept="image/*"
                     showUploadList={false}
                 >
-                    <Button icon={<UploadOutlined />}>Upload image with QR code</Button>
+                    <Button
+                        type="default"
+                        icon={<UploadOutlined />} className="w-full text-center break-all">Upload image with QR code</Button>
                 </Upload>
             </div>
 
