@@ -348,7 +348,7 @@ const SelectSeatsPage = () => {
                   Continue to Payment
                 </Button>
                 <Button
-                  danger
+                  color="danger" variant="solid"
                   icon={<CloseOutlined />}
                   onClick={handleCancel}
                   className="w-full h-12 font-semibold rounded-lg border-red-300 text-red-600 hover:bg-red-50"
