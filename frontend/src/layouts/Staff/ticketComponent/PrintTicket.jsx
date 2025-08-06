@@ -20,6 +20,8 @@ import VersionCard from "../component/VersionCard";
 import { getMovieById } from "../../../services/APIForStaff/API";
 import BackButton from "../component/BackButton";
 import { resetMember } from "../../../redux/features/memberSlice";
+import { QRCodeCanvas } from 'qrcode.react';
+
 
 export default function PrintTicket() {
   const componentRef = useRef();
@@ -70,6 +72,7 @@ export default function PrintTicket() {
     loadMovie();
   }, [selectedMovie, navigate]);
 
+
   const handleExportPdf = async () => {
     if (!componentRef.current) return;
 
@@ -91,6 +94,7 @@ export default function PrintTicket() {
   };
 
   console.log("Data:", bookingData);
+  console.log("Booking Id:", bookingData?.bookingId);
 
   if (!movieInfo?.NameOfEnglish) {
     return <div>Loading ticket information...</div>;
@@ -132,18 +136,20 @@ export default function PrintTicket() {
           {/* Ticket Container - Responsive */}
           <div className="flex justify-center">
             <div ref={componentRef} className="w-full max-w-5xl">
-              <div className="overflow-x-auto">
-                <div className="min-w-[800px] bg-[linear-gradient(to_bottom_right,_#facc15,_#fde047,_#fbbf24)] rounded-xl p-3 sm:p-5">
-                  <div className="relative flex h-[200px] sm:h-[250px] lg:h-[300px]">
+              {/* <div className="overflow-x-auto"> */}
+                <div className="w-full bg-[linear-gradient(to_bottom_right,_#facc15,_#fde047,_#fbbf24)] rounded-xl p-3 sm:p-5">
+                  {/* <div className="relative flex h-[200px] sm:h-[250px] lg:h-[300px]"> */}
+                  <div className="relative flex flex-col sm:flex-row h-auto">
                     {/* Left Section - Movie Info */}
-                    <div className="w-[63%] h-full bg-[linear-gradient(to_right,_#4f46e5,_#7c3aed,_#2563eb)] p-3 sm:p-4 rounded-tl-xl rounded-bl-xl">
-                      <div className="flex items-start gap-2 sm:gap-4 border-b border-white pb-2 w-[95%] text-white">
+                    {/* <div className="w-[63%] h-full bg-[linear-gradient(to_right,_#4f46e5,_#7c3aed,_#2563eb)] p-3 sm:p-4 rounded-tl-xl rounded-bl-xl"> */}
+                    <div className="w-full sm:w-[63%] h-auto min-h-[200px] sm:h-auto bg-[linear-gradient(to_right,_#4f46e5,_#7c3aed,_#2563eb)] p-3 sm:p-4 rounded-tl-xl rounded-tr-xl sm:rounded-none sm:rounded-tl-xl sm:rounded-bl-xl">
+                      <div className="flex items-start gap-2 sm:gap-4 border-b-0 sm:border-b border-white pb-2 w-full sm:w-[95%] text-white">
                         <div className="flex-1">
                           <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
                             <img
                               src={logo}
                               alt="CineZone"
-                              className="w-[15%] sm:w-[20%] h-[25px] sm:h-[35px] object-cover"
+                              className="w-[20%] sm:w-[25%] h-auto sm:h-auto object-cover"
                               style={{ filter: "brightness(0) invert(1)" }}
                             />
                             <div className="px-2 sm:px-3 rounded-full shadow-md flex items-center justify-center bg-[linear-gradient(to_right,_#facc15,_#eab308,_#ca8a04)] text-[#713f12]">
@@ -179,6 +185,18 @@ export default function PrintTicket() {
                             </div>
                           </div>
                         </div>
+                        <div className="sm:w-[20%] w-[30%]">
+                          {bookingData?.bookingId && (
+                            <QRCodeCanvas
+                              value={bookingData.bookingId.toString()}
+                              size={100}
+                              bgColor="#ffffff"
+                              fgColor="#000000"
+                              level="M"
+                              className="bg-white rounded-lg shadow-md p-3 w-full"
+                            />
+                          )}
+                        </div>
                       </div>
 
                       {/* Synopsis - Hide on very small screens */}
@@ -194,7 +212,8 @@ export default function PrintTicket() {
                     </div>
 
                     {/* Right Section - Ticket Details */}
-                    <div className="w-[37%] h-full bg-[linear-gradient(to_right,_#4f46e5,_#7c3aed,_#2563eb)] rounded-tr-xl rounded-br-xl">
+                    {/* <div className="w-[37%] h-full bg-[linear-gradient(to_right,_#4f46e5,_#7c3aed,_#2563eb)] rounded-tr-xl rounded-br-xl"> */}
+                    <div className="w-full sm:w-[37%] h-auto sm:h-auto bg-[linear-gradient(to_right,_#4f46e5,_#7c3aed,_#2563eb)] rounded-bl-xl rounded-br-xl sm:rounded-none sm:rounded-tr-xl sm:rounded-br-xl border-t-3 border-dashed border-white sm:border-none">
                       <div className="flex flex-col justify-center h-full text-white p-2 sm:p-4 space-y-1 sm:space-y-2">
                         <div className="text-center pb-2 mb-2 hidden sm:block">
                           <h3 className="font-bold text-sm lg:text-base">
@@ -236,14 +255,15 @@ export default function PrintTicket() {
                     </div>
 
                     {/* Perforated circles */}
-                    <div className="absolute w-[30px] sm:w-[40px] lg:w-[50px] h-[30px] sm:h-[40px] lg:h-[50px] rounded-full bg-white top-[-25px] sm:top-[-35px] lg:top-[-40px] right-[37%] sm:right-[37%] transform translate-x-1/2"></div>
-                    <div className="absolute w-[30px] sm:w-[40px] lg:w-[50px] h-[30px] sm:h-[40px] lg:h-[50px] rounded-full bg-white bottom-[-25px] sm:bottom-[-35px] lg:bottom-[-40px] right-[37%] sm:right-[37%] transform translate-x-1/2"></div>
+                    <div className="absolute w-[30px] sm:w-[40px] lg:w-[50px] h-[30px] sm:h-[40px] lg:h-[50px] rounded-full bg-white bottom-[165px] sm:top-[-35px] lg:top-[-40px] right-[102%] sm:right-[37%] transform translate-x-1/2"></div>
+                    <div className="absolute w-[30px] sm:w-[40px] lg:w-[50px] h-[30px] sm:h-[40px] lg:h-[50px] rounded-full bg-white bottom-[165px] sm:bottom-[-35px] lg:bottom-[-40px] right-[-2%] sm:right-[37%] transform translate-x-1/2"></div>
 
                     {/* Dashed line */}
-                    <div className="absolute h-[100%] sm:h-[90%] top-[10%] sm:top-[5%] border-dashed border-white border-2 right-[37%] transform translate-x-1/2"></div>
+                    {/* <div className="absolute h-[100%] sm:h-[90%] top-[10%] sm:top-[5%] border-dashed border-white border-2 right-[37%] transform translate-x-1/2"></div> */}
+                    <div className="hidden sm:block absolute h-[90%] top-[5%] border-dashed border-white border-2 right-[37%] transform translate-x-1/2"></div>
                   </div>
                 </div>
-              </div>
+              {/* </div> */}
             </div>
           </div>
         </div>
