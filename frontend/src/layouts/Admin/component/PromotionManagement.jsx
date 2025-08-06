@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Tag } from "lucide-react";
 import {
@@ -163,6 +163,13 @@ const PromotionManagement = () => {
       console.error("Error fetching all promotions for stats:", error);
       setAllPromotionsForStats([]);
     }
+  }, []);
+
+  // Cleanup toast when component unmounts
+  useEffect(() => {
+    return () => {
+      toast.dismiss(); // Clear all pending toasts when component unmounts
+    };
   }, []);
 
   // Load initial data when component mounts
@@ -364,7 +371,6 @@ const PromotionManagement = () => {
         </div>
       </div>
 
-      <ToastContainer position="top-right" autoClose={2000} />
       <div className="flex flex-col items-center lg:items-start h-auto min-h-screen max-w-7xl w-full overflow-x-hidden mx-auto">
         <div className="w-[90%] md:w-[95%] lg:w-full max-w-7xl space-y-4 sm:space-y-6">
           <StatsCards

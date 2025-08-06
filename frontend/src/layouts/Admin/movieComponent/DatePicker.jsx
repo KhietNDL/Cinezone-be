@@ -11,6 +11,7 @@ const DatePicker = ({
   const [isOpen, setIsOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(value || "");
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   const months = [
@@ -41,6 +42,7 @@ const DatePicker = ({
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false);
+        setIsYearDropdownOpen(false);
       }
     };
 
@@ -61,7 +63,16 @@ const DatePicker = ({
   const formatInputDate = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
-    return date.toISOString().split("T")[0];
+    // Use local timezone to avoid date shifting
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const formatted = `${year}-${month}-${day}`;
+
+    console.log("DatePicker - formatInputDate input:", dateString);
+    console.log("DatePicker - formatInputDate output:", formatted);
+
+    return formatted;
   };
 
   const isDateDisabled = (date) => {
@@ -97,7 +108,19 @@ const DatePicker = ({
 
   const handleDateSelect = (date) => {
     if (isDateDisabled(date)) return;
-    const formattedDate = formatInputDate(date);
+    // Create a new date in local timezone to avoid timezone issues
+    const localDate = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate()
+    );
+    const formattedDate = formatInputDate(localDate);
+
+    // Log để debug format
+    console.log("DatePicker - Selected date:", date);
+    console.log("DatePicker - Formatted date (yyyy-mm-dd):", formattedDate);
+    console.log("DatePicker - Sending to backend:", formattedDate);
+
     setSelectedDate(formattedDate);
     onChange(formattedDate);
     setIsOpen(false);
@@ -113,10 +136,26 @@ const DatePicker = ({
 
   const goToToday = () => {
     const today = new Date();
+    console.log("DatePicker - Today button clicked, today date:", today);
     setCurrentMonth(today);
     if (!isDateDisabled(today)) {
       handleDateSelect(today);
     }
+  };
+
+  const generateYearOptions = () => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    // Generate years from 50 years ago to current year only
+    for (let i = currentYear - 50; i <= currentYear; i++) {
+      years.push(i);
+    }
+    return years;
+  };
+
+  const handleYearSelect = (year) => {
+    setCurrentMonth(new Date(year, currentMonth.getMonth(), 1));
+    setIsYearDropdownOpen(false);
   };
 
   const days = getDaysInMonth(currentMonth);
@@ -197,8 +236,52 @@ const DatePicker = ({
 
             <div className="flex items-center space-x-3">
               <h3 className="text-sm font-semibold text-gray-800">
-                {months[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                {months[currentMonth.getMonth()]}
               </h3>
+
+              {/* Year Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
+                  className="text-sm font-semibold text-gray-800 hover:text-purple-600 transition-colors duration-200 px-2 py-1 rounded hover:bg-purple-50 flex items-center space-x-1"
+                >
+                  <span>{currentMonth.getFullYear()}</span>
+                  <svg
+                    className={`w-3 h-3 transition-transform duration-200 ${
+                      isYearDropdownOpen ? "rotate-180" : ""
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+
+                {isYearDropdownOpen && (
+                  <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-60 max-h-40 overflow-y-auto min-w-[80px]">
+                    {generateYearOptions().map((year) => (
+                      <button
+                        key={year}
+                        onClick={() => handleYearSelect(year)}
+                        className={`block w-full text-left px-3 py-2 text-sm hover:bg-purple-50 transition-colors duration-200 ${
+                          year === currentMonth.getFullYear()
+                            ? "bg-purple-100 text-purple-700 font-medium"
+                            : "text-gray-700"
+                        }`}
+                      >
+                        {year}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <button
                 onClick={goToToday}
                 className={`text-xs px-3 py-1.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 font-medium shadow-sm hover:shadow-md ${

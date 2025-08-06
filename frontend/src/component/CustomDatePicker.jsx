@@ -75,12 +75,20 @@ const CustomDatePicker = ({ value, onChange, minDate }) => {
     setCurrentMonth(newMonth);
   };
 
+  const formatDateToString = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const selectDate = (dateObj) => {
     const minDateObj = minDate ? new Date(minDate) : new Date();
     minDateObj.setHours(0, 0, 0, 0);
 
     if (dateObj.date < minDateObj) return;
-    const formattedDate = dateObj.date.toISOString().split("T")[0]; // Format as yyyy-mm-dd
+    // Use local timezone to avoid date shifting
+    const formattedDate = formatDateToString(dateObj.date);
     onChange(formattedDate);
     setIsOpen(false);
   };
@@ -289,7 +297,7 @@ const CustomDatePicker = ({ value, onChange, minDate }) => {
                 onClick={() => {
                   const nextWeek = new Date(today);
                   nextWeek.setDate(today.getDate() + 7);
-                  onChange(nextWeek.toISOString().split("T")[0]);
+                  onChange(formatDateToString(nextWeek));
                   setIsOpen(false);
                 }}
                 className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-sm font-medium"
@@ -300,7 +308,7 @@ const CustomDatePicker = ({ value, onChange, minDate }) => {
                 onClick={() => {
                   const twoWeeks = new Date(today);
                   twoWeeks.setDate(today.getDate() + 14);
-                  onChange(twoWeeks.toISOString().split("T")[0]);
+                  onChange(formatDateToString(twoWeeks));
                   setIsOpen(false);
                 }}
                 className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium"
@@ -311,7 +319,7 @@ const CustomDatePicker = ({ value, onChange, minDate }) => {
                 onClick={() => {
                   const nextMonth = new Date(today);
                   nextMonth.setMonth(today.getMonth() + 1);
-                  onChange(nextMonth.toISOString().split("T")[0]);
+                  onChange(formatDateToString(nextMonth));
                   setIsOpen(false);
                 }}
                 className="px-4 py-2 bg-violet-100 text-violet-700 rounded-lg hover:bg-violet-200 transition-colors text-sm font-medium"
