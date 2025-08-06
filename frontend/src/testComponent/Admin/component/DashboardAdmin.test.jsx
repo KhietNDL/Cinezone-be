@@ -2,12 +2,7 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
-// Cập nhật đường dẫn này cho phù hợp với cấu trúc thư mục của bạn
-// Ví dụ có thể là:
-// import DashboardAdmin from '../../../components/Admin/DashboardAdmin';
-// hoặc
-// import DashboardAdmin from '../DashboardAdmin';
-// hoặc
+
 import DashboardAdmin from "../../../layouts/Admin/component/DashboardAdmin";
 // Mock các services API
 jest.mock("../../../services/API", () => ({
@@ -16,6 +11,9 @@ jest.mock("../../../services/API", () => ({
   getRevenueThisMonth: jest.fn(),
   getRevenueThisWeek: jest.fn(),
   getRevenueThisQuarter: jest.fn(),
+}));
+jest.mock("../../../config", () => ({
+  API_BASE_URL: "https://mock-api.com",
 }));
 
 // Mock các icons

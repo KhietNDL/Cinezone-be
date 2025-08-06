@@ -129,6 +129,7 @@ const EditAccount = () => {
         const updatedData = {
           ...profileData,
           ...editData,
+          sex: editData.sex ? Number(editData.sex) : profileData.sex,
           avatar_url: response.user?.avatar_url,
         };
         setProfileData(updatedData);
@@ -518,7 +519,7 @@ const EditAccount = () => {
                         name="dateOfBirth"
                         value={
                           editData.dateOfBirth
-                            ? editData.dateOfBirth.split("T")[0]
+                            ? editData.dateOfBirth.split(/[T ]/)[0]
                             : ""
                         }
                         onChange={handleInputChange}

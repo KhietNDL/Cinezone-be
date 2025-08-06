@@ -97,22 +97,28 @@ describe("RoomManagement", () => {
 
   it("opens detail modal", async () => {
     render(<RoomManagement />);
+
+    // Wait for rooms to load
     await waitFor(() =>
       expect(screen.getAllByText("Room A").length).toBeGreaterThan(0)
     );
-    const detailButtons = screen.getAllByText(/detail/i);
 
-    let found = false;
-    for (const btn of detailButtons) {
-      fireEvent.click(btn);
-      try {
-        await screen.findByTestId("layout-select-seat", {}, { timeout: 500 });
-        found = true;
-        break;
-      } catch (e) {
-        // Không tìm thấy, thử nút tiếp theo
-      }
-    }
-    expect(found).toBe(true);
+    // Debug: Log all buttons to see what's available
+    screen.debug();
+
+    // Get all buttons with "Detail" text (case insensitive)
+    const detailButtons = screen.getAllByText(/detail/i);
+    expect(detailButtons.length).toBeGreaterThan(0);
+
+    // Click the first detail button
+    fireEvent.click(detailButtons[0]);
+
+    // Wait for the layout component to appear
+    await waitFor(
+      () => {
+        expect(screen.getByTestId("layout-select-seat")).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
   });
 });
