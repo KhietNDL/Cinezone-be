@@ -6,6 +6,9 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
+import { useDispatch, useSelector } from "react-redux";
+import { cancelBooking, cancelProduct } from "../../../services/API";
+import BackButton from "../../../component/BackButton";
 
 const stripePromise = loadStripe(
   "pk_test_51RihUMQ1nvt86rfmgAyf52c8e3iUK1gd3PuGxth8Cgng0hxm1dhdvj1B5fCK3zZnXXPVAdc2Qyaq6H9NgxD1Pwdt006VPZkX34"
@@ -38,6 +41,19 @@ function CheckoutForm({ onSuccess }) {
     }
     setProcessing(false);
   };
+
+
+const handleClick = () => {
+  const response = cancelBooking(bookingId);  
+  console.log("Cancel booking response:", response);
+  cancelProduct(orderProductsId);   
+  
+}
+    const {
+     bookingIdFromRedux:bookingId,
+    orderProductsIdFromRedux:orderProductsId=null,
+  }=useSelector((state) => state.booking);
+ 
 
   return (
     <div className="relative mb-10">
@@ -204,11 +220,7 @@ function CheckoutForm({ onSuccess }) {
   );
 }
 
-export default function StripeCheckoutForm({
-  clientSecret,
-  onSuccess,
-  totalAmount,
-}) {
+export default function StripeCheckoutForm({ clientSecret, onSuccess, totalAmount, onBack }) {
   if (!clientSecret) return null;
 
   // Enhanced appearance configuration
@@ -321,6 +333,7 @@ export default function StripeCheckoutForm({
 
   return (
     <div className="w-full max-w-md mx-auto">
+    <BackButton onClick={onBack} />
       <Elements
         stripe={stripePromise}
         options={{
@@ -336,6 +349,7 @@ export default function StripeCheckoutForm({
           totalAmount={totalAmount}
         />
       </Elements>
+       
     </div>
   );
 }

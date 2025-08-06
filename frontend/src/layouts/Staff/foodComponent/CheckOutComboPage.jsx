@@ -341,7 +341,7 @@ export default function CheckOutComboPage() {
               </Button>
               <Button
                 color="danger"
-                variant="outlined"
+                variant="solid"
                 icon={<FaTimes />}
                 onClick={handleCancel}
                 className="h-12 px-8 font-semibold rounded-lg border-2 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 focus:bg-red-50 focus:border-red-400 transition-all duration-200"

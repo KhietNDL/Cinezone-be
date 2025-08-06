@@ -256,12 +256,12 @@ const SelectSeatsPage = () => {
                     textColor="text-purple-600"
                     width={30}
                     height={30}
-                    widthDouble={42}
-                    heightDouble={24}
+                    widthDouble={65}
+                    heightDouble={40}
                     seatColors={{
                       selected: "text-[#8600E1]",
                       taken: "text-gray-400",
-                      holding: "text-gray-400",
+                      holding: "text-blue-400",
                       normal: "text-purple-600",
                       vip: "text-yellow-600",
                       couple: "text-red-600",
@@ -348,7 +348,7 @@ const SelectSeatsPage = () => {
                   Continue to Payment
                 </Button>
                 <Button
-                  danger
+                  color="danger" variant="solid"
                   icon={<CloseOutlined />}
                   onClick={handleCancel}
                   className="w-full h-12 font-semibold rounded-lg border-red-300 text-red-600 hover:bg-red-50"

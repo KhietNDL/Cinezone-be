@@ -38,21 +38,15 @@ export function BlogList({
   useEffect(() => {
     async function fetchMovies() {
       try {
-        // Fetch tất cả các movies theo ID
-        const moviesData = await Promise.all(
-          movieIds.map(async (id) => {
-            const { object } = await cosmic.objects
-              .findOne({
-                id: id,
-              })
-              .props("id,slug,title,metadata")
-              .depth(1);
-
-            return object;
+        // Lấy tất cả blog có type là "movies"
+        const { objects } = await cosmic.objects
+          .find({
+            type: "movies", // hoặc "movies" nếu bạn lưu blog dưới type này
           })
-        );
+          .props("id,slug,title,metadata")
+          .depth(1);
 
-        setMovies(moviesData);
+        setMovies(objects);
       } catch (err) {
         console.error("Error fetching movies:", err);
         setError(err);
@@ -83,7 +77,7 @@ export function BlogList({
     <div className="pt-10 pb-15 px-4 min-h-screen bg-gradient-to-b from-black via-gray-900 via-50% via-purple-950/50 to-slate-900">
       {/* Back Button and Title */}
       <div className="flex items-center justify-between mb-8">
-        <BackButton/>
+        <BackButton />
 
         <h1 className="text-3xl font-bold text-white">Movie Blog</h1>
 

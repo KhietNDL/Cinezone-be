@@ -392,7 +392,7 @@ export default function ComboPage() {
                     Proceed to Checkout
                   </Button>
                   <Button
-                    danger
+                    color="danger" variant="solid"
                     icon={<FaXmark />}
                     onClick={handleCancel}
                     className="h-12 px-8 font-semibold rounded-lg border-red-300 text-red-600 hover:bg-red-50"

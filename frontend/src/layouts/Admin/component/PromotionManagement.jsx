@@ -293,6 +293,7 @@ const PromotionManagement = () => {
     setImage(null);
     setImagePreview(promotion.Image || null);
     setShowFormPopup(true);
+    setIsEdit(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 

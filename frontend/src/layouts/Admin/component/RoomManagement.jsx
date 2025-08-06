@@ -1046,7 +1046,7 @@ const RoomManagement = () => {
                     totalSeats={selectedRoom?.SeatQuantity || seatData.length}
                     onSeatSelect={() => {}} // Read-only mode for admin view
                     initialSelectedSeats={[]} // No seats selected initially
-                    readOnly={true} // Disable seat clicking for admin view
+                    //readOnly={true} // Disable seat clicking for admin view
                     width={20}
                     height={20}
                     widthDouble={40}

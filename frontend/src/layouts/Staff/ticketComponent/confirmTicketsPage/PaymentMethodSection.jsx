@@ -86,7 +86,7 @@ const PaymentMethodSection = ({
         </Button>
         <Button
           type="default"
-          danger
+          color="danger" variant="solid"
           size="large"
           onClick={handleCancel}
           icon={<FaX />}

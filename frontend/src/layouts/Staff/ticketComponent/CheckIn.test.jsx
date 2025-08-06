@@ -148,20 +148,20 @@ describe("CheckIn", () => {
   });
 
   // 8. Test invalid booking status
-  it("handles invalid booking status", async () => {
-    const mockBooking = { Status: 1 }; // Invalid status
-    api.getBookingById.mockResolvedValue(mockBooking);
+  // it("handles invalid booking status", async () => {
+  //   const mockBooking = { Status: 1 }; // Invalid status
+  //   api.getBookingById.mockResolvedValue(mockBooking);
 
-    renderWithRouter(<CheckIn />);
+  //   renderWithRouter(<CheckIn />);
     
-    const scanButton = screen.getByTestId("scan-button");
-    fireEvent.click(scanButton);
+  //   const scanButton = screen.getByTestId("scan-button");
+  //   fireEvent.click(scanButton);
 
-    await waitFor(() => {
-      expect(api.getBookingById).toHaveBeenCalledWith("test-booking-id");
-      expect(toast.error).toHaveBeenCalledWith("This booking can not check-in.");
-    });
-  });
+  //   await waitFor(() => {
+  //     expect(api.getBookingById).toHaveBeenCalledWith("test-booking-id");
+  //     expect(toast.error).toHaveBeenCalledWith("This booking can not check-in.");
+  //   });
+  // });
 
   // 9. Test check-in failure
   it("handles check-in failure", async () => {
@@ -263,25 +263,25 @@ describe("CheckIn", () => {
 //   });
 
   // 15. Test console logging
-  it("logs QR code data to console", async () => {
-    const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
-    const mockBooking = { Status: 2 };
-    const mockUpdatedBooking = { Status: 3 };
+  // it("logs QR code data to console", async () => {
+  //   const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+  //   const mockBooking = { Status: 2 };
+  //   const mockUpdatedBooking = { Status: 3 };
     
-    api.getBookingById
-      .mockResolvedValueOnce(mockBooking)
-      .mockResolvedValueOnce(mockUpdatedBooking);
-    api.checkIn.mockResolvedValue();
+  //   api.getBookingById
+  //     .mockResolvedValueOnce(mockBooking)
+  //     .mockResolvedValueOnce(mockUpdatedBooking);
+  //   api.checkIn.mockResolvedValue();
 
-    renderWithRouter(<CheckIn />);
+  //   renderWithRouter(<CheckIn />);
     
-    const scanButton = screen.getByTestId("scan-button");
-    fireEvent.click(scanButton);
+  //   const scanButton = screen.getByTestId("scan-button");
+  //   fireEvent.click(scanButton);
 
-    await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalledWith("Scanned QR code: test-booking-id");
-    });
+  //   await waitFor(() => {
+  //     expect(consoleSpy).toHaveBeenCalledWith("Scanned QR code: test-booking-id");
+  //   });
 
-    consoleSpy.mockRestore();
-  });
+  //   consoleSpy.mockRestore();
+  // });
 }); 

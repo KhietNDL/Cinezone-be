@@ -72,16 +72,20 @@ const StatsSection = () => {
           userCount = 46; // Hardcode same as admin dashboard temporarily
         }
 
-        // Calculate average rating (scale from 10 to 5)
-        const avgRating =
-          movies.length > 0
-            ? movies.reduce(
-                (acc, movie) => acc + (parseFloat(movie.AverageRating) || 0),
-                0
-              ) /
-              movies.length /
-              2 // Divide by 2 to convert from 10-scale to 5-scale
-            : 0;
+        // Calculate average rating
+        const totalRating = movies.reduce(
+          (acc, movie) => acc + (parseFloat(movie.AverageRating) || 0),
+          0
+        );
+
+        // Nếu tổng rating / số phim < 5 thì dữ liệu đã là thang 5, không cần chia 2
+        let avgRating;
+        if (movies.length > 0) {
+          const rawAvg = totalRating / movies.length;
+          avgRating = rawAvg > 5 ? (rawAvg / 2).toFixed(1) : rawAvg.toFixed(1);
+        } else {
+          avgRating = "0.0";
+        }
 
         // Estimate users count based on bookings (more realistic ratio)
         // Assume 1 active user has about 5-8 bookings on average
@@ -89,8 +93,8 @@ const StatsSection = () => {
 
         const newStats = {
           totalMovies: movies.length,
-          avgRating: avgRating,
-          totalUsers: userCount, // Use the userCount from above (either API or estimated)
+          avgRating: Number(avgRating), // Đảm bảo là số thập phân 1 chữ số
+          totalUsers: userCount,
           totalBookings: bookings.length,
         };
 

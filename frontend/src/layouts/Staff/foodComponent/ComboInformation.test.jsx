@@ -33,6 +33,13 @@ beforeAll(() => {
       dispatchEvent: jest.fn(),
     })),
   });
+
+  // Mock window.history.replaceState
+  Object.defineProperty(window, "history", {
+    value: {
+      replaceState: jest.fn(),
+    },
+  });
 });
 
 // Mock toast
@@ -59,6 +66,7 @@ jest.mock("react-router-dom", () => ({
 // Mock API
 jest.mock("../../../services/APIForStaff/API", () => ({
   cancelProductsById: jest.fn(),
+  confirmPayment: jest.fn(),
 }));
 
 // Mock Ant Design Table
@@ -77,7 +85,15 @@ jest.mock("antd", () => {
           ))}
         </div>
         {dataSource.length === 0 ? (
-          <div data-testid="table-empty">{locale?.emptyText || "No data"}</div>
+          <div data-testid="table-empty">
+            {typeof locale?.emptyText === 'object' ? (
+              <div>
+                <div>No combo items found</div>
+              </div>
+            ) : (
+              locale?.emptyText || "No data"
+            )}
+          </div>
         ) : (
           dataSource.map((record) => (
             <div
@@ -142,13 +158,15 @@ describe("ComboInformation", () => {
           },
         ],
         orderProductId: "order-123",
+        comboVisaResponse: null,
+        paymentId: null,
       },
     };
 
     renderWithProvider(<ComboInformation />, storeWithCart);
 
-    expect(screen.getByText("Payment Successfully")).toBeInTheDocument();
-    expect(screen.getByText("Payment Successfully")).toHaveClass(
+    expect(screen.getByText("Payment Successful")).toBeInTheDocument();
+    expect(screen.getByText("Payment Successful")).toHaveClass(
       "text-green-600"
     );
     expect(screen.getByTestId("mock-antd-table")).toBeInTheDocument();
@@ -169,15 +187,15 @@ describe("ComboInformation", () => {
       screen.getByTestId("cell-9f6cb2df-687e-4424-a125-6aa82792e38c-Total")
     ).toHaveTextContent("25.000 VNĐ");
 
-    expect(screen.getByText(/Total Amount:/i)).toBeInTheDocument();
+    expect(screen.getByText("Total Amount")).toBeInTheDocument();
     expect(
-      screen.getByText("25.000 VNĐ", { selector: ".text-green-600" })
+      screen.getByText("25.000 VNĐ", { selector: ".text-purple-800" })
     ).toBeInTheDocument();
 
     expect(
-      screen.getByRole("button", { name: /New Combo/i })
+      screen.getByRole("button", { name: /New Combo Order/i })
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Cancel/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Close/i })).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /Try Again/i })
     ).not.toBeInTheDocument();
@@ -198,12 +216,12 @@ describe("ComboInformation", () => {
           },
         ],
         orderProductId: "order-123",
+        comboVisaResponse: null,
+        paymentId: null,
       },
     };
 
     renderWithProvider(<ComboInformation />, storeWithCart);
-
-    screen.debug();
 
     expect(screen.getByText("Payment Failed")).toBeInTheDocument();
     expect(screen.getByText("Payment Failed")).toHaveClass("text-red-600");
@@ -213,19 +231,20 @@ describe("ComboInformation", () => {
       screen.getByTestId("row-9f6cb2df-687e-4424-a125-6aa82792e38c")
     ).toBeInTheDocument();
 
-    expect(screen.getByText(/Total Amount:/i)).toBeInTheDocument();
+    expect(screen.getByText("Total Amount")).toBeInTheDocument();
     expect(
-      screen.getByText("25.000 VNĐ", { selector: ".text-green-600" })
+      screen.getByText("25.000 VNĐ", { selector: ".text-purple-800" })
     ).toBeInTheDocument();
 
     expect(
       screen.getByRole("button", { name: /Try Again/i })
     ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Cancel/i })).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: /New Combo/i })
+      screen.queryByRole("button", { name: /New Combo Order/i })
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: /Cancel/i })
+      screen.queryByRole("button", { name: /Close/i })
     ).not.toBeInTheDocument();
   });
 
@@ -235,24 +254,26 @@ describe("ComboInformation", () => {
       combo: {
         cart: [],
         orderProductId: null,
+        comboVisaResponse: null,
+        paymentId: null,
       },
     };
 
     renderWithProvider(<ComboInformation />, storeWithEmptyCart);
 
-    expect(screen.getByText("Payment Successfully")).toBeInTheDocument();
+    expect(screen.getByText("Payment Successful")).toBeInTheDocument();
 
-    expect(screen.getByText("No combos in cart.")).toBeInTheDocument();
+    expect(screen.getByText("No combo items found")).toBeInTheDocument();
 
-    expect(screen.getByText(/Total Amount:/i)).toBeInTheDocument();
+    expect(screen.getByText("Total Amount")).toBeInTheDocument();
     expect(
-      screen.getByText("0 VNĐ", { selector: ".text-green-600" })
+      screen.getByText("0 VNĐ", { selector: ".text-purple-800" })
     ).toBeInTheDocument();
 
     expect(
-      screen.getByRole("button", { name: /New Combo/i })
+      screen.getByRole("button", { name: /New Combo Order/i })
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Cancel/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Close/i })).toBeInTheDocument();
   });
 
   it("handles New Combo button click", async () => {
@@ -270,18 +291,20 @@ describe("ComboInformation", () => {
           },
         ],
         orderProductId: "order-123",
+        comboVisaResponse: null,
+        paymentId: null,
       },
     };
 
     renderWithProvider(<ComboInformation />, storeWithCart);
 
-    fireEvent.click(screen.getByRole("button", { name: /New Combo/i }));
+    fireEvent.click(screen.getByRole("button", { name: /New Combo Order/i }));
 
     expect(mockNavigate).toHaveBeenCalledWith("/staff/combo-selling");
   });
 
   it("handles Cancel button click", async () => {
-    mockSearch = "?resultCode=0";
+    mockSearch = "?resultCode=1006";
     const storeWithCart = {
       combo: {
         cart: [
@@ -295,14 +318,21 @@ describe("ComboInformation", () => {
           },
         ],
         orderProductId: "order-123",
+        comboVisaResponse: null,
+        paymentId: null,
       },
     };
+
+    api.cancelProductsById.mockResolvedValueOnce({});
 
     renderWithProvider(<ComboInformation />, storeWithCart);
 
     fireEvent.click(screen.getByRole("button", { name: /Cancel/i }));
 
-    expect(mockNavigate).toHaveBeenCalledWith("/staff/combo-selling");
+    await waitFor(() => {
+      expect(api.cancelProductsById).toHaveBeenCalledWith("order-123");
+      expect(mockNavigate).toHaveBeenCalledWith("/staff/combo-selling");
+    });
   });
 
   it("handles Try Again button click with successful API call", async () => {
@@ -320,6 +350,8 @@ describe("ComboInformation", () => {
           },
         ],
         orderProductId: "order-123",
+        comboVisaResponse: null,
+        paymentId: null,
       },
     };
 
@@ -355,6 +387,8 @@ describe("ComboInformation", () => {
           },
         ],
         orderProductId: "order-123",
+        comboVisaResponse: null,
+        paymentId: null,
       },
     };
 

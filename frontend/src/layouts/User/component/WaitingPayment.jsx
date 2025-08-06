@@ -3,16 +3,16 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { CheckCircle, XCircle, Home } from "lucide-react";
 import logo from "../../../assets/logoWeb.svg";
 import {
+  cancelBooking,
+  cancelProduct,
   createMomoPayment,
   createStripePayment,
   createZalopayPayment,
 } from "../../../services/API";
 import StripeCheckoutForm from "./StripeCheckoutForm";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  setOrderProductsId,
-  setPaymentId,
-} from "../../../redux/features/bookingSlice";
+import { setOrderProductsId, setPaymentId } from "../../../redux/features/bookingSlice";
+import BackButton from "../../../component/BackButton";
 
 const WaitingPayment = () => {
   const { state } = useLocation();
@@ -158,30 +158,21 @@ const WaitingPayment = () => {
     return "Unknown";
   };
 
-  // useEffect(() => {
-  //   const createStripeSession = async () => {
-  //     const res = await fetch("http://localhost:4458/api/payment/stripe", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json", Authorization: `Bearer ${state.token}` },
-  //       body: JSON.stringify({
-  //         amount: state.finalPrice,
-  //         bookingId: state.bookingId,
-  //         orderProductId: state.orderProductId,
-  //       }),
-  //     });
-  //     const data = await res.json();
-  //     if (data.status === "success" && (data.data?.clientSecret || data.data?.ClientSecret)) {
-  //       setClientSecret(data.data.clientSecret || data.data.ClientSecret);
-  //     } else {
-  //       setStripeError(data.error || "Không lấy được thông tin thanh toán Stripe");
-  //     }
-  //   };
+ const handleBackWithCancel = () => {
+  if (bookingId) {
+    cancelBooking(bookingId).catch((err) =>
+      console.error("Cancel booking error:", err)
+    );
+  }
 
-  //   if (state.paymentMethod === "3") {
-  //     createStripeSession();
-  //   }
-  //   // ...xử lý các phương thức khác (Momo, ZaloPay) nếu cần
-  // }, [state]);
+  if (orderProductsId) {
+    cancelProduct(orderProductsId).catch((err) =>
+      console.error("Cancel product error:", err)
+    );
+  }
+
+  navigate(-1);
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 via-50% via-purple-950/50 to-slate-900 text-white flex items-center justify-center p-25">
@@ -297,12 +288,15 @@ const WaitingPayment = () => {
         )}
 
         {clientSecret && paymentMethod === "3" && (
-          <StripeCheckoutForm
-            clientSecret={clientSecret}
-            onSuccess={() => {
-              navigate("/ticket");
-            }}
-          />
+          
+          
+         
+         <StripeCheckoutForm
+  clientSecret={clientSecret}
+  onSuccess={() => navigate("/ticket")}
+  onBack={handleBackWithCancel}
+/>
+
         )}
 
         {stripeError && <div className="text-red-500">{stripeError}</div>}

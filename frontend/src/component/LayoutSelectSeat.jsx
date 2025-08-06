@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { PiArmchairLight, PiArmchairFill } from "react-icons/pi";
 import { MdOutlineChair } from "react-icons/md";
+import { TbSofa } from "react-icons/tb";
 
 export const LayoutSelectSeat = ({
   onSeatSelect = () => {},
   initialSelectedSeats = [],
   seatDataFromAPI = [],
-  containerWidth = "750px",
+  containerWidth = "100%",
   width = 30,
   height = 30,
   textColor = "text-gray-500",
   widthDouble = 60,
   heightDouble = 30,
   readOnly = false,
-
   aisleWidth = 60,
   seatSpacing = 12,
   seatSpacingCouple = 0,
@@ -34,6 +34,7 @@ export const LayoutSelectSeat = ({
   const [isLoaded, setIsLoaded] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [warningMessage, setWarningMessage] = useState("");
+  const scrollContainerRef = useRef(null);
 
   const seatMap = {};
   seatDataFromAPI.forEach((seat) => {
@@ -45,21 +46,19 @@ export const LayoutSelectSeat = ({
     const rows = {};
 
     seatDataFromAPI.forEach((seat) => {
-      // Validate seat data before processing
       if (
         !seat ||
         typeof seat.seatNumber !== "string" ||
         seat.seatNumber.length === 0
       ) {
-        return; // Skip this seat
+        return;
       }
 
-      const row = seat.seatNumber[0]; // A, B, C...
+      const row = seat.seatNumber[0];
       const number = parseInt(seat.seatNumber.slice(1));
 
-      // Validate row and number
       if (!row || isNaN(number)) {
-        return; // Skip this seat
+        return;
       }
 
       if (!rows[row]) {
@@ -77,7 +76,6 @@ export const LayoutSelectSeat = ({
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([row, seats]) => {
         const sortedSeats = seats.sort((a, b) => a.number - b.number);
-
         const totalSeats = sortedSeats.length;
         const leftSideCount = Math.ceil(totalSeats / 2);
 
@@ -90,7 +88,6 @@ export const LayoutSelectSeat = ({
         };
       });
 
-    // **Assign type based on row index**
     return sortedRows.map((rowData, index, arr) => {
       if (index < 3) {
         rowData.seats.forEach((seat) => (seat.type = "Normal"));
@@ -103,13 +100,39 @@ export const LayoutSelectSeat = ({
     });
   };
 
+  // Tính toán minimum width cần thiết cho toàn bộ layout
+  const calculateMinWidth = () => {
+    if (seatLayout.length === 0) return 750;
+
+    let maxRowWidth = 0;
+    
+    seatLayout.forEach((row) => {
+      // Width của left side
+      const leftWidth = row.leftSeats.reduce((total, seat) => {
+        const seatWidth = seat.type === "Couple" ? widthDouble : width;
+        return total + seatWidth + seatSpacing;
+      }, 0);
+
+      // Width của right side
+      const rightWidth = row.rightSeats.reduce((total, seat) => {
+        const seatWidth = seat.type === "Couple" ? widthDouble : width;
+        return total + seatWidth + seatSpacing;
+      }, 0);
+
+      // Total width: row labels (16px each) + left seats + aisle + right seats
+      const totalWidth = 32 + leftWidth + aisleWidth + rightWidth;
+      maxRowWidth = Math.max(maxRowWidth, totalWidth);
+    });
+
+    return Math.max(maxRowWidth, 750); // Minimum 750px
+  };
+
   const wouldCreateGap = (seatNumber, currentSelectedSeats) => {
     const seat = seatMap[seatNumber];
     if (!seat) return false;
 
     const row = seat.seatNumber[0];
 
-    // Lấy tất cả ghế trong hàng hiện tại
     const rowSeats = seatDataFromAPI
       .filter((s) => s.seatNumber[0] === row)
       .sort(
@@ -117,12 +140,10 @@ export const LayoutSelectSeat = ({
           parseInt(a.seatNumber.slice(1)) - parseInt(b.seatNumber.slice(1))
       );
 
-    // Lấy ghế available trong hàng này (không bao gồm ghế đang chọn)
     const availableSeats = rowSeats
       .filter((s) => s.status === "available" && s.seatNumber !== seatNumber)
       .map((s) => parseInt(s.seatNumber.slice(1)));
 
-    // Lấy ghế đã chọn + taken + holding trong hàng này
     const occupiedInRow = rowSeats
       .filter(
         (s) =>
@@ -134,35 +155,25 @@ export const LayoutSelectSeat = ({
 
     if (occupiedInRow.length === 0) return false;
 
-    // Thêm ghế hiện tại vào danh sách để kiểm tra
     const currentSeatNumber = parseInt(seatNumber.slice(1));
     const allOccupied = [...occupiedInRow, currentSeatNumber].sort(
       (a, b) => a - b
     );
 
-    // Tìm khoảng trống sẽ được tạo ra
     for (let i = 0; i < allOccupied.length - 1; i++) {
       const currentNum = allOccupied[i];
       const nextNum = allOccupied[i + 1];
 
-      // Kiểm tra khoảng cách đúng 2 (có 1 ghế ở giữa)
       if (nextNum - currentNum === 2) {
         const gapSeatNum = currentNum + 1;
         const seatToCheck = `${row}${gapSeatNum}`;
         const seatData = seatMap[seatToCheck];
 
-        // Nếu ghế ở giữa tồn tại và available
         if (seatData && seatData.status === "available") {
-          // **LOGIC THỰC TẾ**:
-          // - Nếu chỉ còn lại ít ghế available (≤ 3), cho phép chọn
-          // - Nếu không còn cặp ghế kề nhau nào khác, cho phép chọn
-          // - Chỉ cấm khi còn nhiều lựa chọn tốt hơn
-
           if (availableSeats.length <= 3) {
-            return false; // Cho phép chọn nếu ít ghế còn lại
+            return false;
           }
 
-          // Kiểm tra xem có cặp ghế kề nhau khác không (không tính ghế gap)
           const seatsExcludingGap = availableSeats.filter(
             (num) => num !== gapSeatNum
           );
@@ -175,7 +186,6 @@ export const LayoutSelectSeat = ({
             }
           }
 
-          // Chỉ cấm nếu vẫn còn cặp ghế kề nhau khác
           return hasConsecutivePair;
         }
       }
@@ -184,25 +194,21 @@ export const LayoutSelectSeat = ({
     return false;
   };
 
-  // **LOGIC CẢI THIỆN CHO BỎ CHỌN GHẾ**
   const wouldCreateGapOnDeselect = (seatNumber, currentSelectedSeats) => {
     const seat = seatMap[seatNumber];
     if (!seat) return false;
 
     const row = seat.seatNumber[0];
 
-    // Tạo set mới không bao gồm ghế đang bỏ chọn
     const newSelectedSeats = new Set(currentSelectedSeats);
     newSelectedSeats.delete(seatNumber);
 
-    // Nếu sau khi bỏ chọn không còn ghế nào được chọn trong hàng, cho phép
     const remainingSelectedInRow = seatDataFromAPI.filter(
       (s) => s.seatNumber[0] === row && newSelectedSeats.has(s.seatNumber)
     );
 
     if (remainingSelectedInRow.length === 0) return false;
 
-    // Lấy ghế available trong hàng này (bao gồm ghế đang bỏ chọn)
     const availableSeats = seatDataFromAPI
       .filter(
         (s) =>
@@ -211,7 +217,6 @@ export const LayoutSelectSeat = ({
       )
       .map((s) => parseInt(s.seatNumber.slice(1)));
 
-    // Lấy ghế đã chọn + taken + holding trong hàng này sau khi bỏ chọn
     const occupiedInRow = seatDataFromAPI
       .filter(
         (s) =>
@@ -225,7 +230,6 @@ export const LayoutSelectSeat = ({
 
     if (occupiedInRow.length <= 1) return false;
 
-    // Kiểm tra khoảng trống sẽ được tạo ra
     for (let i = 0; i < occupiedInRow.length - 1; i++) {
       const currentNum = occupiedInRow[i];
       const nextNum = occupiedInRow[i + 1];
@@ -236,20 +240,15 @@ export const LayoutSelectSeat = ({
         const seatData = seatMap[seatToCheck];
 
         if (seatData && seatData.status === "available") {
-          // **LOGIC THỰC TẾ**: Cho phép bỏ chọn trong hầu hết trường hợp
-          // Chỉ cấm khi việc bỏ chọn tạo ra gap MÀ người dùng có thể chọn cách khác tốt hơn
-
           const currentSeatNumber = parseInt(seatNumber.slice(1));
           const otherAvailableSeats = availableSeats.filter(
             (num) => num !== currentSeatNumber && num !== gapSeatNum
           );
 
-          // Nếu ít ghế available còn lại, cho phép bỏ chọn
           if (otherAvailableSeats.length <= 2) {
             return false;
           }
 
-          // Kiểm tra có cặp ghế kề nhau khác không
           let hasConsecutivePair = false;
           for (let j = 0; j < otherAvailableSeats.length - 1; j++) {
             if (otherAvailableSeats[j + 1] - otherAvailableSeats[j] === 1) {
@@ -258,7 +257,6 @@ export const LayoutSelectSeat = ({
             }
           }
 
-          // Chỉ cấm nếu vẫn còn nhiều lựa chọn tốt hơn
           return hasConsecutivePair && otherAvailableSeats.length > 3;
         }
       }
@@ -267,17 +265,45 @@ export const LayoutSelectSeat = ({
     return false;
   };
 
+  // Function to center the scroll position
+  const centerScrollPosition = () => {
+    if (scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      const scrollWidth = container.scrollWidth;
+      const clientWidth = container.clientWidth;
+      
+      if (scrollWidth > clientWidth) {
+        const centerPosition = (scrollWidth - clientWidth) / 2;
+        container.scrollLeft = centerPosition;
+      }
+    }
+  };
+
   useEffect(() => {
     if (seatDataFromAPI.length > 0) {
       const layout = groupSeatsByRow();
       setSeatLayout(layout);
-      // Trigger animation after layout is set
-      setTimeout(() => setIsLoaded(true), 100);
+      setTimeout(() => {
+        setIsLoaded(true);
+        // Center the scroll position after layout is loaded
+        setTimeout(() => centerScrollPosition(), 100);
+      }, 100);
     }
   }, [seatDataFromAPI]);
 
+  // Re-center when window resizes
+  useEffect(() => {
+    const handleResize = () => {
+      if (isLoaded) {
+        setTimeout(() => centerScrollPosition(), 100);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isLoaded]);
+
   const handleSeatClick = (seatNumber) => {
-    // If readOnly mode is enabled, don't allow seat selection
     if (readOnly) return;
 
     const seat = seatMap[seatNumber];
@@ -286,7 +312,6 @@ export const LayoutSelectSeat = ({
     const isCurrentlySelected = selectedSeats.has(seatNumber);
 
     if (isCurrentlySelected) {
-      // Kiểm tra việc bỏ chọn có tạo khoảng trống không
       if (wouldCreateGapOnDeselect(seatNumber, selectedSeats)) {
         setWarningMessage(
           "Cannot deselect this seat as it will create a gap between the selected seats in the same row!"
@@ -295,7 +320,6 @@ export const LayoutSelectSeat = ({
         return;
       }
     } else {
-      // Kiểm tra việc chọn có tạo khoảng trống không
       if (wouldCreateGap(seatNumber, selectedSeats)) {
         setWarningMessage(
           "Cannot select this seat because it will create a gap between the seats in the same row!"
@@ -314,7 +338,6 @@ export const LayoutSelectSeat = ({
 
     setSelectedSeats(newSelectedSeats);
 
-    // Trả về thông tin ghế đã chọn với tổng giá
     const selectedSeatDetails = Array.from(newSelectedSeats).map(
       (seatNum) => seatMap[seatNum]
     );
@@ -340,25 +363,23 @@ export const LayoutSelectSeat = ({
     const isCouple = type === "Couple";
     const isClickable = !isTaken && !isHolding && !readOnly;
 
-    // Chọn màu dựa vào hàng
     const getSeatColorByRow = () => {
       if (status === "taken") return seatColors.taken;
       if (status === "holding") return seatColors.holding;
       if (isSelected) return seatColors.selected;
 
-      if (rowIndex < 3) return seatColors.normal; // 3 hàng đầu = Normal
-      if (rowIndex === seatLayout.length - 1) return seatColors.couple; // Hàng cuối = Couple
-      return seatColors.vip; // Còn lại = VIP
+      if (rowIndex < 3) return seatColors.normal;
+      if (rowIndex === seatLayout.length - 1) return seatColors.couple;
+      return seatColors.vip;
     };
 
     const seatColor = getSeatColorByRow();
 
-    // Ghế đôi
     if (isCouple) {
       return (
         <div
           key={seatId}
-          className="inline-block"
+          className="inline-block flex-shrink-0"
           style={{
             marginRight: `${seatSpacingCouple}px`,
             width: `${widthDouble}px`,
@@ -391,7 +412,7 @@ export const LayoutSelectSeat = ({
             }}
             title={`${type} Seat ${seatNumber} - ${price.toLocaleString()}đ - ${status}`}
           >
-            <MdOutlineChair
+            <TbSofa 
               style={{
                 width: `${widthDouble}px`,
                 height: `${heightDouble}px`,
@@ -399,7 +420,6 @@ export const LayoutSelectSeat = ({
                 pointerEvents: "none",
               }}
             />
-            {/* Tooltip */}
             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
               {seatNumber} - {price.toLocaleString()}đ
             </div>
@@ -408,11 +428,10 @@ export const LayoutSelectSeat = ({
       );
     }
 
-    // Ghế đơn
     return (
       <div
         key={seatId}
-        className="inline-block"
+        className="inline-block flex-shrink-0"
         style={{
           marginRight: `${seatSpacing}px`,
           width: `${width}px`,
@@ -463,7 +482,6 @@ export const LayoutSelectSeat = ({
             />
           )}
 
-          {/* Tooltip */}
           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
             {seatNumber} - {price.toLocaleString()}đ
           </div>
@@ -472,19 +490,16 @@ export const LayoutSelectSeat = ({
     );
   };
 
-  // Tính toán width của hàng rộng nhất để căn chỉnh
   const getMaxRowWidth = () => {
     let maxLeftWidth = 0;
     let maxRightWidth = 0;
 
     seatLayout.forEach((row) => {
-      // Tính width của left side
       const leftWidth = row.leftSeats.reduce((total, seat) => {
         const seatWidth = seat.type === "Couple" ? widthDouble : width;
         return total + seatWidth + seatSpacing;
       }, 0);
 
-      // Tính width của right side
       const rightWidth = row.rightSeats.reduce((total, seat) => {
         const seatWidth = seat.type === "Couple" ? widthDouble : width;
         return total + seatWidth + seatSpacing;
@@ -498,6 +513,7 @@ export const LayoutSelectSeat = ({
   };
 
   const { maxLeftWidth, maxRightWidth } = getMaxRowWidth();
+  const minLayoutWidth = calculateMinWidth();
 
   const renderRow = (rowData, index) => {
     return (
@@ -511,7 +527,7 @@ export const LayoutSelectSeat = ({
         }}
       >
         {/* Row label - Left */}
-        <div className="w-8 flex justify-center">
+        <div className="w-8 flex justify-center flex-shrink-0">
           <span className={`${textColor} text-sm font-medium`}>
             {rowData.row}
           </span>
@@ -519,7 +535,7 @@ export const LayoutSelectSeat = ({
 
         {/* Left side seats */}
         <div
-          className="flex items-center justify-end"
+          className="flex items-center justify-end flex-shrink-0"
           style={{ width: `${maxLeftWidth}px` }}
         >
           {rowData.leftSeats.map((seat, seatIndex) => (
@@ -539,7 +555,7 @@ export const LayoutSelectSeat = ({
 
         {/* Aisle */}
         <div
-          className="flex items-center justify-center"
+          className="flex items-center justify-center flex-shrink-0"
           style={{ width: `${aisleWidth}px` }}
         >
           <div className="w-px h-0 bg-gray-600 opacity-30"></div>
@@ -547,7 +563,7 @@ export const LayoutSelectSeat = ({
 
         {/* Right side seats */}
         <div
-          className="flex items-center justify-start"
+          className="flex items-center justify-start flex-shrink-0"
           style={{ width: `${maxRightWidth}px` }}
         >
           {rowData.rightSeats.map((seat, seatIndex) => (
@@ -568,7 +584,7 @@ export const LayoutSelectSeat = ({
         </div>
 
         {/* Row label - Right */}
-        <div className="w-8 flex justify-center">
+        <div className="w-8 flex justify-center flex-shrink-0">
           <span className={`${textColor} text-sm font-medium`}>
             {rowData.row}
           </span>
@@ -578,53 +594,73 @@ export const LayoutSelectSeat = ({
   };
 
   return (
-    <div className="text-white rounded-lg" style={{ width: containerWidth }}>
-      {/* Screen */}
-      <div
-        className={`w-full h-[60px] relative overflow-hidden mb-8 transition-all duration-700 ${
-          isLoaded ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
-        }`}
-      >
-        <svg
-          width="100%"
-          height="40"
-          viewBox="0 0 800 40"
-          className="absolute top-0 left-0"
-          preserveAspectRatio="none"
+    <div className="text-white rounded-lg w-full" style={{ maxWidth: containerWidth }}>
+      {/* Container chung cho screen và seat map - căn giữa trong viewport */}
+      <div className="w-full flex justify-center">
+        <div 
+          ref={scrollContainerRef}
+          className={`scroll-smooth ${isLoaded ? 'overflow-x-auto' : 'overflow-x-hidden'} overflow-y-hidden`}
+          style={{ maxWidth: '100%' }}
         >
-          <defs>
-            <linearGradient
-              id="purpleGradient"
-              x1="0%"
-              y1="0%"
-              x2="100%"
-              y2="0%"
+          <div 
+            style={{ 
+              minWidth: `${minLayoutWidth}px`,
+              width: 'max-content',
+            }}
+          >
+            {/* Screen - Aligned with seat map */}
+            <div
+              className={`h-[60px] relative overflow-hidden mb-8 transition-all duration-700 flex justify-center ${
+                isLoaded ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
+              }`}
             >
-              <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.2" />
-              <stop offset="50%" stopColor="#8b5cf6" stopOpacity="1" />
-              <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.2" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M 0 20 Q 400 5 800 20"
-            stroke="url(#purpleGradient)"
-            strokeWidth="3"
-            strokeLinecap="round"
-            fill="none"
-          />
-        </svg>
-        <div
-          className={`text-center font-medium text-base mt-6 ${textColor} tracking-wider`}
-        >
-          SCREEN
+              <div style={{ width: `${Math.min(minLayoutWidth * 0.8, 800)}px` }}>
+                <svg
+                  width="100%"
+                  height="40"
+                  viewBox="0 0 800 40"
+                  className="absolute top-0 left-0"
+                  preserveAspectRatio="none"
+                >
+                  <defs>
+                    <linearGradient
+                      id="purpleGradient"
+                      x1="0%"
+                      y1="0%"
+                      x2="100%"
+                      y2="0%"
+                    >
+                      <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.2" />
+                      <stop offset="50%" stopColor="#8b5cf6" stopOpacity="1" />
+                      <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.2" />
+                    </linearGradient>
+                  </defs>
+                  <path
+                    d="M 0 20 Q 400 5 800 20"
+                    stroke="url(#purpleGradient)"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    fill="none"
+                  />
+                </svg>
+                <div
+                  className={`text-center font-medium text-base mt-6 ${textColor} tracking-wider`}
+                >
+                  SCREEN
+                </div>
+              </div>
+            </div>
+
+            {/* Seat Layout - Same width as container */}
+            <div className="flex flex-col space-y-2">
+              {seatLayout.map((row, index) => renderRow(row, index))}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Seat Layout */}
-      <div className="flex flex-col space-y-2">
-        {seatLayout.map((row, index) => renderRow(row, index))}
-      </div>
-      <div className="mt-8 overflow-x-auto w-full flex items-center justify-center">
+      {/* Legend - Fixed and centered */}
+      <div className="mt-8 w-full flex items-center justify-center">
         <div className="flex justify-center items-center flex-wrap gap-4 sm:gap-6 text-sm sm:text-lg w-full sm:px-3 max-w-full px-5">
           <div className="flex items-center space-x-2 min-w-fit">
             <PiArmchairLight className={seatColors.normal} size={20} />
@@ -635,7 +671,7 @@ export const LayoutSelectSeat = ({
             <span className="text-gray-400">VIP</span>
           </div>
           <div className="flex items-center space-x-2 min-w-fit">
-            <MdOutlineChair className={seatColors.couple} size={20} />
+            <TbSofa className={seatColors.couple} size={20} />
             <span className="text-gray-400">Couple</span>
           </div>
           <div className="flex items-center space-x-2 min-w-fit">
@@ -660,6 +696,39 @@ export const LayoutSelectSeat = ({
         }
         .animate-fade-in {
           animation: fade-in 0.5s ease-out forwards;
+        }
+        
+        /* Custom scrollbar styles - only show when loaded */
+        .overflow-x-auto {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(139, 92, 246, 0.3) transparent;
+        }
+        
+        .overflow-x-auto::-webkit-scrollbar {
+          height: 8px;
+        }
+        
+        .overflow-x-auto::-webkit-scrollbar-track {
+          background: rgba(75, 85, 99, 0.1);
+          border-radius: 4px;
+        }
+        
+        .overflow-x-auto::-webkit-scrollbar-thumb {
+          background: rgba(139, 92, 246, 0.3);
+          border-radius: 4px;
+        }
+        
+        .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+          background: rgba(139, 92, 246, 0.5);
+        }
+
+        /* Hide scrollbar when loading */
+        .overflow-x-hidden {
+          scrollbar-width: none;
+        }
+        
+        .overflow-x-hidden::-webkit-scrollbar {
+          display: none;
         }
       `}</style>
 
