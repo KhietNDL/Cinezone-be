@@ -2,18 +2,30 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Users, CheckCircle, Clock, Film, Eye, Ticket } from "lucide-react";
 import { IoSearchOutline } from "react-icons/io5";
+import UserAvatar from "../userComponent/UserAvatar";
 import {
   getAllBookings,
   getBookingById,
   searchBookingsByUser,
 } from "../../../services/API";
+import {
+  getTopMoviesByTickets,
+  getTopGenresByTickets,
+} from "../../../services/APIForAdmin/API";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  Legend,
+} from "recharts";
 import Pagination from "../movieComponent/Pagination";
 import StatsCards from "../ticketComponent/StatsCards";
 
 const TicketBookingManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
-  const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedBooking, setSelectedBooking] = useState(null);
@@ -22,13 +34,32 @@ const TicketBookingManagement = () => {
   // eslint-disable-next-line no-unused-vars
   const [loading, setLoading] = useState(false);
   const [bookingDetails, setBookingDetails] = useState({});
-  const [statusFilter, setStatusFilter] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("all");
 
   // Stats data for all bookings
   const [allBookingDetails, setAllBookingDetails] = useState({});
 
+  // Chart data states
+  const [topMoviesData, setTopMoviesData] = useState([]);
+  const [topGenresData, setTopGenresData] = useState([]);
+
+  // Helper function to map filter to backend status
+  const getStatusFromFilter = (filter) => {
+    switch (filter) {
+      case "successful":
+        return "successful"; // Status 2 (Paid) or 3 (Completed)
+      case "pending":
+        return "pending"; // Status 1 (Pending)
+      case "cancelled":
+        return "cancelled"; // Status 4 (Cancelled)
+      case "all":
+      default:
+        return null;
+    }
+  };
+
   // Stats calculation based on all bookings
-  const totalBookings = totalItems;
+  const totalBookings = Object.keys(allBookingDetails).length;
   const successfulBookings = Object.values(allBookingDetails).filter(
     (booking) => booking.status === 2 || booking.status === 3
   ).length;
@@ -67,48 +98,29 @@ const TicketBookingManagement = () => {
 
   const handleFilterChange = (filterType) => {
     setStatusFilter(filterType);
-    setCurrentPage(1); // Reset to first page when filter changes
+    setCurrentPage(1); // Reset to page 1 when filter changes
+
+    // Use backend filtering instead of client-side
+    const status = getStatusFromFilter(filterType);
+    if (searchTerm.trim()) {
+      searchBookingData(searchTerm, status);
+    } else {
+      fetchBookings(status);
+    }
   };
 
-  const getFilteredBookings = () => {
-    if (!statusFilter) return bookings;
-
-    return bookings.filter((booking) => {
-      // Use allBookingDetails for filtering if available, otherwise fallback to current page data
-      const detailsToUse =
-        allBookingDetails[booking.BookingId] ||
-        bookingDetails[booking.BookingId];
-      const status = detailsToUse?.status ?? booking.status;
-
-      if (statusFilter === "successful") {
-        return status === 2 || status === 3; // Paid or Completed
-      } else if (statusFilter === "pending") {
-        return status === 1; // Pending
-      } else if (statusFilter === "cancelled") {
-        return status === 4; // Cancelled
-      }
-      return true;
-    });
-  };
-
-  const fetchBookings = useCallback(async () => {
-    setLoading(true);
+  // Fetch all bookings for statistics calculation
+  const getAllBookingsForStats = useCallback(async () => {
     try {
       const params = {
-        page: currentPage,
-        limit: itemsPerPage,
+        page: 1,
+        limit: 10000, // Large number to get all bookings
         sortBy: "CreatedAt",
         sortOrder: "desc",
       };
-      const data = await getAllBookings(params);
-      setBookings(data.data);
-      if (data.pagination) {
-        setTotalItems(data.pagination.total);
-        setTotalPages(data.pagination.totalPages);
-      }
 
-      // Chỉ fetch all bookings cho stats ở trang đầu tiên
-      if (currentPage === 1 && Object.keys(allBookingDetails).length === 0) {
+      const data = await getAllBookings(params);
+      if (data.data) {
         // Fetch details for all bookings for accurate stats
         const fetchAllDetails = async () => {
           const detailsPromises = data.data.map(async (booking) => {
@@ -116,14 +128,7 @@ const TicketBookingManagement = () => {
             try {
               const detail = await getBookingById(bookingId);
               return { [bookingId]: detail };
-            } catch (error) {
-              // Only log if it's not a "not found" error
-              if (!error.message?.includes("not found")) {
-                console.error(
-                  `Error fetching detail for booking ${bookingId}:`,
-                  error
-                );
-              }
+            } catch {
               // Fallback to booking data with basic structure
               return {
                 [bookingId]: {
@@ -143,13 +148,39 @@ const TicketBookingManagement = () => {
             (acc, curr) => ({ ...acc, ...curr }),
             {}
           );
-          // Set both current page details and all details for stats
-          setBookingDetails(updatedDetails);
           setAllBookingDetails(updatedDetails);
         };
         await fetchAllDetails();
-      } else {
-        // Chỉ fetch details cho trang hiện tại
+      }
+    } catch (error) {
+      console.error("Error fetching all bookings for stats:", error);
+      setAllBookingDetails({});
+    }
+  }, []);
+
+  const fetchBookings = useCallback(
+    async (status = null) => {
+      setLoading(true);
+      try {
+        const params = {
+          page: currentPage,
+          limit: itemsPerPage,
+          sortBy: "CreatedAt",
+          sortOrder: "desc",
+        };
+
+        // Add status filter if provided
+        if (status) {
+          params.status = status;
+        }
+
+        const data = await getAllBookings(params);
+        setBookings(data.data);
+        if (data.pagination) {
+          setTotalPages(data.pagination.totalPages);
+        }
+
+        // Fetch details for current page bookings only
         const fetchDetails = async () => {
           const detailsPromises = data.data.map(async (booking) => {
             const bookingId = booking.BookingId;
@@ -186,25 +217,30 @@ const TicketBookingManagement = () => {
           setBookingDetails(updatedDetails);
         };
         await fetchDetails();
+      } catch (error) {
+        console.error("Error fetching bookings:", error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentPage, itemsPerPage, allBookingDetails]);
+    },
+    [currentPage, itemsPerPage]
+  );
 
   // Load initial data khi component mount
   useEffect(() => {
     if (!searchTerm) {
       fetchBookings();
     }
-  }, [fetchBookings, searchTerm]);
+    // Load stats data separately to avoid duplicate calls
+    if (Object.keys(allBookingDetails).length === 0) {
+      getAllBookingsForStats();
+    }
+  }, [fetchBookings, searchTerm, getAllBookingsForStats, allBookingDetails]);
 
   const searchBookingData = useCallback(
-    async (searchTerm) => {
+    async (searchTerm, status = null) => {
       if (!searchTerm.trim()) {
-        fetchBookings();
+        fetchBookings(status);
         return;
       }
       setLoading(true);
@@ -215,6 +251,11 @@ const TicketBookingManagement = () => {
           sortBy: "CreatedAt",
           sortOrder: "desc",
         };
+
+        // Add status filter if provided
+        if (status) {
+          params.status = status;
+        }
 
         const response = await searchBookingsByUser(searchTerm, params);
         if (response) {
@@ -227,11 +268,9 @@ const TicketBookingManagement = () => {
 
           // Xử lý pagination từ response
           if (response.pagination) {
-            setTotalItems(response.pagination.total);
             setTotalPages(response.pagination.totalPages);
           } else {
             const total = bookingsData.length;
-            setTotalItems(total);
             setTotalPages(Math.ceil(total / itemsPerPage));
           }
 
@@ -274,7 +313,6 @@ const TicketBookingManagement = () => {
       } catch (error) {
         console.error("Error searching bookings:", error);
         setBookings([]);
-        setTotalItems(0);
         setTotalPages(0);
       } finally {
         setLoading(false);
@@ -315,15 +353,51 @@ const TicketBookingManagement = () => {
   // Thêm useEffect mới với debounce
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
+      const status = getStatusFromFilter(statusFilter);
+
       if (searchTerm) {
-        searchBookingData(searchTerm);
+        searchBookingData(searchTerm, status);
       } else {
-        fetchBookings();
+        fetchBookings(status);
       }
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm, currentPage, searchBookingData, fetchBookings]); // Thêm currentPage để search lại khi đổi trang
+  }, [searchTerm, currentPage, statusFilter, searchBookingData, fetchBookings]);
+
+  // Fetch chart data
+  useEffect(() => {
+    const fetchTopMoviesStats = async () => {
+      try {
+        const response = await getTopMoviesByTickets(10);
+        if (response?.data && Array.isArray(response.data)) {
+          setTopMoviesData(response.data);
+        } else {
+          setTopMoviesData([]);
+        }
+      } catch (error) {
+        console.error("Error fetching top movies stats:", error);
+        setTopMoviesData([]);
+      }
+    };
+
+    const fetchTopGenresStats = async () => {
+      try {
+        const response = await getTopGenresByTickets(5);
+        if (response?.data && Array.isArray(response.data)) {
+          setTopGenresData(response.data);
+        } else {
+          setTopGenresData([]);
+        }
+      } catch (error) {
+        console.error("Error fetching top genres stats:", error);
+        setTopGenresData([]);
+      }
+    };
+
+    fetchTopMoviesStats();
+    fetchTopGenresStats();
+  }, []);
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
@@ -732,7 +806,7 @@ const TicketBookingManagement = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 hover:border-gray-300 shadow-sm"
-                placeholder="Search by name or movie..."
+                placeholder="Search by phone.."
               />
             </div>
           </div>
@@ -783,7 +857,7 @@ const TicketBookingManagement = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {getFilteredBookings().map((booking) => (
+                    {bookings.map((booking) => (
                       <tr
                         key={booking.BookingId}
                         onClick={() => openModal(booking)}
@@ -791,8 +865,17 @@ const TicketBookingManagement = () => {
                       >
                         <td className="py-3 px-4 shrink-0">
                           <div className="flex items-center">
-                            <div className="w-10 h-10 bg-gradient-to-r from-purple-100 to-purple-200 rounded-full flex items-center justify-center mr-3">
-                              <Users className="w-5 h-5 text-purple-600" />
+                            <div className="mr-3">
+                              <UserAvatar
+                                fullName={
+                                  (
+                                    allBookingDetails[booking.BookingId] ||
+                                    bookingDetails[booking.BookingId]
+                                  )?.buyerName || "User"
+                                }
+                                size="md"
+                                showHover={true}
+                              />
                             </div>
                             <div>
                               <span className="block font-medium text-gray-800 group-hover:text-purple-700 transition-colors duration-200">
@@ -888,7 +971,7 @@ const TicketBookingManagement = () => {
               </div>
 
               {/* No data state */}
-              {getFilteredBookings().length === 0 && (
+              {bookings.length === 0 && (
                 <div className="text-center py-12">
                   <div className="w-24 h-24 mx-auto mb-4 bg-gradient-to-r from-purple-100 to-purple-200 rounded-full flex items-center justify-center">
                     <Ticket className="w-12 h-12 text-purple-400" />
@@ -907,7 +990,7 @@ const TicketBookingManagement = () => {
 
             {/* Card Layout for Mobile */}
             <div className="block sm:hidden">
-              {getFilteredBookings().length === 0 ? (
+              {bookings.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="w-24 h-24 mx-auto mb-4 bg-gradient-to-r from-purple-100 to-purple-200 rounded-full flex items-center justify-center">
                     <Ticket className="w-12 h-12 text-purple-400" />
@@ -923,7 +1006,7 @@ const TicketBookingManagement = () => {
                 </div>
               ) : (
                 <div className="space-y-4 p-4">
-                  {getFilteredBookings().map((booking) => (
+                  {bookings.map((booking) => (
                     <article
                       key={booking.BookingId}
                       className="bg-white p-4 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 cursor-pointer hover:bg-gradient-to-r hover:from-purple-50/30 hover:to-indigo-50/30 group"
@@ -931,11 +1014,19 @@ const TicketBookingManagement = () => {
                     >
                       <div className="flex items-center gap-4">
                         <div className="relative">
-                          <div className="w-16 h-16 bg-gradient-to-r from-purple-100 to-purple-200 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow duration-300 ring-2 ring-gray-100 group-hover:ring-purple-200">
-                            <Ticket className="w-8 h-8 text-purple-600" />
-                          </div>
+                          <UserAvatar
+                            fullName={
+                              (
+                                allBookingDetails[booking.BookingId] ||
+                                bookingDetails[booking.BookingId]
+                              )?.buyerName || "User"
+                            }
+                            size="xl"
+                            showHover={true}
+                            className="shadow-md group-hover:shadow-lg transition-shadow duration-300 ring-2 ring-gray-100 group-hover:ring-purple-200"
+                          />
                           <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-purple-600 to-purple-700 rounded-full flex items-center justify-center">
-                            <Users className="w-3 h-3 text-white" />
+                            <Ticket className="w-3 h-3 text-white" />
                           </div>
                         </div>
                         <div className="flex-1 min-w-0">
@@ -1057,6 +1148,247 @@ const TicketBookingManagement = () => {
             totalPages={totalPages}
             handlePageChange={handlePageChange}
           />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {" "}
+            {/* Top Movies by Tickets Pie Chart */}
+            <div className="bg-white p-5 sm:p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-purple-50/30">
+              <div className="mb-6">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
+                  Top Movies by Ticket Sales (Pie Chart)
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Distribution of ticket sales among top movies
+                </p>
+              </div>
+              <div className="h-[350px] sm:h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={topMoviesData.slice(0, 8)} // Show top 8 movies to avoid overcrowding
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ title, percent }) =>
+                        `${
+                          title && title.length > 15
+                            ? title.substring(0, 15) + "..."
+                            : title || "Unknown"
+                        } (${(percent * 100).toFixed(1)}%)`
+                      }
+                      outerRadius={120}
+                      fill="#8884d8"
+                      dataKey="ticketsSold"
+                    >
+                      {topMoviesData.slice(0, 8).map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={
+                            [
+                              "#8B5CF6", // Purple
+                              "#06B6D4", // Cyan
+                              "#10B981", // Green
+                              "#F59E0B", // Yellow
+                              "#EF4444", // Red
+                              "#EC4899", // Pink
+                              "#6366F1", // Indigo
+                              "#84CC16", // Lime
+                            ][index % 8]
+                          }
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value, name, props) => [
+                        `${value.toLocaleString()} tickets`,
+                        `${props.payload.title || "Unknown Movie"}`,
+                      ]}
+                      labelStyle={{ color: "#333" }}
+                      contentStyle={{
+                        backgroundColor: "#fff",
+                        border: "1px solid #e5e7eb",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                      }}
+                    />
+                    <Legend
+                      verticalAlign="bottom"
+                      height={36}
+                      formatter={(value, entry) =>
+                        entry.payload.title && entry.payload.title.length > 20
+                          ? entry.payload.title.substring(0, 20) + "..."
+                          : entry.payload.title || "Unknown Movie"
+                      }
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Summary Stats */}
+              <div className="mt-6 pt-4 border-t border-gray-100">
+                <div className="text-sm text-gray-600">
+                  <div className="flex justify-between items-center mb-3 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-100">
+                    <span className="font-medium text-gray-700">
+                      Total Tickets Sold (Top Movies):
+                    </span>
+                    <span className="font-bold text-lg text-purple-600">
+                      {topMoviesData
+                        .slice(0, 8)
+                        .reduce((sum, item) => sum + (item.ticketsSold || 0), 0)
+                        .toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {topMoviesData.slice(0, 8).map((movie, index) => (
+                      <div
+                        key={movie.movieId}
+                        className="flex justify-between items-center p-3 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 rounded-lg transition-all duration-200 border border-transparent hover:border-purple-200"
+                      >
+                        <div className="flex items-center">
+                          <div
+                            className="w-3 h-3 rounded-full mr-2 shadow-sm"
+                            style={{
+                              backgroundColor: [
+                                "#8B5CF6", // Purple
+                                "#06B6D4", // Cyan
+                                "#10B981", // Green
+                                "#F59E0B", // Yellow
+                                "#EF4444", // Red
+                                "#EC4899", // Pink
+                                "#6366F1", // Indigo
+                                "#84CC16", // Lime
+                              ][index % 8],
+                            }}
+                          ></div>
+                          <span className="font-medium text-xs">
+                            {movie.title && movie.title.length > 15
+                              ? movie.title.substring(0, 15) + "..."
+                              : movie.title || "Unknown Movie"}
+                            :
+                          </span>
+                        </div>
+                        <span className="font-semibold text-gray-800 text-xs">
+                          {(movie.ticketsSold || 0).toLocaleString()} tickets
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* Top Genres by Tickets Pie Chart */}
+            <div className="bg-white p-5 sm:p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-emerald-50/30">
+              <div className="mb-6">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
+                  Top Genres by Ticket Sales
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Distribution of ticket sales among different genres
+                </p>
+              </div>
+              <div className="h-[350px] sm:h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={topGenresData} // Show all genres
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ genre, percent }) =>
+                        `${genre} (${(percent * 100).toFixed(1)}%)`
+                      }
+                      outerRadius={120}
+                      fill="#8884d8"
+                      dataKey="ticketsSold"
+                    >
+                      {topGenresData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={
+                            [
+                              "#10B981", // Green
+                              "#06B6D4", // Cyan
+                              "#8B5CF6", // Purple
+                              "#F59E0B", // Yellow
+                              "#EF4444", // Red
+                              "#EC4899", // Pink
+                              "#6366F1", // Indigo
+                              "#84CC16", // Lime
+                            ][index % 8]
+                          }
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value, name, props) => [
+                        `${value.toLocaleString()} tickets`,
+                        `${props.payload.genre} Genre`,
+                      ]}
+                      labelStyle={{ color: "#333" }}
+                      contentStyle={{
+                        backgroundColor: "#fff",
+                        border: "1px solid #e5e7eb",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                      }}
+                    />
+                    <Legend
+                      verticalAlign="bottom"
+                      height={36}
+                      formatter={(value, entry) => entry.payload.genre}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Summary Stats */}
+              <div className="mt-6 pt-4 border-t border-gray-100">
+                <div className="text-sm text-gray-600">
+                  <div className="flex justify-between items-center mb-3 p-3 bg-gradient-to-r from-emerald-50 to-green-50 rounded-lg border border-emerald-100">
+                    <span className="font-medium text-gray-700">
+                      Total Tickets Sold (All Genres):
+                    </span>
+                    <span className="font-bold text-lg text-emerald-600">
+                      {topGenresData
+                        .reduce((sum, item) => sum + (item.ticketsSold || 0), 0)
+                        .toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {topGenresData.map((genre, index) => (
+                      <div
+                        key={genre.genre}
+                        className="flex justify-between items-center p-3 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-green-50 rounded-lg transition-all duration-200 border border-transparent hover:border-emerald-200"
+                      >
+                        <div className="flex items-center">
+                          <div
+                            className="w-3 h-3 rounded-full mr-2 shadow-sm"
+                            style={{
+                              backgroundColor: [
+                                "#10B981", // Green
+                                "#06B6D4", // Cyan
+                                "#8B5CF6", // Purple
+                                "#F59E0B", // Yellow
+                                "#EF4444", // Red
+                                "#EC4899", // Pink
+                                "#6366F1", // Indigo
+                                "#84CC16", // Lime
+                              ][index % 8],
+                            }}
+                          ></div>
+                          <span className="font-medium text-xs">
+                            {genre.genre}:
+                          </span>
+                        </div>
+                        <span className="font-semibold text-gray-800 text-xs">
+                          {(genre.ticketsSold || 0).toLocaleString()} tickets
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

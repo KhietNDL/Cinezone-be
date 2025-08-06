@@ -42,7 +42,7 @@ export default function WaitingPaymentStaff() {
       navigate(-1);
     } catch (error) {
       toast.error("Failed to cancel the booking.");
-      console.log("Error cancelling booking:", error);
+      console.error("Cancellation error:", error);
     }
   };
 

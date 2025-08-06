@@ -116,10 +116,6 @@ const MovieListPage = () => {
     setPagination((prev) => ({ ...prev, currentPage: 1 }));
   };
 
-  const handleBackToLanding = () => {
-    navigate("/");
-  };
-
   // Trailer popup functions
   const handleOpenTrailer = (movie) => {
     setCurrentTrailerMovie(movie);
@@ -259,7 +255,7 @@ const MovieListPage = () => {
 
       {/* Back Button and Title */}
       <div className="flex items-center justify-between mb-8">
-        <BackButton/>
+        <BackButton />
 
         <h1 className="text-3xl font-bold text-white">All Movies</h1>
 

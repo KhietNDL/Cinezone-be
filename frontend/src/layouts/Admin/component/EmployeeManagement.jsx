@@ -83,7 +83,7 @@ const EmployeeManagement = () => {
   const [employeeTenureData, setEmployeeTenureData] = useState([]);
 
   const handleSearchEmployees = useCallback(
-    async (searchTerm) => {
+    async (searchTerm, status = null) => {
       try {
         const params = {
           page: page,
@@ -91,6 +91,11 @@ const EmployeeManagement = () => {
           sortBy: uiState.sortBy,
           sortOrder: uiState.sortOrder,
         };
+
+        // Add status filter if provided
+        if (status) {
+          params.status = status;
+        }
 
         if (searchTerm.trim() === "") {
           const response = await getEmployee(params);
@@ -262,10 +267,12 @@ const EmployeeManagement = () => {
     if (!initialLoadRef.current) return;
 
     const searchTimeout = setTimeout(() => {
+      const status = getStatusFromFilter(activeFilter);
+
       if (searchEmployee.trim()) {
-        handleSearchEmployees(searchEmployee);
+        handleSearchEmployees(searchEmployee, status);
       } else {
-        handleSearchEmployees("");
+        handleSearchEmployees("", status);
       }
     }, 300);
 
@@ -275,6 +282,7 @@ const EmployeeManagement = () => {
     page,
     uiState.sortBy,
     uiState.sortOrder,
+    activeFilter, // Add activeFilter to dependencies
     handleSearchEmployees,
   ]);
 
@@ -406,7 +414,10 @@ const EmployeeManagement = () => {
       resetForm();
       setShowAddForm(false);
       toast.success("Employee added successfully!");
-      handleSearchEmployees(searchEmployee); // Refresh current search results
+
+      // Refresh current search results with filter
+      const status = getStatusFromFilter(activeFilter);
+      handleSearchEmployees(searchEmployee, status);
     } catch (error) {
       console.error("Failed to add employee:", error);
     } finally {
@@ -471,7 +482,10 @@ const EmployeeManagement = () => {
       setSelectedEmployee(null);
       resetForm();
       toast.success("Employee updated successfully!");
-      handleSearchEmployees(searchEmployee); // Refresh current search results
+
+      // Refresh current search results with filter
+      const status = getStatusFromFilter(activeFilter);
+      handleSearchEmployees(searchEmployee, status);
     } catch (error) {
       console.error("Failed to update employee:", error);
     } finally {
@@ -497,8 +511,10 @@ const EmployeeManagement = () => {
       );
 
       toast.success("Employee unbanned successfully!");
-      // Refresh current search results to get updated data
-      handleSearchEmployees(searchEmployee);
+
+      // Refresh current search results with filter
+      const status = getStatusFromFilter(activeFilter);
+      handleSearchEmployees(searchEmployee, status);
     } catch (error) {
       console.error("Failed to unban employee:", error);
       toast.error(
@@ -516,7 +532,10 @@ const EmployeeManagement = () => {
       setShowDeletePopup(false);
       setSelectedEmployee(null);
       toast.success("Employee deleted successfully!");
-      handleSearchEmployees(searchEmployee); // Refresh current search results
+
+      // Refresh current search results with filter
+      const status = getStatusFromFilter(activeFilter);
+      handleSearchEmployees(searchEmployee, status);
     } catch (error) {
       console.error("Failed to delete employee:", error);
       toast.error(
@@ -570,53 +589,31 @@ const EmployeeManagement = () => {
     setPage(1); // Reset to first page when sorting changes
   };
 
-  // Handle filter changes
+  // Helper function to get status from activeFilter
+  const getStatusFromFilter = (filterType) => {
+    const statusMap = {
+      active: "active",
+      inactive: "inactive",
+      newHires: "new",
+      total: null,
+      null: null,
+    };
+    return statusMap[filterType];
+  };
+
+  // Handle filter changes - now uses backend filtering
   const handleFilterChange = (filterType) => {
     setActiveFilter(filterType);
     setPage(1); // Reset to first page when filter changes
+
+    const status = getStatusFromFilter(filterType);
+    handleSearchEmployees(searchEmployee, status);
   };
 
   // Load all employees for stats on component mount and when needed
   useEffect(() => {
     getAllEmployeesForStats();
   }, [getAllEmployeesForStats]);
-
-  // Filter employees based on active filter
-  const getFilteredEmployees = () => {
-    if (!activeFilter || activeFilter === "total") {
-      return employees;
-    }
-
-    const today = new Date();
-    const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-    switch (activeFilter) {
-      case "active":
-        return employees.filter(
-          (employee) => employee.isDeleted === 0 || employee.isDeleted === false
-        );
-      case "inactive":
-        return employees.filter(
-          (employee) => employee.isDeleted === 1 || employee.isDeleted === true
-        );
-      case "newHires": {
-        return employees.filter((employee) => {
-          if (employee.CreatedAt) {
-            const createdDate = new Date(employee.CreatedAt);
-            return (
-              createdDate >= thirtyDaysAgo &&
-              (employee.isDeleted === 0 || employee.isDeleted === false)
-            );
-          }
-          return false;
-        });
-      }
-      default:
-        return employees;
-    }
-  };
-
-  const filteredEmployees = getFilteredEmployees();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -728,11 +725,11 @@ const EmployeeManagement = () => {
                         : ""}
                     </span>
                     <span className="text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded-full">
-                      {filteredEmployees.length} employees
+                      {employees.length} employees
                     </span>
                   </div>
                   <button
-                    onClick={() => setActiveFilter(null)}
+                    onClick={() => handleFilterChange(null)}
                     className="text-purple-600 hover:text-purple-800 text-sm font-medium hover:bg-purple-100 px-2 py-1 rounded transition-colors duration-200"
                   >
                     Clear Filter
@@ -744,7 +741,7 @@ const EmployeeManagement = () => {
             {/* Table Layout for sm and above */}
             <div className="hidden sm:block">
               <EmployeeTable
-                employees={filteredEmployees}
+                employees={employees}
                 handleEdit={handleEdit}
                 handleDelete={handleDelete}
                 handleUnban={handleUnban}
@@ -758,7 +755,7 @@ const EmployeeManagement = () => {
 
             {/* Card Layout for Mobile */}
             <div className="block sm:hidden space-y-4 sm:space-y-6">
-              {filteredEmployees.map((emp) => (
+              {employees.map((emp) => (
                 <article
                   key={emp.UserId}
                   className="bg-white p-4 sm:p-5 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 cursor-pointer hover:bg-gradient-to-r hover:from-purple-50/30 hover:to-indigo-50/30 group"

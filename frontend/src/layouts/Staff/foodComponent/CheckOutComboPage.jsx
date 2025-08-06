@@ -49,7 +49,6 @@ export default function CheckOutComboPage() {
     setChangeAmount(change > 0 ? change : 0);
   };
 
-
   const handlePayment = async () => {
     try {
       setLoading(true);
@@ -65,7 +64,9 @@ export default function CheckOutComboPage() {
 
       if (paymentMethod === "Cash") {
         if (customerPay < totalPrice) {
-          toast.error("The amount of money the customer gave is not enough to pay.");
+          toast.error(
+            "The amount of money the customer gave is not enough to pay."
+          );
           return;
         }
       }
@@ -74,8 +75,6 @@ export default function CheckOutComboPage() {
         toast.error("Please select a card type for Stripe payment.");
         return;
       }
-
-
 
       const userId = user?.userId || user?.id;
       if (!userId) {
@@ -120,8 +119,6 @@ export default function CheckOutComboPage() {
         successUrl,
         cardType: paymentMethod === "Stripe" ? cardType : undefined,
       });
-      // console.log("paymentResult:", paymentResult);
-      // console.log("paymentResult.data:", paymentResult?.data);
 
       if (
         paymentMethod === "Stripe" &&
@@ -273,8 +270,8 @@ export default function CheckOutComboPage() {
                   disabled={paymentMethod !== "Cash"}
                   status={
                     paymentMethod === "Cash" &&
-                      customerPay &&
-                      parseInt(customerPay) < totalPrice
+                    customerPay &&
+                    parseInt(customerPay) < totalPrice
                       ? "error"
                       : ""
                   }
@@ -288,7 +285,9 @@ export default function CheckOutComboPage() {
                   )}
               </div>
               <div>
-                <label className="block mb-1 font-medium text-gray-700">Change back</label>
+                <label className="block mb-1 font-medium text-gray-700">
+                  Change back
+                </label>
                 <div className="h-[38px] flex items-center px-3 bg-gray-100 rounded-md text-gray-800 font-semibold">
                   {formatPrice(changeAmount)} VNĐ
                 </div>
@@ -341,7 +340,8 @@ export default function CheckOutComboPage() {
                 {loading ? "Processing..." : "Confirm Payment"}
               </Button>
               <Button
-                color="danger" variant="outlined"
+                color="danger"
+                variant="outlined"
                 icon={<FaTimes />}
                 onClick={handleCancel}
                 className="h-12 px-8 font-semibold rounded-lg border-2 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 focus:bg-red-50 focus:border-red-400 transition-all duration-200"

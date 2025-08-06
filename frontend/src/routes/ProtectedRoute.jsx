@@ -21,7 +21,6 @@ const ProtectedRoute = ({ allowedRoles }) => {
         const currentTime = Date.now() / 1000;
 
         if (decodedToken.exp && decodedToken.exp < currentTime) {
-          console.log("Token has expired, logging out...");
           signOut();
           return true; // Token expired
         }
@@ -53,8 +52,6 @@ const ProtectedRoute = ({ allowedRoles }) => {
       // Check if token is expired
       const currentTime = Date.now() / 1000; // Current time in seconds
       if (decoded.exp && decoded.exp < currentTime) {
-        console.log("Token has expired, logging out...");
-        // Token expired, perform logout
         signOut();
         return <Navigate to="/login" replace />;
       }

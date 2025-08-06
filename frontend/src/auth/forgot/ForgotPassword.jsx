@@ -88,12 +88,10 @@ const MovieForgotPassword = () => {
 
       try {
         const result = await forgot({ email: formData.email });
-        console.log("Password reset email sent:", result);
         setIsSuccess(true);
         // Navigate to verification page with email in state
         navigate("/verification", { state: { email: formData.email } });
       } catch (error) {
-        console.error("Error sending password reset:", error);
         // Nếu là lỗi 404 thì hiện Email not found
         if (error?.message === "Email not found") {
           setApiError("Email not found");

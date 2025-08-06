@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -30,11 +30,11 @@ const MovieHeroSwiper = ({ movieData }) => {
   const currentMovie = movies[currentSlide] || {};
 
   // Xử lý user interaction để enable autoplay với sound
-  const handleUserInteraction = () => {
+  const handleUserInteraction = useCallback(() => {
     if (!userInteracted) {
       setUserInteracted(true);
     }
-  };
+  }, [userInteracted]);
 
   // Handle slide navigation
   const handleNextSlide = () => {
@@ -66,7 +66,7 @@ const MovieHeroSwiper = ({ movieData }) => {
   };
 
   // Pause video without resetting
-  const pauseVideo = () => {
+  const pauseVideo = useCallback(() => {
     if (videoRef.current && isVideoPlaying) {
       try {
         videoRef.current.pause();
@@ -75,10 +75,10 @@ const MovieHeroSwiper = ({ movieData }) => {
         console.error("Error pausing video:", error);
       }
     }
-  };
+  }, [isVideoPlaying]);
 
   // Resume video from current position
-  const resumeVideo = () => {
+  const resumeVideo = useCallback(() => {
     if (videoRef.current && !isVideoPlaying) {
       try {
         if (userInteracted) {
@@ -101,10 +101,10 @@ const MovieHeroSwiper = ({ movieData }) => {
         console.error("Error resuming video:", error);
       }
     }
-  };
+  }, [isVideoPlaying, userInteracted]);
 
   // Bắt đầu phát video với âm thanh
-  const startVideoWithSound = async () => {
+  const startVideoWithSound = useCallback(async () => {
     if (videoRef.current) {
       try {
         videoRef.current.muted = false; // Unmute video
@@ -125,7 +125,7 @@ const MovieHeroSwiper = ({ movieData }) => {
         }
       }
     }
-  };
+  }, [handleUserInteraction]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -155,7 +155,12 @@ const MovieHeroSwiper = ({ movieData }) => {
         video.removeEventListener("canplay", handleCanPlay);
       };
     }
-  }, [currentSlide, currentMovie.TrailerUrl, userInteracted]);
+  }, [
+    currentSlide,
+    currentMovie.TrailerUrl,
+    userInteracted,
+    startVideoWithSound,
+  ]);
 
   // Auto-slide sau 15 giây
   useEffect(() => {
@@ -222,7 +227,7 @@ const MovieHeroSwiper = ({ movieData }) => {
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [isVideoPlaying, pausedByScroll, isPopupOpen, userInteracted]);
+  }, [isVideoPlaying, pausedByScroll, isPopupOpen, pauseVideo, resumeVideo]);
 
   const handleStopVideo = () => {
     if (videoRef.current) {
@@ -280,7 +285,7 @@ const MovieHeroSwiper = ({ movieData }) => {
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("touchstart", handleTouch);
     };
-  }, []);
+  }, [handleUserInteraction]);
 
   const navigate = useNavigate();
   const handleClickMovie = (movieTitle) => {

@@ -36,8 +36,7 @@ class SessionManager {
       }
 
       return session;
-    } catch (error) {
-      console.error("Error parsing session:", error);
+    } catch {
       this.clearSession();
       return null;
     }
