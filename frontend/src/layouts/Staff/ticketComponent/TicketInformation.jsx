@@ -750,7 +750,7 @@ const TicketInformation = () => {
                         className="w-full font-medium"
                         size="large"
                         icon={<FaX />}
-                        danger
+                        color="danger" variant="solid"
                       >
                         Close
                       </Button>
@@ -774,8 +774,8 @@ const TicketInformation = () => {
                     >
                       <Button
                         className="w-full font-medium"
-                        color="primary"
-                        variant="outlined"
+                        color="blue"
+                        variant="solid"
                         size="large"
                         icon={<FaRegEye />}
                       >
