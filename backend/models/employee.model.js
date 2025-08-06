@@ -91,13 +91,14 @@ class Employee {
       cccd,
       email,
       phoneNumber,
-      address,
+      address
     } = employeeData;
     const hashedPassword = await bcrypt.hash(password, 10);
+    const createdAt = createdAt || new Date();
     const [result] = await db
       .promise()
       .query(
-        "INSERT INTO Users (UserId, FullName, DateOfBirth, Password, Sex, CCCD, Email, PhoneNumber, Address, Role, IsDeleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 2, 0)",
+        "INSERT INTO Users (UserId, FullName, DateOfBirth, Password, Sex, CCCD, Email, PhoneNumber, Address, Role, IsDeleted, CreatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 2, 0, ?)",
         [
           UserId,
           fullName,
@@ -108,6 +109,7 @@ class Employee {
           email,
           phoneNumber,
           address,
+          createdAt
         ]
       );
     return UserId;
