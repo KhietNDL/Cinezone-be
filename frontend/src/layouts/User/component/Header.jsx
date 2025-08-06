@@ -149,7 +149,7 @@ const Header = () => {
     async function fetchMemberHistory() {
       try {
         const res = await fetch(
-          `http://cinezone.info:4458/api/payment/history?memberId=${user.userId}&page=1&limit=8&sortBy=CreatedAt&sortOrder=desc`
+          `https://cinezone.info:4458/api/payment/history?memberId=${user.userId}&page=1&limit=8&sortBy=CreatedAt&sortOrder=desc`
         );
 
         // Kiểm tra response status

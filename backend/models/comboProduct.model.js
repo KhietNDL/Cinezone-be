@@ -13,6 +13,15 @@ class ComboProduct {
   }
 
   static async create({ ComboId, ProductId, Quantity }) {
+    // Kiểm tra trùng lặp ComboId + ProductId
+    const [existRows] = await db.promise().query(
+      `SELECT 1 FROM ComboProduct WHERE ComboId = ? AND ProductId = ? AND IsDeleted = 0`,
+      [ComboId, ProductId]
+    );
+    if (existRows.length > 0) {
+      throw new Error('Combo này đã có sản phẩm này!');
+    }
+
     const ComboProductId = uuidv4();
     await db.promise().query(
       `INSERT INTO ComboProduct (ComboProductId, ComboId, ProductId, Quantity, IsDeleted, CreatedAt)
