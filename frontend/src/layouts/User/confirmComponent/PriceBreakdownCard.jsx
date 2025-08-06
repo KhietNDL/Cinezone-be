@@ -30,6 +30,19 @@ const PriceBreakdownCard = ({
               )}
             </div>
           </div>
+          {/* Membership Discount Toggle */}
+{/* <div className="flex items-center mb-2">
+  <input
+    type="checkbox"
+    checked={useMembershipDiscount}
+    onChange={(e) => setUseMembershipDiscount(e.target.checked)}
+    id="membership-discount-toggle"
+    className="mr-2"
+  />
+  <label htmlFor="membership-discount-toggle" className="text-sm">
+    Áp dụng giảm giá theo hạng thành viên
+  </label>
+</div> */}
           <div>
             <p className="flex justify-end text-sm text-green-400">Member Discount {userDiscount}%</p>
           </div>

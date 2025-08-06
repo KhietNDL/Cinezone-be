@@ -49,6 +49,7 @@ const ConfirmPayment = () => {
   const [discountAmount, setDiscountAmount] = useState(0);
   const [discountType, setDiscountType] = useState("");
   const [memberPoints, setMemberPoints] = useState(0); // 'promotion' or 'points'
+  const [useMembershipDiscount, setUseMembershipDiscount] = useState(true);
 
   const [isConfirming, setIsConfirming] = useState(false);
   const dispatch = useDispatch();
@@ -76,13 +77,9 @@ const ConfirmPayment = () => {
       )
       : 0;
 
-  // Initialize prices - SEPARATE SEAT AND PRODUCT
-  useEffect(() => {
-    // console.log("Final total price from Redux:", finalTotalPrice);
-    // console.log("Product total calculated:", productTotal);
-    // console.log("USER DISCOUNT", userDiscount);
 
-    // Tách giá ghế và product
+  useEffect(() => {
+
     const calculatedSeatPrice = (finalTotalPrice - productTotal) * (100 - userDiscount) / 100;
     const calculatedProductPrice = productTotal;
     const priceAfterMembership = calculatedSeatPrice + calculatedProductPrice;
@@ -516,11 +513,8 @@ const ConfirmPayment = () => {
       <FadeInWrapper delay={600}>
         <BackButton
           className="absolute top-28 left-14 z-10"
-          onClick={() => {
-            window.scrollTo({ top: 0, behavior: 'instant' });
-            navigate(-1);
-          }}
-        />
+          />
+        
 
       </FadeInWrapper>
       <ToastContainer

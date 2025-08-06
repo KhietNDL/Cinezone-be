@@ -52,7 +52,7 @@ const SeatMap = ({
           <button
             onClick={onRefresh}
             disabled={isRefreshing}
-            className="flex items-center gap-2 px-3 md:px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/30 rounded-xl text-purple-300 hover:text-purple-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-3 md:px-4 py-2 bg-gradient-to-r from-purple-600/20 via-purple-500/60 to-purple-600/20 rounded-xl text-purple-300 hover:text-purple-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span className="text-xs md:text-sm font-medium">
               {isRefreshing ? "Refreshing..." : "Refresh Seats"}
@@ -90,8 +90,8 @@ const SeatMap = ({
               }}
               width={24}
               height={24}
-              widthDouble={48}
-              heightDouble={32}
+              widthDouble={65}
+              heightDouble={40}
               gapX={3}
               textColor="text-blue-300/70"
               seatColors={{
@@ -101,7 +101,7 @@ const SeatMap = ({
                 holding: "text-gray-200",
                 vip: "text-[#FFE3B3]/70",
                 normal: "text-[#752090]",
-                couple: "text-[#C957BC]",
+                couple: "text-[#C957BC]/90",
               }}
             />
           </div>

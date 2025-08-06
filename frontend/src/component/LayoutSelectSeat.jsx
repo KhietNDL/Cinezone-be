@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { PiArmchairLight, PiArmchairFill } from "react-icons/pi";
 import { MdOutlineChair } from "react-icons/md";
-
+import { TbSofa } from "react-icons/tb";
 export const LayoutSelectSeat = ({
   onSeatSelect = () => { },
   initialSelectedSeats = [],
@@ -160,7 +160,7 @@ export const LayoutSelectSeat = ({
   return false;
 };
 
-// **LOGIC CẢI THIỆN CHO BỎ CHỌN GHẾ**
+
 const wouldCreateGapOnDeselect = (seatNumber, currentSelectedSeats) => {
   const seat = seatMap[seatNumber];
   if (!seat) return false;
@@ -236,7 +236,6 @@ const wouldCreateGapOnDeselect = (seatNumber, currentSelectedSeats) => {
     if (seatDataFromAPI.length > 0) {
       const layout = groupSeatsByRow();
       setSeatLayout(layout);
-      // Trigger animation after layout is set
       setTimeout(() => setIsLoaded(true), 100);
     }
   }, [seatDataFromAPI]);
@@ -342,7 +341,7 @@ const wouldCreateGapOnDeselect = (seatNumber, currentSelectedSeats) => {
             }}
             title={`${type} Seat ${seatNumber} - ${price.toLocaleString()}đ - ${status}`}
           >
-            <MdOutlineChair
+            <TbSofa 
               style={{
                 width: `${widthDouble}px`,
                 height: `${heightDouble}px`,

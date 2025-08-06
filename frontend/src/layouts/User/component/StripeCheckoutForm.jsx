@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
-import { useDispatch } from "react-redux";
-import { cancelBooking } from "../../../services/API";
+import { useDispatch, useSelector } from "react-redux";
+import { cancelBooking, cancelProduct } from "../../../services/API";
 import { FaArrowLeft } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { Await, useNavigate } from "react-router-dom";
+import BackButton from "../../../component/BackButton";
 
 const stripePromise = loadStripe("pk_test_51RihUMQ1nvt86rfmgAyf52c8e3iUK1gd3PuGxth8Cgng0hxm1dhdvj1B5fCK3zZnXXPVAdc2Qyaq6H9NgxD1Pwdt006VPZkX34");
 
@@ -38,14 +39,17 @@ function CheckoutForm({ clientSecret, onSuccess, totalAmount }) {
     setProcessing(false);
   };
 
-  const handleClick = () => {
-    if (onClick) {
-      onClick();
-    } else {
-      navigate(-1);
-    }
-  };
 
+const handleClick = () => {
+  const response = cancelBooking(bookingId);  
+  console.log("Cancel booking response:", response);
+  cancelProduct(orderProductsId);   
+  
+}
+    const {
+     bookingIdFromRedux:bookingId,
+    orderProductsIdFromRedux:orderProductsId=null,
+  }=useSelector((state) => state.booking);
  
 
   return (
@@ -157,7 +161,7 @@ function CheckoutForm({ clientSecret, onSuccess, totalAmount }) {
   );
 }
 
-export default function StripeCheckoutForm({ clientSecret, onSuccess, totalAmount }) {
+export default function StripeCheckoutForm({ clientSecret, onSuccess, totalAmount, onBack }) {
   if (!clientSecret) return null;
 
   // Enhanced appearance configuration
@@ -266,7 +270,7 @@ export default function StripeCheckoutForm({ clientSecret, onSuccess, totalAmoun
 
   return (
     <div className="w-full max-w-md mx-auto">
-      
+    <BackButton onClick={onBack} />
       <Elements
         stripe={stripePromise}
         options={{
@@ -282,6 +286,7 @@ export default function StripeCheckoutForm({ clientSecret, onSuccess, totalAmoun
           totalAmount={totalAmount}
         />
       </Elements>
+       
     </div>
   );
 }
