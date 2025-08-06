@@ -127,44 +127,75 @@ class Analytics {
     const currentYear = year || new Date().getFullYear();
     const currentQuarter = Math.floor((new Date().getMonth() + 3) / 3);
 
+    // Xác định các tháng trong quý hiện tại
+    const startMonth = (currentQuarter - 1) * 3 + 1; // Tháng đầu tiên của quý
+    const endMonth = currentQuarter * 3; // Tháng cuối cùng của quý
+
+    // Tạo mảng chứa các tháng trong quý
+    const monthsInQuarter = [];
+    for (let i = startMonth; i <= endMonth; i++) {
+      monthsInQuarter.push({
+        month: i,
+        monthName: ['January', 'February', 'March', 'April', 'May', 'June',
+          'July', 'August', 'September', 'October', 'November', 'December'][i - 1],
+        monthNameVN: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
+          'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'][i - 1]
+      });
+    }
+
+    // Truy vấn dữ liệu doanh thu cho từng tháng trong quý hiện tại
     const sql = `
     SELECT 
-      QUARTER(BookingDate) as quarter,
+      MONTH(BookingDate) as month,
       SUM(TotalAmount) as total,
-      MIN(DATE_FORMAT(BookingDate, '%Y-%m-%d')) as startDate,
-      MAX(DATE_FORMAT(BookingDate, '%Y-%m-%d')) as endDate,
       COUNT(*) as bookingCount
     FROM Bookings
     WHERE IsDeleted = 0 AND Status IN (2,3)
       AND YEAR(BookingDate) = ?
-    GROUP BY QUARTER(BookingDate)
-    ORDER BY quarter
+      AND QUARTER(BookingDate) = ?
+    GROUP BY MONTH(BookingDate)
+    ORDER BY month
   `;
 
-    const [rows] = await db.promise().query(sql, [currentYear]);
+    const [rows] = await db.promise().query(sql, [currentYear, currentQuarter]);
 
-    // Tạo dữ liệu cho tất cả 4 quý
-    const quarters = [
-      { quarter: 1, label: 'Q1', monthRange: '1-3', total: 0, bookingCount: 0, dateRange: null, isCurrent: currentQuarter === 1 },
-      { quarter: 2, label: 'Q2', monthRange: '4-6', total: 0, bookingCount: 0, dateRange: null, isCurrent: currentQuarter === 2 },
-      { quarter: 3, label: 'Q3', monthRange: '7-9', total: 0, bookingCount: 0, dateRange: null, isCurrent: currentQuarter === 3 },
-      { quarter: 4, label: 'Q4', monthRange: '10-12', total: 0, bookingCount: 0, dateRange: null, isCurrent: currentQuarter === 4 }
-    ];
+    // Cập nhật thông tin doanh thu cho mỗi tháng
+    let totalQuarterRevenue = 0;
+    let totalQuarterBookings = 0;
 
-    // Cập nhật dữ liệu từ kết quả truy vấn
     for (const row of rows) {
-      const quarterIndex = row.quarter - 1;
-      if (quarterIndex >= 0 && quarterIndex < 4) {
-        quarters[quarterIndex].total = Number(row.total);
-        quarters[quarterIndex].bookingCount = Number(row.bookingCount);
-        quarters[quarterIndex].dateRange = `${row.startDate} - ${row.endDate}`;
+      const month = monthsInQuarter.find(m => m.month === Number(row.month));
+      if (month) {
+        month.total = Number(row.total);
+        month.bookingCount = Number(row.bookingCount);
+        totalQuarterRevenue += Number(row.total);
+        totalQuarterBookings += Number(row.bookingCount);
       }
     }
+
+    // Thêm thông tin về doanh thu vào các tháng chưa có dữ liệu
+    for (const month of monthsInQuarter) {
+      if (!month.hasOwnProperty('total')) {
+        month.total = 0;
+        month.bookingCount = 0;
+      }
+    }
+
+    // Lấy thông tin ngày bắt đầu và kết thúc của quý
+    const startDate = `${currentYear}-${startMonth.toString().padStart(2, '0')}-01`;
+    const lastDay = new Date(currentYear, endMonth, 0).getDate();
+    const endDate = `${currentYear}-${endMonth.toString().padStart(2, '0')}-${lastDay}`;
 
     return {
       currentYear,
       currentQuarter,
-      quarters
+      label: `Q${currentQuarter}`,
+      startDate,
+      endDate,
+      monthRange: `${startMonth}-${endMonth}`,
+      months: monthsInQuarter,
+      totalRevenue: totalQuarterRevenue,
+      totalBookings: totalQuarterBookings
     };
   }
 
