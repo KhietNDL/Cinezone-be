@@ -1,5 +1,5 @@
-// import { toast } from "react-toastify";
-
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 // Các hàm API cho từng loại
 import {
   createCashPayment,
@@ -33,7 +33,7 @@ export async function processPayment({
           if (type === "ticket") {
             cashRes = await createCashPayment(orderId, amount, `CASH-${Date.now()}`);
             // await confirmBooking(orderId);
-            // toast.success("Cash payment successful!");
+            toast.success("Cash payment successful!");
             navigate(successUrl);
           } else if (type === "combo") {
             cashRes = await createCashPaymentForProduct(orderId, amount, `Payment for combo CASH-${Date.now()}`);

@@ -36,14 +36,15 @@ const MovieTheaterLogin = () => {
           ?.map((movie) => {
             if (!movie.PosterImageHorizontal) return null;
             // Nếu là đường dẫn tương đối thì thêm host
-            if (movie.PosterImageHorizontal.startsWith("http"))
+            if (movie.PosterImageHorizontal.startsWith("https"))
               return movie.PosterImageHorizontal;
-            return `http://cinezone.info:4458${movie.PosterImageHorizontal}`;
+            return `https://cinezone.info:4458${movie.PosterImageHorizontal}`;
           })
           .filter(Boolean);
+
         setMovieBackgrounds(
           posters && posters.length > 0
-            ? posters.slice(0, 3)
+            ? posters // Lấy tất cả ảnh, bỏ .slice(0, 3)
             : [imageLogin6, imageLogin2, imageLogin3]
         );
       } catch (error) {
@@ -124,7 +125,7 @@ const MovieTheaterLogin = () => {
 
   const handleGoogleLogin = () => {
     // window.location.href = "http://localhost:4458/api/auth/login-google";
-    window.location.href = "http://cinezone.info:4458/api/auth/login-google";
+    window.location.href = "https://cinezone.info:4458/api/auth/login-google";
   };
 
   return (
@@ -142,7 +143,7 @@ const MovieTheaterLogin = () => {
             }}
           />
         ))}
-        <div className="absolute inset-0 bg-black/60" />
+        <div className="absolute inset-0 bg-black/20" />
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900/40 via-blue-900/40 to-indigo-900/40" />
       </div>
 

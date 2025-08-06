@@ -34,7 +34,8 @@ const HistoryActivity = () => {
 
   const handleViewDetail = (booking, product) => {
     setSelectedBooking(booking);
-    setSelectedOrderProduct(product);
+    // Handle null/undefined product safely
+    setSelectedOrderProduct(product || []);
     console.log("Selected Booking:", booking);
     console.log("Selected Order Product:", product);
     setShowDetailModal(true);
@@ -673,7 +674,7 @@ const HistoryActivity = () => {
                         <td className="  text-start py-0 px-0">
                           {item.booking?.status === 2 && (
                             <button
-                              onClick={() => handleViewDetail(item.booking, item.orderProduct.products)}
+                              onClick={() => handleViewDetail(item.booking, item.orderProduct?.products || [])}
                               className="bg-blue-100 text-blue-600 px-2  py-2 w-[60px] rounded-full text-sm font-medium hover:bg-blue-500/50"
                             >
                               Detail
@@ -991,23 +992,20 @@ const HistoryActivity = () => {
                         : selectedBooking.seats}
                     </p>
                   </div>
-
                 </div>
+
+                {/* Products Section - Only show if products exist */}
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
                   <div className="text-center flex-1">
                     <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">
-                      Product
+                      Products
                     </p>
                     <p className="text-sm font-semibold text-gray-900 mt-1">
-                      {selectedOrderProduct && selectedOrderProduct.length > 0
+                      {selectedOrderProduct && Array.isArray(selectedOrderProduct) && selectedOrderProduct.length > 0
                         ? selectedOrderProduct.map(item => item.productName).join(", ")
-                        : "N/A"}
-
+                        : "No products purchased"}
                     </p>
                   </div>
-
-
-
                 </div>
               </div>
             </div>

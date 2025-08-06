@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { PiArmchairLight, PiArmchairFill } from "react-icons/pi";
 import { MdOutlineChair } from "react-icons/md";
 import { TbSofa } from "react-icons/tb";
@@ -7,7 +7,7 @@ export const LayoutSelectSeat = ({
   onSeatSelect = () => {},
   initialSelectedSeats = [],
   seatDataFromAPI = [],
-  containerWidth = "100%", // Thay đổi để responsive hơn
+  containerWidth = "100%",
   width = 30,
   height = 30,
   textColor = "text-gray-500",
@@ -34,6 +34,7 @@ export const LayoutSelectSeat = ({
   const [isLoaded, setIsLoaded] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [warningMessage, setWarningMessage] = useState("");
+  const scrollContainerRef = useRef(null);
 
   const seatMap = {};
   seatDataFromAPI.forEach((seat) => {
@@ -264,13 +265,43 @@ export const LayoutSelectSeat = ({
     return false;
   };
 
+  // Function to center the scroll position
+  const centerScrollPosition = () => {
+    if (scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      const scrollWidth = container.scrollWidth;
+      const clientWidth = container.clientWidth;
+      
+      if (scrollWidth > clientWidth) {
+        const centerPosition = (scrollWidth - clientWidth) / 2;
+        container.scrollLeft = centerPosition;
+      }
+    }
+  };
+
   useEffect(() => {
     if (seatDataFromAPI.length > 0) {
       const layout = groupSeatsByRow();
       setSeatLayout(layout);
-      setTimeout(() => setIsLoaded(true), 100);
+      setTimeout(() => {
+        setIsLoaded(true);
+        // Center the scroll position after layout is loaded
+        setTimeout(() => centerScrollPosition(), 100);
+      }, 100);
     }
   }, [seatDataFromAPI]);
+
+  // Re-center when window resizes
+  useEffect(() => {
+    const handleResize = () => {
+      if (isLoaded) {
+        setTimeout(() => centerScrollPosition(), 100);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isLoaded]);
 
   const handleSeatClick = (seatNumber) => {
     if (readOnly) return;
@@ -493,7 +524,6 @@ export const LayoutSelectSeat = ({
         }`}
         style={{
           transitionDelay: `${index * 100}ms`,
-          minWidth: `${minLayoutWidth}px`,
         }}
       >
         {/* Row label - Left */}
@@ -565,62 +595,72 @@ export const LayoutSelectSeat = ({
 
   return (
     <div className="text-white rounded-lg w-full" style={{ maxWidth: containerWidth }}>
-      {/* Screen */}
-      <div
-        className={`w-full h-[60px] relative overflow-hidden mb-8 transition-all duration-700 ${
-          isLoaded ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
-        }`}
-      >
-        <svg
-          width="100%"
-          height="40"
-          viewBox="0 0 800 40"
-          className="absolute top-0 left-0"
-          preserveAspectRatio="none"
-        >
-          <defs>
-            <linearGradient
-              id="purpleGradient"
-              x1="0%"
-              y1="0%"
-              x2="100%"
-              y2="0%"
-            >
-              <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.2" />
-              <stop offset="50%" stopColor="#8b5cf6" stopOpacity="1" />
-              <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.2" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M 0 20 Q 400 5 800 20"
-            stroke="url(#purpleGradient)"
-            strokeWidth="3"
-            strokeLinecap="round"
-            fill="none"
-          />
-        </svg>
-        <div
-          className={`text-center font-medium text-base mt-6 ${textColor} tracking-wider`}
-        >
-          SCREEN
-        </div>
-      </div>
-
-      {/* Scrollable Seat Layout Container */}
-      <div className="overflow-x-auto overflow-y-visible w-full">
+      {/* Container chung cho screen và seat map - căn giữa trong viewport */}
+      <div className="w-full flex justify-center">
         <div 
-          className="flex flex-col space-y-2"
-          style={{ 
-            minWidth: `${minLayoutWidth}px`,
-            width: 'max-content' 
-          }}
+          ref={scrollContainerRef}
+          className={`scroll-smooth ${isLoaded ? 'overflow-x-auto' : 'overflow-x-hidden'} overflow-y-hidden`}
+          style={{ maxWidth: '100%' }}
         >
-          {seatLayout.map((row, index) => renderRow(row, index))}
+          <div 
+            style={{ 
+              minWidth: `${minLayoutWidth}px`,
+              width: 'max-content',
+            }}
+          >
+            {/* Screen - Aligned with seat map */}
+            <div
+              className={`h-[60px] relative overflow-hidden mb-8 transition-all duration-700 flex justify-center ${
+                isLoaded ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
+              }`}
+            >
+              <div style={{ width: `${Math.min(minLayoutWidth * 0.8, 800)}px` }}>
+                <svg
+                  width="100%"
+                  height="40"
+                  viewBox="0 0 800 40"
+                  className="absolute top-0 left-0"
+                  preserveAspectRatio="none"
+                >
+                  <defs>
+                    <linearGradient
+                      id="purpleGradient"
+                      x1="0%"
+                      y1="0%"
+                      x2="100%"
+                      y2="0%"
+                    >
+                      <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.2" />
+                      <stop offset="50%" stopColor="#8b5cf6" stopOpacity="1" />
+                      <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.2" />
+                    </linearGradient>
+                  </defs>
+                  <path
+                    d="M 0 20 Q 400 5 800 20"
+                    stroke="url(#purpleGradient)"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    fill="none"
+                  />
+                </svg>
+                <div
+                  className={`text-center font-medium text-base mt-6 ${textColor} tracking-wider`}
+                >
+                  SCREEN
+                </div>
+              </div>
+            </div>
+
+            {/* Seat Layout - Same width as container */}
+            <div className="flex flex-col space-y-2">
+              {seatLayout.map((row, index) => renderRow(row, index))}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Legend */}
-      <div className="mt-8 overflow-x-auto w-full flex items-center justify-center">
+      {/* Legend - Fixed and centered */}
+      <div className="mt-8 w-full flex items-center justify-center">
         <div className="flex justify-center items-center flex-wrap gap-4 sm:gap-6 text-sm sm:text-lg w-full sm:px-3 max-w-full px-5">
           <div className="flex items-center space-x-2 min-w-fit">
             <PiArmchairLight className={seatColors.normal} size={20} />
@@ -658,7 +698,7 @@ export const LayoutSelectSeat = ({
           animation: fade-in 0.5s ease-out forwards;
         }
         
-        /* Custom scrollbar styles */
+        /* Custom scrollbar styles - only show when loaded */
         .overflow-x-auto {
           scrollbar-width: thin;
           scrollbar-color: rgba(139, 92, 246, 0.3) transparent;
@@ -680,6 +720,15 @@ export const LayoutSelectSeat = ({
         
         .overflow-x-auto::-webkit-scrollbar-thumb:hover {
           background: rgba(139, 92, 246, 0.5);
+        }
+
+        /* Hide scrollbar when loading */
+        .overflow-x-hidden {
+          scrollbar-width: none;
+        }
+        
+        .overflow-x-hidden::-webkit-scrollbar {
+          display: none;
         }
       `}</style>
 

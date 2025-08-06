@@ -226,7 +226,7 @@ const TicketInformation = () => {
           }
         }
         status = "succeeded";
-        toast.success("Payment successful!");
+        toast.success("Stripe payment successful!");
       } else if (res?.status === 2) {
         status = "succeeded";
       } else {
