@@ -7,7 +7,7 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "../component/SwiperButton.css";
 import { IoTime, IoSearchOutline } from "react-icons/io5";
-import { FaCouch } from "react-icons/fa6";
+import { FaCouch, FaX } from "react-icons/fa6";
 import {
   getCurrentMovies,
   searchMovies,
@@ -620,7 +620,7 @@ const SellTicketPage = () => {
                 color="danger" variant="solid"
                 size="large"
                 onClick={handleCancel}
-                icon={<MdCancel className="text-base" />}
+                icon={<FaX className="text-base" />}
                 className="w-full sm:w-auto px-6 py-2 h-auto font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
               >
                 Cancel & Reset
