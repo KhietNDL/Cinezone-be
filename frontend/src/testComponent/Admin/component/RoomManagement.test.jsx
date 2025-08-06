@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable no-undef */
 import React from "react";
 import {
@@ -100,12 +101,7 @@ describe("RoomManagement", () => {
       expect(screen.getAllByText("Room A").length).toBeGreaterThan(0)
     );
     const detailButtons = screen.getAllByText(/detail/i);
-    // Log để debug
-    // eslint-disable-next-line no-console
-    console.log(
-      detailButtons.length,
-      detailButtons.map((btn) => btn.outerHTML)
-    );
+
     let found = false;
     for (const btn of detailButtons) {
       fireEvent.click(btn);

@@ -5,7 +5,20 @@ import {
   getEmployee,
   searchEmployeesByInfo,
   updateEmployee,
+  unbanEmployee,
 } from "../../../services/API";
+import {
+  getEmployeeAgeGroups,
+  getEmployeeTenureStats,
+} from "../../../services/APIForAdmin/API";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  Legend,
+} from "recharts";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import HeaderStats from "../employeeComponent/HeaderStats";
@@ -15,7 +28,7 @@ import EmployeeForm from "../employeeComponent/EmployeeForm";
 import DeletePopup from "../employeeComponent/DeletePopup";
 import EmployeeTooltip from "../employeeComponent/EmployeeTooltip";
 import { IoEyeOutline } from "react-icons/io5";
-import { FaRegEdit } from "react-icons/fa";
+import { FaRegEdit, FaUser, FaUnlock } from "react-icons/fa";
 import { RiDeleteBin5Line } from "react-icons/ri";
 import Pagination from "../movieComponent/Pagination";
 
@@ -46,41 +59,55 @@ const EmployeeManagement = () => {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const avatarUploadRef = useRef(null);
   const initialLoadRef = useRef(false);
-  const [sortBy, setSortBy] = useState("FullName");
-  const [sortOrder, setSortOrder] = useState("asc");
+
+  // UI state similar to UserManagement
+  const [uiState, setUiState] = useState({
+    sortBy: "FullName",
+    sortOrder: "asc",
+    currentPage: 1,
+  });
+
+  // Add filter state
+  const [activeFilter, setActiveFilter] = useState(null);
+  const [employeeStats, setEmployeeStats] = useState({
+    total: 0,
+    active: 0,
+    inactive: 0,
+    newHires: 0,
+  });
+  const [_allEmployeesForStats, setAllEmployeesForStats] = useState([]);
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
+
+  // Chart data states
+  const [employeeAgeData, setEmployeeAgeData] = useState([]);
+  const [employeeTenureData, setEmployeeTenureData] = useState([]);
 
   const handleSearchEmployees = useCallback(
-    async (searchTerm) => {
+    async (searchTerm, status = null) => {
       try {
         const params = {
           page: page,
           limit: itemsPerPage,
-          sortBy: sortBy,
-          sortOrder: sortOrder,
+          sortBy: uiState.sortBy,
+          sortOrder: uiState.sortOrder,
         };
 
-        console.log("handleSearchEmployees called with:", {
-          searchTerm,
-          params,
-          page,
-          sortBy,
-          sortOrder,
-        });
+        // Add status filter if provided
+        if (status) {
+          params.status = status;
+        }
 
         if (searchTerm.trim() === "") {
           const response = await getEmployee(params);
-          console.log("getEmployee response:", response);
+
           if (response.data) {
-            console.log("Setting employees with data:", response.data);
-            console.log("Data length:", response.data.length);
             setEmployees(response.data);
             if (response.pagination) {
-              console.log("Setting pagination:", response.pagination);
               setTotalPages(response.pagination.totalPages);
               setTotalEmployees(response.pagination.total);
             }
           } else {
-            console.log("No response.data found");
+            // No response data found
           }
         } else {
           // Use new API that supports multiple search fields
@@ -92,16 +119,10 @@ const EmployeeManagement = () => {
           };
 
           const response = await searchEmployeesByInfo(searchInfo, params);
-          console.log("searchEmployeesByInfo response:", response);
+
           if (response.employees) {
-            console.log(
-              "Setting employees with search data:",
-              response.employees
-            );
-            console.log("Search data length:", response.employees.length);
             setEmployees(response.employees);
             if (response.pagination) {
-              console.log("Setting search pagination:", response.pagination);
               setTotalPages(response.pagination.totalPages);
               setTotalEmployees(response.pagination.total);
             } else {
@@ -111,7 +132,7 @@ const EmployeeManagement = () => {
               setTotalPages(Math.ceil(total / itemsPerPage));
             }
           } else {
-            console.log("No response.employees found in search");
+            // No employees found in search
             setEmployees([]);
             setTotalPages(0);
             setTotalEmployees(0);
@@ -125,16 +146,114 @@ const EmployeeManagement = () => {
         setTotalEmployees(0);
       }
     },
-    [page, itemsPerPage, sortBy, sortOrder] // Keep these dependencies stable
+    [page, itemsPerPage, uiState.sortBy, uiState.sortOrder] // Keep these dependencies stable
   );
+
+  // Fetch all employees for statistics calculation
+  const getAllEmployeesForStats = useCallback(async () => {
+    try {
+      // Try using getEmployee first (which should return all employees)
+      const params = {
+        page: 1,
+        limit: 10000, // Large number to get all employees
+        sortBy: "UserId",
+        sortOrder: "asc",
+      };
+
+      const response = await getEmployee(params);
+
+      if (response && response.data) {
+        const allEmployeesArray = Array.isArray(response.data)
+          ? response.data
+          : [];
+        setAllEmployeesForStats(allEmployeesArray);
+        calculateEmployeeStats(
+          allEmployeesArray,
+          response.pagination?.total || allEmployeesArray.length
+        );
+      } else {
+        // If getEmployee doesn't work, try searchEmployeesByInfo with empty search
+        const searchInfo = {
+          name: "",
+          email: "",
+          cccd: "",
+          phone: "",
+        };
+
+        const searchResponse = await searchEmployeesByInfo(searchInfo, params);
+
+        if (searchResponse && searchResponse.employees) {
+          const allEmployeesArray = Array.isArray(searchResponse.employees)
+            ? searchResponse.employees
+            : [];
+          setAllEmployeesForStats(allEmployeesArray);
+          calculateEmployeeStats(
+            allEmployeesArray,
+            searchResponse.pagination?.total || allEmployeesArray.length
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching all employees for stats:", error);
+      // Fallback to current employees if fetch fails
+      calculateEmployeeStats(employees, totalEmployees);
+    }
+  }, [employees, totalEmployees]);
+
+  // Calculate employee statistics from all employees
+  const calculateEmployeeStats = (allEmployeesData, totalCount) => {
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const stats = allEmployeesData.reduce(
+      (acc, employee) => {
+        // Use JoinedDate for new hires calculation, fallback to CreatedAt
+        const joinedDate = employee.JoinedDate
+          ? new Date(employee.JoinedDate)
+          : employee.CreatedAt
+          ? new Date(employee.CreatedAt)
+          : null;
+
+        // New hires (joined in last 30 days and not deleted)
+        if (
+          joinedDate &&
+          joinedDate >= thirtyDaysAgo &&
+          employee.isDeleted === 0
+        ) {
+          acc.newHires++;
+        }
+
+        // Active employees (isDeleted === 0)
+        if (employee.isDeleted === 0) {
+          acc.active++;
+        }
+
+        // Inactive employees (isDeleted === 1)
+        if (employee.isDeleted === 1) {
+          acc.inactive++;
+        }
+
+        return acc;
+      },
+      { total: totalCount, active: 0, inactive: 0, newHires: 0 }
+    );
+
+    setEmployeeStats({
+      total: totalCount,
+      active: stats.active,
+      inactive: stats.inactive,
+      newHires: stats.newHires,
+    });
+  };
 
   // Load initial data when component mounts
   useEffect(() => {
     if (!initialLoadRef.current && !searchEmployee.trim()) {
       initialLoadRef.current = true;
       handleSearchEmployees("");
+      getAllEmployeesForStats();
     }
-  }, [handleSearchEmployees, searchEmployee]);
+  }, [handleSearchEmployees, searchEmployee, getAllEmployeesForStats]);
 
   // Effect riêng cho searchEmployee để reset về trang 1
   useEffect(() => {
@@ -148,26 +267,71 @@ const EmployeeManagement = () => {
     if (!initialLoadRef.current) return;
 
     const searchTimeout = setTimeout(() => {
+      const status = getStatusFromFilter(activeFilter);
+
       if (searchEmployee.trim()) {
-        handleSearchEmployees(searchEmployee);
+        handleSearchEmployees(searchEmployee, status);
       } else {
-        handleSearchEmployees("");
+        handleSearchEmployees("", status);
       }
     }, 300);
 
     return () => clearTimeout(searchTimeout);
-  }, [searchEmployee, page, sortBy, sortOrder, handleSearchEmployees]);
+  }, [
+    searchEmployee,
+    page,
+    uiState.sortBy,
+    uiState.sortOrder,
+    activeFilter, // Add activeFilter to dependencies
+    handleSearchEmployees,
+  ]);
 
-  // Debug useEffect to track employees state changes
+  // Close sort dropdown when clicking outside
   useEffect(() => {
-    console.log("Employees state updated:", {
-      employeesLength: employees.length,
-      employees: employees,
-      page: page,
-      totalPages: totalPages,
-      totalEmployees: totalEmployees,
-    });
-  }, [employees, page, totalPages, totalEmployees]);
+    const handleClickOutside = (event) => {
+      if (
+        showSortDropdown &&
+        !event.target.closest(".sort-dropdown-container")
+      ) {
+        setShowSortDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showSortDropdown]);
+
+  // Fetch chart data
+  useEffect(() => {
+    const fetchEmployeeAgeGroups = async () => {
+      try {
+        const response = await getEmployeeAgeGroups();
+        if (response && response.data) {
+          setEmployeeAgeData(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching employee age groups:", error);
+        setEmployeeAgeData([]);
+      }
+    };
+
+    const fetchEmployeeTenureStats = async () => {
+      try {
+        const response = await getEmployeeTenureStats();
+        if (response && response.data) {
+          setEmployeeTenureData(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching employee tenure stats:", error);
+        setEmployeeTenureData([]);
+      }
+    };
+
+    fetchEmployeeAgeGroups();
+    fetchEmployeeTenureStats();
+  }, []);
 
   const validateForm = () => {
     if (!fullName || fullName.length < 6 || fullName.length > 100) {
@@ -250,7 +414,10 @@ const EmployeeManagement = () => {
       resetForm();
       setShowAddForm(false);
       toast.success("Employee added successfully!");
-      handleSearchEmployees(searchEmployee); // Refresh current search results
+
+      // Refresh current search results with filter
+      const status = getStatusFromFilter(activeFilter);
+      handleSearchEmployees(searchEmployee, status);
     } catch (error) {
       console.error("Failed to add employee:", error);
     } finally {
@@ -315,7 +482,10 @@ const EmployeeManagement = () => {
       setSelectedEmployee(null);
       resetForm();
       toast.success("Employee updated successfully!");
-      handleSearchEmployees(searchEmployee); // Refresh current search results
+
+      // Refresh current search results with filter
+      const status = getStatusFromFilter(activeFilter);
+      handleSearchEmployees(searchEmployee, status);
     } catch (error) {
       console.error("Failed to update employee:", error);
     } finally {
@@ -329,6 +499,30 @@ const EmployeeManagement = () => {
     setShowDeletePopup(true);
   };
 
+  const handleUnban = async (employee) => {
+    try {
+      await unbanEmployee(employee.UserId);
+
+      // Update local state immediately
+      setEmployees((prev) =>
+        prev.map((emp) =>
+          emp.UserId === employee.UserId ? { ...emp, isDeleted: 0 } : emp
+        )
+      );
+
+      toast.success("Employee unbanned successfully!");
+
+      // Refresh current search results with filter
+      const status = getStatusFromFilter(activeFilter);
+      handleSearchEmployees(searchEmployee, status);
+    } catch (error) {
+      console.error("Failed to unban employee:", error);
+      toast.error(
+        `Failed to unban employee: ${error.message || "Please try again."}`
+      );
+    }
+  };
+
   const confirmDelete = async () => {
     try {
       await deleteEmployee(selectedEmployee.UserId);
@@ -338,7 +532,10 @@ const EmployeeManagement = () => {
       setShowDeletePopup(false);
       setSelectedEmployee(null);
       toast.success("Employee deleted successfully!");
-      handleSearchEmployees(searchEmployee); // Refresh current search results
+
+      // Refresh current search results with filter
+      const status = getStatusFromFilter(activeFilter);
+      handleSearchEmployees(searchEmployee, status);
     } catch (error) {
       console.error("Failed to delete employee:", error);
       toast.error(
@@ -354,11 +551,6 @@ const EmployeeManagement = () => {
     const rect = event.currentTarget.getBoundingClientRect();
     setTooltipPosition({ x: rect.right + 10, y: rect.top + window.scrollY });
     setSelectedEmployeeForTooltip(employee);
-  };
-
-  const handleOutsideClick = (e) => {
-    if (!e.target.closest("tr") && !e.target.closest(".tooltip"))
-      setSelectedEmployeeForTooltip(null);
   };
 
   const resetForm = () => {
@@ -385,216 +577,631 @@ const EmployeeManagement = () => {
   };
 
   const handleSort = (column) => {
-    if (sortBy === column) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortBy(column);
-      setSortOrder("asc");
-    }
+    setUiState((prev) => {
+      const newSortOrder =
+        prev.sortBy === column && prev.sortOrder === "asc" ? "desc" : "asc";
+      return {
+        ...prev,
+        sortBy: column,
+        sortOrder: newSortOrder,
+      };
+    });
     setPage(1); // Reset to first page when sorting changes
   };
 
+  // Helper function to get status from activeFilter
+  const getStatusFromFilter = (filterType) => {
+    const statusMap = {
+      active: "active",
+      inactive: "inactive",
+      newHires: "new",
+      total: null,
+      null: null,
+    };
+    return statusMap[filterType];
+  };
+
+  // Handle filter changes - now uses backend filtering
+  const handleFilterChange = (filterType) => {
+    setActiveFilter(filterType);
+    setPage(1); // Reset to first page when filter changes
+
+    const status = getStatusFromFilter(filterType);
+    handleSearchEmployees(searchEmployee, status);
+  };
+
+  // Load all employees for stats on component mount and when needed
+  useEffect(() => {
+    getAllEmployeesForStats();
+  }, [getAllEmployeesForStats]);
+
   return (
-    <div className="h-full">
-      <div
-        className="flex flex-col lg:flex-row items-center justify-between gap-6"
-        onClick={handleOutsideClick}
-      >
-        {loading && (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999]">
-            <div className="bg-white rounded-lg p-4 sm:p-6 flex flex-col items-center shadow-xl">
-              <svg
-                className="animate-spin h-6 sm:h-8 w-6 sm:w-8 text-indigo-600 mb-3 sm:mb-4"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  fill="none"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8v8z"
-                />
-              </svg>
-              <div className="font-semibold text-base sm:text-lg text-indigo-700">
-                {showEditForm
-                  ? "Updating employee, please wait..."
-                  : "Adding employee, please wait..."}
-              </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header Section */}
+      <div className="max-w-7xl select-none mx-auto px-3 sm:px-6 py-3 sm:py-4 bg-white shadow-md rounded-lg mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-3 lg:gap-4">
+          {/* Left: Logo/Brand */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
+              <FaUser className="text-white text-lg sm:text-xl" />
+            </div>
+            <div>
+              <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent">
+                Employee Management
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">
+                Admin Portal - Manage Staff Members
+              </p>
             </div>
           </div>
-        )}
-        <div className="w-[90%] md:w-[95%] lg:w-[95%] max-w-7xl space-y-4">
-          <HeaderStats totalEmployees={totalEmployees} />
-          <SearchAndAdd
-            searchEmployee={searchEmployee}
-            setSearchEmployee={setSearchEmployee}
-            setPage={setPage}
-            resetForm={resetForm}
-            setShowAddForm={setShowAddForm}
-            showEditForm={showEditForm}
-          />
-          <div className="bg-white rounded-md shadow-sm">
+
+          {/* Right: Search & Actions */}
+          <div className="flex flex-col sm:flex-row items-center gap-3 lg:gap-4 w-full md:w-auto">
+            {/* Search Input */}
+            <div className="relative flex items-center w-full md:w-[350px]">
+              <div className="absolute left-3 z-10">
+                <svg
+                  className="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+              <input
+                type="text"
+                value={searchEmployee}
+                onChange={(e) => {
+                  setPage(1);
+                  setSearchEmployee(e.target.value);
+                }}
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 hover:border-gray-300 shadow-sm"
+                placeholder="Search employees by name or email..."
+              />
+            </div>
+
+            {/* Add Employee Button */}
+            {!showEditForm && (
+              <button
+                onClick={() => {
+                  resetForm();
+                  setShowAddForm(true);
+                }}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-medium text-sm hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 w-full sm:w-auto min-w-[140px] whitespace-nowrap"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
+                </svg>
+                Add Employee
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col items-center lg:items-start max-w-7xl w-full overflow-x-hidden">
+        <div className="w-[90%] md:w-[95%] lg:w-full max-w-7xl space-y-4 sm:space-y-6">
+          {/* Stats Cards */}
+          <HeaderStats
+            totalEmployees={totalEmployees}
+            activeEmployees={employeeStats.active}
+            inactiveEmployees={employeeStats.inactive}
+            newHires={employeeStats.newHires}
+            onFilterChange={handleFilterChange}
+            activeFilter={activeFilter}
+          />{" "}
+          {/* Employee Table */}
+          <div className="bg-white p-2 sm:p-3 md:p-4 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
+            {/* Filter indicator */}
+            {activeFilter && activeFilter !== "total" && (
+              <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-600 rounded-full"></div>
+                    <span className="text-sm font-medium text-purple-700">
+                      Filtering by:{" "}
+                      {activeFilter === "active"
+                        ? "Active Employees"
+                        : activeFilter === "inactive"
+                        ? "Inactive Employees"
+                        : activeFilter === "newHires"
+                        ? "New Hires"
+                        : ""}
+                    </span>
+                    <span className="text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded-full">
+                      {employees.length} employees
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleFilterChange(null)}
+                    className="text-purple-600 hover:text-purple-800 text-sm font-medium hover:bg-purple-100 px-2 py-1 rounded transition-colors duration-200"
+                  >
+                    Clear Filter
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Table Layout for sm and above */}
             <div className="hidden sm:block">
               <EmployeeTable
-                employees={employees} // Use server-side paginated data
+                employees={employees}
                 handleEdit={handleEdit}
                 handleDelete={handleDelete}
+                handleUnban={handleUnban}
                 handleRowClick={handleRowClick}
                 formatDate={formatDate}
-                sortBy={sortBy}
-                sortOrder={sortOrder}
+                sortBy={uiState.sortBy}
+                sortOrder={uiState.sortOrder}
                 handleSort={handleSort}
               />
             </div>
+
             {/* Card Layout for Mobile */}
-            <div className="block sm:hidden space-y-4">
+            <div className="block sm:hidden space-y-4 sm:space-y-6">
               {employees.map((emp) => (
                 <article
                   key={emp.UserId}
-                  className="bg-white p-4 rounded-lg shadow-sm border border-slate-200"
+                  className="bg-white p-4 sm:p-5 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 cursor-pointer hover:bg-gradient-to-r hover:from-purple-50/30 hover:to-indigo-50/30 group"
                   onClick={(e) => handleRowClick(emp, e)}
                 >
                   <div className="flex items-center gap-4">
-                    <img
-                      src={emp.avatar_url || "/default-avatar.png"}
-                      alt={emp.FullName}
-                      className="w-16 h-16 rounded-full object-cover"
-                    />
-                    <div className="flex-1 w-[200px]">
-                      <h3 className="text-sm font-medium text-gray-900 break-words">
+                    <div className="relative">
+                      <img
+                        src={emp.avatar_url || "/default-avatar.png"}
+                        alt={emp.FullName}
+                        className="w-16 h-16 rounded-xl object-cover shadow-md group-hover:shadow-lg transition-shadow duration-300 ring-2 ring-gray-100 group-hover:ring-purple-200"
+                      />
+                      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-purple-600 to-purple-700 rounded-full flex items-center justify-center">
+                        <svg
+                          className="w-3 h-3 text-white"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-semibold text-gray-900 truncate group-hover:text-purple-700 transition-colors duration-300">
                         {emp.FullName}
                       </h3>
-                      <p className="text-xs text-gray-500 break-words">
+                      <p className="text-xs text-gray-500 truncate group-hover:text-purple-600 transition-colors duration-300">
                         {emp.Email}
+                      </p>
+                      <div className="flex items-center mt-1">
+                        <span
+                          className={`inline-block text-xs font-medium px-2 py-1 rounded-full ${
+                            emp.isDeleted === 1 || emp.isDeleted === true
+                              ? "bg-red-100 text-red-700"
+                              : "bg-green-100 text-green-700"
+                          }`}
+                        >
+                          {emp.isDeleted === 1 || emp.isDeleted === true
+                            ? "Inactive"
+                            : "Active"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-xs text-gray-600">
+                    <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-3 rounded-lg border border-purple-100">
+                      <p className="font-medium text-purple-700">DOB</p>
+                      <p className="text-purple-600">
+                        {formatDate(emp.DateOfBirth)}
+                      </p>
+                    </div>
+                    <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-3 rounded-lg border border-blue-100">
+                      <p className="font-medium text-blue-700">Gender</p>
+                      <p className="text-blue-600">
+                        {emp.Sex === 1
+                          ? "Male"
+                          : emp.Sex === 2
+                          ? "Female"
+                          : "Other"}
+                      </p>
+                    </div>
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg border border-green-100">
+                      <p className="font-medium text-green-700">Phone</p>
+                      <p className="text-green-600">{emp.PhoneNumber}</p>
+                    </div>
+                    <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-3 rounded-lg border border-orange-100">
+                      <p className="font-medium text-orange-700">Joined</p>
+                      <p className="text-orange-600">
+                        {formatDate(emp.CreatedAt)}
                       </p>
                     </div>
                   </div>
-                  <div className="mt-4 text-xs grid grid-cols-2 gap-x-2 gap-y-4 text-gray-700">
-                    <p>
-                      <strong>DOB:</strong> {formatDate(emp.DateOfBirth)}
-                    </p>
-                    <p>
-                      <strong>Gender:</strong>{" "}
-                      {emp.Sex === 1
-                        ? "Male"
-                        : emp.Sex === 2
-                        ? "Female"
-                        : "Other"}
-                    </p>
-                    <p>
-                      <strong>Phone:</strong> {emp.PhoneNumber}
-                    </p>
-                    <p>
-                      <strong>Joined:</strong> {formatDate(emp.CreatedAt)}
-                    </p>
-                  </div>
-                  <div className="flex gap-2 mt-4">
+
+                  <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-gray-100">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleRowClick(emp, e);
                       }}
-                      className="text-blue-500 hover:text-blue-700"
+                      className="flex items-center justify-center w-8 h-8 text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md"
                       aria-label={`View ${emp.FullName}`}
                     >
                       <IoEyeOutline size={16} />
                     </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEdit(emp);
-                      }}
-                      className="text-blue-500 hover:text-blue-700"
-                      aria-label={`Edit ${emp.FullName}`}
-                    >
-                      <FaRegEdit size={16} />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(emp);
-                      }}
-                      className="text-red-400 hover:text-red-600"
-                      aria-label={`Delete ${emp.FullName}`}
-                    >
-                      <RiDeleteBin5Line size={16} />
-                    </button>
+
+                    {/* Show unban button if employee is deleted/banned */}
+                    {emp.isDeleted === 1 || emp.isDeleted === true ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUnban(emp);
+                        }}
+                        className="flex items-center justify-center w-8 h-8 text-green-500 hover:text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md"
+                        aria-label={`Unban ${emp.FullName}`}
+                      >
+                        <FaUnlock size={16} />
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(emp);
+                          }}
+                          className="flex items-center justify-center w-8 h-8 text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md"
+                          aria-label={`Edit ${emp.FullName}`}
+                        >
+                          <FaRegEdit size={16} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(emp);
+                          }}
+                          className="flex items-center justify-center w-8 h-8 text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md"
+                          aria-label={`Delete ${emp.FullName}`}
+                        >
+                          <RiDeleteBin5Line size={16} />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </article>
               ))}
             </div>
           </div>
+          {/* Pagination */}
           <Pagination
             currentPage={page}
             totalPages={totalPages}
             handlePageChange={handlePageChange}
           />
+          {/* Employee Analytics Charts */}
+          <div className="w-full space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Employee Age Distribution Chart */}
+              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-indigo-50/30">
+                <div className="mb-6">
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
+                    Employee Age Distribution
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Demographic breakdown of employees
+                  </p>
+                </div>
+                <div className="h-[250px] sm:h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={employeeAgeData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ ageGroup, percent }) =>
+                          `${ageGroup} (${(percent * 100).toFixed(1)}%)`
+                        }
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="total"
+                      >
+                        {employeeAgeData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={
+                              [
+                                "#6366F1",
+                                "#8B5CF6",
+                                "#EC4899",
+                                "#10B981",
+                                "#F59E0B",
+                                "#EF4444",
+                              ][index % 6]
+                            }
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value) => [value, "Employees"]}
+                        labelStyle={{ color: "#333" }}
+                        contentStyle={{
+                          backgroundColor: "#fff",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "8px",
+                          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Summary Stats */}
+                <div className="mt-6 pt-4 border-t border-gray-100">
+                  <div className="text-sm text-gray-600">
+                    <div className="flex justify-between items-center mb-3 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-100">
+                      <span className="font-medium text-gray-700">
+                        Total Employees:
+                      </span>
+                      <span className="font-bold text-lg text-purple-600">
+                        {employeeAgeData.reduce(
+                          (sum, item) => sum + item.total,
+                          0
+                        )}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {employeeAgeData.map((group, index) => (
+                        <div
+                          key={group.ageGroup}
+                          className="flex justify-between items-center p-3 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 rounded-lg transition-all duration-200 border border-transparent hover:border-purple-200"
+                        >
+                          <div className="flex items-center">
+                            <div
+                              className="w-3 h-3 rounded-full mr-2 shadow-sm"
+                              style={{
+                                backgroundColor: [
+                                  "#6366F1",
+                                  "#8B5CF6",
+                                  "#EC4899",
+                                  "#10B981",
+                                  "#F59E0B",
+                                  "#EF4444",
+                                ][index % 6],
+                              }}
+                            ></div>
+                            <span className="font-medium">
+                              {group.ageGroup}:
+                            </span>
+                          </div>
+                          <span className="font-semibold text-gray-800">
+                            {group.total} employees
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Employee Tenure Statistics Chart */}
+              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-indigo-50/30">
+                <div className="mb-6">
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
+                    Employee Tenure Distribution
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Working time statistics of employees
+                  </p>
+                </div>
+                <div className="h-[250px] sm:h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={employeeTenureData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ group, percent }) =>
+                          `${group} (${(percent * 100).toFixed(1)}%)`
+                        }
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="total"
+                      >
+                        {employeeTenureData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={
+                              [
+                                "#6366F1",
+                                "#8B5CF6",
+                                "#EC4899",
+                                "#10B981",
+                                "#F59E0B",
+                                "#EF4444",
+                              ][index % 6]
+                            }
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value) => [value, "Employees"]}
+                        labelStyle={{ color: "#333" }}
+                        contentStyle={{
+                          backgroundColor: "#fff",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "8px",
+                          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Summary Stats */}
+                <div className="mt-6 pt-4 border-t border-gray-100">
+                  <div className="text-sm text-gray-600">
+                    <div className="flex justify-between items-center mb-3 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-100">
+                      <span className="font-medium text-gray-700">
+                        Total Employees:
+                      </span>
+                      <span className="font-bold text-lg text-purple-600">
+                        {employeeTenureData.reduce(
+                          (sum, item) => sum + item.total,
+                          0
+                        )}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2">
+                      {employeeTenureData.map((group, index) => (
+                        <div
+                          key={group.group}
+                          className="flex justify-between items-center p-3 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 rounded-lg transition-all duration-200 border border-transparent hover:border-purple-200"
+                        >
+                          <div className="flex items-center">
+                            <div
+                              className="w-3 h-3 rounded-full mr-2 shadow-sm"
+                              style={{
+                                backgroundColor: [
+                                  "#6366F1",
+                                  "#8B5CF6",
+                                  "#EC4899",
+                                  "#10B981",
+                                  "#F59E0B",
+                                  "#EF4444",
+                                ][index % 6],
+                              }}
+                            ></div>
+                            <span className="font-medium">{group.group}:</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-gray-800">
+                              {group.total} employees
+                            </span>
+                            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                              {group.percentage}%
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        {(showAddForm || showEditForm) && (
-          <EmployeeForm
-            showEditForm={showEditForm}
-            fullName={fullName}
-            dateOfBirth={dateOfBirth}
-            password={password}
-            sex={sex}
-            cccd={cccd}
-            email={email}
-            phoneNumber={phoneNumber}
-            address={address}
-            avatarPreview={avatarPreview}
-            avatarUploadRef={avatarUploadRef}
-            setFullName={setFullName}
-            setDateOfBirth={setDateOfBirth}
-            setPassword={setPassword}
-            setSex={setSex}
-            setCccd={setCccd}
-            setEmail={setEmail}
-            setPhoneNumber={setPhoneNumber}
-            setAddress={setAddress}
-            handleAvatarChange={handleAvatarChange}
-            handleAdd={handleAdd}
-            handleUpdate={handleUpdate}
-            setShowAddForm={setShowAddForm}
-            setShowEditForm={setShowEditForm}
-            setSelectedEmployee={setSelectedEmployee}
-            resetForm={resetForm}
-            setAvatarFile={setAvatarFile}
-            setAvatarPreview={setAvatarPreview}
-          />
-        )}
-        {showDeletePopup && (
-          <DeletePopup
-            confirmDelete={confirmDelete}
-            setShowDeletePopup={setShowDeletePopup}
-            selectedEmployee={selectedEmployee}
-          />
-        )}
-        {selectedEmployeeForTooltip && (
-          <EmployeeTooltip
-            employee={selectedEmployeeForTooltip}
-            position={tooltipPosition}
-            onClose={() => setSelectedEmployeeForTooltip(null)}
-          />
-        )}
-        <ToastContainer
-          position="top-right"
-          autoClose={2000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-        />
       </div>
+
+      {/* Loading Spinner */}
+      {loading && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999]">
+          <div className="bg-white rounded-xl p-6 flex flex-col items-center shadow-2xl border border-gray-100">
+            <svg
+              className="animate-spin h-8 w-8 text-purple-600 mb-4"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+                fill="none"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v8z"
+              />
+            </svg>
+            <div className="font-semibold text-lg text-purple-700">
+              {showEditForm ? "Updating employee..." : "Adding employee..."}
+            </div>
+            <p className="text-sm text-gray-500 mt-1">Please wait</p>
+          </div>
+        </div>
+      )}
+
+      {/* Modals */}
+      {(showAddForm || showEditForm) && (
+        <EmployeeForm
+          showEditForm={showEditForm}
+          fullName={fullName}
+          dateOfBirth={dateOfBirth}
+          password={password}
+          sex={sex}
+          cccd={cccd}
+          email={email}
+          phoneNumber={phoneNumber}
+          address={address}
+          avatarPreview={avatarPreview}
+          avatarUploadRef={avatarUploadRef}
+          setFullName={setFullName}
+          setDateOfBirth={setDateOfBirth}
+          setPassword={setPassword}
+          setSex={setSex}
+          setCccd={setCccd}
+          setEmail={setEmail}
+          setPhoneNumber={setPhoneNumber}
+          setAddress={setAddress}
+          handleAvatarChange={handleAvatarChange}
+          handleAdd={handleAdd}
+          handleUpdate={handleUpdate}
+          setShowAddForm={setShowAddForm}
+          setShowEditForm={setShowEditForm}
+          setSelectedEmployee={setSelectedEmployee}
+          resetForm={resetForm}
+          setAvatarFile={setAvatarFile}
+          setAvatarPreview={setAvatarPreview}
+        />
+      )}
+
+      {showDeletePopup && (
+        <DeletePopup
+          confirmDelete={confirmDelete}
+          setShowDeletePopup={setShowDeletePopup}
+          selectedEmployee={selectedEmployee}
+        />
+      )}
+
+      {selectedEmployeeForTooltip && (
+        <EmployeeTooltip
+          employee={selectedEmployeeForTooltip}
+          position={tooltipPosition}
+          onClose={() => setSelectedEmployeeForTooltip(null)}
+        />
+      )}
+
+      <ToastContainer
+        position="top-right"
+        autoClose={2000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+      />
     </div>
   );
 };

@@ -68,13 +68,17 @@ const HistoryActivity = () => {
 
   // Filter và Search functions cho booking (sử dụng paymentHistory)
   const applyFilters = () => {
-    const safePaymentHistory = Array.isArray(paymentHistory) ? paymentHistory : [];
+    const safePaymentHistory = Array.isArray(paymentHistory)
+      ? paymentHistory
+      : [];
     let filtered = [...safePaymentHistory];
 
     // Search by movie name
     if (searchTerm) {
       filtered = filtered.filter((item) =>
-        item.booking?.movieNameEnglish?.toLowerCase().includes(searchTerm.toLowerCase())
+        item.booking?.movieNameEnglish
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase())
       );
     }
 
@@ -90,7 +94,9 @@ const HistoryActivity = () => {
       const selectedDateDDMMYYYY = convertYYYYMMDDtoDDMMYYYY(dateFilter);
       filtered = filtered.filter((item) => {
         if (!item.booking?.BookingDate) return false;
-        const bookingDateDDMMYYYY = formatDateToDDMMYYYY(item.booking.BookingDate);
+        const bookingDateDDMMYYYY = formatDateToDDMMYYYY(
+          item.booking.BookingDate
+        );
         return bookingDateDDMMYYYY === selectedDateDDMMYYYY;
       });
     }
@@ -170,7 +176,7 @@ const HistoryActivity = () => {
       try {
         setLoading(true);
         const response = await getBookingHistory(user.userId);
-        console.log("Booking History in HistoryPage:", response);
+
         setHistoryData(response?.data || []);
       } catch (error) {
         console.error("Lỗi khi lấy history:", error);
@@ -195,7 +201,6 @@ const HistoryActivity = () => {
         const response = await getPaymentHistory(user.userId);
         const rawData = response?.data || [];
         // setPaymentHistory(rawData);
-        console.log("Payment History in HistoryPage:", rawData);
 
         // Lọc trùng theo bookingId thủ công
         const seen = new Set();
@@ -228,7 +233,7 @@ const HistoryActivity = () => {
       try {
         setLoading(true);
         const response = await getScoreHistoryByMemberId(user.userId);
-        console.log("SCORE History in HistoryPage:", response);
+
         setScoreHistory(response || []);
       } catch (error) {
         console.error("Lỗi khi lấy history:", error);
@@ -241,8 +246,6 @@ const HistoryActivity = () => {
   }, [user]);
 
 
-
-  // Apply filters whenever filter states change
   useEffect(() => {
     applyFilters();
   }, [searchTerm, statusFilter, dateFilter, paymentHistory]);
@@ -615,7 +618,8 @@ const HistoryActivity = () => {
                         <td className="py-4 px-6">
                           <div className="text-center space-x-3">
                             <span className="font-medium text-gray-800">
-                              {item.booking?.movieNameEnglish || "Unknown Movie"}
+                              {item.booking?.movieNameEnglish ||
+                                "Unknown Movie"}
                             </span>
                           </div>
                         </td>
@@ -705,7 +709,6 @@ const HistoryActivity = () => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
               </div>
-
 
               {/* Filter by Date */}
               <div className="flex-1 w-full">
@@ -823,7 +826,6 @@ const HistoryActivity = () => {
                       <th className="text-center py-4 px-6 font-semibold text-gray-700">
                         Booking ID
                       </th>
-
                     </tr>
                   </thead>
                   <tbody>
@@ -873,7 +875,6 @@ const HistoryActivity = () => {
                         <td className="text-center py-4 px-6 text-gray-700 font-mono text-sm">
                           {item.RelatedBookingId}
                         </td>
-
                       </tr>
                     ))}
                   </tbody>

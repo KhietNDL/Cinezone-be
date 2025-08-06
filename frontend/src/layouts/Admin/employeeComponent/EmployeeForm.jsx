@@ -1,4 +1,5 @@
 import React from "react";
+import DatePicker from "../userComponent/DatePicker";
 
 const EmployeeForm = ({
   showEditForm,
@@ -31,18 +32,18 @@ const EmployeeForm = ({
   setAvatarPreview,
 }) => {
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[95vh] overflow-hidden">
-        <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-4 text-white">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg sm:max-w-xl max-h-[90vh] overflow-y-auto border border-gray-100">
+        <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-4 sm:px-6 py-3 sm:py-4 text-white rounded-t-xl">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold">
+              <h2 className="text-xl sm:text-2xl font-bold">
                 {showEditForm ? "Edit Employee" : "Add New Employee"}
               </h2>
-              <p className="text-indigo-100 text-sm mt-1">
+              <p className="text-purple-100 text-xs sm:text-sm mt-1">
                 {showEditForm
-                  ? "Update the details below to edit the employee record"
-                  : "Fill in the details below to add a new employee"}
+                  ? "Update the details below to edit the employee"
+                  : "Fill in the details below to add an employee"}
               </p>
             </div>
             <button
@@ -52,10 +53,11 @@ const EmployeeForm = ({
                 setSelectedEmployee(null);
                 resetForm();
               }}
-              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              className="p-2 hover:bg-purple-700 rounded-xl transition-all duration-200 hover:scale-110"
+              aria-label="Close modal"
             >
               <svg
-                className="w-6 h-6"
+                className="w-5 sm:w-6 h-5 sm:h-6"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -70,28 +72,30 @@ const EmployeeForm = ({
             </button>
           </div>
         </div>
-        <div className="p-6 overflow-y-auto max-h-[calc(95vh-170px)]">
-          <div className="space-y-6">
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <svg
-                  className="w-5 h-5 mr-2 text-indigo-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-                Personal Information
+        <div className="p-4 sm:p-6">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 p-4 sm:p-5 rounded-xl border border-purple-100">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center">
+                <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg flex items-center justify-center mr-3">
+                  <svg
+                    className="w-4 sm:w-5 h-4 sm:h-5 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                </div>
+                Employee Information
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
                     Full Name <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -99,12 +103,50 @@ const EmployeeForm = ({
                     name="FullName"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                     placeholder="Enter full name"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 text-xs sm:text-sm hover:border-gray-400"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <DatePicker
+                    label="Date of Birth"
+                    value={dateOfBirth}
+                    onChange={(value) => setDateOfBirth(value)}
+                    placeholder="Select date of birth"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                    Gender <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex gap-3 sm:gap-4 mt-2">
+                    <label className="flex items-center text-xs sm:text-sm cursor-pointer p-2 rounded-lg hover:bg-purple-50 transition-colors duration-200">
+                      <input
+                        type="radio"
+                        name="Sex"
+                        value="1"
+                        checked={sex === 1}
+                        onChange={(e) => setSex(Number(e.target.value))}
+                        className="mr-2 text-purple-600 focus:ring-purple-500"
+                      />
+                      Male
+                    </label>
+                    <label className="flex items-center text-xs sm:text-sm cursor-pointer p-2 rounded-lg hover:bg-purple-50 transition-colors duration-200">
+                      <input
+                        type="radio"
+                        name="Sex"
+                        value="2"
+                        checked={sex === 2}
+                        onChange={(e) => setSex(Number(e.target.value))}
+                        className="mr-2 text-purple-600 focus:ring-purple-500"
+                      />
+                      Female
+                    </label>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
                     Identity Card <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -112,49 +154,100 @@ const EmployeeForm = ({
                     name="CCCD"
                     value={cccd}
                     onChange={(e) => setCccd(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                    placeholder="Enter ID card number"
+                    placeholder="Enter identity card number"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 text-xs sm:text-sm hover:border-gray-400"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Date of Birth <span className="text-red-500">*</span>
+                  <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                    Email <span className="text-red-500">*</span>
                   </label>
                   <input
-                    type="date"
-                    name="DateOfBirth"
-                    value={dateOfBirth}
-                    onChange={(e) => setDateOfBirth(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    type="email"
+                    name="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter email address"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 text-xs sm:text-sm hover:border-gray-400"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Gender <span className="text-red-500">*</span>
+                  <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                    Phone Number <span className="text-red-500">*</span>
                   </label>
-                  <select
-                    name="Sex"
-                    value={sex}
-                    onChange={(e) => setSex(Number(e.target.value))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                  >
-                    <option value={1}>Male</option>
-                    <option value={2}>Female</option>
-                    <option value={3}>Other</option>
-                  </select>
+                  <input
+                    type="tel"
+                    name="PhoneNumber"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="Enter phone number"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 text-xs sm:text-sm hover:border-gray-400"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Avatar <span className="text-red-500">*</span>
+                  <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                    Address <span className="text-red-500">*</span>
                   </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
-                    {avatarPreview ? (
-                      <div className="relative flex flex-col items-center">
+                  <input
+                    type="text"
+                    name="Address"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Enter address"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 text-xs sm:text-sm hover:border-gray-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                    Password
+                    {showEditForm ? "" : " "}
+                  </label>
+                  <input
+                    type="password"
+                    name="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder={
+                      showEditForm
+                        ? "Enter new password (leave blank to keep current)"
+                        : "Enter password"
+                    }
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 text-xs sm:text-sm hover:border-gray-400"
+                  />
+                </div>
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2 w-full">
+                    Avatar
+                  </label>
+                  <div className="w-full flex flex-col items-center">
+                    <div className="relative w-20 sm:w-24 h-20 sm:h-24 rounded-xl border-2 border-dashed border-purple-300 bg-gradient-to-br from-purple-50 to-indigo-50 flex items-center justify-center overflow-hidden mb-3 hover:border-purple-400 transition-colors duration-200">
+                      {avatarPreview ? (
                         <img
                           src={avatarPreview}
-                          alt="Avatar Preview"
-                          className="w-full h-30 object-cover rounded-xl"
+                          alt="Avatar"
+                          className="object-cover w-full h-full rounded-lg"
+                          onError={(e) =>
+                            (e.target.src = "/default-avatar.png")
+                          }
                         />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-purple-100 to-indigo-100 rounded-lg flex items-center justify-center">
+                          <svg
+                            className="w-8 h-8 text-purple-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                            />
+                          </svg>
+                        </div>
+                      )}
+                      {avatarPreview && (
                         <button
                           type="button"
                           onClick={() => {
@@ -163,158 +256,60 @@ const EmployeeForm = ({
                             if (avatarUploadRef.current)
                               avatarUploadRef.current.value = "";
                           }}
-                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center hover:bg-red-600 transition-colors"
+                          className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 rounded-full p-1.5 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-110"
+                          title="Remove image"
+                          aria-label="Remove avatar"
                         >
-                          ✕
+                          <svg
+                            className="w-3 h-3 text-white"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
                         </button>
-                      </div>
-                    ) : (
-                      <div>
-                        <svg
-                          className="mx-auto h-12 w-12 text-gray-400 mb-4"
-                          stroke="currentColor"
-                          fill="none"
-                          viewBox="0 0 48 48"
-                        >
-                          <path
-                            d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                            strokeWidth={2}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                        <input
-                          type="file"
-                          accept="image/png, image/jpeg"
-                          onChange={handleAvatarChange}
-                          className="hidden"
-                          id="avatarUpload"
-                          ref={avatarUploadRef}
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id="avatar-upload"
+                      className="hidden"
+                      ref={avatarUploadRef}
+                      onChange={handleAvatarChange}
+                    />
+                    <label
+                      htmlFor="avatar-upload"
+                      className="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl cursor-pointer hover:from-purple-700 hover:to-purple-800 transition-all duration-200 text-xs sm:text-sm font-medium shadow-md hover:shadow-lg transform hover:scale-105 flex items-center gap-2"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                         />
-                        <label
-                          htmlFor="avatarUpload"
-                          className="text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
-                        >
-                          Click to upload avatar
-                        </label>
-                        <p className="text-xs text-gray-500 mt-2">
-                          PNG, JPG up to 10MB
-                        </p>
-                      </div>
-                    )}
+                      </svg>
+                      Upload Image
+                    </label>
                   </div>
-                </div>
-              </div>
-            </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <svg
-                  className="w-5 h-5 mr-2 text-green-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  />
-                </svg>
-                Contact Information
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Email <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    name="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                    placeholder="Enter email address"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Phone Number <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    name="PhoneNumber"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                    placeholder="Enter phone number"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Address <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    name="Address"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none transition-all"
-                    placeholder="Enter full address"
-                    rows="3"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <svg
-                  className="w-5 h-5 mr-2 text-red-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 15v2m-6 4h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                  />
-                </svg>
-                Security Information
-              </h3>
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Password{" "}
-                    {showEditForm ? (
-                      ""
-                    ) : (
-                      <span className="text-red-500">*</span>
-                    )}
-                  </label>
-                  <input
-                    type="password"
-                    name="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                    placeholder={
-                      showEditForm
-                        ? "Enter new password (leave blank to keep current)"
-                        : "Enter password"
-                    }
-                  />
-                  {showEditForm && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      Leave blank to keep the current password
-                    </p>
-                  )}
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <div className="bg-gray-50 px-6 py-4 border-slate-300 border-t flex justify-end space-x-3">
+        <div className="bg-gradient-to-r from-gray-50 to-purple-50/30 px-4 sm:px-6 py-4 sm:py-5 border-t border-gray-200 flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 rounded-b-xl">
           <button
             onClick={() => {
               setShowAddForm(false);
@@ -322,15 +317,30 @@ const EmployeeForm = ({
               setSelectedEmployee(null);
               resetForm();
             }}
-            className="px-6 py-3 text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg font-medium transition-colors"
+            className="px-6 py-2.5 text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400 rounded-xl font-medium transition-all duration-200 text-xs sm:text-sm shadow-sm hover:shadow-md"
+            aria-label="Cancel"
           >
             Cancel
           </button>
           <button
             onClick={showEditForm ? handleUpdate : handleAdd}
-            className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg"
+            className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-xl font-medium transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 flex items-center justify-center text-xs sm:text-sm"
+            aria-label={showEditForm ? "Update employee" : "Add employee"}
           >
-            {showEditForm ? "Save Changes" : "Add Employee"}
+            <svg
+              className="w-4 h-4 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+            {showEditForm ? "Update Employee" : "Add Employee"}
           </button>
         </div>
       </div>

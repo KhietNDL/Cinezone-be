@@ -28,9 +28,30 @@ class Promotion {
     };
   }
 
-  static async getAllPromotions(page = 1, limit = 0) {
-    let sql =
-      "SELECT p.*, u.FullName as CreatedByName FROM Promotions p LEFT JOIN Users u ON p.CreatedBy = u.UserId WHERE p.IsDeleted = 0 ORDER BY p.CreatedAt DESC";
+  static async getAllPromotions(page = 1, limit = 0, status = null) {
+    let whereClause = "p.IsDeleted = 0";
+    let countWhereClause = "IsDeleted = 0";
+    
+    // Add status filter if provided
+    if (status) {
+      const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+      switch (status.toLowerCase()) {
+        case 'active':
+          whereClause += ` AND p.StartTime <= '${now}' AND p.EndTime >= '${now}'`;
+          countWhereClause += ` AND StartTime <= '${now}' AND EndTime >= '${now}'`;
+          break;
+        case 'expired':
+          whereClause += ` AND p.EndTime < '${now}'`;
+          countWhereClause += ` AND EndTime < '${now}'`;
+          break;
+        case 'upcoming':
+          whereClause += ` AND p.StartTime > '${now}'`;
+          countWhereClause += ` AND StartTime > '${now}'`;
+          break;
+      }
+    }
+
+    let sql = `SELECT p.*, u.FullName as CreatedByName FROM Promotions p LEFT JOIN Users u ON p.CreatedBy = u.UserId WHERE ${whereClause} ORDER BY p.CreatedAt DESC`;
     let values = [];
     if (limit > 0) {
       const offset = (page - 1) * limit;
@@ -38,10 +59,11 @@ class Promotion {
       values.push(limit, offset);
     }
     const [rows] = await db.promise().query(sql, values);
+    
     // Lấy tổng số lượng
     const [countRows] = await db
       .promise()
-      .query("SELECT COUNT(*) as total FROM Promotions WHERE IsDeleted = 0");
+      .query(`SELECT COUNT(*) as total FROM Promotions WHERE ${countWhereClause}`);
     const total = countRows[0].total;
     return {
       promotions: rows.map(this.formatPromotionRow),

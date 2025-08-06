@@ -4,66 +4,33 @@ import * as Yup from "yup";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FaMoneyBillWave } from "react-icons/fa";
-import { Spin } from "antd";
 import {
-  getMovieById, cancelBookingById,
-  checkPromotion, createBookingHold, checkMemberShip, getUserInfo
+  getMovieById,
+  cancelBookingById,
+  checkPromotion,
+  createBookingHold,
+  checkMemberShip,
+  getUserInfo,
 } from "../../../../services/APIForStaff/API";
 import { useAuth } from "../../../../context/AuthContext";
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from "react-redux";
 import {
   setCompleteBooking,
   resetBooking,
   setPaymentId,
-  setStripeClientSecret
-} from '../../../../redux/features/sellingSlice'
+  setStripeClientSecret,
+} from "../../../../redux/features/sellingSlice";
 import {
   setMember,
   setMemberChecked,
-  resetMember
-} from '../../../../redux/features/memberSlice'
+  resetMember,
+} from "../../../../redux/features/memberSlice";
+import { Spin } from "antd";
 import { Formik } from "formik";
-import { processPayment } from '../../../../hooks/useProcessPayment';
+import { processPayment } from "../../../../hooks/useProcessPayment";
 import BackButton from "../../component/BackButton";
-import ConfirmFormBody from "./ConfirmFormBody";
-
-// Sửa hàm calculatePointsAndPrice để cộng dồn DiscountTicket và discount (promotion)
-const calculatePointsAndPrice = (selectedSeats, seatData, memberChecked, convertToTicket,
-  discount, totalPrice, memberScore, discountTicket) => {
-  let PointsToUse = 0;
-  let finalPrice = totalPrice;
-  let membershipDiscountAmount = 0;
-  let promotionDiscountAmount = 0;
-
-  if (memberChecked && convertToTicket === "Agree") {
-    const totalAmount = selectedSeats.reduce((total, seatNumber) => {
-      const seat = seatData.find((s) => s.seatNumber === seatNumber);
-      return total + (seat?.price || 0);
-    }, 0);
-
-    const pointsOfAmount = Math.floor(totalAmount / 1000)
-    if (memberScore >= pointsOfAmount) {
-      PointsToUse = pointsOfAmount;
-      finalPrice = totalAmount - PointsToUse * 1000;
-    } else {
-      PointsToUse = 0;
-      finalPrice = totalAmount;
-    }
-  } else {
-    // Áp dụng giảm giá thành viên trước nếu có
-    if (memberChecked && discountTicket && Number(discountTicket) > 0) {
-      membershipDiscountAmount = Math.round(finalPrice * Number(discountTicket) / 100);
-      finalPrice = finalPrice - membershipDiscountAmount;
-    }
-    // Sau đó áp dụng tiếp mã khuyến mãi nếu có
-    if (discount && convertToTicket === "Disagree") {
-      promotionDiscountAmount = Math.round(finalPrice * Number(discount) / 100);
-      finalPrice = finalPrice - promotionDiscountAmount;
-    }
-  }
-
-  return { PointsToUse, finalPrice, membershipDiscountAmount, promotionDiscountAmount };
-};
+// import ConfirmFormBody from "./ConfirmFormBody";
+import ConfirmFormBody, { calculatePointsAndPrice } from "./ConfirmFormBody";
 
 const ConfirmTicketsPage = () => {
   const { user } = useAuth();
@@ -93,6 +60,7 @@ const ConfirmTicketsPage = () => {
     };
     loadMovie();
   }, [bookingData, navigate]);
+  
 
   const handleMemberSearch = async (searchValue) => {
     try {
@@ -106,24 +74,19 @@ const ConfirmTicketsPage = () => {
       let res = null;
 
       if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(searchValue)) {
-        res = await getUserInfo('email', searchValue);
-
+        res = await getUserInfo("email", searchValue);
       } else if (/^0\d{9,10}$/.test(searchValue)) {
-        res = await getUserInfo('phone', searchValue);
-
+        res = await getUserInfo("phone", searchValue);
       } else if (/^\d{9,12}$/.test(searchValue)) {
-        res = await getUserInfo('cccd', searchValue);
+        res = await getUserInfo("cccd", searchValue);
       } else if (searchValue.length >= 6) {
-        res = await getUserInfo('name', searchValue);
-
+        res = await getUserInfo("name", searchValue);
       } else {
         throw new Error("Invalid Email/Phone/ID/Full Name");
       }
 
       const user = res?.users?.[0] || res?.data?.users?.[0];
-
       const memberShip = await checkMemberShip(user?.UserId || user?.id);
-      console.log("MemberShip:", memberShip);
 
       if (!user?.UserId) throw new Error("Member not found");
 
@@ -142,49 +105,57 @@ const ConfirmTicketsPage = () => {
       dispatch(setMember(memberData));
       dispatch(setMemberChecked(true));
 
-      // Tự động áp dụng giảm giá thành viên nếu có DiscountTicket > 0
       if (memberData.discountTicket && Number(memberData.discountTicket) > 0) {
-        // setMemberDiscount(Number(memberData.discountTicket));
-        toast.success(`Member found! Applied membership discount (${memberData.discountTicket}%)`);
+        toast.success(
+          `Member found! Applied membership discount (${memberData.discountTicket}%)`
+        );
       } else {
-        // setMemberDiscount(null);
         setDiscount(null);
         toast.success("Member found!");
       }
     } catch (error) {
       dispatch(resetMember());
       setDiscount(null);
-      toast.error(error || "Search error");
+      toast.error(error.message || "Search error");
     } finally {
       setIsSearching(false);
     }
   };
 
-  const handleAddPromotion = useCallback(async (promotionCode, setFieldValue) => {
-    try {
-      if (!promotionCode?.trim()) {
-        toast.error("Please enter a promotion code");
-        return;
+  const handleAddPromotion = useCallback(
+    async (promotionCode, setFieldValue) => {
+      try {
+        if (!promotionCode?.trim()) {
+          toast.error("Please enter a promotion code");
+          return;
+        }
+
+        const res = await checkPromotion(promotionCode);
+        if (!res.promotions?.length) {
+          throw new Error("Invalid promotion code");
+        }
+
+        const promotion = res.promotions[0];
+        const now = new Date();
+        if (now < new Date(promotion.StartTime))
+          throw new Error("Promotion not yet valid");
+        if (now > new Date(promotion.EndTime))
+          throw new Error("Promotion has expired");
+        if(res.promotions.length > 1) 
+          throw new Error("Multiple promotions found, please refine your search");
+
+        setDiscount(promotion.DiscountValue);
+        toast.success(
+          `Successfully applied ${promotion.DiscountValue}% discount`
+        );
+      } catch (error) {
+        setDiscount(null);
+        setFieldValue("promotionCode", "");
+        toast.error(error.message);
       }
-
-      const res = await checkPromotion(promotionCode);
-      if (!res.promotions?.length) {
-        throw new Error("Invalid promotion code");
-      }
-
-      const promotion = res.promotions[0];
-      const now = new Date();
-      if (now < new Date(promotion.StartTime)) throw new Error("Promotion not yet valid");
-      if (now > new Date(promotion.EndTime)) throw new Error("Promotion has expired");
-
-      setDiscount(promotion.DiscountValue);
-      toast.success(`Successfully applied ${promotion.DiscountValue}% discount`);
-    } catch (error) {
-      setDiscount(null);
-      setFieldValue("promotionCode", "");
-      toast.error(error);
-    }
-  }, [setDiscount]);
+    },
+    [setDiscount]
+  );
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
@@ -204,6 +175,8 @@ const ConfirmTicketsPage = () => {
           ? values.promotionCode
           : "";
 
+      // const PointsToUse = 0; // Placeholder, as calculatePointsAndPrice is removed
+      // const finalPrice = bookingData.totalPrice; // Placeholder, as calculatePointsAndPrice is removed
       const { PointsToUse, finalPrice } = calculatePointsAndPrice(
         bookingData.selectedSeats,
         bookingData.seatData,
@@ -212,15 +185,21 @@ const ConfirmTicketsPage = () => {
         discount,
         bookingData.totalPrice,
         member?.score || 0,
-        discountTicket
+        member?.discountTicket || 0
       );
 
-      if (values.convertToTicket === "Agree" && memberChecked && PointsToUse > (member?.score || 0)) {
+      if (
+        values.convertToTicket === "Agree" &&
+        memberChecked &&
+        PointsToUse > (member?.score || 0)
+      ) {
         throw new Error("Not enough points to complete this transaction");
       }
 
       const seatIds = bookingData.selectedSeats.map((seat) => {
-        const seatData = bookingData.seatData.find((s) => s.seatNumber === seat);
+        const seatData = bookingData.seatData.find(
+          (s) => s.seatNumber === seat
+        );
         if (!seatData?.seatId) {
           throw new Error(`Missing seat ID for seat ${seat}`);
         }
@@ -250,11 +229,13 @@ const ConfirmTicketsPage = () => {
         discount,
         pointsUsed: PointsToUse,
         seatDetails: bookingData.selectedSeats.map((seat) => {
-          const seatData = bookingData.seatData.find((s) => s.seatNumber === seat);
+          const seatData = bookingData.seatData.find(
+            (s) => s.seatNumber === seat
+          );
           return {
             seatNumber: seat,
-            type: seatData?.type || "normal",
-            price: seatData?.price || 90000,
+            type: seatData?.type,
+            price: seatData?.price,
           };
         }),
       };
@@ -274,23 +255,33 @@ const ConfirmTicketsPage = () => {
         orderId: bookingRes.bookingId,
         amount: finalPrice,
         type: "ticket",
-        cardType: values.paymentMethod === "Stripe" ? values.cardType : undefined,
+        cardType:
+          values.paymentMethod === "Stripe" ? values.cardType : undefined,
         navigate,
         setIsRedirecting,
-        successUrl
+        successUrl,
       });
 
-      // Nếu là Visa, lưu clientSecret để render StripeCheckoutForm
-      if (values.paymentMethod === "Stripe" && paymentResult?.data?.clientSecret) {
+      if (
+        values.paymentMethod === "Stripe" &&
+        paymentResult?.data?.clientSecret
+      ) {
         dispatch(setStripeClientSecret(paymentResult.data));
       }
 
-      if (values.paymentMethod && paymentResult?.data?.paymentId || paymentResult?.data?.payment?.PaymentId) {
-        dispatch(setPaymentId(paymentResult.data.paymentId || paymentResult.data.payment.PaymentId));
+      if (
+        (values.paymentMethod && paymentResult?.data?.paymentId) ||
+        paymentResult?.data?.payment?.PaymentId
+      ) {
+        dispatch(
+          setPaymentId(
+            paymentResult.data.paymentId || paymentResult.data.payment.PaymentId
+          )
+        );
       }
     } catch (error) {
-      console.error("Booking error:", error);
-      toast.error(error || "Error processing booking");
+      console.error("Booking error:", error || error.message);
+      toast.error(error.message);
     } finally {
       setSubmitting(false);
     }
@@ -302,7 +293,7 @@ const ConfirmTicketsPage = () => {
         await cancelBookingById(bookingData.bookingId);
       }
     } catch (error) {
-      console.error("Failed to cancel booking:", error || error);
+      console.error("Failed to cancel booking:", error.message || error);
       toast.error("Failed to cancel booking");
     }
     dispatch(resetBooking());
@@ -311,7 +302,6 @@ const ConfirmTicketsPage = () => {
   }, [bookingData?.bookingId, dispatch, navigate]);
 
   const validationSchema = Yup.object().shape({
-
     convertToTicket: Yup.string().when([], {
       is: () => memberChecked,
       then: (schema) =>
@@ -334,24 +324,29 @@ const ConfirmTicketsPage = () => {
 
     paymentMethod: Yup.string()
       .required("Please select payment method")
-      .oneOf(["Cash", "Momo", "VNPay", "ZaloPay", "Stripe"], "Invalid payment method"),
+      .oneOf(
+        ["Cash", "Momo", "VNPay", "ZaloPay", "Stripe"],
+        "Invalid payment method"
+      ),
 
     cardType: Yup.string().when("paymentMethod", {
       is: "Stripe",
       then: (schema) =>
-        schema.required("Please select a card type").oneOf(["visa", "mastercard", "jcb", "unionpay"]),
+        schema
+          .required("Please select a card type")
+          .oneOf(["visa", "mastercard", "jcb", "unionpay"]),
       otherwise: (schema) => schema.notRequired(),
     }),
 
     cashGiven: Yup.number()
-      .transform((value, originalValue) => originalValue === "" ? undefined : value)
+      .transform((value, originalValue) =>
+        originalValue === "" ? undefined : value
+      )
       .when("paymentMethod", {
         is: (val) => val === "Cash",
-        then: (schema) =>
-          schema.required("Please enter cash given"),
+        then: (schema) => schema.required("Please enter cash given"),
         otherwise: (schema) => schema.notRequired(),
       }),
-
   });
 
   if (isRedirecting) {
@@ -370,20 +365,17 @@ const ConfirmTicketsPage = () => {
     );
   }
 
-  // Lấy discountTicket từ member nếu có
-  const discountTicket = memberChecked && member && member.discountTicket ? Number(member.discountTicket) : 0;
+  const discountTicket =
+    memberChecked && member && member.discountTicket
+      ? Number(member.discountTicket)
+      : 0;
 
   return (
-    <div className="min-h-screen bg-[#fafbfc]">
+    <div className="min-h-screen bg-gray-50">
       {/* Header Section */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 bg-white shadow-md rounded-lg">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-3 lg:gap-4">
-          {/* Left: Back Button */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            <BackButton />
-          </div>
-
-          {/* Center: Title */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 bg-white shadow-md rounded-lg mb-6">
+        <div className="flex flex-row items-center gap-3 lg:gap-4">
+          <BackButton />
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
               <FaMoneyBillWave className="text-white text-lg sm:text-xl" />
@@ -393,17 +385,14 @@ const ConfirmTicketsPage = () => {
                 Confirm Tickets
               </h1>
               <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">
-                Complete your booking and payment
+                Staff Portal - Ticket Selling
               </p>
             </div>
           </div>
-
-          {/* Right: Empty space for balance */}
-          <div className="w-8 h-8 sm:w-10 sm:h-10"></div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto py-6">
+      <div className="max-w-7xl mx-auto ">
         <Formik
           initialValues={{
             memberSearch: "",
@@ -417,28 +406,25 @@ const ConfirmTicketsPage = () => {
           onSubmit={handleSubmit}
         >
           {(formikProps) => (
-            <>
-                             <ConfirmFormBody
-                 {...formikProps}
-                 bookingData={bookingData}
-                 memberChecked={memberChecked}
-                 member={member}
-                 discount={discount}
-                 setDiscount={setDiscount}
-                 discountTicket={discountTicket}
-                 isSearching={isSearching}
-                 handleMemberSearch={handleMemberSearch}
-                 handleAddPromotion={handleAddPromotion}
-                 handleCancel={handleCancel}
-                 movieInfo={movieInfo}
-               />
-            </>
+            <ConfirmFormBody
+              {...formikProps}
+              bookingData={bookingData}
+              memberChecked={memberChecked}
+              member={member}
+              discount={discount}
+              discountTicket={discountTicket}
+              isSearching={isSearching}
+              handleMemberSearch={handleMemberSearch}
+              handleAddPromotion={handleAddPromotion}
+              handleCancel={handleCancel}
+              movieInfo={movieInfo}
+              setDiscount={setDiscount}
+            />
           )}
         </Formik>
       </div>
     </div>
   );
 };
-
 
 export default ConfirmTicketsPage;

@@ -398,14 +398,8 @@ const LandingPage = () => {
         </div>
       </div>
 
-      {/* Stats Section - Use hero movies */}
-      {heroMovies.length > 0 && (
-        <StatsSection
-          movieData={heroMovies}
-          currentMovies={currentMovies}
-          upcomingMovies={upcomingMovies}
-        />
-      )}
+      {/* Stats Section - Shows real-time statistics */}
+      <StatsSection />
 
       {/* Trending Section - Use hero movies */}
       {heroMovies.length > 0 && (

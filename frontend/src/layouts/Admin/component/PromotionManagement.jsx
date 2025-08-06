@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { Tag } from "lucide-react";
 import {
   getPromotion,
   createPromotion,
@@ -35,41 +36,63 @@ const PromotionManagement = () => {
   const [isEdit, setIsEdit] = useState(false);
   const [showFormPopup, setShowFormPopup] = useState(false);
   const [totalPages, setTotalPages] = useState(0);
-  const [totalPromotions, setTotalPromotions] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [allPromotionsForStats, setAllPromotionsForStats] = useState([]);
   const itemsPerPage = 5;
 
-  const getPromotionData = useCallback(async () => {
-    try {
-      const params = {
-        page: currentPage,
-        limit: itemsPerPage,
-        sortBy: "CreatedAt",
-        sortOrder: "desc",
-      };
-      const response = await getPromotion(params);
-      setPromotions(response.data || []);
-      if (response.pagination) {
-        setTotalPages(response.pagination.totalPages);
-        setTotalPromotions(response.pagination.total);
-      } else {
-        const promotionsList = response.data || [];
-        setTotalPromotions(promotionsList.length);
-        setTotalPages(Math.ceil(promotionsList.length / itemsPerPage));
-      }
-    } catch (error) {
-      console.error("Error fetching promotions:", error);
-      toast.error("Failed to fetch promotions.");
-      setPromotions([]);
-      setTotalPages(0);
-      setTotalPromotions(0);
+  // Helper function to map filter to backend status
+  const getStatusFromFilter = (filter) => {
+    switch (filter) {
+      case "active":
+        return "active";
+      case "expired":
+        return "expired";
+      case "upcoming":
+        return "upcoming";
+      case "all":
+      default:
+        return null;
     }
-  }, [currentPage, itemsPerPage]);
+  };
+
+  const getPromotionData = useCallback(
+    async (status = null) => {
+      try {
+        const params = {
+          page: currentPage,
+          limit: itemsPerPage,
+          sortBy: "CreatedAt",
+          sortOrder: "desc",
+        };
+
+        // Add status filter if provided
+        if (status) {
+          params.status = status;
+        }
+
+        const response = await getPromotion(params);
+        setPromotions(response.data || []);
+        if (response.pagination) {
+          setTotalPages(response.pagination.totalPages);
+        } else {
+          const promotionsList = response.data || [];
+          setTotalPages(Math.ceil(promotionsList.length / itemsPerPage));
+        }
+      } catch (error) {
+        console.error("Error fetching promotions:", error);
+        toast.error("Failed to fetch promotions.");
+        setPromotions([]);
+        setTotalPages(0);
+      }
+    },
+    [currentPage, itemsPerPage]
+  );
 
   const searchPromotionData = useCallback(
-    async (searchTerm) => {
+    async (searchTerm, status = null) => {
       if (!searchTerm.trim()) {
-        getPromotionData();
+        getPromotionData(status);
         return;
       }
 
@@ -81,36 +104,74 @@ const PromotionManagement = () => {
           sortOrder: "desc",
         };
 
+        // Add status filter if provided
+        if (status) {
+          params.status = status;
+        }
+
         const response = await searchPromotion(searchTerm, params);
         if (response) {
           setPromotions(response.data || response.promotions || []);
 
           // Xử lý pagination từ response
           if (response.pagination) {
-            setTotalPromotions(response.pagination.total);
             setTotalPages(response.pagination.totalPages);
           } else {
             const promotionsList = response.data || response.promotions || [];
-            setTotalPromotions(promotionsList.length);
             setTotalPages(Math.ceil(promotionsList.length / itemsPerPage));
           }
         }
       } catch (error) {
         console.error("Error searching promotions:", error);
         setPromotions([]);
-        setTotalPromotions(0);
         setTotalPages(0);
       }
     },
     [currentPage, itemsPerPage, getPromotionData]
   );
 
+  // Handle filter change for backend filtering
+  const handleFilterChange = (filter) => {
+    setActiveFilter(filter);
+    setCurrentPage(1); // Reset to page 1 when filter changes
+    const status = getStatusFromFilter(filter);
+
+    if (searchTerm.trim()) {
+      searchPromotionData(searchTerm, status);
+    } else {
+      getPromotionData(status);
+    }
+  };
+
+  // Fetch all promotions for statistics calculation
+  const getAllPromotionsForStats = useCallback(async () => {
+    try {
+      const response = await getPromotion({
+        page: 1,
+        limit: 10000, // Large number to get all promotions
+        sortBy: "CreatedAt",
+        sortOrder: "desc",
+      });
+
+      if (response.data) {
+        const allPromotionsArray = Array.isArray(response.data)
+          ? response.data
+          : [];
+        setAllPromotionsForStats(allPromotionsArray);
+      }
+    } catch (error) {
+      console.error("Error fetching all promotions for stats:", error);
+      setAllPromotionsForStats([]);
+    }
+  }, []);
+
   // Load initial data when component mounts
   useEffect(() => {
     if (!searchTerm.trim()) {
       getPromotionData();
     }
-  }, [getPromotionData, searchTerm]);
+    getAllPromotionsForStats();
+  }, [getPromotionData, searchTerm, getAllPromotionsForStats]);
 
   // Effect riêng cho searchTerm để reset về trang 1
   useEffect(() => {
@@ -122,15 +183,25 @@ const PromotionManagement = () => {
   // useEffect với debounce cho search
   useEffect(() => {
     const searchTimeout = setTimeout(() => {
+      const status = getStatusFromFilter(activeFilter);
+
       if (searchTerm.trim()) {
-        searchPromotionData(searchTerm);
+        searchPromotionData(searchTerm, status);
       } else {
-        getPromotionData();
+        getPromotionData(status);
+        getAllPromotionsForStats(); // Reload stats when clearing search
       }
     }, 500);
 
     return () => clearTimeout(searchTimeout);
-  }, [searchTerm, currentPage, searchPromotionData, getPromotionData]);
+  }, [
+    searchTerm,
+    currentPage,
+    activeFilter,
+    searchPromotionData,
+    getPromotionData,
+    getAllPromotionsForStats,
+  ]);
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
@@ -179,12 +250,14 @@ const PromotionManagement = () => {
       }
       resetForm();
       setShowFormPopup(false);
-      // Refresh current data
+      // Refresh current data with filter
+      const status = getStatusFromFilter(activeFilter);
       if (searchTerm.trim()) {
-        searchPromotionData(searchTerm);
+        searchPromotionData(searchTerm, status);
       } else {
-        getPromotionData();
+        getPromotionData(status);
       }
+      getAllPromotionsForStats(); // Refresh stats
     } catch (error) {
       console.error("Error saving promotion:", error);
       toast.error("Failed to save promotion.");
@@ -194,7 +267,6 @@ const PromotionManagement = () => {
   };
 
   const handleEdit = (promotion) => {
-    console.log("Editing promotion:", promotion); // Debug log
     setPromotionId(promotion.PromotionId);
     setTitle(promotion.Title || "");
 
@@ -213,7 +285,6 @@ const PromotionManagement = () => {
     setUpdatedAt(promotion.UpdatedAt || "");
     setImage(null);
     setImagePreview(promotion.Image || null);
-    setIsEdit(true);
     setShowFormPopup(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -225,12 +296,14 @@ const PromotionManagement = () => {
       toast.success("Promotion deleted successfully!");
       setShowDeletePopup(false);
       setSelectedPromotion(null);
-      // Refresh current data
+      // Refresh current data with filter
+      const status = getStatusFromFilter(activeFilter);
       if (searchTerm.trim()) {
-        searchPromotionData(searchTerm);
+        searchPromotionData(searchTerm, status);
       } else {
-        getPromotionData();
+        getPromotionData(status);
       }
+      getAllPromotionsForStats(); // Refresh stats
     } catch (error) {
       console.error("Error deleting promotion:", error);
       toast.error("Failed to delete promotion.");
@@ -259,22 +332,48 @@ const PromotionManagement = () => {
   };
 
   return (
-    <div className="h-full">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header Section */}
+      <div className="max-w-7xl select-none mx-auto px-3 sm:px-6 py-3 sm:py-4 bg-white shadow-md rounded-lg mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-3 lg:gap-4">
+          {/* Left: Logo/Brand */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
+              <Tag className="text-white text-lg sm:text-xl" />
+            </div>
+            <div>
+              <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent">
+                Promotion Management
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">
+                Admin Portal - Manage Discounts & Offers
+              </p>
+            </div>
+          </div>
+
+          {/* Right: Search & Actions */}
+          <div className="flex flex-col sm:flex-row items-center gap-3 lg:gap-4 w-full md:w-auto">
+            <SearchAndAdd
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              isEdit={isEdit}
+              setShowFormPopup={setShowFormPopup}
+              resetForm={resetForm}
+            />
+          </div>
+        </div>
+      </div>
+
       <ToastContainer position="top-right" autoClose={2000} />
-      <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
-        <div className="w-[90%] md:w-[95%] lg:w-[95%] max-w-7xl space-y-4">
+      <div className="flex flex-col items-center lg:items-start h-auto min-h-screen max-w-7xl w-full overflow-x-hidden mx-auto">
+        <div className="w-[90%] md:w-[95%] lg:w-full max-w-7xl space-y-4 sm:space-y-6">
           <StatsCards
-            totalPromotions={totalPromotions}
-            promotions={promotions}
+            totalPromotions={allPromotionsForStats.length}
+            promotions={allPromotionsForStats}
+            activeFilter={activeFilter}
+            handleFilterChange={handleFilterChange}
           />
-          <SearchAndAdd
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            isEdit={isEdit}
-            setShowFormPopup={setShowFormPopup}
-            resetForm={resetForm}
-          />
-          <div className="bg-white p-2 sm:p-4 rounded-md shadow-sm">
+          <div className="bg-white rounded-xl shadow-md border border-gray-100">
             <PromotionTable
               promotions={promotions}
               handleEdit={handleEdit}
@@ -296,67 +395,41 @@ const PromotionManagement = () => {
             handlePageChange={handlePageChange}
           />
         </div>
-        <DeletePopup
-          showDeletePopup={showDeletePopup}
-          setShowDeletePopup={setShowDeletePopup}
-          handleDelete={handleDelete}
-          loading={loading}
-        />
-        <PromotionFormPopup
-          showFormPopup={showFormPopup}
-          setShowFormPopup={setShowFormPopup}
-          isEdit={isEdit}
-          title={title}
-          setTitle={setTitle}
-          startTime={startTime}
-          setStartTime={setStartTime}
-          endTime={endTime}
-          setEndTime={setEndTime}
-          discountValue={discountValue}
-          setDiscountValue={setDiscountValue}
-          detail={detail}
-          setDetail={setDetail}
-          code={code}
-          setCode={setCode}
-          updatedAt={updatedAt}
-          image={image}
-          setImage={setImage}
-          imagePreview={imagePreview}
-          setImagePreview={setImagePreview}
-          handleSubmit={handleSubmit}
-          handleImageChange={handleImageChange}
-          resetForm={resetForm}
-          loading={loading}
-        />
-        {loading && !showFormPopup && (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999]">
-            <div className="bg-white rounded-lg p-4 sm:p-6 flex flex-col items-center shadow-xl">
-              <svg
-                className="animate-spin h-6 sm:h-8 w-6 sm:w-8 text-indigo-600 mb-3 sm:mb-4"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  fill="none"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8v8z"
-                />
-              </svg>
-              <div className="font-semibold text-base sm:text-lg text-indigo-700">
-                Đang xử lý, vui lòng chờ...
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Modal Components */}
+      <DeletePopup
+        showDeletePopup={showDeletePopup}
+        setShowDeletePopup={setShowDeletePopup}
+        handleDelete={handleDelete}
+        loading={loading}
+      />
+      <PromotionFormPopup
+        showFormPopup={showFormPopup}
+        setShowFormPopup={setShowFormPopup}
+        isEdit={isEdit}
+        title={title}
+        setTitle={setTitle}
+        startTime={startTime}
+        setStartTime={setStartTime}
+        endTime={endTime}
+        setEndTime={setEndTime}
+        discountValue={discountValue}
+        setDiscountValue={setDiscountValue}
+        detail={detail}
+        setDetail={setDetail}
+        code={code}
+        setCode={setCode}
+        updatedAt={updatedAt}
+        image={image}
+        setImage={setImage}
+        imagePreview={imagePreview}
+        setImagePreview={setImagePreview}
+        handleSubmit={handleSubmit}
+        handleImageChange={handleImageChange}
+        resetForm={resetForm}
+        loading={loading}
+      />
     </div>
   );
 };

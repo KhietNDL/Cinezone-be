@@ -22,22 +22,34 @@ const PromotionTable = ({
   };
 
   return (
-    <div className="hidden sm:block">
+    <div className="hidden sm:block overflow-x-auto">
       <table className="w-full table-auto border-collapse">
         <thead>
-          <tr className="text-left text-slate-500 text-sm border-b border-slate-200">
-            <th className="py-2 text-center w-[200px] shrink-0">Image</th>
-            <th className="py-2 px-2 w-[200px] shrink-0">Promotion Name</th>
-            <th className="py-2 text-center w-[120px] shrink-0">Code</th>
-            <th className="py-2 text-center w-[150px] shrink-0">Value</th>
-            <th className="py-2 text-center w-[60px] md:w-[100px] shrink-0">
+          <tr className="bg-gradient-to-r from-gray-50 to-purple-50 border-b border-gray-200">
+            <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 w-[200px]">
+              Image
+            </th>
+            <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 w-[200px]">
+              Promotion Name
+            </th>
+            <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700 w-[120px]">
+              Code
+            </th>
+            <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700 w-[100px]">
+              Value
+            </th>
+            <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700 w-[120px]">
               Start Date
             </th>
-            <th className="py-2 text-center w-[60px] md:w-[100px] shrink-0">
+            <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700 w-[120px]">
               End Date
             </th>
-            <th className="py-2 text-center w-[100px] shrink-0">Status</th>
-            <th className="py-2 text-center">Actions</th>
+            <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700 w-[120px]">
+              Status
+            </th>
+            <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700 w-[100px]">
+              Actions
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -49,80 +61,86 @@ const PromotionTable = ({
             return (
               <tr
                 key={promotion.PromotionId}
-                className="border-b border-slate-200 hover:bg-slate-100 hover:rounded-lg cursor-pointer text-sm"
+                className="group border-b border-gray-100 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 transition-all duration-200"
               >
-                <td className="py-2 text-center w-[200px] shrink-0">
+                <td className="py-3 px-4">
                   {promotion.Image ? (
                     <img
                       src={promotion.Image}
                       alt={promotion.Title}
-                      className="w-30 h-24 object-cover rounded mx-auto"
+                      className="w-16 h-16 object-cover rounded-lg mx-auto shadow-sm"
                     />
                   ) : (
-                    <span className="text-gray-400 italic">No image</span>
+                    <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto">
+                      <span className="text-gray-400 italic text-xs">
+                        No image
+                      </span>
+                    </div>
                   )}
                 </td>
-                <td className="px-2 py-2 whitespace-nowrap w-[200px] shrink-0">
+                <td className="py-3 px-4">
                   <div>
-                    <div className="text-sm font-medium text-gray-900">
+                    <div className="text-sm font-semibold text-gray-900 group-hover:text-purple-900 transition-colors">
                       {promotion.Title}
                     </div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-xs text-gray-600 mt-1">
                       {promotion.Detail}
                     </div>
                   </div>
                 </td>
-                <td className="py-2 text-center w-[120px] shrink-0">
-                  <span className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
+                <td className="py-3 px-4 text-center">
+                  <span className="text-sm font-mono bg-purple-50 text-purple-700 px-3 py-1 rounded-lg">
                     {promotion.Code}
                   </span>
                 </td>
-                <td className="py-2 text-center w-[150px] shrink-0">
-                  {promotion.DiscountValue
-                    ? Number(promotion.DiscountValue) % 1 === 0
-                      ? Number(promotion.DiscountValue) + "%"
-                      : Number(promotion.DiscountValue)
-                          .toFixed(2)
-                          .replace(/\.00$/, "") + "%"
-                    : ""}
+                <td className="py-3 px-4 text-center">
+                  <span className="text-sm font-semibold text-gray-900">
+                    {promotion.DiscountValue
+                      ? Number(promotion.DiscountValue) % 1 === 0
+                        ? Number(promotion.DiscountValue) + "%"
+                        : Number(promotion.DiscountValue)
+                            .toFixed(2)
+                            .replace(/\.00$/, "") + "%"
+                      : ""}
+                  </span>
                 </td>
-                <td className="py-2 text-center">
-                  <div className="text-sm text-gray-900 w-[60px] md:w-[100px] shrink-0">
+                <td className="py-3 px-4 text-center">
+                  <div className="text-sm text-gray-900">
                     {formatDate(promotion.StartTime)}
                   </div>
                 </td>
-                <td className="py-2 text-center">
-                  <div className="text-sm text-gray-900 w-[60px] md:w-[100px] shrink-0">
+                <td className="py-3 px-4 text-center">
+                  <div className="text-sm text-gray-900">
                     {formatDate(promotion.EndTime)}
                   </div>
                 </td>
-                <td className="py-2 text-center w-[100px] shrink-0">
+                <td className="py-3 px-4 text-center">
                   <span
-                    className={`px-3 py-1 rounded-full font-semibold text-xs ${statusClass}`}
+                    className={`px-3 py-1 rounded-full font-medium text-xs ${statusClass}`}
                   >
                     {status}
                   </span>
                 </td>
-                <td className="px-6 py-2 text-sm font-medium w-[100px] shrink-0">
+                <td className="py-3 px-4">
                   <div className="flex items-center justify-center gap-2">
                     <button
                       onClick={() => handleEdit(promotion)}
-                      className="text-blue-500 hover:text-blue-700 cursor-pointer"
+                      className="w-8 h-8 flex items-center justify-center bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 hover:scale-110 transition-all duration-200"
                       title="Edit"
                       aria-label="Edit promotion"
                     >
-                      <FaRegEdit size={20} />
+                      <FaRegEdit size={14} />
                     </button>
                     <button
                       onClick={() => {
                         setSelectedPromotion(promotion);
                         setShowDeletePopup(true);
                       }}
-                      className="text-red-400 hover:text-red-600 cursor-pointer"
+                      className="w-8 h-8 flex items-center justify-center bg-red-100 text-red-700 rounded-lg hover:bg-red-200 hover:scale-110 transition-all duration-200"
                       title="Delete"
                       aria-label="Delete promotion"
                     >
-                      <RiDeleteBin5Line size={20} />
+                      <RiDeleteBin5Line size={14} />
                     </button>
                   </div>
                 </td>

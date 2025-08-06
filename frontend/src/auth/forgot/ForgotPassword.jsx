@@ -33,9 +33,10 @@ const MovieForgotPassword = () => {
         const data = await getCurrentMovies();
         const posters = data?.data
           ?.map((movie) => {
-            if (!movie.PosterImage) return null;
-            if (movie.PosterImage.startsWith("http")) return movie.PosterImage;
-            return `http://cinezone:4458${movie.PosterImage}`;
+            if (!movie.PosterImageHorizontal) return null;
+            if (movie.PosterImageHorizontal.startsWith("http"))
+              return movie.PosterImageHorizontal;
+            return `http://cinezone:4458${movie.PosterImageHorizontal}`;
           })
           .filter(Boolean);
         setMovieBackgrounds(
@@ -87,12 +88,10 @@ const MovieForgotPassword = () => {
 
       try {
         const result = await forgot({ email: formData.email });
-        console.log("Password reset email sent:", result);
         setIsSuccess(true);
         // Navigate to verification page with email in state
         navigate("/verification", { state: { email: formData.email } });
       } catch (error) {
-        console.error("Error sending password reset:", error);
         // Nếu là lỗi 404 thì hiện Email not found
         if (error?.message === "Email not found") {
           setApiError("Email not found");

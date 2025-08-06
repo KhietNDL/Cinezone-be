@@ -1,5 +1,6 @@
 import React from "react";
 import { MdOutlineClose } from "react-icons/md";
+import DatePicker from "./DatePicker";
 
 const PromotionFormPopup = ({
   showFormPopup,
@@ -17,51 +18,24 @@ const PromotionFormPopup = ({
   setDetail,
   code,
   setCode,
-  updatedAt,
+
   imagePreview,
   handleSubmit,
   handleImageChange,
   resetForm,
   loading,
 }) => {
-  // Debug log to check received props when editing
-  React.useEffect(() => {
-    if (isEdit && showFormPopup) {
-      console.log("Form props for editing:", {
-        title,
-        discountValue,
-        startTime,
-        endTime,
-        detail,
-        code,
-        updatedAt,
-        imagePreview,
-      });
-    }
-  }, [
-    isEdit,
-    showFormPopup,
-    title,
-    discountValue,
-    startTime,
-    endTime,
-    detail,
-    code,
-    updatedAt,
-    imagePreview,
-  ]);
-
   if (!showFormPopup) return null;
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full min-w-[300px] max-w-[90vw] sm:max-w-2xl max-h-[90vh] overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 sm:px-6 py-3 sm:py-4 text-white">
+        <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-4 sm:px-6 py-3 sm:py-4 text-white">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg sm:text-2xl font-bold">
                 {isEdit ? "Edit Promotion" : "Add New Promotion"}
               </h2>
-              <p className="text-blue-100 text-xs sm:text-sm mt-1">
+              <p className="text-purple-100 text-xs sm:text-sm mt-1">
                 {isEdit
                   ? "Update the details below to edit the promotion"
                   : "Fill in the details below to add a promotion"}
@@ -97,7 +71,7 @@ const PromotionFormPopup = ({
                     type="text"
                     value={title || ""}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base"
                     placeholder="Enter promotion name"
                     required
                   />
@@ -114,7 +88,7 @@ const PromotionFormPopup = ({
                     type="number"
                     value={discountValue || ""}
                     onChange={(e) => setDiscountValue(e.target.value)}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base"
                     placeholder="e.g. 25 or 10"
                     required
                   />
@@ -123,38 +97,21 @@ const PromotionFormPopup = ({
 
               {/* Row 2: Start Date and End Date */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                <div>
-                  <label
-                    htmlFor="startTime"
-                    className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2"
-                  >
-                    Start Date <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="startTime"
-                    type="date"
-                    value={startTime || ""}
-                    onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-                    required
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="endTime"
-                    className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2"
-                  >
-                    End Date <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="endTime"
-                    type="date"
-                    value={endTime || ""}
-                    onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-                    required
-                  />
-                </div>
+                <DatePicker
+                  label="Start Date"
+                  value={startTime}
+                  onChange={setStartTime}
+                  placeholder="Select start date"
+                  required={true}
+                />
+                <DatePicker
+                  label="End Date"
+                  value={endTime}
+                  onChange={setEndTime}
+                  placeholder="Select end date"
+                  required={true}
+                  minDate={startTime}
+                />
               </div>
 
               {/* Row 3: Detail */}
@@ -170,7 +127,7 @@ const PromotionFormPopup = ({
                   type="text"
                   value={detail || ""}
                   onChange={(e) => setDetail(e.target.value)}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base"
                   placeholder="Promotion detail"
                 />
               </div>
@@ -189,7 +146,7 @@ const PromotionFormPopup = ({
                     type="text"
                     value={code || ""}
                     onChange={(e) => setCode(e.target.value)}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base"
                     placeholder="e.g. SUMMER2025"
                     required
                   />
@@ -206,7 +163,7 @@ const PromotionFormPopup = ({
                 </label>
                 <div className="flex items-center gap-3 sm:gap-4">
                   <label className="cursor-pointer flex flex-col items-center">
-                    <span className="px-3 sm:px-4 py-1 sm:py-2 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 hover:bg-blue-100 text-sm sm:text-base">
+                    <span className="px-3 sm:px-4 py-1 sm:py-2 bg-purple-50 border border-purple-200 rounded-lg text-purple-700 hover:bg-purple-100 text-sm sm:text-base">
                       Choose Image
                     </span>
                     <input
@@ -241,7 +198,7 @@ const PromotionFormPopup = ({
               </button>
               <button
                 type="submit"
-                className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg text-sm sm:text-base"
+                className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-lg text-sm sm:text-base"
                 disabled={loading}
               >
                 {isEdit ? "Save Promotion" : "Add Promotion"}
@@ -253,7 +210,7 @@ const PromotionFormPopup = ({
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-4 sm:p-6 flex flex-col items-center shadow-xl">
               <svg
-                className="animate-spin h-6 sm:h-8 w-6 sm:w-8 text-blue-600 mb-3 sm:mb-4"
+                className="animate-spin h-6 sm:h-8 w-6 sm:w-8 text-purple-600 mb-3 sm:mb-4"
                 viewBox="0 0 24 24"
               >
                 <circle
@@ -271,7 +228,7 @@ const PromotionFormPopup = ({
                   d="M4 12a8 8 0 018-8v8z"
                 />
               </svg>
-              <div className="font-semibold text-base sm:text-lg text-blue-700">
+              <div className="font-semibold text-base sm:text-lg text-purple-700">
                 {isEdit
                   ? "Đang cập nhật khuyến mãi..."
                   : "Đang thêm khuyến mãi..."}

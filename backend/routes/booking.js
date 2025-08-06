@@ -173,6 +173,12 @@ router.delete('/:bookingId', bookingController.deleteBooking);
  *           enum: [asc, desc]
  *           default: desc
  *         description: Sort order (asc or desc)
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [successful, pending, cancelled]
+ *         description: Filter bookings by status (successful = 2 (PAID), pending = 1 (PENDING), cancelled = 4 (CANCELLED))
  *     responses:
  *       200:
  *         description: Bookings retrieved

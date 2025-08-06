@@ -29,33 +29,23 @@ const WaitingPayment = () => {
     seatIds,
     promotionId,
     userId,
-    
+
     finalPrice = 0,
     // Product related data from ConfirmPayment
     OrderProductId = null,
     products = [],
     productHoldResult = null,
-    stripeCardType ,
+    stripeCardType,
   } = state || {};
 
-  const {
-    bookingId,
-    orderProductsId=null,
-  }=useSelector((state) => state.booking);
+  const { bookingId, orderProductsId = null } = useSelector(
+    (state) => state.booking
+  );
 
   const [paymentStatus, setPaymentStatus] = useState("waiting");
   const [clientSecret, setClientSecret] = useState(null);
   const [stripeError, setStripeError] = useState("");
   const returnUrl = `${window.location.origin}/ticket`;
-
-  console.log("🎫 WaitingPayment received data:", {
-    bookingId,
-    orderProductsId,
-    products: products.length,
-    finalPrice,
-    paymentMethod,
-    stripeCardType,
-  });
 
   useEffect(() => {
     const processPayment = async () => {
@@ -67,14 +57,12 @@ const WaitingPayment = () => {
           // Case 1: Mua cả ghế và bắp nước (Pay for both booking and order product)
           dispatch(setOrderProductsId(OrderProductId));
           payload = {
-            
             bookingId: bookingId,
             orderProductId: OrderProductId,
             amount: finalPrice,
             returnUrl,
             userId,
           };
-         
         } else if (bookingId && !OrderProductId) {
           // Case 2: Chỉ mua ghế (Pay for booking only)
           dispatch(setOrderProductsId(null));
@@ -84,7 +72,6 @@ const WaitingPayment = () => {
             returnUrl,
             userId,
           };
-          
         } else if (!bookingId && OrderProductId) {
           // Case 3: Chỉ mua bắp nước (Pay for order product only)
           dispatch(setOrderProductsId(OrderProductId));
@@ -94,22 +81,15 @@ const WaitingPayment = () => {
             returnUrl,
             userId,
           };
-         
         } else {
           console.error("❌ No valid booking or product order found");
           setPaymentStatus("failed");
           return;
         }
 
-        // console.log("Payment payload:", payload);
-        // console.log("Seat Booking ID:", bookingId || "None");
-        // console.log("Product Order ID:", orderProductsId || "None");
-        // console.log("" Final Price:", finalPrice);
-        // console.log("Payment Method:", paymentMethod);
-
         if (paymentMethod === "3") {
-        payload.cardType = stripeCardType; // stripeCardType là state/prop bạn đã có sẵn
-      }
+          payload.cardType = stripeCardType; // stripeCardType là state/prop bạn đã có sẵn
+        }
 
         let response;
 
@@ -122,21 +102,27 @@ const WaitingPayment = () => {
           }
           setPaymentStatus("failed");
         } else if (paymentMethod === "3") {
-          
           response = await createStripePayment(payload);
-          dispatch(setPaymentId(response?.data?.paymentId || response?.paymentId));
-          const clientSecret = response?.data?.clientSecret || response?.data?.ClientSecret;
+          dispatch(
+            setPaymentId(response?.data?.paymentId || response?.paymentId)
+          );
+          const clientSecret =
+            response?.data?.clientSecret || response?.data?.ClientSecret;
           if (clientSecret) {
             setClientSecret(clientSecret);
             setPaymentStatus("stripe");
             return;
           }
-          setStripeError(response?.error || "Không lấy được thông tin thanh toán Stripe");
+          setStripeError(
+            response?.error || "Không lấy được thông tin thanh toán Stripe"
+          );
           setPaymentStatus("failed");
         } else if (paymentMethod === "4") {
           response = await createZalopayPayment(payload);
           const redirectUrl = response?.data?.order_url || response?.order_url;
-          dispatch(setPaymentId(response?.data?.paymentId || response?.paymentId));
+          dispatch(
+            setPaymentId(response?.data?.paymentId || response?.paymentId)
+          );
           if (redirectUrl) {
             window.location.href = redirectUrl;
             return;
@@ -155,10 +141,10 @@ const WaitingPayment = () => {
     if (paymentMethod && (bookingId || orderProductsId)) {
       processPayment();
     } else {
-      console.error("❌ Missing required data:", { 
-        paymentMethod, 
-        bookingId, 
-        orderProductsId
+      console.error("❌ Missing required data:", {
+        paymentMethod,
+        bookingId,
+        orderProductsId,
       });
       setPaymentStatus("failed");
     }
@@ -192,50 +178,64 @@ const WaitingPayment = () => {
     <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 via-50% via-purple-950/50 to-slate-900 text-white flex items-center justify-center p-25">
       <div className="bg-transparent rounded-xl shadow-xl w-full max-w-2xl   text-center">
         <img src={logo} alt="Logo" className="w-40 h-auto mx-auto" />
-        
+
         {paymentStatus === "waiting" && (
           <>
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6B59E6] mx-auto mb-12"></div>
-            <p className="text-2xl font-bold mb-4">Redirecting to payment gateway...</p>
-            <p className="text-gray-300 mb-4">Please wait while we process your payment.</p>
-            
+            <p className="text-2xl font-bold mb-4">
+              Redirecting to payment gateway...
+            </p>
+            <p className="text-gray-300 mb-4">
+              Please wait while we process your payment.
+            </p>
+
             {/* Payment summary */}
             <div className="bg-white/5 rounded-lg p-4 text-left max-w-md mx-auto mb-6">
-              <h3 className="text-lg font-semibold mb-3 text-center">Payment Summary</h3>
+              <h3 className="text-lg font-semibold mb-3 text-center">
+                Payment Summary
+              </h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Payment Type:</span>
-                  <span className="font-semibold text-[#6B59E6]">{getPaymentType()}</span>
+                  <span className="font-semibold text-[#6B59E6]">
+                    {getPaymentType()}
+                  </span>
                 </div>
-                
+
                 {bookingId && (
                   <div className="flex justify-between">
                     <span>Seat Booking ID:</span>
-                    <span className="font-mono">{bookingId.slice(0, 8)}...</span>
+                    <span className="font-mono">
+                      {bookingId.slice(0, 8)}...
+                    </span>
                   </div>
                 )}
-                
+
                 {orderProductsId && (
                   <div className="flex justify-between">
                     <span>Product Order ID:</span>
-                    <span className="font-mono">{orderProductsId.slice(0, 8)}...</span>
+                    <span className="font-mono">
+                      {orderProductsId.slice(0, 8)}...
+                    </span>
                   </div>
                 )}
-                
+
                 {bookingId && selectedSeats.length > 0 && (
                   <div className="flex justify-between">
                     <span>Seats:</span>
                     <span>{selectedSeats.join(", ")}</span>
                   </div>
                 )}
-                
+
                 {orderProductsId && products.length > 0 && (
                   <div className="flex justify-between">
                     <span>Products:</span>
-                    <span>{products.length} item{products.length > 1 ? 's' : ''}</span>
+                    <span>
+                      {products.length} item{products.length > 1 ? "s" : ""}
+                    </span>
                   </div>
                 )}
-                
+
                 <div className="flex justify-between font-semibold border-t border-gray-600 pt-2">
                   <span>Total Amount:</span>
                   <span>{finalPrice.toLocaleString()}đ</span>
@@ -248,15 +248,23 @@ const WaitingPayment = () => {
         {paymentStatus === "failed" && (
           <>
             <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <p className="text-2xl font-bold text-red-400 mb-2">Payment Failed</p>
-            <p className="text-gray-300 mb-6">There was a problem processing your payment. Please try again.</p>
-            
+            <p className="text-2xl font-bold text-red-400 mb-2">
+              Payment Failed
+            </p>
+            <p className="text-gray-300 mb-6">
+              There was a problem processing your payment. Please try again.
+            </p>
+
             {/* Error details */}
             <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-6 text-left max-w-md mx-auto">
-              <h4 className="font-semibold text-red-400 mb-2">Error Details:</h4>
+              <h4 className="font-semibold text-red-400 mb-2">
+                Error Details:
+              </h4>
               <div className="text-sm text-gray-300">
                 {!paymentMethod && <p>• Payment method not selected</p>}
-                {!bookingId && !orderProductsId && <p>• No booking or product order found</p>}
+                {!bookingId && !orderProductsId && (
+                  <p>• No booking or product order found</p>
+                )}
                 {!finalPrice && <p>• Amount is invalid</p>}
               </div>
             </div>
@@ -269,9 +277,7 @@ const WaitingPayment = () => {
                 Go Back
               </button>
               <button
-                onClick={() => navigate("/",
-                  
-                )}
+                onClick={() => navigate("/")}
                 className="bg-[#6B59E6] hover:bg-[#534a89] text-white px-6 py-3 rounded-lg font-semibold transition flex items-center gap-2"
               >
                 <Home size={20} />
@@ -292,10 +298,8 @@ const WaitingPayment = () => {
 />
 
         )}
-        
-        {stripeError && (
-          <div className="text-red-500">{stripeError}</div>
-        )}
+
+        {stripeError && <div className="text-red-500">{stripeError}</div>}
       </div>
     </div>
   );

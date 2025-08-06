@@ -10,8 +10,9 @@ const getAllUsers = async (req, res) => {
     const limit = req.query.limit !== undefined ? parseInt(req.query.limit) : 0;
     const sortBy = req.query.sortBy;
     const sortOrder = req.query.sortOrder;
+    const status = req.query.status; // Lấy status từ query
 
-    const result = await UserManagement.getAllUsers(page, limit, sortBy, sortOrder);
+    const result = await UserManagement.getAllUsers(page, limit, sortBy, sortOrder, status);
 
     res.status(200).json({
       message: "Users retrieved successfully",

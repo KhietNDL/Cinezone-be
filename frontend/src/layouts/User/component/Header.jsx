@@ -75,8 +75,8 @@ const Header = () => {
     }
     try {
       const response = await searchMovies({ name: query });
-      if (response.data.data) {
-        setSearchResults(response.data.data);
+      if (response.data) {
+        setSearchResults(response.data);
       }
     } catch (error) {
       console.error("Error fetching movies:", error);
@@ -131,8 +131,6 @@ const Header = () => {
     if (!user) return;
     const socket = io("http://localhost:4458");
     socket.emit("join", user.userId || user.UserId);
-    console.log("[FE] Join room:", user.userId || user.UserId);
-
     socket.on("notification", (data) => {
       setNotifications((prev) => [data, ...prev].slice(0, 8)); // Chỉ giữ 8 noti mới nhất
       setNewNotiCount((prev) => prev + 1);
@@ -187,8 +185,10 @@ const Header = () => {
           // Helper để lấy điểm cộng/trừ
           const getScoreValue = (booking) => {
             if (!booking) return 0;
-            if (booking.pointEarn && booking.pointEarn > 0) return booking.pointEarn;
-            if (booking.pointUse && booking.pointUse > 0) return -booking.pointUse;
+            if (booking.pointEarn && booking.pointEarn > 0)
+              return booking.pointEarn;
+            if (booking.pointUse && booking.pointUse > 0)
+              return -booking.pointUse;
             return 0;
           };
 

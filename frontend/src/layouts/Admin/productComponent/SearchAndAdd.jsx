@@ -10,26 +10,31 @@ const SearchAndAdd = ({
   resetForm,
 }) => {
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-2 w-full">
-      <div className="flex items-center p-1 px-2 w-full max-w-[400px] rounded-xl bg-white shadow-sm">
-        <IoSearchOutline size={20} />
+    <div className="flex flex-col sm:flex-row items-center gap-3 lg:gap-4 w-full">
+      {/* Search Input */}
+      <div className="relative flex items-center w-full md:w-[350px]">
+        <div className="absolute left-3 z-10">
+          <IoSearchOutline className="w-4 h-4 text-gray-400" />
+        </div>
         <input
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="p-1 sm:p-2 focus:outline-none w-full text-sm sm:text-base"
-          placeholder="Search by product name"
+          className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 hover:border-gray-300 shadow-sm"
+          placeholder="Search by product name..."
         />
       </div>
+
+      {/* Add Product Button */}
       {!isEdit && (
         <button
           onClick={() => {
             resetForm();
             setShowFormPopup(true);
           }}
-          className="flex items-center text-[#6051F3] hover:bg-slate-50 p-2 rounded-md active:bg-slate-100 bg-white shadow-sm w-full sm:w-auto text-sm sm:text-base"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-medium text-sm hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 w-full sm:w-auto min-w-[140px] whitespace-nowrap"
         >
-          <GoPlus size={18} className="mr-1 sm:mr-2" />
+          <GoPlus className="w-4 h-4" />
           Add Product
         </button>
       )}

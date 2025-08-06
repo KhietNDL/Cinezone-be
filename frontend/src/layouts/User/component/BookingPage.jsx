@@ -198,7 +198,6 @@ const BookingPage = () => {
       try {
         const response = await getShowtimeByMovieId(movie?.MovieId);
         setShowtimes(response.showtimes || []);
-        console.log("DATA NGAY", response)
       } catch (error) {
         console.error("Error fetching showtimes:", error);
         toast.error("Failed to load showtimes", {
@@ -231,43 +230,41 @@ const BookingPage = () => {
 const loadSeats = async (showtimeId, showLoading = true) => {
   if (!showtimeId) return;
 
-  setIsRefreshing(true);
-  if (showLoading) setSeatMapLoading(true);
+    setIsRefreshing(true);
+    if (showLoading) setSeatMapLoading(true);
 
-  try {
-    const response = await getSeatsByShowtimeId(showtimeId);
-    console.log("SEATS DATA:", response);
+    try {
+      const response = await getSeatsByShowtimeId(showtimeId);
 
-    // Reset state ghế
-    dispatch(setSeatsData(response.seats));
-    dispatch(setSeatQuantity(response.seatQuantity));
-    dispatch(setSelectedSeats([]));
-    dispatch(setCalculatedTotalPrice(0));
-    dispatch(setSeatIds([]));
+      // Reset state ghế
+      dispatch(setSeatsData(response.seats));
+      dispatch(setSeatQuantity(response.seatQuantity));
+      dispatch(setSelectedSeats([]));
+      dispatch(setCalculatedTotalPrice(0));
+      dispatch(setSeatIds([]));
 
-    setLastRefreshTime(Date.now());
-  } catch (error) {
-    console.error("Error loading seats:", error);
-    toast.error("Failed to load seat data", {
-      duration: 4000,
-      position: "top-center",
-    });
-  } finally {
-    setIsRefreshing(false);
-    if (showLoading) setSeatMapLoading(false);
-  }
-};
+      setLastRefreshTime(Date.now());
+    } catch (error) {
+      console.error("Error loading seats:", error);
+      toast.error("Failed to load seat data", {
+        duration: 4000,
+        position: "top-center",
+      });
+    } finally {
+      setIsRefreshing(false);
+      if (showLoading) setSeatMapLoading(false);
+    }
+  };
 
-// Gọi loadSeats trong useEffect khi selectedShowtimeId thay đổi
-useEffect(() => {
-  loadSeats(selectedShowtimeId);
-}, [selectedShowtimeId, dispatch]);
+  // Gọi loadSeats trong useEffect khi selectedShowtimeId thay đổi
+  useEffect(() => {
+    loadSeats(selectedShowtimeId);
+  }, [selectedShowtimeId, dispatch]);
 
-// Dùng cùng hàm này cho nút Refresh
-const refreshSeats = () => {
-  loadSeats(selectedShowtimeId, false); // false để không set loading cho seat map (chỉ icon refresh)
-};
-
+  // Dùng cùng hàm này cho nút Refresh
+  const refreshSeats = () => {
+    loadSeats(selectedShowtimeId, false); // false để không set loading cho seat map (chỉ icon refresh)
+  };
 
   const handleContinue = async () => {
     if (!user) {
@@ -354,25 +351,25 @@ const refreshSeats = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 via-50% via-purple-950/50 to-slate-900 text-white relative">
-       <FadeInWrapper delay={100} className="lg:col-span-4 order-1 lg:order-1">
-      <BackButton className="absolute top-28 left-14 z-10"
-       onClick={() => {
-                  window.scrollTo({ top: 0, behavior: 'instant' });
-                  navigate("/");
-                }} />
-                </FadeInWrapper>
+      <FadeInWrapper delay={100} className="lg:col-span-4 order-1 lg:order-1">
+        <BackButton
+          className="absolute top-28 left-14 z-10"
+          onClick={() => {
+            window.scrollTo({ top: 0, behavior: "instant" });
+            navigate("/");
+          }}
+        />
+      </FadeInWrapper>
       <ToastContainer />
-      
+
       <div className="max-w-7xl mx-auto py-6 md:py-8 lg:py-16 px-4 sm:px-10 pb-8">
         <div className="space-y-6 w-full-screen">
-            
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 lg:gap-8 mt-15">
-            
-            
-          
-            
             {/* Movie Info Section - fade in đầu tiên */}
-            <FadeInWrapper delay={200} className="lg:col-span-4 order-1 lg:order-1">
+            <FadeInWrapper
+              delay={200}
+              className="lg:col-span-4 order-1 lg:order-1"
+            >
               <AnimatedWrapper
                 enableStars={true}
                 enableTilt={false}
@@ -397,7 +394,10 @@ const refreshSeats = () => {
             </FadeInWrapper>
 
             {/* Main Booking Section - fade in thứ hai */}
-            <FadeInWrapper delay={400} className="lg:col-span-8 order-2 lg:order-2">
+            <FadeInWrapper
+              delay={400}
+              className="lg:col-span-8 order-2 lg:order-2"
+            >
               <div className="bg-white/5 backdrop-blur-md rounded-3xl p-4 md:p-6 lg:p-8 border border-white/10 shadow-2xl h-full">
                 <div className="h-full flex flex-col rounded-3xl">
                   <AnimatedWrapper
@@ -499,7 +499,7 @@ const refreshSeats = () => {
         popupVideoRef={popupVideoRef}
         onClose={() => setIsPopupOpen(false)}
       />
-      
+
       <FeedbackModal
         isOpen={isFeedbackOpen}
         feedbackRating={feedbackRating}
@@ -542,7 +542,7 @@ const refreshSeats = () => {
             });
             handleFetchRatings();
           } catch (err) {
-            console.log(err);
+            console.error("Error submitting feedback:", err);
             toast.error("Failed to submit feedback", {
               duration: 4000,
               position: "top-center",
@@ -552,7 +552,7 @@ const refreshSeats = () => {
           }
         }}
       />
-      
+
       <RatingListModal
         isOpen={isRatingListOpen}
         ratingsList={ratingsList}

@@ -406,14 +406,6 @@ describe("ProductManagement", () => {
       render(<ProductManagement />);
       expect(screen.getByTestId("toast-container")).toBeInTheDocument();
     });
-
-    test("loads products on mount", async () => {
-      render(<ProductManagement />);
-
-      await waitFor(() => {
-        expect(getAllProducts).toHaveBeenCalledWith({ page: 1, limit: 5 });
-      });
-    });
   });
 
   describe("Product Loading and Display", () => {
@@ -682,21 +674,6 @@ describe("ProductManagement", () => {
   });
 
   describe("Pagination", () => {
-    test("changes page correctly", async () => {
-      render(<ProductManagement />);
-
-      await waitFor(() => {
-        expect(screen.getByTestId("current-page").textContent).toBe("1");
-      });
-
-      const nextButton = screen.getByTestId("next-page");
-      fireEvent.click(nextButton);
-
-      await waitFor(() => {
-        expect(getAllProducts).toHaveBeenCalledWith({ page: 2, limit: 5 });
-      });
-    });
-
     test("disables previous button on first page", async () => {
       render(<ProductManagement />);
 

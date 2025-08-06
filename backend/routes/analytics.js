@@ -383,4 +383,113 @@ router.get('/movies/genres', analyticsController.getMovieGenreStats);
  */
 router.get('/employees/tenure', analyticsController.getEmployeeTenureStats);
 
+/**
+ * @swagger
+ * /api/analytics/top-movies-by-tickets:
+ *   get:
+ *     summary: Get top movies by tickets
+ *     tags: [Analytics]
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 20
+ *         description: Limit number of top movies (max 20, default 10)
+ *       - in: query
+ *         name: day
+ *         schema:
+ *           type: integer
+ *         description: Filter by day (1-31)
+ *       - in: query
+ *         name: month
+ *         schema:
+ *           type: integer
+ *         description: Filter by month (1-12)
+ *       - in: query
+ *         name: year
+ *         schema:
+ *           type: integer
+ *         description: Filter by year (e.g. 2024)
+ *     responses:
+ *       200:
+ *         description: Top movies by tickets
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       movieId:
+ *                         type: string
+ *                         example: "603d2f2f2f2f2f2f2f2f2f2"
+ *                       title:
+ *                         type: string
+ *                         example: "Avengers: Endgame"
+ *                       ticketsSold:
+ *                         type: integer
+ *                         example: 150
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/top-movies-by-tickets', analyticsController.getTopMoviesByTickets);
+
+/**
+ * @swagger
+ * /api/analytics/top-genres-by-tickets:
+ *   get:
+ *     summary: Get top genres by tickets
+ *     tags: [Analytics]
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 20
+ *         description: Limit number of top genres (max 20, default 5)
+ *       - in: query
+ *         name: day
+ *         schema:
+ *           type: integer
+ *         description: Filter by day (1-31)
+ *       - in: query
+ *         name: month
+ *         schema:
+ *           type: integer
+ *         description: Filter by month (1-12)
+ *       - in: query
+ *         name: year
+ *         schema:
+ *           type: integer
+ *         description: Filter by year (e.g. 2024)
+ *     responses:
+ *       200:
+ *         description: Top genres by tickets
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       genre:
+ *                         type: string
+ *                         example: "Action"
+ *                       ticketsSold:
+ *                         type: integer
+ *                         example: 300
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/top-genres-by-tickets', analyticsController.getTopGenresByTickets);
+
 module.exports = router;

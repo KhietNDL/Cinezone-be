@@ -236,7 +236,7 @@ const TrendingSection = ({
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .trending-swiper .swiper-slide {
           transition: all 0.3s ease;
         }

@@ -64,10 +64,6 @@ const MovieTheaterLogin = () => {
     return () => clearInterval(interval);
   }, [movieBackgrounds.length]);
 
-  useEffect(() => {
-    console.log("movieBackgrounds:", movieBackgrounds);
-  }, [movieBackgrounds]);
-
   const validateEmail = (email) => {
     return email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
   };
@@ -97,7 +93,6 @@ const MovieTheaterLogin = () => {
           email: formData.email,
           password: formData.password,
         });
-        console.log("Login API response:", response);
 
         if (response.token && response.user?.userId) {
           await signIn(response.token, response.user.userId);
@@ -134,16 +129,16 @@ const MovieTheaterLogin = () => {
 
   return (
     <div className="relative overflow-hidden">
+      {/* Background slideshow */}
       <div className="absolute inset-0">
         {movieBackgrounds.map((bg, index) => (
           <div
             key={index}
-            className={`absolute inset-0 h-screen bg-repeat transition-opacity duration-1000 ${
+            className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 ${
               index === currentBgIndex ? "opacity-100" : "opacity-0"
             }`}
             style={{
               backgroundImage: `url(${bg})`,
-              backgroundSize: "auto 103.33vh",
             }}
           />
         ))}
@@ -151,7 +146,7 @@ const MovieTheaterLogin = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900/40 via-blue-900/40 to-indigo-900/40" />
       </div>
 
-      <div className="absolute inset-0 overflow-hidden z-10">
+      {/* <div className="absolute inset-0 overflow-hidden z-10">
         <div className="absolute -top-4 -left-4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-pulse"></div>
         <div className="absolute -top-4 -right-4 w-96 h-96 bg-yellow-500 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-pulse animation-delay-2000"></div>
         <div className="absolute -bottom-8 left-20 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-pulse animation-delay-4000"></div>
@@ -176,7 +171,7 @@ const MovieTheaterLogin = () => {
         >
           <Star className="text-pink-400 w-6 h-6 opacity-60" />
         </div>
-      </div>
+      </div> */}
 
       <div className="flex items-center justify-center h-screen sm:px-10 lg:px-20 relative z-20">
         <div className="relative w-full max-w-lg">

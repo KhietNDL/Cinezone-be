@@ -1,17 +1,26 @@
 import React, { useEffect, useState } from "react";
-import { Trash2, Building, Users, TrendingUp, X } from "lucide-react";
+import {
+  Trash2,
+  Building,
+  Users,
+  TrendingUp,
+  X,
+  ChevronDown,
+} from "lucide-react";
 import { FaSortAmountDownAlt, FaSortAmountUpAlt } from "react-icons/fa";
 import { FaRegEdit } from "react-icons/fa";
 import { RiDeleteBin5Line } from "react-icons/ri";
 import { IoSearchOutline } from "react-icons/io5";
 import { GoPlus } from "react-icons/go";
 import { LayoutSelectSeat } from "../../../component/LayoutSelectSeat";
+import StatsCards from "../roomComponent/StatsCards";
 import {
   getCinemaRooms,
   createCinemaRoom,
   searchCinemaRooms,
   deleteCinemaRoom,
   updateCinemaRoom,
+  getSeatsByCinemaRoomId,
 } from "../../../services/API";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -38,30 +47,35 @@ const RoomManagement = () => {
   const [roomCol, setRoomCol] = useState("");
   const [roomType, setRoomType] = useState("Normal");
   const [searchTerm, setSearchTerm] = useState("");
+  const [seatData, setSeatData] = useState([]);
+  const [isLoadingSeats, setIsLoadingSeats] = useState(false);
+  const [showRoomTypeDropdown, setShowRoomTypeDropdown] = useState(false);
 
-  const statsData = [
-    {
-      icon: Building,
-      label: "Total Rooms",
-      value: totalRooms,
-      color: "text-blue-600",
-      bgColor: "bg-blue-100",
-    },
-    {
-      icon: Users,
-      label: "Total Seats",
-      value: "2,160",
-      color: "text-green-600",
-      bgColor: "bg-green-100",
-    },
-    {
-      icon: TrendingUp,
-      label: "Avg Rate",
-      value: "75%",
-      color: "text-orange-600",
-      bgColor: "bg-orange-100",
-    },
-  ];
+  // Calculate total seats from rooms data
+  const totalSeats = rooms.reduce(
+    (total, room) => total + (room.SeatQuantity || 0),
+    0
+  );
+
+  // Calculate average occupancy rate (placeholder - you can implement real calculation)
+  const averageRate = rooms.length > 0 ? "75%" : "0%";
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        showRoomTypeDropdown &&
+        !event.target.closest(".room-type-dropdown")
+      ) {
+        setShowRoomTypeDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showRoomTypeDropdown]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -73,9 +87,20 @@ const RoomManagement = () => {
             sortBy: "SeatQuantity",
             sortOrder: sortOrder,
           });
-          setRooms(Array.isArray(response.data) ? response.data : []);
+
+          // Handle different response structures
+          let roomsData = [];
+          if (response) {
+            if (Array.isArray(response.data)) {
+              roomsData = response.data;
+            } else if (Array.isArray(response)) {
+              roomsData = response;
+            }
+          }
+
+          setRooms(roomsData);
           setTotalPages(response.pagination?.totalPages || 1);
-          setTotalRooms(response.pagination?.total || 0);
+          setTotalRooms(response.pagination?.total || roomsData.length);
         } else {
           const data = await searchCinemaRooms({
             searchTerm,
@@ -84,12 +109,24 @@ const RoomManagement = () => {
             sortBy: "SeatQuantity",
             sortOrder: sortOrder,
           });
-          setRooms(Array.isArray(data.data) ? data.data : []);
+
+          // Handle different response structures for search
+          let searchData = [];
+          if (data) {
+            if (Array.isArray(data.data)) {
+              searchData = data.data;
+            } else if (Array.isArray(data)) {
+              searchData = data;
+            }
+          }
+
+          setRooms(searchData);
           setTotalPages(data.pagination?.totalPages || 1);
-          setTotalRooms(data.pagination?.total || 0);
+          setTotalRooms(data.pagination?.total || searchData.length);
         }
       } catch (error) {
         console.error("Error fetching/searching rooms:", error);
+        toast.error("Failed to fetch rooms data");
         setRooms([]);
         setTotalPages(1);
         setTotalRooms(0);
@@ -100,9 +137,72 @@ const RoomManagement = () => {
     return () => clearTimeout(timeoutId);
   }, [searchTerm, currentPage, itemsPerPage, sortOrder]);
 
-  const handleView = (room) => {
+  const handleView = async (room) => {
     setSelectedRoom(room);
+    setIsLoadingSeats(true);
+    setSeatData([]);
     setShowDetailsModal(true);
+
+    try {
+      const seatResponse = await getSeatsByCinemaRoomId(room.CinemaRoomId);
+
+      // Handle different response structures
+      let rawSeatData = [];
+      if (seatResponse) {
+        if (Array.isArray(seatResponse)) {
+          rawSeatData = seatResponse;
+        } else if (seatResponse.data && Array.isArray(seatResponse.data)) {
+          rawSeatData = seatResponse.data;
+        } else if (seatResponse.seats && Array.isArray(seatResponse.seats)) {
+          rawSeatData = seatResponse.seats;
+        }
+      }
+
+      // Transform and validate seat data to match LayoutSelectSeat expectations
+      const transformedSeatData = rawSeatData.map((seat, index) => {
+        // Ensure we have the required seatNumber property
+        let seatNumber = seat.seatNumber || seat.SeatNumber || seat.seat_number;
+
+        // If no seatNumber exists, generate one based on position
+        if (!seatNumber) {
+          const rowLetter = String.fromCharCode(65 + Math.floor(index / 10)); // A, B, C...
+          const seatNum = (index % 10) + 1;
+          seatNumber = `${rowLetter}${seatNum}`;
+        }
+
+        return {
+          seatId: seat.seatId || seat.SeatId || seat.id || index,
+          seatNumber: seatNumber,
+          type: seat.type || seat.Type || seat.seat_type || "Normal",
+          status: seat.status || seat.Status || seat.seat_status || "available",
+          price: seat.price || seat.Price || seat.seat_price || 0,
+          ...seat, // Include any other properties
+        };
+      });
+
+      // Validate that all seats have required properties
+      const isValidSeatData = transformedSeatData.every(
+        (seat) =>
+          seat.seatNumber &&
+          typeof seat.seatNumber === "string" &&
+          seat.seatNumber.length > 0
+      );
+
+      if (!isValidSeatData) {
+        console.error("Invalid seat data structure:", transformedSeatData);
+        toast.error("Invalid seat data format received from server");
+        setSeatData([]);
+        return;
+      }
+
+      setSeatData(transformedSeatData);
+    } catch (error) {
+      console.error("Error fetching seat data:", error);
+      toast.error("Failed to load seat data for this room");
+      setSeatData([]);
+    } finally {
+      setIsLoadingSeats(false);
+    }
   };
 
   const handleEdit = (room) => {
@@ -249,6 +349,9 @@ const RoomManagement = () => {
     setRoomRow("");
     setRoomCol("");
     setRoomType("Normal");
+    setSeatData([]);
+    setIsLoadingSeats(false);
+    setShowRoomTypeDropdown(false);
   };
 
   const handlePageChange = (page) => {
@@ -258,230 +361,246 @@ const RoomManagement = () => {
   };
 
   return (
-    <div className="h-full">
-      <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
-        <div className="w-[90%] md:w-[95%] lg:w-[95%] max-w-7xl space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 lg:gap-4 w-full">
-            {statsData.map((stat, index) => (
-              <div key={index} className="bg-white rounded-md shadow-sm">
-                <div className="bg-white rounded-md p-2 lg:p-3 w-full">
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between">
-                    <p className="text-xs lg:text-sm text-gray-600 mb-1 lg:mb-0">
-                      {stat.label}
-                    </p>
-                    <div
-                      className={`p-1.5 lg:p-2 rounded-full ${stat.bgColor} w-fit`}
-                    >
-                      <stat.icon
-                        className={`w-4 h-4 lg:w-6 lg:h-6 ${stat.color}`}
-                      />
-                    </div>
-                  </div>
-                  <div className="font-bold text-base lg:text-[19px] mt-1">
-                    {stat.value}
-                  </div>
-                </div>
-              </div>
-            ))}
+    <div className="min-h-screen bg-gray-50">
+      {/* Header Section */}
+      <div className="max-w-7xl select-none mx-auto px-3 sm:px-6 py-3 sm:py-4 bg-white shadow-md rounded-lg mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-3 lg:gap-4">
+          {/* Left: Logo/Brand */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
+              <Building className="text-white text-lg sm:text-xl" />
+            </div>
+            <div>
+              <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent">
+                Room Management
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">
+                Admin Portal - Cinema Room Administration
+              </p>
+            </div>
           </div>
 
-          <div className="w-full py-3 space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div className="w-full sm:w-auto">
-                <div className="flex items-center p-2 px-3 w-full sm:w-80 rounded-xl bg-white shadow-sm">
-                  <div className="shrink-0">
-                    <IoSearchOutline size={20} />
-                  </div>
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => {
-                      setSearchTerm(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="p-2 focus:outline-none w-full text-sm"
-                    placeholder="Search by room name or room id"
-                  />
-                </div>
-              </div>
-              <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
-                <button
-                  onClick={handleAddRoom}
-                  className="flex items-center text-[#6051F3] hover:bg-slate-50 p-2 rounded-md active:bg-slate-100 bg-white shadow-sm text-sm"
-                >
-                  <GoPlus size={20} className="mr-2" />
-                  Room
-                </button>
-              </div>
+          {/* Right: Search & Actions */}
+          <div className="flex flex-col sm:flex-row items-center gap-3 lg:gap-4 w-full md:w-auto">
+            <div className="relative w-full sm:w-80">
+              <IoSearchOutline
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={20}
+              />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                placeholder="Search by room name or room id"
+              />
             </div>
+            <button
+              onClick={handleAddRoom}
+              className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-md hover:shadow-lg whitespace-nowrap"
+            >
+              <GoPlus size={20} className="mr-2" />
+              Add Room
+            </button>
+          </div>
+        </div>
+      </div>
 
-            <div className="bg-white p-2 lg:p-4 rounded-lg shadow-sm">
-              <div className="hidden sm:block">
-                <table className="w-full table-auto border-collapse">
-                  <thead>
-                    <tr className="text-left text-slate-500 text-xs sm:text-sm border-b border-gray-200">
-                      <th className="py-2 text-center px-2 sm:px-4 w-[150px] sm:w-[180px] md:w-[200px] shrink-0">
-                        Room Name
-                      </th>
-                      <th className="py-2 px-2 sm:px-4 w-[60px] shrink-0 text-center hidden md:table-cell">
-                        Row
-                      </th>
-                      <th className="py-2 px-2 sm:px-4 w-[60px] shrink-0 text-center hidden md:table-cell">
-                        Col
-                      </th>
-                      <th
-                        onClick={() =>
-                          setSortOrder(sortOrder === "asc" ? "desc" : "asc")
-                        }
-                        className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] shrink-0 text-center cursor-pointer select-none"
-                      >
-                        Seat Quantity
-                        <span className="inline-block ml-1 align-middle">
-                          {sortOrder === "asc" ? (
-                            <FaSortAmountUpAlt className="inline text-blue-500" />
-                          ) : (
-                            <FaSortAmountDownAlt className="inline text-blue-500" />
-                          )}
-                        </span>
-                      </th>
-                      <th className="py-2 px-2 sm:px-4 w-[80px] shrink-0 text-center hidden md:table-cell">
-                        Type
-                      </th>
-                      <th className="py-2 px-2 sm:px-4 w-[80px] shrink-0 text-center hidden md:table-cell">
-                        Set Detail
-                      </th>
-                      <th className="py-2 px-2 sm:px-4 w-[80px] shrink-0 text-center">
-                        Action
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Array.isArray(rooms) && rooms.length > 0 ? (
-                      rooms.map((room) => (
-                        <tr
-                          key={room.CinemaRoomId}
-                          onClick={() => handleEdit(room)}
-                          className="border-b cursor-pointer border-gray-200 hover:bg-gray-50 text-xs sm:text-sm transition-colors"
-                        >
-                          <td className="py-2 px-2 sm:px-4 w-[150px] sm:w-[180px] md:w-[200px] shrink-0">
-                            <span className="block text-center">
-                              {room.Name?.length > 20
-                                ? `${room.Name.slice(0, 20)}...`
-                                : room.Name || "N/A"}
-                            </span>
-                          </td>
-                          <td className="py-2 px-2 sm:px-4 w-[60px] shrink-0 text-center hidden md:table-cell">
-                            {room.Row || "N/A"}
-                          </td>
-                          <td className="py-2 px-2 sm:px-4 w-[60px] shrink-0 text-center hidden md:table-cell">
-                            {room.Col || "N/A"}
-                          </td>
-                          <td className="py-2 px-2 sm:px-4 w-[100px] sm:w-[120px] shrink-0 text-center">
-                            {room.SeatQuantity || "N/A"}
-                          </td>
-                          <td className="py-2 px-2 sm:px-4 w-[80px] shrink-0 text-center hidden md:table-cell">
-                            {room.Type || "Normal"}
-                          </td>
-                          <td className="py-2 px-2 sm:px-4 w-[80px] shrink-0 text-center hidden md:table-cell">
-                            <button
-                              className="text-blue-500 hover:text-blue-700 text-xs sm:text-sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleView(room);
-                              }}
-                            >
-                              Detail
-                            </button>
-                          </td>
-                          <td className="py-2 px-2 sm:px-4 w-[80px] shrink-0 text-center">
-                            <div className="flex justify-center space-x-2 sm:space-x-3">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEdit(room);
-                                }}
-                                className="text-blue-500 hover:text-blue-700 p-1 sm:p-2"
-                                title="Edit"
-                                aria-label={`Edit ${room.Name || "room"}`}
-                              >
-                                <FaRegEdit size={18} />
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDelete(room);
-                                }}
-                                className="text-red-400 hover:text-red-600 p-1 sm:p-2"
-                                title="Delete"
-                                aria-label={`Delete ${room.Name || "room"}`}
-                              >
-                                <RiDeleteBin5Line size={18} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td
-                          colSpan="7"
-                          className="py-4 text-center text-gray-500"
-                        >
-                          No rooms available
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-              <div className="block sm:hidden space-y-4">
-                {Array.isArray(rooms) && rooms.length > 0 ? (
-                  rooms.map((room) => (
-                    <article
-                      key={room.CinemaRoomId}
-                      className="bg-white p-4 rounded-lg shadow-sm border border-slate-200"
-                      onClick={() => handleEdit(room)}
+      {/* Main Content */}
+      <div className="flex flex-col items-center lg:items-start h-auto min-h-screen max-w-7xl w-full overflow-x-hidden mx-auto">
+        <div className="w-[90%] md:w-[95%] lg:w-full max-w-7xl space-y-4 sm:space-y-6">
+          {/* Stats Cards */}
+          <StatsCards
+            totalRooms={totalRooms}
+            totalSeats={totalSeats}
+            averageRate={averageRate}
+          />
+
+          {/* Table Section */}
+          <div className="bg-white rounded-xl shadow-md border border-gray-100">
+            <div className="hidden sm:block">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Room Name
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                      Dimensions
+                    </th>
+                    <th
+                      onClick={() =>
+                        setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                      }
+                      className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none transition-colors"
                     >
-                      <div className="flex items-center gap-4">
-                        <div className="flex-1">
-                          <h3 className="text-sm font-medium text-gray-900 truncate">
-                            {room.Name?.length > 20
-                              ? `${room.Name.slice(0, 20)}...`
-                              : room.Name || "N/A"}
-                          </h3>
-                          <p className="text-xs text-gray-500 truncate">
-                            Row: {room.Row || "N/A"} × Col: {room.Col || "N/A"}
-                          </p>
-                          <p className="text-xs text-gray-500 truncate">
-                            Seats: {room.SeatQuantity || "N/A"}
-                          </p>
-                          <p className="text-xs text-gray-500 truncate">
-                            Type: {room.Type || "Normal"}
-                          </p>
-                        </div>
+                      <div className="flex items-center space-x-1">
+                        <span>Seat Quantity</span>
+                        {sortOrder === "asc" ? (
+                          <FaSortAmountUpAlt className="text-purple-500" />
+                        ) : (
+                          <FaSortAmountDownAlt className="text-purple-500" />
+                        )}
                       </div>
-                      <div className="mt-4 text-xs grid grid-cols-2 gap-x-2 gap-y-4 text-gray-700">
-                        <p>
-                          <strong>Detail:</strong>{" "}
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                      Type
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                      Details
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {Array.isArray(rooms) && rooms.length > 0 ? (
+                    rooms.map((room) => (
+                      <tr
+                        key={room.CinemaRoomId}
+                        className="hover:bg-gray-50 transition-colors cursor-pointer"
+                        onClick={() => handleEdit(room)}
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            {room.Name?.length > 25
+                              ? `${room.Name.slice(0, 25)}...`
+                              : room.Name || "N/A"}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden md:table-cell">
+                          {room.Row || "N/A"} × {room.Col || "N/A"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {room.SeatQuantity || "N/A"} seats
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              room.Type === "IMAX"
+                                ? "bg-purple-100 text-purple-800"
+                                : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {room.Type || "Normal"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">
                           <button
-                            className="text-blue-500 hover:text-blue-700"
+                            className="text-purple-600 hover:text-purple-900 font-medium"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleView(room);
                             }}
                           >
-                            View
+                            View Layout
                           </button>
-                        </p>
-                      </div>
-                      <div className="flex justify-center space-x-2 mt-2">
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEdit(room);
+                              }}
+                              className="text-purple-600 hover:text-purple-900 p-1 hover:bg-purple-50 rounded transition-colors"
+                              title="Edit"
+                            >
+                              <FaRegEdit size={16} />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(room);
+                              }}
+                              className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded transition-colors"
+                              title="Delete"
+                            >
+                              <RiDeleteBin5Line size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="6" className="px-6 py-12 text-center">
+                        <div className="text-gray-500">
+                          <Building className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                          <p className="text-lg font-medium">No rooms found</p>
+                          <p className="text-sm">
+                            Get started by creating your first room
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile View */}
+            <div className="block sm:hidden divide-y divide-gray-200">
+              {Array.isArray(rooms) && rooms.length > 0 ? (
+                rooms.map((room) => (
+                  <div
+                    key={room.CinemaRoomId}
+                    className="p-6 hover:bg-gray-50 transition-colors cursor-pointer"
+                    onClick={() => handleEdit(room)}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-lg font-medium text-gray-900 truncate">
+                        {room.Name?.length > 20
+                          ? `${room.Name.slice(0, 20)}...`
+                          : room.Name || "N/A"}
+                      </h3>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          room.Type === "IMAX"
+                            ? "bg-purple-100 text-purple-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {room.Type || "Normal"}
+                      </span>
+                    </div>
+                    <div className="space-y-2 text-sm text-gray-600">
+                      <p>
+                        <span className="font-medium">ID:</span>{" "}
+                        {room.CinemaRoomId}
+                      </p>
+                      <p>
+                        <span className="font-medium">Dimensions:</span>{" "}
+                        {room.Row || "N/A"} × {room.Col || "N/A"}
+                      </p>
+                      <p>
+                        <span className="font-medium">Seats:</span>{" "}
+                        {room.SeatQuantity || "N/A"}
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between mt-4">
+                      <button
+                        className="text-purple-600 hover:text-purple-900 font-medium"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleView(room);
+                        }}
+                      >
+                        View Layout
+                      </button>
+                      <div className="flex items-center space-x-3">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleEdit(room);
                           }}
-                          className="text-blue-500 hover:text-blue-700"
-                          aria-label={`Edit ${room.Name || "room"}`}
+                          className="text-purple-600 hover:text-purple-900"
                         >
                           <FaRegEdit size={16} />
                         </button>
@@ -490,38 +609,44 @@ const RoomManagement = () => {
                             e.stopPropagation();
                             handleDelete(room);
                           }}
-                          className="text-red-400 hover:text-red-600"
-                          aria-label={`Delete ${room.Name || "room"}`}
+                          className="text-red-600 hover:text-red-900"
                         >
                           <RiDeleteBin5Line size={16} />
                         </button>
                       </div>
-                    </article>
-                  ))
-                ) : (
-                  <div className="text-center text-gray-500 py-4">
-                    No rooms available
+                    </div>
                   </div>
-                )}
-              </div>
+                ))
+              ) : (
+                <div className="p-12 text-center text-gray-500">
+                  <Building className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <p className="text-lg font-medium">No rooms found</p>
+                  <p className="text-sm">
+                    Get started by creating your first room
+                  </p>
+                </div>
+              )}
             </div>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              handlePageChange={handlePageChange}
-            />
           </div>
+
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            handlePageChange={handlePageChange}
+          />
         </div>
       </div>
 
+      {/* Add Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white rounded-lg p-4 lg:p-6 w-full max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Building className="w-5 h-5 text-blue-600" />
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Building className="w-5 h-5 text-purple-600" />
               </div>
-              <h2 className="text-lg font-semibold text-gray-800">
+              <h2 className="text-xl font-semibold text-gray-800">
                 Add New Room
               </h2>
             </div>
@@ -536,7 +661,7 @@ const RoomManagement = () => {
                   placeholder="Enter room name"
                   value={roomName}
                   onChange={(e) => setRoomName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
               </div>
 
@@ -552,7 +677,7 @@ const RoomManagement = () => {
                     placeholder="Enter rows"
                     value={roomRow}
                     onChange={(e) => setRoomRow(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -566,7 +691,7 @@ const RoomManagement = () => {
                     placeholder="Enter columns"
                     value={roomCol}
                     onChange={(e) => setRoomCol(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -580,7 +705,7 @@ const RoomManagement = () => {
                   placeholder="Enter seat quantity"
                   value={seatQuantity}
                   onChange={(e) => setSeatQuantity(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
                 {roomRow && roomCol && (
                   <p className="text-xs text-gray-500 mt-1">
@@ -595,43 +720,91 @@ const RoomManagement = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Room Type
                 </label>
-                <select
-                  value={roomType}
-                  onChange={(e) => setRoomType(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                >
-                  <option value="Normal">Normal</option>
-                  <option value="IMAX">IMAX</option>
-                </select>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowRoomTypeDropdown(!showRoomTypeDropdown)
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white text-left flex items-center justify-between"
+                  >
+                    <span
+                      className={roomType ? "text-gray-900" : "text-gray-500"}
+                    >
+                      {roomType || "Select room type"}
+                    </span>
+                    <ChevronDown
+                      className={`w-5 h-5 text-gray-400 transition-transform ${
+                        showRoomTypeDropdown ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {showRoomTypeDropdown && (
+                    <div className="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      <div className="py-1">
+                        <button
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setRoomType("Normal");
+                            setShowRoomTypeDropdown(false);
+                          }}
+                          className="w-full px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none text-gray-900 transition-colors duration-150"
+                        >
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 rounded-full bg-gray-400 mr-3"></div>
+                            Normal
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setRoomType("IMAX");
+                            setShowRoomTypeDropdown(false);
+                          }}
+                          className="w-full px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none text-gray-900 transition-colors duration-150"
+                        >
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 rounded-full bg-purple-500 mr-3"></div>
+                            IMAX
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6 pt-4 border-t">
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
               <button
                 onClick={handleCloseModals}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md text-center text-sm w-full sm:w-auto"
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                ← Back
+                Cancel
               </button>
               <button
                 onClick={handleSaveRoom}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium text-center text-sm w-full sm:w-auto"
+                className="px-6 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200"
               >
-                + Add
+                Add Room
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Edit Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white rounded-lg p-4 lg:p-6 w-full max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Building className="w-5 h-5 text-blue-600" />
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Building className="w-5 h-5 text-purple-600" />
               </div>
-              <h2 className="text-lg font-semibold text-gray-800">Edit Room</h2>
+              <h2 className="text-xl font-semibold text-gray-800">Edit Room</h2>
             </div>
 
             <div className="space-y-4">
@@ -644,7 +817,7 @@ const RoomManagement = () => {
                   placeholder="Enter room name"
                   value={roomName}
                   onChange={(e) => setRoomName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
               </div>
 
@@ -660,7 +833,7 @@ const RoomManagement = () => {
                     placeholder="Enter rows"
                     value={roomRow}
                     onChange={(e) => setRoomRow(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -674,7 +847,7 @@ const RoomManagement = () => {
                     placeholder="Enter columns"
                     value={roomCol}
                     onChange={(e) => setRoomCol(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -688,7 +861,7 @@ const RoomManagement = () => {
                   placeholder="Enter seat quantity"
                   value={seatQuantity}
                   onChange={(e) => setSeatQuantity(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
                 {roomRow && roomCol && (
                   <p className="text-xs text-gray-500 mt-1">
@@ -703,26 +876,74 @@ const RoomManagement = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Room Type
                 </label>
-                <select
-                  value={roomType}
-                  onChange={(e) => setRoomType(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                >
-                  <option value="Normal">Normal</option>
-                  <option value="IMAX">IMAX</option>
-                </select>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowRoomTypeDropdown(!showRoomTypeDropdown)
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white text-left flex items-center justify-between"
+                  >
+                    <span
+                      className={roomType ? "text-gray-900" : "text-gray-500"}
+                    >
+                      {roomType || "Select room type"}
+                    </span>
+                    <ChevronDown
+                      className={`w-5 h-5 text-gray-400 transition-transform ${
+                        showRoomTypeDropdown ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {showRoomTypeDropdown && (
+                    <div className="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      <div className="py-1">
+                        <button
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setRoomType("Normal");
+                            setShowRoomTypeDropdown(false);
+                          }}
+                          className="w-full px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none text-gray-900 transition-colors duration-150"
+                        >
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 rounded-full bg-gray-400 mr-3"></div>
+                            Normal
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setRoomType("IMAX");
+                            setShowRoomTypeDropdown(false);
+                          }}
+                          className="w-full px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none text-gray-900 transition-colors duration-150"
+                        >
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 rounded-full bg-purple-500 mr-3"></div>
+                            IMAX
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
+
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
               <button
                 onClick={handleCloseModals}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md text-sm w-full sm:w-auto"
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                ← Back
+                Cancel
               </button>
               <button
                 onClick={handleSaveRoom}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium text-sm w-full sm:w-auto"
+                className="px-6 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200"
               >
                 Save Changes
               </button>
@@ -731,34 +952,35 @@ const RoomManagement = () => {
         </div>
       )}
 
+      {/* Delete Modal */}
       {showDeleteModal && selectedRoom && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white rounded-lg p-4 lg:p-6 w-full max-w-md sm:max-w-lg">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
             <div className="text-center">
               <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
                 <Trash2 className="h-6 w-6 text-red-600" />
               </div>
 
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Delete room?
+                Delete Room
               </h3>
 
               <p className="text-sm text-gray-500 mb-6">
-                Are you sure you want to delete this room?
+                Are you sure you want to delete "{selectedRoom.Name}"?
                 <br />
                 This action cannot be undone.
               </p>
 
-              <div className="flex flex-col sm:flex-row justify-center gap-3">
+              <div className="flex justify-center gap-3">
                 <button
                   onClick={handleCloseModals}
-                  className="px-6 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md text-sm w-full sm:w-auto"
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleConfirmDelete}
-                  className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md font-medium text-sm w-full sm:w-auto"
+                  className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
                 >
                   Delete
                 </button>
@@ -768,48 +990,91 @@ const RoomManagement = () => {
         </div>
       )}
 
+      {/* Details Modal */}
       {showDetailsModal && selectedRoom && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white rounded-lg p-4 lg:p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Building className="w-5 h-5 text-blue-600" />
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Building className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-800">
-                    {selectedRoom.Name} Details
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    {selectedRoom.Name} - Seat Layout
                   </h2>
                   <p className="text-sm text-gray-500">
-                    Room ID: {selectedRoom.CinemaRoomId} • Dimensions:{" "}
-                    {selectedRoom.Row || "N/A"} × {selectedRoom.Col || "N/A"} •
-                    Total Seats: {selectedRoom.SeatQuantity} • Type:{" "}
+                    • Dimensions: {selectedRoom.Row || "N/A"} ×{" "}
+                    {selectedRoom.Col || "N/A"} • Total Seats:{" "}
+                    {selectedRoom.SeatQuantity} • Type:{" "}
                     {selectedRoom.Type || "Normal"}
                   </p>
                 </div>
               </div>
               <button
                 onClick={handleCloseModals}
-                className="text-gray-400 hover:text-gray-600 hover:bg-slate-200 p-2 rounded-lg"
+                className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-lg transition-colors"
               >
-                <X size={30} />
+                <X size={24} />
               </button>
             </div>
 
-            <LayoutSelectSeat />
+            {isLoadingSeats ? (
+              <div className="flex justify-center items-center py-12">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-gray-600">Loading seat layout...</span>
+                </div>
+              </div>
+            ) : seatData && seatData.length > 0 ? (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center text-sm text-gray-600">
+                  <span>Room: {selectedRoom?.Name}</span>
+                  <span>Seats Found: {seatData.length}</span>
+                </div>
+                <div className="flex justify-center bg-gray-50 rounded-2xl p-6 border border-gray-200 overflow-x-auto">
+                  <LayoutSelectSeat
+                    key={`room-${selectedRoom?.CinemaRoomId}-${seatData.length}`}
+                    seatDataFromAPI={seatData}
+                    totalSeats={selectedRoom?.SeatQuantity || seatData.length}
+                    onSeatSelect={() => {}} // Read-only mode for admin view
+                    initialSelectedSeats={[]} // No seats selected initially
+                    readOnly={true} // Disable seat clicking for admin view
+                    width={20}
+                    height={20}
+                    widthDouble={40}
+                    heightDouble={28}
+                    textColor="text-gray-600"
+                    seatColors={{
+                      available: "text-green-500",
+                      selected: "text-blue-500",
+                      taken: "text-red-500",
+                      holding: "text-yellow-500",
+                      vip: "text-purple-500",
+                      normal: "text-gray-500",
+                      couple: "text-pink-500",
+                    }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-12 text-gray-500">
+                <Building className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                <p className="text-lg font-medium">No seat data available</p>
+                <p className="text-sm">
+                  Seat layout could not be loaded for this room
+                </p>
+                <p className="text-xs mt-2 text-gray-400">
+                  Room ID: {selectedRoom?.CinemaRoomId} | Expected Seats:{" "}
+                  {selectedRoom?.SeatQuantity}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick={true}
-        rtl={false}
-        draggable={true}
-      />
+      <ToastContainer position="top-right" autoClose={2000} />
     </div>
   );
 };

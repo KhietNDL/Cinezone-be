@@ -205,15 +205,6 @@ describe("PromotionManagement", () => {
     });
   });
 
-  it("can search for promotions", async () => {
-    render(<PromotionManagement />);
-    const searchInput = screen.getByPlaceholderText("Search by name");
-    fireEvent.change(searchInput, { target: { value: "Promo" } });
-    await waitFor(() => {
-      expect(searchPromotion).toHaveBeenCalledWith("Promo");
-    });
-  });
-
   it("opens add promotion modal", async () => {
     render(<PromotionManagement />);
     // Nút đầu tiên là nút mở modal

@@ -36,72 +36,65 @@ export const LayoutSelectSeat1 = ({
   seatDataFromAPI.forEach((seat) => {
     seatMap[seat.seatNumber] = seat;
   });
-  console.log("SEAT DATA FROM API:", seatDataFromAPI);
 
   // Group seats by row và column từ API data
   const groupSeatsByRowCol = () => {
     if (seatDataFromAPI.length === 0) return [];
 
     // Tìm số hàng và cột tối đa
-    const maxRow = Math.max(...seatDataFromAPI.map(seat => seat.row));
-    const maxCol = Math.max(...seatDataFromAPI.map(seat => seat.col));
-
-    console.log(`Max rows: ${maxRow}, Max cols: ${maxCol}`);
-
+    const maxRow = Math.max(...seatDataFromAPI.map((seat) => seat.row));
+    const maxCol = Math.max(...seatDataFromAPI.map((seat) => seat.col));
     const layout = [];
-
     // Tạo layout theo từng hàng
     for (let rowIndex = 1; rowIndex <= maxRow; rowIndex++) {
       const rowLabel = String.fromCharCode(64 + rowIndex); // A, B, C...
-      
       // Lấy tất cả ghế trong hàng này
-      const seatsInRow = seatDataFromAPI.filter(seat => seat.row === rowIndex);
-      
+      const seatsInRow = seatDataFromAPI.filter(
+        (seat) => seat.row === rowIndex
+      );
       if (seatsInRow.length === 0) continue;
-
       // Sắp xếp theo cột
       seatsInRow.sort((a, b) => a.col - b.col);
-
       // Xác định loại ghế dựa trên vị trí hàng
-      let seatType = 'normal';
+      let seatType = "normal";
       if (rowIndex <= 3) {
-        seatType = 'normal'; // 3 dãy đầu
+        seatType = "normal"; // 3 dãy đầu
       } else if (rowIndex === maxRow) {
-        seatType = 'couple'; // dãy cuối
+        seatType = "couple"; // dãy cuối
       } else {
-        seatType = 'vip'; // còn lại
+        seatType = "vip"; // còn lại
       }
 
       // Tạo danh sách ghế cho hàng này
       const rowSeats = [];
 
-      if (seatType === 'couple') {
+      if (seatType === "couple") {
         // Ghế couple: gộp 2 ghế thành 1
         for (let i = 0; i < seatsInRow.length; i += 2) {
           const seat1 = seatsInRow[i];
           const seat2 = seatsInRow[i + 1];
-          
+
           if (seat1 && seat2) {
             // Tạo ghế couple với tên gộp
             const coupleSeat = {
               ...seat1,
               seatNumber: `${rowLabel}${seat1.col}-${seat2.col}`,
               seatId: `${seat1.seatId}-${seat2.seatId}`,
-              type: 'Couple',
+              type: "Couple",
               price: seat1.price + (seat2 ? seat2.price : 0),
               isCouple: true,
-              originalSeats: [seat1, seat2].filter(Boolean)
+              originalSeats: [seat1, seat2].filter(Boolean),
             };
             rowSeats.push(coupleSeat);
           }
         }
       } else {
         // Ghế đơn: normal hoặc vip
-        seatsInRow.forEach(seat => {
+        seatsInRow.forEach((seat) => {
           rowSeats.push({
             ...seat,
-            type: seatType === 'normal' ? 'Normal' : 'VIP',
-            isCouple: false
+            type: seatType === "normal" ? "Normal" : "VIP",
+            isCouple: false,
           });
         });
       }
@@ -116,7 +109,7 @@ export const LayoutSelectSeat1 = ({
         seats: rowSeats,
         leftSeats: rowSeats.slice(0, leftSideCount),
         rightSeats: rowSeats.slice(leftSideCount),
-        seatType
+        seatType,
       });
     }
 
@@ -126,7 +119,7 @@ export const LayoutSelectSeat1 = ({
   useEffect(() => {
     if (seatDataFromAPI.length > 0) {
       const layout = groupSeatsByRowCol();
-      console.log("Generated layout:", layout);
+
       setSeatLayout(layout);
       setTimeout(() => setIsLoaded(true), 100);
     }
@@ -134,7 +127,7 @@ export const LayoutSelectSeat1 = ({
 
   const handleSeatClick = (seat) => {
     const seatNumber = seat.seatNumber;
-    
+
     // Kiểm tra trạng thái ghế
     if (seat.status === "taken" || seat.status === "holding") return;
 
@@ -146,22 +139,21 @@ export const LayoutSelectSeat1 = ({
     }
 
     setSelectedSeats(newSelectedSeats);
-    console.log("Selected Seats: ", newSelectedSeats);
 
     // Tính toán thông tin ghế đã chọn
     const selectedSeatDetails = [];
     const selectedSeatIds = [];
     let totalPrice = 0;
 
-    newSelectedSeats.forEach(seatNum => {
+    newSelectedSeats.forEach((seatNum) => {
       // Tìm ghế trong layout
       for (let row of seatLayout) {
-        const foundSeat = row.seats.find(s => s.seatNumber === seatNum);
+        const foundSeat = row.seats.find((s) => s.seatNumber === seatNum);
         if (foundSeat) {
           selectedSeatDetails.push(foundSeat);
           if (foundSeat.isCouple) {
             // Với ghế couple, lấy ID của cả 2 ghế gốc
-            foundSeat.originalSeats.forEach(originalSeat => {
+            foundSeat.originalSeats.forEach((originalSeat) => {
               selectedSeatIds.push(originalSeat.seatId);
             });
           } else {
@@ -222,7 +214,7 @@ export const LayoutSelectSeat1 = ({
           }}
         >
           <div
-            onClick={isClickable ? () => handleSeatClick(seat) : undefined} 
+            onClick={isClickable ? () => handleSeatClick(seat) : undefined}
             className={`
               ${getSeatColor(seat)} 
               transition-opacity duration-200
@@ -244,7 +236,7 @@ export const LayoutSelectSeat1 = ({
                 width: `${widthDouble}px`,
                 height: `${heightDouble}px`,
                 display: "block",
-                pointerEvents: "none", 
+                pointerEvents: "none",
               }}
             />
 
@@ -511,7 +503,3 @@ export const LayoutSelectSeat1 = ({
     </div>
   );
 };
-
-
-
-
