@@ -123,7 +123,7 @@ const MovieForgotPassword = () => {
         {movieBackgrounds.map((bg, index) => (
           <div
             key={index}
-            className={`absolute inset-0 object-cover bg-cover bg-center bg-no-repeat transition-opacity duration-1000 ${
+            className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 ${
               index === currentBgIndex ? "opacity-100" : "opacity-0"
             }`}
             style={{
@@ -131,44 +131,8 @@ const MovieForgotPassword = () => {
             }}
           />
         ))}
-        <div className="absolute inset-0 bg-black/60" />
+        <div className="absolute inset-0 bg-black/20" />
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900/40 via-blue-900/40 to-indigo-900/40" />
-      </div>
-
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden z-10">
-        <div className="absolute -top-4 -left-4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-pulse"></div>
-        <div
-          className="absolute -top-4 -right-4 w-96 h-96 bg-yellow-500 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-pulse"
-          style={{ animationDelay: "2s" }}
-        ></div>
-        <div
-          className="absolute -bottom-8 left-20 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-pulse"
-          style={{ animationDelay: "4s" }}
-        ></div>
-
-        {/* Floating movie icons */}
-        <div className="absolute top-20 left-10 animate-bounce">
-          <Film className="text-yellow-400 w-6 h-6 opacity-60" />
-        </div>
-        <div
-          className="absolute top-40 right-20 animate-bounce"
-          style={{ animationDelay: "1s" }}
-        >
-          <Star className="text-yellow-300 w-5 h-5 opacity-50" />
-        </div>
-        <div
-          className="absolute bottom-32 left-32 animate-bounce"
-          style={{ animationDelay: "2s" }}
-        >
-          <Shield className="text-purple-400 w-4 h-4 opacity-40" />
-        </div>
-        <div
-          className="absolute bottom-20 right-10 animate-bounce"
-          style={{ animationDelay: "0.5s" }}
-        >
-          <Clock className="text-pink-400 w-6 h-6 opacity-60" />
-        </div>
       </div>
 
       {/* Main content */}
@@ -318,7 +282,7 @@ const MovieForgotPassword = () => {
           </div>
 
           {/* Floating elements */}
-          <div className="absolute -top-4 sm:-top-6 lg:-top-8 -right-4 sm:-right-6 lg:-right-8 w-8 h-8 sm:w-12 sm:h-12 lg:w-16 lg:h-16 bg-gradient-to-r from-orange-400 to-red-500 rounded-full opacity-60 animate-ping"></div>
+
           <div className="absolute -bottom-3 sm:-bottom-4 lg:-bottom-6 -left-3 sm:-left-4 lg:-left-6 w-6 h-6 sm:w-8 sm:h-8 lg:w-12 lg:h-12 bg-gradient-to-r from-red-400 to-pink-500 rounded-full opacity-40 animate-pulse"></div>
         </div>
       </div>
